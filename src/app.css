@@ -46,24 +46,35 @@
 	--disabled-ink: rgba(30, 42, 71, 0.38);
 	--disabled-soft: rgba(30, 42, 71, 0.04);
 
-	/* ガラスの塗り (visual 3.2「明るい地では塗りを高めに」と 4.5:1 の実測の折り合い。
-	   visual 3.1「大きい要素ほど不透明」に従い、面が大きい --glass-panel を --glass-1 より濃くする) */
-	--glass-1: rgba(255, 255, 255, 0.62);
-	--glass-2: rgba(255, 255, 255, 0.76);
-	--glass-panel: rgba(255, 255, 255, 0.66);
+	/* ガラスの塗り。Apple の Liquid Glass は面の中で背後の色がはっきり透けるので、
+	   4.5:1 の実測が許す下限まで薄くした。--glass-1 (カード) は載る文字がほぼ --ink なので
+	   最も薄くでき、--ink-3 が載るサイドナビと依頼バーは実測が 4.5:1 を割ったので上げた。
+	   visual 3.1「大きい要素ほど不透明」とも向きが一致する */
+	--glass-1: rgba(255, 255, 255, 0.48);
+	--glass-2: rgba(255, 255, 255, 0.6);
+	--glass-panel: rgba(255, 255, 255, 0.58);
 	--solid: rgba(255, 255, 255, 0.97);
 
-	/* ぼかし。12px と 16px の 2 段だけ (性能規則)。彩度と明度で背後の色を拾う (visual 4.2) */
+	/* ぼかしは 12px と 16px のまま。Liquid Glass のぼかしはごく弱く、強くすると
+	   すりガラスになって「厚みのある透明な板」に見えなくなる。背景をぼかして見せる役は
+	   ぼかし量ではなく、下の屈折 (変位写像) と縁のレンズの帯が担う。
+	   彩度と明度で背後の色を拾う (visual 4.2) */
 	--blur-s: blur(12px) saturate(190%) brightness(1.05);
 	--blur-m: blur(16px) saturate(190%) brightness(1.05);
+	/* 屈折を足した版。Chromium だけが backdrop-filter で SVG フィルターを受け付ける (記事 5)。
+	   受け付けない環境ではこの宣言が捨てられ、直前の --blur-m の宣言が残る */
+	--blur-lens: var(--blur-m) url(#lens);
 
 	/* visual 3.1 — 左上から差す鏡面ハイライト。厚みのある板に見せる。
 	   塗りの上に重ねる背景画像なので、疑似要素を足さずに済む */
 	--sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 45%);
 
-	/* 縁の光 (visual 3.2 の 1px の白い縁、4.2) */
+	/* 縁の光 (visual 3.2 の 1px の白い縁、4.2) と、その内側に入れるレンズの帯。
+	   角丸に沿う内側の影なので、疑似要素なしで縁だけが明るく立ち上がり、
+	   ガラスが縁で厚みを持って背景を曲げているように見える */
 	--rim:
 		inset 0 0 0 1px rgba(255, 255, 255, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.95),
+		inset 0 0 8px rgba(255, 255, 255, 0.5), inset 0 0 24px rgba(255, 255, 255, 0.35),
 		0 0 0 1px rgba(30, 42, 71, 0.05);
 
 	/* 影 3 段 */
@@ -216,15 +227,25 @@ svg.i {
 		radial-gradient(900px 600px at 52% 48%, #e9f1ff 0%, rgba(233, 241, 255, 0) 70%),
 		linear-gradient(180deg, #f9fbfe 0%, #f2f6fb 100%);
 }
+/* 記事 5 — 屈折に使う SVG フィルターの置き場。display: none にすると参照が切れる */
+.filter-defs {
+	position: fixed;
+	width: 0;
+	height: 0;
+	pointer-events: none;
+}
+
 /* 5 個置くが色相は 3 つのまま (visual 3.3: 4 色を超えると重なりが濁る)。
    ガラス面 (サイドナビ、上部バー、公開パネル、Today のカード、依頼バー) の背後に
-   必ず 1 つ以上来るよう配置する。ぼかしは直径の 1 割を目安 (visual 4.3) */
+   必ず 1 つ以上来るよう配置する。塊自体のぼかしは輪郭が残る 28px に下げた
+   (visual 4.3 の「直径の 1 割」より弱い)。ガラス越しに「形のあるもの」が見えないと
+   ぼかしも屈折も働かないので、塊は溶かしきらない (visual 3.2) */
 .bg-blob {
 	position: absolute;
 	border-radius: 50%;
-	filter: blur(56px);
+	filter: blur(28px);
 	mix-blend-mode: multiply;
-	opacity: 0.45;
+	opacity: 0.55;
 	/* transform だけを 72 秒で動かす。filter と opacity は動かさない (visual 4.3) */
 	animation: blob-drift 72s var(--ease-out) infinite alternate;
 }
@@ -557,6 +578,21 @@ body[data-overlay='on'] .card {
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e3);
 }
+
+/* 記事 5 — 屈折 (レンズ効果)。変位写像を backdrop-filter に通せるのは Chromium 系だけで、
+   Safari と Firefox はぼかしと縁の光までになる。これは段階分けとして決めたものである。
+   ぼかしを設定する規則すべてより後ろに置いて上書きする。覆いが出ている間の .card と
+   印刷は、より強い指定で backdrop-filter: none に倒れるのでここでは触れない */
+.glass,
+.sidebar,
+.rail,
+.header.glass,
+.card,
+.chatbar {
+	-webkit-backdrop-filter: var(--blur-lens);
+	backdrop-filter: var(--blur-lens);
+}
+
 .chatbar input {
 	flex: 1;
 	min-width: 0;
@@ -1548,8 +1584,10 @@ body[data-overlay='on'] .card {
 	max-width: calc(var(--orb-half) * 2);
 	max-height: calc(var(--orb-half) * 2);
 }
-/* visual 4.2 / 4.5 — ぼかしと縁は .glass のまま。大きい面なので塗りは --glass-panel、
-   影は 1 段上げて --e3、角丸は 24px にする (visual 3.1 / 4.13 の「画面の外枠」の段) */
+/* visual 4.2 / 4.5 — ぼかしと縁は .glass のまま。影は 1 段上げて --e3、角丸は 24px
+   (visual 3.1 / 4.13 の「画面の外枠」の段)。塗りはサイドナビ用の --glass-panel ではなく
+   最も薄い --glass-1 を使う。この面に載る文字は --ink と --ink-2 だけで、--ink-3 を
+   --ink-2 に落とす指定が下にあるため、実測でまだ余裕がある */
 .public-panel {
 	--pad: var(--sp-8);
 	position: relative;
@@ -1559,7 +1597,7 @@ body[data-overlay='on'] .card {
 	width: 100%;
 	padding: var(--pad);
 	border-radius: var(--r-l);
-	background: var(--sheen), var(--glass-panel);
+	background: var(--sheen), var(--glass-1);
 	box-shadow: var(--rim), var(--e3);
 	text-align: center;
 	animation: panel-in var(--d-enter) var(--ease-enter) both;
