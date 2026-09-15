@@ -360,7 +360,7 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		gl.useProgram(bright.p);
 		bind(0, scene);
 		gl.uniform1i(bright.u.uTex, 0);
-		gl.uniform1f(bright.u.uThreshold, 0.45);
+		gl.uniform1f(bright.u.uThreshold, 0.6); /* 光彩 (#9cc4ff の輝度 0.76) の芯だけ拾う。低いと全体が白く覆われる */
 		fullscreen(bright, halfA);
 
 		const step = (blurRadius * dpr) / 2 / 8; /* 半分解像度のテクセルで 8 タップ分に収める */
@@ -379,7 +379,7 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		bind(1, halfA);
 		gl.uniform1i(composite.u.uScene, 0);
 		gl.uniform1i(composite.u.uBloom, 1);
-		gl.uniform1f(composite.u.uStrength, 1.15);
+		gl.uniform1f(composite.u.uStrength, 1.3);
 		fullscreen(composite, null);
 	};
 
