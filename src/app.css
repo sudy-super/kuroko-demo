@@ -12,7 +12,14 @@
 	--bg: #f4f7fc;
 
 	/* 文字と線 */
-	/* Task 10c — ガラスを透明に寄せたぶん、文字の背後が白ではなく背景の色そのものになった。
+	/* Task 10d — 背景を壁紙にしたので、文字の背後は白ではなく色の塊そのものになった。
+	   最も色の濃い背後 (サイドナビの上半分に掛かる青 #4f7bff の塊) で実測し、4.5:1 を割った
+	   --ink-2 / --ink-3 / --accent をさらに濃くした。ブリーフ 3 の「塗りを厚くせず文字色を濃くする」に従う。
+	   実測 (1440x900 の /today、各文字の周り 28px から glyph と部品を除いた画素の下位 5% 分位):
+	   --ink 7.26:1、--ink-2 7.06:1、--ink-3 4.61:1、--accent 4.66:1。
+	   --ink → --ink-2 → --ink-3 の順に薄くなるという約束は保つ (相対輝度 0.024 → 0.064 → 0.078)。
+
+	   Task 10c — ガラスを透明に寄せたぶん、文字の背後が白ではなく背景の色そのものになった。
 	   実測に合わせて --ink-2 / --ink-3 / --accent を濃くした。ブリーフ 6 の
 	   「満たさない場合は塗りを厚くせず文字色を濃くする」に従う。
 	   --ink → --ink-2 → --ink-3 の順に薄くなるという約束は保つ。--ink-3 が載る最も色の濃い
@@ -20,20 +27,20 @@
 	   厳しいほうの上限を --ink-3 に当て、--ink-2 はそこからさらに一段濃くしている。
 	   実測: --ink-2 は 5.06:1 以上、--ink-3 は 4.62:1 以上 (4 フレームの下位 5% 分位) */
 	--ink: #1e2a47;
-	--ink-2: #47516a;
-	--ink-3: #4e576d;
+	--ink-2: #3f4859;
+	--ink-3: #474f63;
 	--line: rgba(140, 160, 200, 0.18);
 	--line-2: rgba(140, 160, 200, 0.3);
 
 	/* アクセント */
-	--accent: #1552b6;
+	--accent: #10408e;
 	--accent-top: #2a6fe0;
 	--accent-2: #4f95ff;
-	--accent-soft: rgba(21, 82, 182, 0.1);
-	--accent-soft-2: rgba(21, 82, 182, 0.16);
-	--accent-glow: rgba(21, 82, 182, 0.28);
+	--accent-soft: rgba(16, 64, 142, 0.1);
+	--accent-soft-2: rgba(16, 64, 142, 0.16);
+	--accent-glow: rgba(16, 64, 142, 0.28);
 	/* 主ボタンと送信ボタンの落ち影。--accent と同じ RGB にそろえる */
-	--accent-shadow: rgba(21, 82, 182, 0.36);
+	--accent-shadow: rgba(16, 64, 142, 0.36);
 
 	/* ruling — 合否の色と入力欄の枠、選択中の塗り */
 	--ok: #107a48;
@@ -41,7 +48,7 @@
 	--warn: #c62129;
 	--warn-soft: #fdecec;
 	--border: #8593b0;
-	--sel: rgba(21, 82, 182, 0.12);
+	--sel: rgba(16, 64, 142, 0.12);
 	/* components 3.2 / 3.11 — 一覧行、ボトムナビ、コマンドパレットの選択中の塗り */
 	--sel-soft: rgba(214, 228, 252, 0.75);
 
@@ -49,8 +56,8 @@
 	--hover: rgba(30, 42, 71, 0.08);
 	--press: rgba(30, 42, 71, 0.1);
 	--hover-light: rgba(255, 255, 255, 0.45);
-	--hover-accent: rgba(21, 82, 182, 0.08);
-	--press-accent: rgba(21, 82, 182, 0.1);
+	--hover-accent: rgba(16, 64, 142, 0.08);
+	--press-accent: rgba(16, 64, 142, 0.1);
 	--disabled-bg: rgba(30, 42, 71, 0.12);
 	--disabled-ink: rgba(30, 42, 71, 0.38);
 	--disabled-soft: rgba(30, 42, 71, 0.04);
@@ -228,76 +235,88 @@ svg.i {
 	inset: 0;
 	z-index: 0;
 	pointer-events: none;
-	background:
-		radial-gradient(900px 600px at 52% 48%, #e9f1ff 0%, rgba(233, 241, 255, 0) 70%),
-		linear-gradient(180deg, #f9fbfe 0%, #f2f6fb 100%);
+	background: linear-gradient(160deg, #eaf0ff 0%, #f4f6fb 45%, #eef4ff 100%);
 }
-/* 5 個置くが色相は 3 つのまま (visual 3.3: 4 色を超えると重なりが濁る)。
-   ガラス面 (サイドナビ、上部バー、公開パネル、Today のカード、依頼バー) の背後に
-   必ず 1 つ以上来るよう配置する。ガラス越しに「形のあるもの」が見えないとぼかしも屈折も
-   働かないので、塊は溶かしきらない (visual 3.2)。
-   Task 10c — 輪郭の柔らかさはぼかしではなく放射状の階調で作る。ライブラリはガラスの背後を
-   自分で描き直すが、そこに CSS の filter と mix-blend-mode は再現されない。ぼかしで作った塊は
-   ガラスの中だけ硬い円になり、乗算はガラスの中だけ黒く沈む。階調と不透明度なら、
-   画面とガラスの中で同じ形と同じ色が出る。
+/* Task 10d — 背景は「壁紙」。ガラスは背後の色と形を縁で曲げて初めて成立するので、
+   白に近い地の上では屈折が見えない (visual 3.2〜3.3、liquid-glass.md)。色の塊を 5 個置き、
+   サイドナビ、上部バー、Today の各カード、依頼バー、公開パネルのどれもが必ず塊の上に来るようにする。
+   暖色 (珊瑚) は 1 個だけ。4 色を超えると重なりが濁る (visual 3.3)。
+   大きさは 1440x900 の実験値を vmin に直した (760px → 84vmin など)。小さい画面でも同じ構図になる。
+
+   Task 10c からの制約 — ライブラリはガラスの背後を自分で描き直すが、そこに CSS の filter は
+   再現されない (node_modules/apple-liquid-glass-webgl/src/dom-content.js の 62 行目)。
+   ぼかしで柔らかくした塊はガラスの中だけ硬い円になるので、filter: blur() は使わず、
+   放射状の階調 (40% から 70% にかけて消える) で輪郭の柔らかさを作る。
+   opacity と mix-blend-mode は再現されるので使ってよい (dom-backdrop.js の 152 行目と 460 行目)。
    消える側の色は transparent と書かず塊自身の色の不透明度 0 で書く。transparent の計算値は
    rgba(0, 0, 0, 0) で、ライブラリはそこへ向けて黒く補間するため、ガラスの中だけ灰色に濁る */
 .bg-blob {
 	position: absolute;
+	/* 大きさの基準。1440x900 の実験値 (760px など) を vmin に直した。画面が細いと vmin が
+	   小さくなりすぎて壁紙が白く抜けるので、640px 未満では 1.4 倍にする */
+	--blob-unit: 1vmin;
 	background: radial-gradient(
-		closest-side,
+		circle,
 		rgb(var(--blob)) 0%,
-		rgb(var(--blob)) 62%,
-		rgb(var(--blob) / 0) 100%
+		rgb(var(--blob)) 40%,
+		rgb(var(--blob) / 0) 70%
 	);
-	opacity: 0.62;
+	opacity: 0.42;
 	/* transform だけを 72 秒で動かす。filter と opacity は動かさない (visual 4.3) */
 	animation: blob-drift 72s var(--ease-out) infinite alternate;
 }
+/* 青 — 左上。サイドナビの上半分と上部バーの左に掛かる */
 .bg-blob.a {
-	left: -10%;
-	top: 2%;
-	width: 62vmin;
-	height: 62vmin;
-	--blob: 183 209 255;
+	left: -14.5%;
+	top: -25.5%;
+	width: calc(84 * var(--blob-unit));
+	height: calc(84 * var(--blob-unit));
+	--blob: 79 123 255;
 }
-.bg-blob.b {
-	right: -8%;
-	top: 38%;
-	width: 58vmin;
-	height: 58vmin;
-	--blob: 188 230 240;
+/* 水色 — 右上。上部バーの右と右上のカードの裏 */
+.bg-blob.e {
+	left: 71.5%;
+	top: -20%;
+	width: calc(60 * var(--blob-unit));
+	height: calc(60 * var(--blob-unit));
+	--blob: 106 166 255;
 	animation-duration: 84s;
 	animation-delay: -18s;
 }
-.bg-blob.c {
-	left: 24%;
-	bottom: -8%;
-	width: 70vmin;
-	height: 70vmin;
-	--blob: 198 198 255;
-	animation-duration: 66s;
-	animation-delay: -34s;
-}
-/* 上部バーと、公開パネルの上半分の背後 */
+/* 紫 — 左。サイドナビの下半分から左のカードの裏 */
 .bg-blob.d {
-	left: 24%;
-	top: -14%;
-	width: 56vmin;
-	height: 56vmin;
-	--blob: 188 230 240;
+	left: -9%;
+	top: 43%;
+	width: calc(69 * var(--blob-unit));
+	height: calc(69 * var(--blob-unit));
+	--blob: 142 107 255;
 	animation-duration: 90s;
 	animation-delay: -50s;
 }
-/* サイドナビの下半分の背後 */
-.bg-blob.e {
-	left: -14%;
-	bottom: -6%;
-	width: 54vmin;
-	height: 54vmin;
-	--blob: 198 198 255;
+/* 青緑 — 中央下。下段のカードと依頼バーの裏 */
+.bg-blob.c {
+	left: 28.5%;
+	top: 61%;
+	width: calc(78 * var(--blob-unit));
+	height: calc(78 * var(--blob-unit));
+	--blob: 63 210 199;
+	animation-duration: 66s;
+	animation-delay: -34s;
+}
+/* 珊瑚 — 右下。右のカードの裏。暖色はこの 1 個だけ */
+.bg-blob.b {
+	left: 82.5%;
+	top: 65.5%;
+	width: calc(47 * var(--blob-unit));
+	height: calc(47 * var(--blob-unit));
+	--blob: 255 154 122;
 	animation-duration: 78s;
 	animation-delay: -9s;
+}
+@media (max-width: 640px) {
+	.bg-blob {
+		--blob-unit: 1.4vmin;
+	}
 }
 @keyframes blob-drift {
 	to {
@@ -1316,7 +1335,7 @@ body[data-overlay='on'] .card {
 		box-shadow: 0 0 0 0 var(--accent-glow);
 	}
 	50% {
-		box-shadow: 0 0 0 8px rgba(21, 82, 182, 0);
+		box-shadow: 0 0 0 8px rgba(16, 64, 142, 0);
 	}
 }
 

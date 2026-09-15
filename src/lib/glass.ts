@@ -33,17 +33,19 @@ export const CLEAR: LiquidGlassElementOptions = {
 };
 
 /* Today の内容カード: 12px の小さな文字が並び、しかも裏でオーブが毎フレーム動く。
-   ここだけは塗りと下ぼかしを上げないと文字が読めない */
+   ここだけは塗りと下ぼかしを上げないと文字が読めない。
+   Task 10d で背景が壁紙になり、塗りが濃いと面の中で背後の色が透けず板に見えたので
+   0.72 → 0.52、下ぼかし 12 → 10 まで薄くした (文字のコントラストは実測で 4.5:1 以上) */
 export const REGULAR: LiquidGlassElementOptions = {
-	tint: 0.72,
+	tint: 0.52,
 	tintTone: 'light',
-	material: { ...LENS, backdropBlur: 12 }
+	material: { ...LENS, backdropBlur: 10 }
 };
 
 /* 公開パネル (Welcome と /connect): 載る文字が大きく数も少ないので実測に余裕があり、
    カードより薄く、ぼかしも弱くできる。オーブの下半分がガラス越しに形のまま見える */
 export const PANEL: LiquidGlassElementOptions = {
-	tint: 0.5,
+	tint: 0.42,
 	tintTone: 'light',
 	material: { ...LENS, backdropBlur: 6 }
 };
