@@ -5,8 +5,6 @@
 </script>
 
 <div class="public">
-	<div class="public-stage">
-		<Orb size={480} />
-		<div class="glass public-panel">{@render children()}</div>
-	</div>
+	<Orb size={520} />
+	<div class="glass public-panel">{@render children()}</div>
 </div>

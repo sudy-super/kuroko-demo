@@ -13,12 +13,10 @@
 	<p>Gmail やカレンダーを開く必要はありません。</p>
 </div>
 
-<div class="row">
-	<button class="btn pri lg" onclick={() => goto('/connect')}>デモを開始</button>
-	{#if db.demo.started}
-		<button class="btn sec lg" onclick={() => goto('/today')}>続きから (Today へ)</button>
-	{/if}
-</div>
+<button class="btn pri lg" onclick={() => goto('/connect')}>デモを開始</button>
+{#if db.demo.started}
+	<button class="btn text" onclick={() => goto('/today')}>続きから (Today へ)</button>
+{/if}
 
 <div class="muted note">
 	<p>Demo Workspace / ログインは不要です</p>
