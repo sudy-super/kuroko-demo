@@ -21,7 +21,7 @@ mat3 rotZ(float a) { float c = cos(a), s = sin(a); return mat3(c, s, 0.0, -s, c,
 /* 3D → 画面。奥ほど少し縮む弱い遠近 */
 vec2 project(vec3 p) { return p.xy * (1.0 + 0.12 * p.z); }
 /* 球の裏側 (z < 0 で円盤の内側) は隠す */
-float behind(vec3 p, float R) { return (p.z < 0.0) ? smoothstep(R * 0.96, R * 1.02, length(p.xy)) : 1.0; }
+float behind(vec3 p, float R) { return (p.z < 0.0) ? smoothstep(R * 1.0, R * 1.14, length(p.xy)) : 1.0; } /* 滲んだ輪郭 (1.12R) に合わせる */
 /* 1 を超えた色は色相を保ったまま白へ寄せる (単純な clamp だと青がシアンに転ぶ) */
 vec3 softWhite(vec3 c) {
 	float m = max(c.r, max(c.g, c.b));
@@ -210,7 +210,7 @@ void main() {
 	float ang = aSeed.x * 2.0 * PI;
 	float lat = acos(2.0 * aSeed.y - 1.0); /* 球面に一様に配る */
 	float u = fract(aSeed.z * 7.3);
-	float size = 0.004 * pow(7.0, pow(u, 1.6)); /* 半幅。2px〜14px (520px 基準) の対数分布 */
+	float size = 0.004 * pow(5.0, pow(u, 1.6)); /* 半幅。2px〜10px (520px 基準) の対数分布 */
 	float sizeN = pow(u, 1.6);
 	vec3 pos, vel;
 	float alpha;
@@ -218,7 +218,7 @@ void main() {
 		float T = 5.0 + 6.0 * aSeed.z; /* 寿命 5〜11 秒 */
 		float life = fract(uTime / T + aSeed.w * 17.0);
 		float e = 1.0 - (1.0 - life) * (1.0 - life); /* ease-out: 飛び出して減速 */
-		float rr = 1.0 + 1.3 * e;
+		float rr = 1.0 + 0.75 * e; /* 終端 1.75R。光彩の外で単体で浮かない */
 		/* 剥がれた球面の公転 (35 秒) を引き継ぎ、外へ行くほど接線方向に 0.7 rad ねじれて渦を巻く */
 		float a = ang + uTime * 2.0 * PI / 35.0 + 0.7 * e;
 		mat3 tilt = orbitTilt((rr - 1.0) / 0.25);
@@ -240,7 +240,7 @@ void main() {
 		alpha = 1.0;
 	}
 	float depth = 0.5 + 0.5 * pos.z / length(pos);
-	alpha *= behind(pos, R) * mix(0.55, 1.0, depth);
+	alpha *= behind(pos, R) * mix(0.45, 1.0, depth); /* 奥行きは色ではなく alpha で表す */
 	size *= mix(0.7, 1.15, depth); /* 奥は小さく、手前は大きく */
 
 	vec2 c = project(pos);
@@ -257,7 +257,7 @@ void main() {
 
 	float tone = fract(aSeed.x * 13.0);
 	vC = tone < 0.5 ? mix(C_EDGE * 0.8, C_DEEP, fract(aSeed.w * 9.0)) : (tone < 0.75 ? C_MID : mix(C_LIGHT, vec3(1.0), 0.8));
-	vC = mix(vC * 0.75, vC, depth); /* 奥は暗く */
+	if (tone < 0.75) vC = mix(vC * 0.8, vC, depth); /* 青い破片だけ奥を少し暗く。白寄りは減光すると灰色の紙に見える */
 	/* 自転で面が光を捉える瞬間の白いきらめき */
 	float glint = pow(max(sin(rot * 2.0 + aSeed.w * 20.0), 0.0), 24.0);
 	vC = mix(vC, vec3(1.0), glint * 0.85);

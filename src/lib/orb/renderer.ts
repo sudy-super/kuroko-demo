@@ -73,20 +73,25 @@ export function fibonacciSphere(count: number): Float32Array {
  * plexus: 結節点を球面の層 (差動回転の最内層、周期約 38 秒) で回して投影し、近い組を線で結ぶ。
  * O(n²) だが n ≤ 120 なので毎フレームでよい。戻り値の nodes / lines は (x, y, alpha) の並び。球の裏側は落とす
  */
+export type PlexusScratch = { px: Float32Array; py: Float32Array; vis: Float32Array; nodes: Float32Array; lines: Float32Array };
+/** plexus が毎フレーム使う配列。閉包側で 1 回確保して使い回す */
+export function plexusScratch(n: number): PlexusScratch {
+	return { px: new Float32Array(n), py: new Float32Array(n), vis: new Float32Array(n), nodes: new Float32Array(n * 3), lines: new Float32Array(n * 4 * 6) /* 1 点あたり最大 4 本 */ };
+}
 export function plexus(
 	dirs: Float32Array,
 	time: number,
 	R: number,
-	maxDist: number
+	maxDist: number,
+	scratch: PlexusScratch = plexusScratch(dirs.length / 3)
 ): { nodes: Float32Array; lines: Float32Array; lineCount: number } {
 	const n = dirs.length / 3;
+	const { px, py, vis, nodes, lines } = scratch;
 	const period = 35 + 80 * (0.05 / 1.2); /* shader.ts の orbitPeriod(1.05) と同じ */
 	const ay = (time * 2 * Math.PI) / period;
 	const cy = Math.cos(ay), sy = Math.sin(ay);
 	const cz = Math.cos(-0.3), sz = Math.sin(-0.3); /* orbitTilt(0) = rotX(0.35) * rotZ(-0.3) */
 	const cx = Math.cos(0.35), sx = Math.sin(0.35);
-	const px = new Float32Array(n), py = new Float32Array(n), vis = new Float32Array(n);
-	const nodes = new Float32Array(n * 3);
 	for (let i = 0; i < n; i++) {
 		const rad = R * (1.05 + 0.03 * Math.sin(time * 0.7 + i));
 		let x = dirs[i * 3] * rad, y = dirs[i * 3 + 1] * rad, z = dirs[i * 3 + 2] * rad;
@@ -95,11 +100,12 @@ export function plexus(
 		t = y * cx - z * sx; z = y * sx + z * cx; y = t;
 		const k = 1 + 0.12 * z;
 		px[i] = x * k; py[i] = y * k;
-		const behind = z < 0 && Math.hypot(x, y) < R * 0.98;
-		vis[i] = behind ? 0 : 0.35 + 0.65 * (0.5 + 0.5 * z / rad);
+		/* 裏側は滲んだ輪郭 (1.0R〜1.14R) に合わせて柔らかく隠す。shader.ts の behind() と同じ */
+		const q = Math.min(Math.max((Math.hypot(x, y) / R - 1.0) / 0.14, 0), 1);
+		const shown = z < 0 ? q * q * (3 - 2 * q) : 1;
+		vis[i] = shown * (0.35 + 0.65 * (0.5 + 0.5 * z / rad));
 		nodes.set([px[i], py[i], vis[i] * 0.9], i * 3);
 	}
-	const lines = new Float32Array(n * 4 * 6); /* 1 点あたり最大 4 本 */
 	let c = 0;
 	for (let i = 0; i < n; i++) {
 		if (!vis[i]) continue;
@@ -135,6 +141,7 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 	const shards = shardGeometry(shardCount);
 	const floatSeeds = randoms(floatCount * 4, 23);
 	const nodeDirs = fibonacciSphere(nodeCount);
+	const scratch = plexusScratch(nodeCount);
 	const ringVerts = new Float32Array((RING_SEGS + 1) * 4);
 	for (let i = 0; i <= RING_SEGS; i++) ringVerts.set([i / RING_SEGS, -1, i / RING_SEGS, 1], i * 4);
 
@@ -235,8 +242,10 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		scene = target(w, h);
 		halfA = target(hw, hh);
 		halfB = target(hw, hh);
-		trailA = target(hw, hh);
-		trailB = target(hw, hh);
+		if (particles) { /* 粒子が無ければ軌跡のターゲットは要らない */
+			trailA = target(hw, hh);
+			trailB = target(hw, hh);
+		}
 	};
 
 	/* 三角形 1 枚で全面を描く */
@@ -260,7 +269,7 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 	const over = () => { gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); };
 
 	const draw = (time: number) => {
-		if (!scene || !halfA || !halfB || !trailA || !trailB) return;
+		if (!scene || !halfA || !halfB) return;
 		const w = canvas.width, h = canvas.height;
 		const R = R0 * (1 + 0.015 * Math.sin((time * 2 * Math.PI) / 4));
 		gl.disable(gl.DEPTH_TEST);
@@ -289,7 +298,7 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, (RING_SEGS + 1) * 2);
 		gl.disableVertexAttribArray(ringLoc);
 
-		if (particles) {
+		if (particles && trailA && trailB) {
 			/* 3. 浮遊粒子を半分解像度の軌跡ターゲットへ。前のフレームを減衰させて写してから加算で重ねる */
 			gl.disable(gl.BLEND);
 			gl.useProgram(copy.p);
@@ -326,7 +335,7 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 			gl.disableVertexAttribArray(a2);
 
 			/* 5. plexus の線と結節点 (加算) */
-			const px = plexus(nodeDirs, time, R, R * 0.42);
+			const px = plexus(nodeDirs, time, R, R * 0.42, scratch);
 			additive();
 			gl.useProgram(line.p);
 			gl.uniform2f(line.u.uRes, w, h);

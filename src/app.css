@@ -1479,7 +1479,8 @@ body[data-overlay='on'] .card {
 	align-content: safe center;
 	min-height: 100dvh;
 	padding: var(--sp-6);
-	/* 回転するオーブの角が狭い画面で横にはみ出す。clip なら縦の溢れは見えたままになる */
+	/* オーブのキャンバスは球の直径の約 2 倍の光彩と破片を含むので、狭い画面では横にはみ出す。
+	   clip なら縦の溢れは見えたままになる */
 	overflow-x: clip;
 }
 .public-stage {
@@ -1488,7 +1489,7 @@ body[data-overlay='on'] .card {
 	   568px = /connect のパネルの高さ 520px + .public の上下の余白 48px */
 	--orb-room: max(200px, calc(100dvh - 568px));
 	--orb-half: min(260px, calc(var(--orb-room) * 0.65));
-	--orb-rise: min(90px, calc(var(--orb-room) * 0.35));
+	--orb-rise: min(70px, calc(var(--orb-room) * 0.35));
 	position: relative;
 	width: 100%;
 	max-width: 560px;

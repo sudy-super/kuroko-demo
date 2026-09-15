@@ -7,12 +7,18 @@
 	let fallback = $state(false);
 
 	onMount(() => {
-		const orb = createOrb(canvas!, {
-			reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
-			/* 低性能の判定はブリーフどおり「モバイル幅 かつ コア数 4 以下」の AND */
-			mobile: matchMedia('(max-width: 960px)').matches && navigator.hardwareConcurrency <= 4,
-			particles: sparks
-		});
+		let orb: ReturnType<typeof createOrb> = null;
+		try {
+			orb = createOrb(canvas!, {
+				reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+				/* 低性能の判定はブリーフどおり「モバイル幅 かつ コア数 4 以下」の AND */
+				mobile: matchMedia('(max-width: 960px)').matches && navigator.hardwareConcurrency <= 4,
+				particles: sparks
+			});
+		} catch (e) {
+			/* シェーダーのコンパイル・リンク失敗や framebuffer の不完全もマウントを壊さず CSS の代替に落とす */
+			console.warn('orb: WebGL の初期化に失敗したので CSS の代替を出します', e);
+		}
 		if (!orb) {
 			fallback = true;
 			return;
