@@ -99,16 +99,16 @@ export function plexus(
 	const cz = Math.cos(-0.3), sz = Math.sin(-0.3); /* orbitTilt(0) = rotX(0.35) * rotZ(-0.3) */
 	const cx = Math.cos(0.35), sx = Math.sin(0.35);
 	for (let i = 0; i < n; i++) {
-		/* 結節点を球面に乗せると網が「球の骨組み」に見える。0.9R〜1.3R の厚みに散らして球の輪郭を作らない */
-		const rad = R * (0.8 + 0.6 * (((i * 7919) % 1000) / 1000) + 0.03 * Math.sin(time * 0.7 + i));
+		/* 結節点は球面のすぐ外側に乗せる。網が球面に沿うので立体の球として読める */
+		const rad = R * (1.03 + 0.08 * (((i * 7919) % 1000) / 1000) + 0.02 * Math.sin(time * 0.7 + i));
 		let x = dirs[i * 3] * rad, y = dirs[i * 3 + 1] * rad, z = dirs[i * 3 + 2] * rad;
 		let t = x * cy + z * sy; z = -x * sy + z * cy; x = t;
 		t = x * cz - y * sz; y = x * sz + y * cz; x = t;
 		t = y * cx - z * sx; z = y * sx + z * cx; y = t;
 		const k = 1 + 0.12 * z;
 		px[i] = x * k; py[i] = y * k;
-		/* 裏側は滲んだ輪郭 (1.0R〜1.14R) に合わせて柔らかく隠す。shader.ts の behind() と同じ */
-		const q = Math.min(Math.max((Math.hypot(x, y) / R - 0.85) / 0.35, 0), 1);
+		/* 裏側は球の輪郭 (0.97R〜1.06R) で隠す。shader.ts の behind() と同じ */
+		const q = Math.min(Math.max((Math.hypot(x, y) / R - 0.97) / 0.09, 0), 1);
 		const shown = z < 0 ? q * q * (3 - 2 * q) : 1;
 		vis[i] = shown * (0.35 + 0.65 * (0.5 + 0.5 * z / rad));
 		nodes.set([px[i], py[i], vis[i] * 0.9], i * 3);
@@ -121,7 +121,7 @@ export function plexus(
 			if (!vis[j]) continue;
 			const dd = Math.hypot(px[i] - px[j], py[i] - py[j]);
 			if (dd > maxDist) continue;
-			const a = (0.1 + 0.25 * (1 - dd / maxDist)) * Math.min(vis[i], vis[j]); /* 近いほど明るく 0.1〜0.35 */
+			const a = (0.15 + 0.3 * (1 - dd / maxDist)) * Math.min(vis[i], vis[j]); /* 近いほど明るく 0.15〜0.45 */
 			lines.set([px[i], py[i], a, px[j], py[j], a], c * 6);
 			c++;
 			links++;
@@ -291,7 +291,7 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		gl.clear(gl.COLOR_BUFFER_BIT);
 		fullscreen(sphere, scene);
 
-		/* 2. 光の弧 1 本 (加算)。2 本にすると円周をなぞって球に見えるので 1 本の短い弧にする */
+		/* 2. 光の弧 2 本 (加算)、周期違い。球を回って裏側で隠れるので立体の手がかりになる */
 		additive();
 		gl.useProgram(ring.p);
 		gl.uniform2f(ring.u.uRes, w, h);
@@ -299,6 +299,9 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		const ringLoc = attrib(ring, 'aRing', ringBuf, 2);
 		gl.uniform3f(ring.u.uCfg, 1.15, 1.18, 1 / 22);
 		gl.uniform1f(ring.u.uPhase, 0);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, (RING_SEGS + 1) * 2);
+		gl.uniform3f(ring.u.uCfg, -0.75, 1.32, 1 / 34);
+		gl.uniform1f(ring.u.uPhase, 2.1);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, (RING_SEGS + 1) * 2);
 		gl.disableVertexAttribArray(ringLoc);
 
