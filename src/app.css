@@ -1512,16 +1512,31 @@ body[data-overlay='on'] .card {
 	/* 回転するオーブの角が狭い画面で横にはみ出す。clip なら縦の溢れは見えたままになる */
 	overflow-x: clip;
 }
-/* パネルより上に置き、パネルがオーブの上半分に重なるようにする。ガラスはオーブの
-   光彩をぼかす対象を必要とする (visual 2.8 の 6 項) */
+.public-stage {
+	/* オーブの半径と、パネルの上端から中心までの持ち上げ量。
+	   画面が低いと /connect のパネルが折り返しの下に沈むので、上に空ける分を連続的に縮める。
+	   568px = /connect のパネルの高さ 520px + .public の上下の余白 48px */
+	--orb-room: max(200px, calc(100dvh - 568px));
+	--orb-half: min(260px, calc(var(--orb-room) * 0.65));
+	--orb-rise: min(140px, calc(var(--orb-room) * 0.35));
+	position: relative;
+	width: 100%;
+	max-width: 560px;
+	/* オーブが画面の上に出ないよう、パネルの上に場所を空ける */
+	padding-top: calc(var(--orb-half) + var(--orb-rise));
+}
+/* 中心をパネルの上端より --orb-rise だけ上に置く。明るい中心と縁の光はパネルの上に出て、
+   下側はパネルに隠れてガラスのぼかす対象になる (visual 2.8 の 6 項)。
+   ビューポートではなくパネルを基準にするので、画面の高さが変わっても関係は崩れない */
 .public .orb {
 	position: absolute;
 	z-index: 0;
+	top: calc(var(--orb-half) + var(--orb-rise));
 	left: 50%;
-	top: 38%;
-	transform: translate(-50%, -50%);
-	max-width: 86vw;
-	max-height: 86vw;
+	translate: -50% calc(-50% - var(--orb-rise));
+	/* 寸法は Orb 側のインラインの style に入るので、抑えるのは max-* でしかできない */
+	max-width: calc(var(--orb-half) * 2);
+	max-height: calc(var(--orb-half) * 2);
 }
 /* visual 4.2 / 4.5 — ぼかしと縁は .glass のまま。大きい面なので塗りは --glass-panel (.82)、
    影は 1 段上げて --e3、角丸は 24px にする (visual 3.1 / 4.13 の「画面の外枠」の段) */
@@ -1532,7 +1547,6 @@ body[data-overlay='on'] .card {
 	display: grid;
 	gap: var(--sp-5);
 	width: 100%;
-	max-width: 560px;
 	padding: var(--pad);
 	border-radius: var(--r-l);
 	background: var(--glass-panel);
@@ -1581,4 +1595,10 @@ body[data-overlay='on'] .card {
 /* components 3.6 — 補足の文字は 12px まで。文字寸法の段階の下端 */
 .public-panel .note {
 	font-size: 12px;
+}
+/* 狭い画面では文字が折り返してパネルが高くなるぶん、空ける分の基準を下げる */
+@media (max-width: 960px) {
+	.public-stage {
+		--orb-room: max(160px, calc(100dvh - 660px));
+	}
 }
