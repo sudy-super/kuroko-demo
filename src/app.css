@@ -261,8 +261,8 @@ svg.i {
 /* WebGL が使えないときだけの代替。多層 radial-gradient の球と光彩 */
 .orb-fallback {
 	grid-area: 1 / 1;
-	width: 38%;
-	height: 38%;
+	width: 48%;
+	height: 48%;
 	border-radius: 50%;
 	background:
 		radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 22%),
@@ -1485,7 +1485,7 @@ body[data-overlay='on'] .card {
 	   568px = /connect のパネルの高さ 520px + .public の上下の余白 48px */
 	--orb-room: max(200px, calc(100dvh - 568px));
 	--orb-half: min(260px, calc(var(--orb-room) * 0.65));
-	--orb-rise: min(140px, calc(var(--orb-room) * 0.35));
+	--orb-rise: min(90px, calc(var(--orb-room) * 0.35));
 	position: relative;
 	width: 100%;
 	max-width: 560px;
