@@ -119,7 +119,7 @@ export function plexus(
 
 const REDUCED_TIME = 11.3; /* reduced-motion で描く 1 フレームの時刻 */
 const RING_SEGS = 160;
-const TRAIL_DECAY = 0.85; /* 軌跡: 前のフレームをこの倍率で残す */
+const TRAIL_DECAY = 0.9; /* 軌跡: 前のフレームをこの倍率で残す (60fps で約 10 フレーム分の尾) */
 
 export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | null {
 	const attrs = { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false };

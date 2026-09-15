@@ -28,10 +28,10 @@ vec3 softWhite(vec3 c) {
 	return m > 1.0 ? mix(c / m, vec3(1.0), 1.0 - exp(-(m - 1.0) * 1.2)) : c;
 }
 /* 差動回転 (Atom のロゴの作法): 中心に近い層ほど速く公転する。rr は R の倍率 (1.0 = 球面)。
-   周期は球面で 35 秒、2.2R で 115 秒。層は 0.25R 刻みの 5 層で、傾きを少しずつ変え、中央の層だけ逆回転 */
+   周期は球面で 35 秒、2.2R で 115 秒。層は 0.25R 刻みの 5 層で、傾きを少しずつ変え、2 層 (1 と 3) は逆回転 */
 float orbitPeriod(float rr) { return mix(35.0, 115.0, clamp((rr - 1.0) / 1.2, 0.0, 1.0)); }
 float orbitLayer(float rr) { return floor(clamp((rr - 1.0) / 0.25, 0.0, 4.0)); }
-float orbitDir(float layer) { return layer == 2.0 ? -1.0 : 1.0; }
+float orbitDir(float layer) { return (layer == 1.0 || layer == 3.0) ? -1.0 : 1.0; } /* 2 層を逆回転 */
 mat3 orbitTilt(float layerF) { return rotX(0.35 + 0.12 * layerF) * rotZ(0.15 * layerF - 0.3); }
 vec3 onSphere(float ang, float lat) { return vec3(sin(lat) * cos(ang), cos(lat), sin(lat) * sin(ang)); }
 `;
@@ -116,9 +116,9 @@ void main() {
 		vec3 q = rotY(spin) * n;
 
 		/* 輪郭は fbm で崩し、0.92R〜1.12R の広い範囲で徐々に落として気体のように見せる */
-		float edgeN = fbm(vec3(p * 3.0, uTime * 0.05));
-		float dn = d - 0.05 * R * edgeN;
-		cov = smoothstep(R * 1.12, R * 0.92, dn);
+		float edgeN = fbm(vec3(p * 2.4, uTime * 0.05));
+		float dn = d - 0.08 * R * edgeN;
+		cov = smoothstep(R * 1.15, R * 0.88, dn);
 
 		float f1 = fbm(q * 2.2 + vec3(0.0, uTime * 0.04, 0.0));
 		float f2 = fbm(q * 2.2 + vec3(5.2, -uTime * 0.03, 1.3));
@@ -170,7 +170,7 @@ void main() {
 
 		/* 外周は深い青で締め、淡い背景に埋もれないようにする */
 		float rim = 1.0 - n.z;
-		col = mix(col, C_EDGE, smoothstep(0.45, 1.0, rim) * 0.75 * (1.0 - core));
+		col = mix(col, C_EDGE, smoothstep(0.45, 1.0, rim) * 0.55 * (1.0 - core));
 		/* 核: 中心ほど白く飛ぶ emission */
 		float glow = pow(max(1.0 - d / (R * 0.6), 0.0), 2.6);
 		col += mix(C_LIGHT, vec3(1.0), 0.6) * glow * 1.5;
@@ -180,7 +180,7 @@ void main() {
 		col = softWhite(col);
 
 		/* fbm の筋が縁を越えて外に漏れる薄い発光 (R〜1.2R)。輪郭を光や気体のように見せる */
-		leak = smoothstep(R * 1.2, R * 0.95, d) * (1.0 - cov) * (0.3 * max(fw + 0.25, 0.0) + 0.3 * streak);
+		leak = smoothstep(R * 1.25, R * 0.95, d) * (1.0 - cov) * (0.4 * max(fw + 0.25, 0.0) + 0.35 * streak);
 		leakC = mix(C_LIGHT, vec3(1.0), 0.4);
 	}
 	float a = cov + (leak + haloA * (1.0 - leak)) * (1.0 - cov);
@@ -204,6 +204,7 @@ uniform float uTime;
 varying float vA;
 varying vec3 vC;
 varying vec2 vCorner;
+varying float vSmear;
 void main() {
 	float R = breathe(uTime);
 	float ang = aSeed.x * 2.0 * PI;
@@ -249,14 +250,20 @@ void main() {
 	float rot = uTime * mix(2.4, 0.5, sizeN) * (aSeed.y < 0.5 ? 1.0 : -1.0) + aSeed.x * 6.0; /* 小さいほど速く自転 */
 	vec2 corner = mat2(cos(rot), sin(rot), -sin(rot), cos(rot)) * aCorner;
 	float stretch = 1.0 + 2.5 * sp; /* 進行方向に伸びる */
-	vec2 off = d2 * corner.x * size * stretch + vec2(-d2.y, d2.x) * corner.y * size;
+	/* モーションブラー風: 進行方向の後ろ側の頂点だけをさらに引き伸ばし、そこは薄くする */
+	float trailing = max(-corner.x, 0.0) * min(sp * 1.5, 1.0);
+	vec2 off = d2 * (corner.x * size * stretch - trailing * size * 2.0) + vec2(-d2.y, d2.x) * corner.y * size;
 	gl_Position = vec4((c + off) * min(uRes.x, uRes.y) / uRes, 0.0, 1.0);
 
 	float tone = fract(aSeed.x * 13.0);
 	vC = tone < 0.5 ? mix(C_EDGE * 0.8, C_DEEP, fract(aSeed.w * 9.0)) : (tone < 0.75 ? C_MID : mix(C_LIGHT, vec3(1.0), 0.8));
 	vC = mix(vC * 0.75, vC, depth); /* 奥は暗く */
+	/* 自転で面が光を捉える瞬間の白いきらめき */
+	float glint = pow(max(sin(rot * 2.0 + aSeed.w * 20.0), 0.0), 24.0);
+	vC = mix(vC, vec3(1.0), glint * 0.85);
 	vA = alpha;
-	vCorner = aCorner;
+	vCorner = corner / max(stretch, 1.0); /* 面の明暗は回転後の隅で決めるので、自転で明るい側が回る */
+	vSmear = trailing;
 }
 `;
 
@@ -266,11 +273,14 @@ precision highp float;
 varying float vA;
 varying vec3 vC;
 varying vec2 vCorner;
+varying float vSmear;
 void main() {
 	float e = max(abs(vCorner.x), abs(vCorner.y)); /* 0 = 中心、1 = 縁 */
 	float edge = smoothstep(0.55, 1.0, e);
-	vec3 c = mix(vC, mix(vC, vec3(0.612, 0.769, 1.0), 0.75), edge); /* 縁は #9cc4ff 寄りに光る */
-	float a = vA * mix(0.9, 1.0, edge);
+	/* 面の片側 (左上) が明るく反対側が濃い、厚みのあるガラスの欠片。縁は #9cc4ff 寄りに光る */
+	float facet = 0.8 + 0.4 * clamp(0.5 - 0.35 * vCorner.x + 0.35 * vCorner.y, 0.0, 1.0);
+	vec3 c = mix(vC * facet, mix(vC, vec3(0.612, 0.769, 1.0), 0.75), edge);
+	float a = vA * mix(0.9, 1.0, edge) * (1.0 - 0.5 * vSmear); /* 引き伸ばした後ろ側は薄く */
 	gl_FragColor = vec4(c * a, a);
 }
 `;
@@ -324,7 +334,7 @@ void main() {
 		float rr = 1.2 + 1.0 * fract(aSeed.z * 5.1);
 		float layer = orbitLayer(rr);
 		float a = ang + orbitDir(layer) * uTime * 2.0 * PI / orbitPeriod(rr);
-		float wob = 0.03 * sin(uTime * 0.5 + aSeed.z * 40.0); /* ゆっくり漂う */
+		float wob = 0.05 * sin(uTime * 0.8 + aSeed.z * 40.0); /* ゆっくり漂う */
 		pos = orbitTilt(layer) * (onSphere(a, lat + wob) * (rr + wob) * R);
 		float depth = 0.5 + 0.5 * pos.z / length(pos);
 		float blink = pow(0.5 + 0.5 * sin(uTime * (0.6 + fract(aSeed.w * 7.0) * 1.5) + aSeed.x * 50.0), 8.0); /* ときどき明滅 */
