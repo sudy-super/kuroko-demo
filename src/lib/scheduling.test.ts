@@ -38,6 +38,18 @@ describe('scheduling', () => {
 	it('無効 token は null', () => {
 		expect(confirmSlot('nope', 'x')).toBeNull();
 	});
+	it('確定済みの枠を選び直しても予定と会議は 1 件ずつ', () => {
+		const s = insertSlots('th-tanaka-next');
+		s.status = 'sent';
+		s.token = 'tok';
+		confirmSlot('tok', s.slots[0].id);
+		const r = confirmSlot('tok', s.slots[1].id)!;
+		expect(db.events.filter((e) => e.source === 'kuroko').length).toBe(1);
+		expect(db.meetings.length).toBe(2); // シードの m-abc と選び直した 1 件
+		expect(db.demo.stats.confirmed).toBe(1);
+		expect(s.eventId).toBe(r.event.id);
+		expect(r.event.start).toBe(s.slots[1].start);
+	});
 	it('cancel で予定と会議が消える', () => {
 		const s = insertSlots('th-tanaka-next');
 		s.status = 'sent';

@@ -76,6 +76,23 @@ describe('approval', () => {
 		reject(a.id);
 		expect(a.status).toBe('rejected');
 	});
+	it('送信待ちを却下すると 5 秒後も送信されない', () => {
+		const a = ext();
+		const n = db.line.length;
+		approve(a.id);
+		reject(a.id);
+		expect(a.status).toBe('rejected');
+		vi.advanceTimersByTime(SEND_DELAY_MS);
+		expect(a.status).toBe('rejected');
+		expect(db.line.length).toBe(n);
+	});
+	it('実行済みの承認は却下できない', () => {
+		const a = ext();
+		approve(a.id);
+		vi.advanceTimersByTime(SEND_DELAY_MS);
+		reject(a.id);
+		expect(a.status).toBe('executed');
+	});
 	it('起動時に古い sending は pending に戻る', () => {
 		const a = ext();
 		a.status = 'sending';

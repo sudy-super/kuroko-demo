@@ -70,7 +70,9 @@ export function approve(id: string, origin: Origin = 'approval') {
 		});
 	} else {
 		executeApproval(id);
-		toast('実行しました', { undo: () => undo(db.logs[0].id) });
+		// 押された時点ではなく、今できたログを取り消す。取り消せない種類には取り消しを出さない
+		const l = db.logs[0];
+		toast('実行しました', l?.undo ? { undo: () => undo(l.id) } : {});
 	}
 	save();
 }
@@ -87,8 +89,12 @@ export function undoApproval(id: string) {
 
 export function reject(id: string, origin: Origin = 'approval') {
 	const a = db.approvals.find((x) => x.id === id);
-	if (!a) return;
+	if (!a || a.status === 'executed') return;
+	// 送信待ちを却下したら、待っている送信も止める
+	clearTimeout(timers.get(id));
+	timers.delete(id);
 	a.status = 'rejected';
+	a.sendingAt = undefined;
 	log(`${a.title}を却下しました`, 'other', { actor: 'user', origin });
 	save();
 }
@@ -105,7 +111,8 @@ export function restoreStaleSending() {
 
 export function executeApproval(id: string, auto = false) {
 	const a = db.approvals.find((x) => x.id === id);
-	if (!a || a.status === 'executed') return;
+	// 却下済みと実行済みは動かさない。待機中のタイマーが後から発火しても素通りさせる
+	if (!a || (a.status !== 'pending' && a.status !== 'sending')) return;
 	a.status = 'executed';
 	a.executedAt = nowIso();
 	timers.delete(id);
@@ -200,6 +207,7 @@ export function undo(logId: string) {
 	if (u.kind === 'task_done') {
 		const t = db.tasks.find((x) => x.id === u.taskId);
 		if (t) t.status = 'todo';
+		db.demo.stats.tasksDone = Math.max(0, db.demo.stats.tasksDone - 1);
 	}
 	if (u.kind === 'event_add') db.events = db.events.filter((e) => e.id !== u.eventId);
 	if (u.kind === 'agenda_share') {
@@ -273,6 +281,12 @@ export function confirmSlot(token: string, slotId: string) {
 	if (!s) return null;
 	const slot = s.slots.find((x) => x.id === slotId);
 	if (!slot) return null;
+	// 確定済みの枠を選び直した場合は、前の予定と会議を捨ててから作り直す
+	const redo = s.status === 'confirmed';
+	if (redo) {
+		db.events = db.events.filter((e) => e.id !== s.eventId);
+		db.meetings = db.meetings.filter((m) => m.id !== s.meetingId);
+	}
 	const p = personOf(db, s.personId)!;
 	const event: CalendarEvent = {
 		id: uid('ev'),
@@ -311,7 +325,7 @@ export function confirmSlot(token: string, slotId: string) {
 	s.chosenSlotId = slotId;
 	s.eventId = event.id;
 	s.meetingId = meeting.id;
-	db.demo.stats.confirmed++;
+	if (!redo) db.demo.stats.confirmed++;
 	log(`${fmtMDW(parse(slot.date))} ${slot.start} に ${p.name} 様との打ち合わせを確定しました`, 'hold', {
 		origin: 'schedule',
 		approved: true,
@@ -328,12 +342,13 @@ export function changeSlot(token: string) {
 	db.meetings = db.meetings.filter((m) => m.id !== s.meetingId);
 	s.status = 'sent';
 	s.chosenSlotId = s.eventId = s.meetingId = undefined;
+	db.demo.stats.confirmed = Math.max(0, db.demo.stats.confirmed - 1);
 	save();
 }
 
 export function cancelScheduling(token: string) {
 	const s = db.scheduling.find((x) => x.token === token);
-	if (!s) return;
+	if (!s || (s.status !== 'sent' && s.status !== 'confirmed')) return;
 	db.events = db.events.filter((e) => e.id !== s.eventId);
 	db.meetings = db.meetings.filter((m) => m.id !== s.meetingId);
 	s.status = 'cancelled';
