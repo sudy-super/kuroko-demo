@@ -1,0 +1,1440 @@
+/* ==========================================================================
+   KUROKO AI — グローバル CSS
+   値の出典は各ブロック先頭のコメントに書く。
+   visual N   = docs/research/visual.md 第 N 節
+   components N = docs/research/components.md 第 N 節
+   ruling     = 設計仕様 12.3 の裁定 (visual / components より優先)
+   ========================================================================== */
+
+/* visual 4.1 — トークン (ruling: --glass-panel .82、saturate は 170% に統一) */
+:root {
+	/* 地の色 */
+	--bg: #f4f7fc;
+
+	/* 文字と線 */
+	--ink: #1e2a47;
+	--ink-2: #5a6785;
+	--ink-3: #646f8a;
+	--line: rgba(140, 160, 200, 0.18);
+	--line-2: rgba(140, 160, 200, 0.3);
+
+	/* アクセント */
+	--accent: #1b62d6;
+	--accent-top: #2a6fe0;
+	--accent-2: #4f95ff;
+	--accent-soft: rgba(27, 98, 214, 0.1);
+	--accent-soft-2: rgba(27, 98, 214, 0.16);
+	--accent-glow: rgba(27, 98, 214, 0.28);
+
+	/* ruling — 合否の色と入力欄の枠、選択中の塗り */
+	--ok: #107a48;
+	--ok-soft: rgba(46, 184, 114, 0.12);
+	--warn: #c62129;
+	--warn-soft: #fdecec;
+	--border: #8593b0;
+	--sel: rgba(27, 98, 214, 0.12);
+
+	/* ruling — 状態レイヤー (ホバー 8% / フォーカス 10% / 押下 10%) */
+	--hover: rgba(30, 42, 71, 0.08);
+	--press: rgba(30, 42, 71, 0.1);
+	--hover-light: rgba(255, 255, 255, 0.45);
+	--disabled-bg: rgba(30, 42, 71, 0.12);
+	--disabled-ink: rgba(30, 42, 71, 0.38);
+	--disabled-soft: rgba(30, 42, 71, 0.04);
+
+	/* ガラスの塗り */
+	--glass-1: rgba(255, 255, 255, 0.72);
+	--glass-2: rgba(255, 255, 255, 0.88);
+	--glass-panel: rgba(255, 255, 255, 0.82);
+	--solid: rgba(255, 255, 255, 0.97);
+
+	/* ぼかし。12px と 16px の 2 段だけ */
+	--blur-s: blur(12px) saturate(170%);
+	--blur-m: blur(16px) saturate(170%);
+
+	/* 縁の光 */
+	--rim:
+		inset 0 0 0 1px rgba(255, 255, 255, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.95),
+		0 0 0 1px rgba(30, 42, 71, 0.05);
+
+	/* 影 3 段 */
+	--e1: 0 1px 2px hsl(220 40% 35% / 0.06), 0 2px 6px hsl(220 40% 35% / 0.05);
+	--e2:
+		0 1px 2px hsl(220 40% 35% / 0.06), 0 6px 16px hsl(220 40% 35% / 0.07),
+		0 14px 36px hsl(220 40% 35% / 0.08);
+	--e3:
+		0 2px 6px hsl(220 40% 35% / 0.08), 0 12px 32px hsl(220 40% 35% / 0.12),
+		0 32px 72px hsl(220 40% 35% / 0.16);
+
+	/* 角丸 (visual 4.13) */
+	--r-xs: 8px;
+	--r-s: 12px;
+	--r-m: 18px;
+	--r-l: 24px;
+	--r-xl: 28px;
+	--r-pill: 999px;
+
+	/* 余白 (components 2.1: 4 / 8 / 12 / 16 / 20 / 24 / 32 / 48 / 64 のみ) */
+	--sp-1: 4px;
+	--sp-2: 8px;
+	--sp-3: 12px;
+	--sp-4: 16px;
+	--sp-5: 20px;
+	--sp-6: 24px;
+	--sp-8: 32px;
+	--sp-12: 48px;
+	--sp-16: 64px;
+
+	/* 動き (visual 4.12) */
+	--d-fast: 150ms;
+	--d-base: 200ms;
+	--d-enter: 300ms;
+	--d-exit: 200ms;
+	--ease-out: cubic-bezier(0.2, 0, 0, 1);
+	--ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+	--ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
+
+	/* 書体 */
+	--font: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+	--num: 'Inter', 'Noto Sans JP', sans-serif;
+
+	/* 骨格の寸法 (ruling: サイドナビ 256) */
+	--side-w: 256px;
+	--rail-w: 56px;
+	--header-h: 64px;
+	--chatbar-h: 60px;
+	--bottomnav-h: 72px;
+}
+
+/* components 2.1 — リセットと本文 (-webkit-font-smoothing は書かない) */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+html {
+	font-size: 16px;
+}
+body {
+	margin: 0;
+	font-family: var(--font);
+	font-size: 16px;
+	font-weight: 400;
+	color: var(--ink);
+	background: var(--bg);
+	line-height: 1.7;
+	letter-spacing: 0.02em;
+}
+h1,
+h2,
+h3,
+h4 {
+	margin: 0;
+	font-weight: 700;
+	line-height: 1.4;
+}
+h1 {
+	font-size: 32px;
+}
+h2 {
+	font-size: 24px;
+}
+h3 {
+	font-size: 20px;
+}
+h4 {
+	font-size: 18px;
+}
+p {
+	margin: 0;
+}
+a {
+	color: var(--accent);
+}
+button,
+input,
+textarea,
+select {
+	font-family: inherit;
+	letter-spacing: inherit;
+}
+svg.i {
+	display: block;
+	flex: none;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.7;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+.num {
+	font-family: var(--num);
+	font-variant-numeric: tabular-nums;
+}
+.muted {
+	color: var(--ink-3);
+}
+.row {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-2);
+}
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ruling — フォーカスの見た目は全部品共通 */
+:focus-visible {
+	outline: 2px solid #1b62d6;
+	outline-offset: 2px;
+}
+
+/* visual 4.3 — 背景 (オーブ + 色の塊) */
+.bg {
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	background:
+		radial-gradient(900px 600px at 52% 48%, #e9f1ff 0%, rgba(233, 241, 255, 0) 70%),
+		linear-gradient(180deg, #f9fbfe 0%, #f2f6fb 100%);
+}
+.bg-blob {
+	position: absolute;
+	border-radius: 50%;
+	filter: blur(40px);
+	mix-blend-mode: multiply;
+	opacity: 0.25;
+}
+.bg-blob.a {
+	left: -8%;
+	top: 6%;
+	width: 46vmin;
+	height: 46vmin;
+	background: #cfe0ff;
+}
+.bg-blob.b {
+	right: -6%;
+	top: 44%;
+	width: 40vmin;
+	height: 40vmin;
+	background: #d7f0f6;
+}
+.bg-blob.c {
+	left: 30%;
+	bottom: -12%;
+	width: 52vmin;
+	height: 52vmin;
+	background: #dcdcff;
+}
+
+/* visual 2.8 / 4.3 — オーブ本体と光彩 */
+.orb {
+	position: relative;
+	display: grid;
+	place-items: center;
+	pointer-events: none;
+}
+.orb-glow {
+	grid-area: 1 / 1;
+	width: 600px;
+	height: 600px;
+	max-width: 100%;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(120, 170, 255, 0.2) 0%, rgba(120, 170, 255, 0) 62%);
+	pointer-events: none;
+}
+.orb img {
+	grid-area: 1 / 1;
+	width: 100%;
+	height: 100%;
+	animation: orb-spin 30s linear infinite;
+}
+.spark {
+	position: absolute;
+	width: 4px;
+	height: 4px;
+	border-radius: 50%;
+	background: #9cc4ff;
+	transform: rotate(calc(var(--i) * 15deg)) translateY(-40%);
+	animation: spark 18s linear infinite;
+	animation-delay: calc(var(--i) * -0.75s);
+}
+@keyframes orb-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+@keyframes spark {
+	0% {
+		transform: rotate(calc(var(--i) * 15deg)) translateY(-18%) scale(0.4);
+		opacity: 0;
+	}
+	20% {
+		opacity: 0.9;
+	}
+	100% {
+		transform: rotate(calc(var(--i) * 15deg)) translateY(-68%) scale(1);
+		opacity: 0;
+	}
+}
+
+/* visual 4.2 — ガラスの基本形 */
+.glass {
+	background: var(--glass-1);
+	-webkit-backdrop-filter: var(--blur-m);
+	backdrop-filter: var(--blur-m);
+	box-shadow: var(--rim), var(--e2);
+	border-radius: var(--r-m);
+}
+
+/* ruling — 骨格 */
+.app {
+	position: relative;
+	z-index: 1;
+	min-height: 100dvh;
+}
+.main {
+	margin-left: calc(var(--side-w) + 32px);
+	margin-right: calc(var(--rail-w) + 32px);
+	padding: calc(var(--header-h) + 32px) var(--sp-6) calc(var(--chatbar-h) + 64px);
+}
+
+/* visual 4.4 + components 3.1 — 左サイドナビ (ruling: 幅 256、項目 48、角丸 16) */
+.sidebar {
+	position: fixed;
+	left: var(--sp-4);
+	top: var(--sp-4);
+	bottom: var(--sp-4);
+	z-index: 50;
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-1);
+	overflow-y: auto;
+	width: var(--side-w);
+	padding: var(--sp-2);
+	border-radius: var(--r-l);
+	background: var(--glass-panel);
+	-webkit-backdrop-filter: var(--blur-m);
+	backdrop-filter: var(--blur-m);
+	box-shadow: var(--rim), var(--e2);
+}
+.nav-item {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: var(--sp-4);
+	flex: none;
+	height: 48px;
+	padding: 0 var(--sp-4);
+	border-radius: 16px; /* 同心: 24 − 8 */
+	color: var(--ink);
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 1.4;
+	text-decoration: none;
+	transition: background var(--d-fast) var(--ease-out);
+}
+.nav-item .i {
+	color: var(--ink-2);
+}
+.nav-item:hover {
+	background: var(--hover-light);
+}
+.nav-item:active {
+	background: var(--press);
+}
+.nav-item:focus-visible {
+	outline-offset: -2px;
+}
+.nav-item.on {
+	background: var(--sel);
+	color: var(--accent);
+	font-weight: 700;
+}
+.nav-item.on .i {
+	color: var(--accent);
+}
+/* 塗りだけでは現在地が伝わらないので左端に縦バーを足す (components 3.1) */
+.nav-item.on::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 50%;
+	width: 3px;
+	height: 24px;
+	margin-top: -12px;
+	border-radius: var(--r-pill);
+	background: var(--accent);
+}
+.nav-item .badge {
+	margin-left: auto;
+}
+.nav-sep {
+	flex: none;
+	height: 1px;
+	margin: var(--sp-6) 0;
+	border: 0;
+	background: var(--line);
+}
+.nav-head {
+	flex: none;
+	display: flex;
+	align-items: center;
+	height: 32px;
+	padding: 0 var(--sp-4);
+	color: var(--ink-3);
+	font-size: 12px;
+	font-weight: 500;
+}
+
+/* components 3.1 — 折りたたみ時の縦並びボタン列 (visual 4.13: capsule) */
+.rail {
+	position: fixed;
+	right: var(--sp-4);
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 50;
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-2);
+	width: var(--rail-w);
+	padding: var(--sp-2);
+	border-radius: var(--r-pill);
+	background: var(--glass-panel);
+	-webkit-backdrop-filter: var(--blur-m);
+	backdrop-filter: var(--blur-m);
+	box-shadow: var(--rim), var(--e2);
+}
+
+/* visual 4.2 + components 3.1 — 上部バー。デスクトップはガラス、モバイルは不透明 */
+.header {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-3);
+	height: var(--header-h);
+	padding: 0 var(--sp-6);
+	z-index: 50;
+}
+.header.glass {
+	position: fixed;
+	top: var(--sp-4);
+	left: calc(var(--side-w) + 32px);
+	right: calc(var(--rail-w) + 32px);
+	border-radius: var(--r-l);
+	background: var(--glass-panel);
+	-webkit-backdrop-filter: var(--blur-m);
+	backdrop-filter: var(--blur-m);
+	box-shadow: var(--rim), var(--e2);
+}
+/* ruling: モバイルのヘッダーは不透明、ぼかしなし */
+.header.solid {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	padding: 0 var(--sp-4);
+	background: var(--solid);
+	box-shadow: var(--e1);
+}
+
+/* visual 4.5 — 浮くカード (ガラスを使う 5 か所のひとつ) */
+.card {
+	position: relative;
+	border-radius: var(--r-m);
+	padding: var(--sp-5) var(--sp-5) var(--sp-4);
+	background: var(--glass-1);
+	-webkit-backdrop-filter: var(--blur-m);
+	backdrop-filter: var(--blur-m);
+	box-shadow: var(--rim), var(--e2);
+	transition:
+		transform var(--d-base) var(--ease-out),
+		box-shadow var(--d-base) var(--ease-out);
+}
+.card:hover {
+	transform: translateY(-3px);
+	box-shadow: var(--rim), var(--e3);
+}
+.card:active {
+	transform: translateY(-1px);
+	transition-duration: var(--d-fast);
+}
+.card.on {
+	box-shadow: inset 0 0 0 2px var(--accent), var(--e2);
+}
+/* visual 4.11 — 覆いが出ている間はガラスを 2 枚重ねない */
+body[data-overlay='on'] .card {
+	-webkit-backdrop-filter: none;
+	backdrop-filter: none;
+	background: rgba(255, 255, 255, 0.9);
+}
+
+/* visual 2.7 — Bento grid (ruling: hero は span 4、中央 4 列を空けてオーブを見せる) */
+.bento {
+	display: grid;
+	grid-template-columns: repeat(12, 1fr);
+	gap: var(--sp-4);
+	padding: var(--sp-6);
+}
+.t-hero {
+	grid-column: span 4;
+	grid-row: span 2;
+}
+.t-wide {
+	grid-column: span 4;
+}
+.bento .hole {
+	grid-column: 5 / 9;
+	grid-row: 1 / 3;
+}
+
+/* visual 4.6 — コンテンツ層。ここではガラスを使わない */
+.screen {
+	border-radius: var(--r-l);
+	background: rgba(255, 255, 255, 0.92);
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.85), var(--e1);
+}
+.box {
+	background: #fff;
+	border-radius: var(--r-m);
+	box-shadow: inset 0 0 0 1px var(--line), var(--e1);
+	padding: var(--sp-5) var(--sp-6);
+}
+
+/* visual 4.7 — 浮くピル型の依頼バー */
+.chatbar {
+	position: fixed;
+	bottom: var(--sp-4);
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 55;
+	display: flex;
+	align-items: center;
+	gap: var(--sp-3);
+	width: min(760px, calc(100vw - 32px));
+	height: var(--chatbar-h);
+	padding: 0 var(--sp-2) 0 var(--sp-5);
+	border-radius: var(--r-pill);
+	background: var(--glass-2);
+	-webkit-backdrop-filter: var(--blur-m);
+	backdrop-filter: var(--blur-m);
+	box-shadow: var(--rim), var(--e3);
+}
+.chatbar input {
+	flex: 1;
+	min-width: 0;
+	height: 100%;
+	border: 0;
+	background: none;
+	color: var(--ink);
+	font-size: 16px;
+}
+.chatbar input::placeholder {
+	color: var(--ink-3);
+}
+.chatbar .send {
+	display: grid;
+	place-items: center;
+	flex: none;
+	width: 42px;
+	height: 42px;
+	border: 0;
+	border-radius: 50%;
+	background: linear-gradient(180deg, var(--accent-top) 0%, var(--accent) 100%);
+	color: #fff;
+	cursor: pointer;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 16px var(--accent-glow);
+	transition:
+		transform var(--d-fast) var(--ease-out),
+		box-shadow var(--d-fast) var(--ease-out);
+}
+.chatbar .send:hover {
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 8px 22px rgba(27, 98, 214, 0.36);
+}
+.chatbar .send:active {
+	transform: scale(0.96);
+}
+.chatbar .send:disabled {
+	background: var(--disabled-bg);
+	color: var(--disabled-ink);
+	box-shadow: none;
+	cursor: default;
+}
+
+/* visual 4.8 + components 3.4 — ボタン (ruling: 文字 14 / 700、階調は #2a6fe0 → #1b62d6) */
+.btn {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--sp-2);
+	height: 44px;
+	padding: 0 var(--sp-6);
+	border: 0;
+	border-radius: var(--r-s);
+	background: none;
+	color: var(--ink);
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1.4;
+	white-space: nowrap;
+	text-decoration: none;
+	cursor: pointer;
+	transition:
+		transform var(--d-fast) var(--ease-out),
+		box-shadow var(--d-fast) var(--ease-out),
+		background var(--d-fast) var(--ease-out);
+}
+.btn .i {
+	width: 18px;
+	height: 18px;
+}
+.btn.pri {
+	background: linear-gradient(180deg, var(--accent-top) 0%, var(--accent) 100%);
+	color: #fff;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 16px var(--accent-glow);
+}
+.btn.pri:hover {
+	transform: translateY(-1px);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 10px 24px rgba(27, 98, 214, 0.36);
+}
+.btn.pri:active {
+	transform: translateY(0);
+	box-shadow: inset 0 2px 4px rgba(12, 48, 110, 0.28);
+}
+/* components 3.4: 副ボタンの枠は 1px 実線 #1b62d6 (白地に 5.58:1) */
+.btn.sec {
+	background: #fff;
+	color: var(--accent);
+	box-shadow: inset 0 0 0 1px var(--accent), var(--e1);
+}
+.btn.sec:hover {
+	background: rgba(27, 98, 214, 0.08);
+}
+.btn.sec:active {
+	background: var(--sel);
+}
+.btn.text {
+	padding: 0 var(--sp-3);
+	color: var(--accent);
+	font-weight: 500;
+}
+.btn.text:hover {
+	background: rgba(27, 98, 214, 0.08);
+}
+.btn.text:active {
+	background: var(--sel);
+}
+.btn.danger {
+	background: #fff;
+	color: var(--warn);
+	box-shadow: inset 0 0 0 1px var(--warn), var(--e1);
+}
+.btn.danger:hover {
+	background: var(--warn-soft);
+}
+/* 小ボタンは実寸 36px。透明領域で操作領域を 44px にする (components 3.4) */
+.btn.sm {
+	height: 36px;
+	padding: 0 var(--sp-4);
+	font-weight: 500;
+}
+.btn.sm::after {
+	content: '';
+	position: absolute;
+	inset: -4px 0;
+}
+.btn.sm .i {
+	width: 16px;
+	height: 16px;
+}
+.btn.lg {
+	height: 56px;
+	padding: 0 var(--sp-8);
+	font-size: 16px;
+}
+.btn.lg .i {
+	width: 20px;
+	height: 20px;
+}
+.btn:disabled,
+.btn[aria-disabled='true'] {
+	background: var(--disabled-bg);
+	color: var(--disabled-ink);
+	box-shadow: none;
+	transform: none;
+	cursor: default;
+}
+/* components 3.4 — アイコンボタン 40px の円、操作領域は 44px */
+.iconbtn {
+	position: relative;
+	display: inline-grid;
+	place-items: center;
+	flex: none;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: none;
+	color: var(--ink-2);
+	cursor: pointer;
+	transition: background var(--d-fast) var(--ease-out);
+}
+.iconbtn::after {
+	content: '';
+	position: absolute;
+	inset: -2px;
+}
+.iconbtn:hover {
+	background: var(--hover);
+}
+.iconbtn:active {
+	background: var(--press);
+}
+.iconbtn:disabled {
+	color: var(--disabled-ink);
+	background: none;
+	cursor: default;
+}
+
+/* components 3.5 — 入力欄とフォーム */
+.field {
+	margin-bottom: var(--sp-6);
+}
+.label {
+	display: block;
+	margin-bottom: var(--sp-2);
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--ink);
+}
+.help {
+	display: block;
+	margin: var(--sp-1) 0 var(--sp-2);
+	font-size: 14px;
+	font-weight: 400;
+	color: var(--ink-3);
+}
+.input,
+.textarea {
+	display: block;
+	width: 100%;
+	border: 1px solid var(--border);
+	border-radius: var(--r-s);
+	background: #fff;
+	color: var(--ink);
+	font-size: 16px;
+	line-height: 1.7;
+	transition:
+		border-color var(--d-fast) var(--ease-out),
+		box-shadow var(--d-fast) var(--ease-out);
+}
+.input {
+	height: 48px;
+	padding: 0 var(--sp-4);
+}
+.textarea {
+	min-height: 96px;
+	padding: var(--sp-3) var(--sp-4);
+	resize: vertical;
+}
+.input:hover,
+.textarea:hover {
+	border-color: var(--ink-2);
+}
+/* 入力中は 2px 相当。枠の太さを変えずに内側の影で足し、行がずれないようにする */
+.input:focus,
+.textarea:focus {
+	border-color: var(--accent);
+	box-shadow: inset 0 0 0 1px var(--accent);
+}
+.input.bad,
+.textarea.bad {
+	border-color: var(--warn);
+	box-shadow: inset 0 0 0 1px var(--warn);
+}
+.input:disabled,
+.textarea:disabled {
+	background: var(--disabled-soft);
+	border-color: var(--disabled-bg);
+	color: var(--disabled-ink);
+	cursor: default;
+}
+.error {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-1);
+	margin-top: var(--sp-2);
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--warn);
+}
+.error .i {
+	width: 16px;
+	height: 16px;
+}
+
+/* visual 4.9 + components 3.6 — チップ */
+.chip {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sp-2);
+	height: 40px;
+	padding: 0 var(--sp-4);
+	border: 0;
+	border-radius: var(--r-pill);
+	background: #fff;
+	color: var(--accent);
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.4;
+	white-space: nowrap;
+	cursor: pointer;
+	box-shadow: inset 0 0 0 1px var(--border);
+	transition: background var(--d-fast) var(--ease-out);
+}
+.chip::after {
+	content: '';
+	position: absolute;
+	inset: -2px 0;
+}
+.chip .i {
+	width: 18px;
+	height: 18px;
+}
+.chip:hover {
+	background: rgba(27, 98, 214, 0.08);
+}
+.chip:active {
+	background: var(--sel);
+}
+/* 選択中は塗りを変えるだけでなく先頭にチェック印を出す (components 3.6、WCAG 1.4.1) */
+.chip.on {
+	background: var(--accent);
+	color: #fff;
+	box-shadow: none;
+}
+.chip:disabled {
+	background: var(--disabled-soft);
+	color: var(--disabled-ink);
+	box-shadow: inset 0 0 0 1px var(--disabled-bg);
+	cursor: default;
+}
+
+/* components 3.6 — バッジ (押せない表示専用。ruling: 文字は 12px まで) */
+.badge {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sp-1);
+	height: 22px;
+	padding: 0 var(--sp-2);
+	border-radius: 6px;
+	background: var(--accent-soft-2);
+	color: var(--accent);
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1.4;
+	white-space: nowrap;
+}
+.badge .i,
+.badge svg {
+	width: 12px;
+	height: 12px;
+}
+.badge.src {
+	background: rgba(120, 140, 180, 0.12);
+	color: var(--ink-2);
+}
+.badge.warn {
+	background: var(--warn-soft);
+	color: var(--warn);
+}
+.badge.ok {
+	background: var(--ok-soft);
+	color: var(--ok);
+}
+/* 件数カウンタ。高さの半分の角丸 (visual 4.13 の capsule) */
+.badge.count {
+	justify-content: center;
+	height: 20px;
+	min-width: 20px;
+	border-radius: var(--r-pill);
+	background: var(--accent);
+	color: #fff;
+}
+.badge.count.warn {
+	background: var(--warn);
+	color: #fff;
+}
+
+/* components 3.11 — 一覧行 */
+.list-row {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: var(--sp-3);
+	width: 100%;
+	height: 48px;
+	padding: 0 var(--sp-4);
+	border: 0;
+	background: none;
+	color: var(--ink);
+	font-size: 16px;
+	line-height: 1.4;
+	text-align: left;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background var(--d-fast) var(--ease-out);
+}
+.list-row.lg {
+	height: 56px;
+}
+.list-row.xl {
+	height: 72px;
+}
+.list-row.inbox {
+	height: 88px;
+	align-items: stretch;
+	flex-direction: column;
+	justify-content: center;
+	gap: var(--sp-1);
+}
+/* 区切り線は左右 16px 内側に入れる (components 3.11) */
+.list-row::after {
+	content: '';
+	position: absolute;
+	left: var(--sp-4);
+	right: var(--sp-4);
+	bottom: 0;
+	height: 1px;
+	background: var(--line);
+}
+.list-row:last-child::after {
+	display: none;
+}
+.list-row:hover {
+	background: rgba(255, 255, 255, 0.5);
+}
+.list-row:active {
+	background: var(--press);
+}
+.list-row:focus-visible {
+	outline-offset: -2px;
+}
+.list-row.on {
+	background: var(--sel);
+}
+.list-row.on::after {
+	background: transparent;
+}
+.list-row.on::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 50%;
+	width: 3px;
+	height: 24px;
+	margin-top: -12px;
+	border-radius: var(--r-pill);
+	background: var(--accent);
+}
+.list-row .sub {
+	color: var(--ink-3);
+	font-size: 14px;
+}
+
+/* components 3.7 — トースト (画面上端の中央。下端は依頼バーが占有している) */
+.toast {
+	position: fixed;
+	top: var(--sp-6);
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 90;
+	display: flex;
+	align-items: center;
+	gap: var(--sp-3);
+	min-width: 320px;
+	max-width: 576px;
+	min-height: 48px;
+	padding: 0 var(--sp-2) 0 var(--sp-4);
+	border-radius: var(--r-s);
+	background: rgba(30, 42, 71, 0.92);
+	color: #fff;
+	font-size: 14px;
+	line-height: 1.4;
+	box-shadow: var(--e3);
+	animation: toast-in var(--d-enter) var(--ease-enter) both;
+}
+.toast-msg {
+	flex: 1;
+	padding: var(--sp-2) 0;
+}
+.toast-undo {
+	flex: none;
+	height: 44px;
+	padding: 0 var(--sp-3);
+	border: 0;
+	border-radius: var(--r-xs);
+	background: none;
+	color: #9fe0bd;
+	font-size: 14px;
+	font-weight: 700;
+	cursor: pointer;
+}
+.toast-undo:hover {
+	background: rgba(255, 255, 255, 0.08);
+}
+/* 残り秒数。数字の周りに円弧を描いて残り時間を図でも示す (components 3.7) */
+.toast-ring {
+	position: relative;
+	display: grid;
+	place-items: center;
+	flex: none;
+	width: 32px;
+	height: 32px;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1.4;
+	color: #fff;
+}
+.toast-ring::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: 50%;
+	background: conic-gradient(#9fe0bd calc(var(--p) * 360deg), rgba(255, 255, 255, 0.22) 0);
+	-webkit-mask: radial-gradient(circle, transparent 11px, #000 12px);
+	mask: radial-gradient(circle, transparent 11px, #000 12px);
+}
+/* visual 4.10 — 入場は減速、退場は加速。上端から出るので符号を反転する */
+@keyframes toast-in {
+	from {
+		opacity: 0;
+		transform: translate(-50%, -12px) scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: translate(-50%, 0) scale(1);
+	}
+}
+
+/* visual 4.11 + components 3.8〜3.9 — 覆い、ドロワー、ボトムシート、モーダル */
+.scrim {
+	position: fixed;
+	inset: 0;
+	z-index: 70;
+	background: rgba(30, 42, 71, 0.25);
+	transition: opacity var(--d-base) var(--ease-out);
+}
+.drawer {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 75;
+	display: flex;
+	flex-direction: column;
+	width: min(400px, 100vw);
+	padding: var(--sp-6);
+	border-radius: var(--r-m) 0 0 var(--r-m);
+	background: rgba(255, 255, 255, 0.96);
+	-webkit-backdrop-filter: var(--blur-m);
+	backdrop-filter: var(--blur-m);
+	box-shadow: var(--e3);
+	overflow-y: auto;
+	animation: drawer-in var(--d-enter) var(--ease-enter) both;
+}
+@keyframes drawer-in {
+	from {
+		transform: translateX(100%);
+	}
+}
+.sheet {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 75;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 640px;
+	margin: 0 auto;
+	height: 50dvh;
+	max-height: calc(100dvh - 72px);
+	padding: 0 var(--sp-4) calc(var(--sp-6) + env(safe-area-inset-bottom));
+	border-radius: var(--r-xl) var(--r-xl) 0 0;
+	background: rgba(255, 255, 255, 0.96);
+	-webkit-backdrop-filter: var(--blur-m);
+	backdrop-filter: var(--blur-m);
+	box-shadow: var(--e3);
+	overflow-y: auto;
+	animation: sheet-in var(--d-enter) var(--ease-enter) both;
+}
+@keyframes sheet-in {
+	from {
+		transform: translateY(100%);
+	}
+}
+/* つまみ 32 x 4px (components 3.8)。上下の余白は余白の目盛りに合わせて 20px */
+.sheet-handle {
+	flex: none;
+	width: 32px;
+	height: 4px;
+	margin: var(--sp-5) auto;
+	border-radius: 2px;
+	background: var(--line-2);
+}
+.modal {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 75;
+	display: flex;
+	flex-direction: column;
+	width: min(560px, calc(100vw - 32px));
+	max-height: calc(100dvh - 96px);
+	padding: var(--sp-6);
+	border-radius: var(--r-l);
+	background: rgba(255, 255, 255, 0.96);
+	box-shadow: var(--e3);
+	overflow-y: auto;
+	animation: modal-in var(--d-enter) var(--ease-enter) both;
+}
+.modal.sm {
+	width: min(400px, calc(100vw - 32px));
+}
+@keyframes modal-in {
+	from {
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(0.96);
+	}
+}
+
+/* components 3.2 — ボトムナビ。ruling: 不透明、ぼかしなし */
+.bottomnav {
+	display: none;
+	position: fixed;
+	left: var(--sp-2);
+	right: var(--sp-2);
+	bottom: calc(var(--sp-2) + env(safe-area-inset-bottom));
+	z-index: 60;
+	height: var(--bottomnav-h);
+	border-radius: var(--r-l);
+	background: var(--solid);
+	box-shadow: var(--e2);
+}
+.bottomnav-item {
+	position: relative;
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: var(--sp-1);
+	border: 0;
+	background: none;
+	color: var(--ink-2);
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 1.4;
+	text-decoration: none;
+	cursor: pointer;
+}
+/* 現在地は 64 x 32px の pill をアイコンの背後だけに敷く (components 3.2) */
+.bottomnav-item::before {
+	content: '';
+	position: absolute;
+	top: var(--sp-2);
+	width: 64px;
+	height: 32px;
+	border-radius: var(--r-pill);
+	background: transparent;
+	transition: background var(--d-fast) var(--ease-out);
+}
+.bottomnav-item:hover::before {
+	background: var(--hover);
+}
+.bottomnav-item:active::before {
+	background: var(--press);
+}
+.bottomnav-item.on {
+	color: var(--accent);
+	font-weight: 700;
+}
+.bottomnav-item.on::before {
+	background: var(--sel);
+}
+.bottomnav-item .i,
+.bottomnav-item .badge {
+	position: relative;
+}
+.bottomnav-item:focus-visible {
+	outline-offset: -2px;
+}
+
+/* 仕様 11.3 — 案内カード。ガラスは 5 か所だけなので不透明にする */
+.guide {
+	position: fixed;
+	left: var(--sp-6);
+	bottom: calc(var(--chatbar-h) + 32px);
+	z-index: 65;
+	width: 320px;
+	max-width: calc(100vw - 48px);
+	padding: var(--sp-5);
+	border-radius: var(--r-m);
+	background: rgba(255, 255, 255, 0.96);
+	box-shadow: var(--e3);
+}
+.pulse {
+	animation: pulse 2s var(--ease-out) infinite;
+}
+@keyframes pulse {
+	0%,
+	100% {
+		box-shadow: 0 0 0 0 var(--accent-glow);
+	}
+	50% {
+		box-shadow: 0 0 0 8px rgba(27, 98, 214, 0);
+	}
+}
+
+/* visual 4.2 — ぼかしが使えない環境では不透明に倒す */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	.glass,
+	.sidebar,
+	.rail,
+	.header.glass,
+	.chatbar,
+	.card,
+	.drawer,
+	.sheet {
+		background: rgba(255, 255, 255, 0.94);
+	}
+}
+
+/* visual 4.2 — 透明度を下げる設定に応答する */
+@media (prefers-reduced-transparency: reduce) {
+	.glass,
+	.sidebar,
+	.rail,
+	.header.glass,
+	.header.solid,
+	.chatbar,
+	.card,
+	.drawer,
+	.sheet,
+	.modal,
+	.screen,
+	.bottomnav {
+		background: #fff;
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+	.bg-blob {
+		display: none;
+	}
+}
+
+/* visual 4.2 — コントラストを上げる設定では境界を強調する */
+@media (prefers-contrast: more) {
+	.glass,
+	.sidebar,
+	.rail,
+	.header.glass,
+	.chatbar,
+	.card,
+	.screen,
+	.box {
+		box-shadow: inset 0 0 0 1px var(--ink-2), var(--e2);
+	}
+	.input,
+	.textarea {
+		border-color: var(--ink);
+	}
+	.chip {
+		box-shadow: inset 0 0 0 1px var(--ink);
+	}
+	.list-row::after,
+	.nav-sep {
+		background: var(--ink-2);
+	}
+}
+
+/* ruling 13 — 1280px: Inbox の右パネルを畳む */
+@media (max-width: 1280px) {
+	.inbox .pane-right {
+		display: none;
+	}
+	.inbox.show-right .pane-right {
+		display: block;
+	}
+	.inbox.show-right .pane-list {
+		display: none;
+	}
+}
+
+/* visual 2.7 — 1100px: Bento を 6 列にし、オーブの穴を閉じる */
+@media (max-width: 1100px) {
+	.bento {
+		grid-template-columns: repeat(6, 1fr);
+	}
+	.t-hero {
+		grid-column: span 3;
+	}
+	.t-wide {
+		grid-column: span 3;
+	}
+	.bento .hole {
+		display: none;
+	}
+}
+
+/* components 2.2 — 960px: サイドナビをボトムナビに替える */
+@media (max-width: 960px) {
+	.sidebar,
+	.rail,
+	.header.glass {
+		display: none;
+	}
+	.bottomnav {
+		display: flex;
+	}
+	.header.solid {
+		display: flex;
+	}
+	.main {
+		margin-left: 0;
+		margin-right: 0;
+		padding: calc(var(--header-h) + 16px) var(--sp-4)
+			calc(var(--bottomnav-h) + var(--chatbar-h) + 64px);
+	}
+	/* 依頼バーはボトムナビの上に載せる */
+	.chatbar {
+		left: var(--sp-4);
+		right: var(--sp-4);
+		width: auto;
+		transform: none;
+		bottom: calc(80px + env(safe-area-inset-bottom) + 8px);
+	}
+	.drawer {
+		border-radius: var(--r-xl) var(--r-xl) 0 0;
+	}
+	/* components 3.7 — モバイルのトーストは上端いっぱい */
+	.toast {
+		left: var(--sp-4);
+		right: var(--sp-4);
+		max-width: none;
+		min-width: 0;
+		transform: none;
+		top: calc(12px + env(safe-area-inset-top));
+	}
+	@keyframes toast-in {
+		from {
+			opacity: 0;
+			transform: translateY(-12px) scale(0.98);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+	.guide {
+		left: var(--sp-4);
+		right: var(--sp-4);
+		width: auto;
+		max-width: none;
+		bottom: calc(var(--bottomnav-h) + var(--chatbar-h) + 32px);
+	}
+}
+
+/* visual 2.7 — 700px: Bento を 1 列にする */
+@media (max-width: 700px) {
+	.bento {
+		grid-template-columns: 1fr;
+		padding: var(--sp-4);
+	}
+	.bento > * {
+		grid-column: 1 / -1;
+		grid-row: auto;
+	}
+}
+
+/* components 3.3 — 600px: カードと区画の内側をモバイルの 16px にする */
+@media (max-width: 600px) {
+	.card {
+		padding: var(--sp-4);
+	}
+	.box {
+		padding: var(--sp-4);
+	}
+	.modal {
+		padding: var(--sp-4);
+	}
+}
+
+/* visual 4.12 — 動きを減らす設定。状態の変化だけは短いフェードで見せる */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+	.toast,
+	.drawer,
+	.sheet,
+	.modal {
+		animation: fade-in 120ms linear both !important;
+	}
+	/* オーブは静止画として残す。粒子も消さずに止める (visual 2.8) */
+	.orb img,
+	.spark {
+		animation: none !important;
+	}
+	.spark {
+		opacity: 0.5;
+	}
+}
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+}
+
+/* ruling 17 — 印刷 */
+@media print {
+	.bg,
+	.app > :not(main),
+	.chatbar,
+	.toast,
+	.scrim {
+		display: none !important;
+	}
+	.main {
+		margin: 0;
+		padding: 0;
+	}
+	.screen,
+	.card,
+	.box {
+		box-shadow: none;
+		background: #fff;
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+}
