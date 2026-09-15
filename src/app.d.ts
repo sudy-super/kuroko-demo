@@ -5,7 +5,10 @@ declare global {
 		// interface Error {}
 		// interface Locals {}
 		// interface PageData {}
-		// interface PageState {}
+		// ドロワーを履歴に積むときの印 (Drawer.svelte の浅い経路)
+		interface PageState {
+			drawer?: boolean;
+		}
 		// interface Platform {}
 	}
 }
