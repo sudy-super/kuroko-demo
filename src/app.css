@@ -250,51 +250,26 @@ svg.i {
 	place-items: center;
 	pointer-events: none;
 }
-.orb-glow {
+.orb canvas {
 	grid-area: 1 / 1;
+	display: block;
 	width: 100%;
 	height: 100%;
-	border-radius: 50%;
-	/* 光彩も画像も矩形の面を持たせない。影を付けると画像のアルファではなく箱の形が出る */
-	box-shadow: none;
-	background: radial-gradient(circle, rgba(120, 170, 255, 0.2) 0%, rgba(120, 170, 255, 0) 62%);
-	pointer-events: none;
-}
-.orb img {
-	grid-area: 1 / 1;
-	width: 100%;
-	height: 100%;
+	/* 球とハローはシェーダーが透明の上に描く。箱の形を出す背景や影は付けない */
 	background: transparent;
-	box-shadow: none;
-	animation: orb-spin 30s linear infinite;
 }
-.spark {
-	position: absolute;
-	width: 4px;
-	height: 4px;
+/* WebGL が使えないときだけの代替。多層 radial-gradient の球と光彩 */
+.orb-fallback {
+	grid-area: 1 / 1;
+	width: 38%;
+	height: 38%;
 	border-radius: 50%;
-	background: #9cc4ff;
-	transform: rotate(calc(var(--i) * 15deg)) translateY(-40%);
-	animation: spark 18s linear infinite;
-	animation-delay: calc(var(--i) * -0.75s);
-}
-@keyframes orb-spin {
-	to {
-		transform: rotate(360deg);
-	}
-}
-@keyframes spark {
-	0% {
-		transform: rotate(calc(var(--i) * 15deg)) translateY(-18%) scale(0.4);
-		opacity: 0;
-	}
-	20% {
-		opacity: 0.9;
-	}
-	100% {
-		transform: rotate(calc(var(--i) * 15deg)) translateY(-68%) scale(1);
-		opacity: 0;
-	}
+	background:
+		radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 22%),
+		radial-gradient(circle at 50% 50%, #9cc4ff 0%, #2f7cf6 45%, #1b62d6 78%, #9cc4ff 100%);
+	box-shadow:
+		0 0 48px 16px rgba(79, 149, 255, 0.35),
+		0 0 120px 48px rgba(27, 98, 214, 0.18);
 }
 
 /* visual 4.2 — ガラスの基本形 */
@@ -1453,14 +1428,6 @@ body[data-overlay='on'] .card {
 	.modal.leave,
 	.scrim.leave {
 		animation: fade-out 120ms linear both !important;
-	}
-	/* オーブは静止画として残す。粒子も消さずに止める (visual 2.8) */
-	.orb img,
-	.spark {
-		animation: none !important;
-	}
-	.spark {
-		opacity: 0.5;
 	}
 }
 @keyframes fade-in {

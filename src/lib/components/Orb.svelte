@@ -1,13 +1,30 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { createOrb } from '$lib/orb/renderer';
+
 	let { size = 580, sparks = true }: { size?: number; sparks?: boolean } = $props();
+	let canvas: HTMLCanvasElement | undefined = $state();
+	let fallback = $state(false);
+
+	onMount(() => {
+		const orb = createOrb(canvas!, {
+			reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+			mobile: matchMedia('(max-width: 960px)').matches || navigator.hardwareConcurrency <= 4,
+			particles: sparks
+		});
+		if (!orb) {
+			fallback = true;
+			return;
+		}
+		orb.start();
+		return () => orb.destroy();
+	});
 </script>
 
 <div class="orb" style="width:{size}px;height:{size}px" aria-hidden="true">
-	<div class="orb-glow"></div>
-	<img src="/orb.png" alt="" width={size} height={size} />
-	{#if sparks}
-		{#each Array(24) as _, i}
-			<span class="spark" style="--i:{i}"></span>
-		{/each}
+	{#if fallback}
+		<div class="orb-fallback"></div>
+	{:else}
+		<canvas bind:this={canvas}></canvas>
 	{/if}
 </div>
