@@ -2503,3 +2503,187 @@ body[data-overlay='on'] .bento > [data-liquid-glass-layer] {
 		min-width: 620px;
 	}
 }
+
+/* ==========================================================================
+   people (Task 13) — 一覧 (人物 / 会社 / 案件)、人物・会社・案件の詳細、人物パネル
+   ========================================================================== */
+.people {
+	max-width: 880px;
+}
+.people-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--sp-5);
+	padding: 0 var(--sp-5) var(--sp-5);
+}
+/* 戻る先は見出しの上の行に置く。幅いっぱいを取らせて必ず折り返させる */
+.people-back {
+	flex: 1 0 100%;
+	justify-content: flex-start;
+	padding-inline: 0;
+}
+.people-title {
+	flex: 1;
+	min-width: 0;
+}
+.people-title h1 {
+	margin: 0;
+}
+.people-tabs {
+	flex-wrap: wrap;
+	gap: var(--sp-3);
+	padding: 0 var(--sp-5) var(--sp-5);
+}
+/* 選択中のチップは下地が accent なので、件数は白地に反転させる */
+.people-tabs .chip.on .badge.count {
+	background: #fff;
+	color: var(--accent);
+}
+
+/* ガラスの canvas は bleed の分だけ外へ出るので、位置の基準になる親を置く (Task 10c の注記) */
+.people-cards {
+	position: relative;
+	isolation: isolate;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	gap: var(--sp-5);
+	padding: 0 var(--sp-5);
+	align-items: start;
+}
+/* visual 4.11 — 覆いが出ている間はガラスを 2 枚重ねない (.bento と同じ扱い) */
+body[data-overlay='on'] .people-cards > [data-liquid-glass-layer] {
+	display: none !important;
+}
+
+.people-sec h2 {
+	margin: 0 0 var(--sp-3);
+	font-size: 18px;
+}
+/* カードの余白の中に行を置くので、行の左右の詰めと区切り線は端までにする */
+.people-sec .list-row,
+.person-panel .list-row {
+	padding-inline: 0;
+}
+.people-sec .list-row::after,
+.person-panel .list-row::after {
+	left: 0;
+	right: 0;
+}
+.people-sec p {
+	margin: 0;
+}
+.people-tagrow {
+	flex-wrap: wrap;
+	gap: var(--sp-2);
+	margin-top: var(--sp-3);
+}
+.people-stat {
+	margin-bottom: var(--sp-2);
+	color: var(--ink-2);
+	font-size: 14px;
+}
+.people-missing {
+	padding: 0 var(--sp-5);
+	color: var(--ink-2);
+}
+.people-memo-foot {
+	gap: var(--sp-3);
+	margin-top: var(--sp-3);
+}
+
+/* 見出しと値の 2 列。値が長いときだけ折り返す */
+.kv {
+	display: grid;
+	grid-template-columns: max-content minmax(0, 1fr);
+	gap: var(--sp-2) var(--sp-4);
+	margin: 0;
+}
+.kv dt {
+	color: var(--ink-3);
+	font-size: 14px;
+	line-height: 1.7;
+}
+.kv dd {
+	margin: 0;
+	line-height: 1.7;
+}
+
+/* 一覧の行。名前を伸ばして、右端のバッジを行の末尾に寄せる */
+.people-col {
+	display: flex;
+	flex: 1;
+	min-width: 0;
+	flex-direction: column;
+	justify-content: center;
+}
+.people-name,
+.people-col .sub,
+.people-ident {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.people-ident {
+	flex: 1;
+	min-width: 0;
+}
+.people-amount {
+	font-size: 14px;
+}
+.people-list {
+	padding-inline: var(--sp-5);
+	padding-block: var(--sp-2);
+}
+
+/* PersonPanel — Inbox の右と、メールのスレッドの頭で使う */
+.person-panel {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--sp-2);
+}
+.person-panel .list-row,
+.pp-stats {
+	width: 100%;
+}
+.pp-name {
+	margin: 0;
+	font-size: 20px;
+}
+.person-panel p {
+	margin: 0;
+}
+.pp-mail {
+	color: var(--ink-2);
+	font-size: 14px;
+}
+.pp-stats {
+	margin-top: var(--sp-2);
+}
+/* メモは改行をそのまま見せる */
+.pp-memo {
+	white-space: pre-wrap;
+	color: var(--ink-2);
+	font-size: 14px;
+}
+.person-panel .btn {
+	margin-top: var(--sp-2);
+}
+
+/* components 3.3 — 600px 以下は 1 列に畳み、左右の余白をモバイルの 16px にする */
+@media (max-width: 600px) {
+	.people-head,
+	.people-tabs,
+	.people-cards,
+	.people-missing {
+		padding-inline: var(--sp-4);
+	}
+	.people-cards {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	/* 名前を詰めると 2 行に折れるので、操作は見出しの下の行へ落とす */
+	.people-title {
+		flex: 1 0 100%;
+	}
+}

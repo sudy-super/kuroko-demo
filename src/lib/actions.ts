@@ -10,7 +10,8 @@ import type {
 	CalendarEvent,
 	Meeting,
 	Automation,
-	Suggestion
+	Suggestion,
+	Person
 } from './types';
 import { db, save, resetDb } from './store.svelte';
 import { toast } from './ui.svelte';
@@ -466,6 +467,16 @@ export function addBuffer(eventId: string, min: number) {
 	e.start = toHm(minutes(e.start) + min);
 	e.end = toHm(minutes(e.end) + min);
 	save();
+}
+
+/** People のメモ。中身が変わったときだけ作業履歴に残す */
+export function updatePersonMemo(personId: string, memo: string): Person | undefined {
+	const p = db.people.find((x) => x.id === personId);
+	if (!p || p.memo === memo) return p;
+	p.memo = memo;
+	log(`${p.name} 様のメモを更新しました`, 'other', { actor: 'user', origin: 'people' });
+	save();
+	return p;
 }
 
 export function setAutomation(level: Automation) {
