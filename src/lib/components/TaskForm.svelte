@@ -55,8 +55,8 @@
 			},
 			'tasks'
 		);
-		// addTask が今積んだログを取り消す。押された後に積まれたログには触らない
-		const l = db.logs[0];
+		// 今登録した ToDo のログを id で引く。押された後に積まれたログには触らない
+		const l = addLogOf(db, t.id)!;
 		toast('ToDo を登録しました', { undo: () => undo(l.id) });
 		reset();
 		onclose();
