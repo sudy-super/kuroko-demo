@@ -1,7 +1,7 @@
 /* カレンダーの純粋関数。画面 (週 / 月) と保存前の警告が同じ規則を使えるよう、ここだけに置く。
    時刻は '9:00' のように 1 桁時もあるので、文字列ではなく minutes() で分に直して比べる */
 import type { CalendarEvent, Db } from './types';
-import { minutes, addDays, key } from './dates';
+import { minutes, addDays } from './dates';
 
 /** 予定の時間帯だけを見るための最小の形。保存前の入力にも既存の予定にも使う */
 export type Slot = { date: string; start: string; end: string; place?: string };
@@ -53,7 +53,6 @@ export function monthGrid(d: Date): Date[] {
 export const eventsOn = (db: Db, dateKey: string) =>
 	db.events.filter((e) => e.date === dateKey).sort((a, b) => minutes(a.start) - minutes(b.start));
 
-export const eventsIn = (db: Db, from: Date, to: Date) => {
-	const [a, b] = [key(from), key(to)];
-	return db.events.filter((e) => e.date >= a && e.date <= b);
-};
+/* 'YYYY-MM-DD' は辞書順が日付順と一致するので、Date に直さず文字列のまま比べる */
+export const eventsIn = (db: Db, from: string, to: string) =>
+	db.events.filter((e) => e.date >= from && e.date <= to);

@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import type { CalendarEvent } from '$lib/types';
 	import { db } from '$lib/store.svelte';
-	import { deleteEvent } from '$lib/actions';
+	import { deleteEvent, undo } from '$lib/actions';
 	import { toast } from '$lib/ui.svelte';
 	import { parse, key, addDays, fmtMD, fmtYMDW } from '$lib/dates';
 	import { weekOf } from '$lib/calendar';
@@ -51,7 +51,9 @@
 	function remove() {
 		if (!detail) return;
 		deleteEvent(detail.id);
-		toast(`予定「${detail.title}」を削除しました`);
+		// deleteEvent が今積んだログを取り消す (登録のときと同じ作法)
+		const l = db.logs[0];
+		toast(`予定「${detail.title}」を削除しました`, { undo: () => undo(l.id) });
 		detail = null;
 	}
 </script>
@@ -85,7 +87,7 @@
 		<h2 class="cal-title" aria-live="polite">{title}</h2>
 	</div>
 
-	<section class="card cal-panel" aria-label="{title}の予定" {@attach glass(REGULAR)}>
+	<section class="card cal-panel" aria-label="{title}の予定" {@attach glass(REGULAR, 120)}>
 		{#if view === 'month'}
 			<MonthView {cursor} onopen={(e) => (detail = e)} onpick={pick} />
 		{:else}

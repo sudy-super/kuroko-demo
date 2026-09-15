@@ -1250,6 +1250,16 @@ body[data-overlay='on'] .card {
 .modal.sm {
 	width: min(400px, calc(100vw - 32px));
 }
+/* 操作の行 (components 5.1 — 主ボタンは左) */
+.modal-actions {
+	gap: var(--sp-6);
+	margin-top: var(--sp-6);
+}
+/* 移動時間の警告だけ操作が 3 つ並ぶ。幅の狭いモーダルには収まらないので折り返させる */
+.modal.sm .modal-actions {
+	flex-wrap: wrap;
+	gap: var(--sp-4) var(--sp-5);
+}
 @keyframes modal-in {
 	from {
 		opacity: 0;
@@ -2239,6 +2249,11 @@ body[data-overlay='on'] .bento > [data-liquid-glass-layer] {
 .week-head {
 	height: 48px;
 	border-bottom: 1px solid var(--line-2);
+	/* 本体の縦の送りに出る帯のぶんだけ空け、曜日と列の左端をそろえる。
+	   overflow: hidden で「送れる箱」にしないと scrollbar-gutter が効かない。
+	   横は親の .week がまとめて送るので、ここでは送らせない */
+	overflow: hidden;
+	scrollbar-gutter: stable;
 }
 .week-day {
 	display: flex;
@@ -2256,6 +2271,13 @@ body[data-overlay='on'] .bento > [data-liquid-glass-layer] {
 	color: var(--accent);
 	font-weight: 700;
 }
+/* 0:00〜24:00 を持ち、見える高さは 12 時間分に切って縦に送る。
+   曜日の行は外に置いたままなので、送っても日付は見えたままになる */
+.week-body {
+	max-height: 576px;
+	overflow-y: auto;
+	scrollbar-gutter: stable;
+}
 .week-axis {
 	position: relative;
 }
@@ -2268,7 +2290,7 @@ body[data-overlay='on'] .bento > [data-liquid-glass-layer] {
 }
 .week-col {
 	position: relative;
-	height: 576px; /* 8:00〜20:00 の 12 時間 x 48px */
+	height: 1152px; /* 0:00〜24:00 の 24 時間 x 48px */
 	/* 1 時間ごとに 1px。30 分の線は引かない (投影で縞に見えるため) */
 	background: repeating-linear-gradient(
 		to bottom,
@@ -2352,9 +2374,9 @@ body[data-overlay='on'] .bento > [data-liquid-glass-layer] {
 .month-cell {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
+	gap: var(--sp-1);
 	min-height: 104px;
-	padding: 4px;
+	padding: var(--sp-1);
 	border-top: 1px solid var(--line);
 	border-left: 1px solid var(--line);
 }
@@ -2364,10 +2386,15 @@ body[data-overlay='on'] .bento > [data-liquid-glass-layer] {
 .month-cell:nth-last-child(-n + 7) {
 	border-bottom: 1px solid var(--line);
 }
-/* 当月以外は薄くするだけにし、押せる状態は変えない */
+/* 当月以外。日付の数字を薄くすると 12px では 4.5:1 を割るので、不透明度は掛けず
+   --ink-3 のままにし、当月との違いはセルの地の色で示す。暗い色を敷くと文字の
+   コントラストを食うので、白を薄く重ねて面を白ませる (文字は逆に読みやすくなる)。
+   押せる状態は変えない */
+.month-cell.out {
+	background: var(--hover-light);
+}
 .month-cell.out .month-day {
 	color: var(--ink-3);
-	opacity: 0.7;
 }
 .month-day {
 	align-self: flex-start;
@@ -2475,10 +2502,4 @@ body[data-overlay='on'] .bento > [data-liquid-glass-layer] {
 	.week-cols {
 		min-width: 620px;
 	}
-}
-
-/* 移動時間の警告だけ操作が 3 つ並ぶ。幅の狭いモーダルには収まらないので折り返させる */
-.modal.sm > .row:last-child {
-	flex-wrap: wrap;
-	gap: var(--sp-4) var(--sp-5);
 }

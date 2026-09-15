@@ -88,7 +88,7 @@
 						{/if}
 						{#if children}{@render children()}{/if}
 						<!-- 仕様 5 / components 5.1 — 主ボタンは左。呼び出し側は主 → 副の順に置く -->
-						<div class="row" style="gap: var(--sp-6); margin-top: var(--sp-6)">
+						<div class="row modal-actions">
 							{@render actions()}
 						</div>
 					</div>

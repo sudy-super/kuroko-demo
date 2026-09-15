@@ -2,7 +2,18 @@ import { describe, it, expect } from 'vitest';
 import { seed } from './seed';
 import { key } from './dates';
 import type { CalendarEvent } from './types';
-import { travelWarning, conflicts, overlaps, layoutColumns, weekOf, monthGrid, eventsOn } from './calendar';
+import {
+	travelWarning,
+	conflicts,
+	overlaps,
+	layoutColumns,
+	weekOf,
+	monthGrid,
+	eventsOn,
+	eventsIn
+} from './calendar';
+import { deleteEvent, undo } from './actions';
+import { replaceDb, db } from './store.svelte';
 
 const BASE = new Date(2026, 8, 15); // 火曜。シードの相対日付はこの日を基準にする
 
@@ -98,5 +109,34 @@ describe('eventsOn', () => {
 			'ev-shibuya',
 			'ev-sato-call'
 		]);
+	});
+});
+
+describe('eventsIn', () => {
+	it('開始と終了の日を含む範囲を返す', () => {
+		const d = seed(BASE);
+		const ids = eventsIn(d, '2026-09-15', '2026-09-15').map((e) => e.id);
+		expect([...ids].sort()).toEqual([...eventsOn(d, '2026-09-15').map((e) => e.id)].sort());
+		// 2 日にまたがる範囲と、始まりが終わりより後の範囲
+		expect(eventsIn(d, '2026-09-15', '2026-09-16').length).toBeGreaterThan(ids.length);
+		expect(eventsIn(d, '2026-09-15', '2026-09-14')).toEqual([]);
+	});
+});
+
+describe('deleteEvent の取り消し', () => {
+	it('シードの予定を消しても、取り消しで会議ごと戻る', () => {
+		replaceDb(seed(BASE));
+		const target = db.events.find((e) => e.id === 'ev-shibuya')!;
+		const before = db.events.length;
+		const meetings = db.meetings.filter((m) => m.eventId === target.id).length;
+		deleteEvent(target.id);
+		expect(db.events.find((e) => e.id === 'ev-shibuya')).toBeUndefined();
+		const l = db.logs[0];
+		expect(l.undo).toEqual({ kind: 'event_delete', event: target, meetings: expect.any(Array) });
+		undo(l.id);
+		expect(db.events.length).toBe(before);
+		expect(db.events.find((e) => e.id === 'ev-shibuya')!.title).toBe(target.title);
+		expect(db.meetings.filter((m) => m.eventId === target.id).length).toBe(meetings);
+		expect(db.logs.find((x) => x.id === l.id)!.undone).toBe(true);
 	});
 });

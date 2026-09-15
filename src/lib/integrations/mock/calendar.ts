@@ -3,10 +3,10 @@ import type { CalendarProvider } from '../types';
 import type { CalendarEvent, Db } from '../../types';
 import { freeSlots } from '../../derived';
 import { eventsIn } from '../../calendar';
-import { minutes, parse } from '../../dates';
+import { minutes } from '../../dates';
 
 export const calendar: CalendarProvider = {
-	listEvents: (d: Db, from: string, to: string) => eventsIn(d, parse(from), parse(to)),
+	listEvents: (d: Db, from: string, to: string) => eventsIn(d, from, to),
 	createEvent(d: Db, e: CalendarEvent): CalendarEvent {
 		d.events.push(e);
 		// $state proxy への書き込みは元のオブジェクトに反映されないので、db 側の要素を返す

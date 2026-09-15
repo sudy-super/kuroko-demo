@@ -47,6 +47,7 @@ export type UndoPayload =
   | { kind: 'task_add'; taskId: string }
   | { kind: 'task_done'; taskId: string }
   | { kind: 'event_add'; eventId: string }
+  | { kind: 'event_delete'; event: CalendarEvent; meetings: Meeting[] }
   | { kind: 'agenda_share'; meetingId: string }
   | { kind: 'link_identity'; identityId: string }
   | { kind: 'approval_exec'; approvalId: string };

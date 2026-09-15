@@ -58,13 +58,25 @@ export const PANEL: LiquidGlassElementOptions = {
    既定の 2 でも本番ビルドの実測で 59.4 フレーム/秒、1 フレームの JavaScript は中央値 1.20ms
    (95% 分位 1.57ms) と 60Hz の予算 16.67ms に十分収まる。
    respectReducedTransparency: false — OS 設定には応答しない (裁定済み) */
-export function glass(options: LiquidGlassElementOptions) {
+/* repaintMs — 背後を描き直す間隔 (ミリ秒)。省くと毎フレーム (live: true)。
+   1 フレームの費用は面の画素数にほぼ比例する。カレンダーの面は幅いっぱい x 約 660px
+   (実測 2412x1564 画素)あり、Today のカードより広い。毎フレーム描き直すと、
+   隔離した Chrome の本番ビルドでも月表示 30〜33 フレーム/秒しか出ない。
+   この面の背後にあるのは 72〜90 秒かけて漂う壁紙だけなので、毎フレームではなく
+   一定の間隔で描き直しても見た目は変わらない (1 フレームあたりの塊の動きは 0.1px 未満)。
+   refresh() は「次のフレームで背後を描き直す」印を立てるだけで、その間ガラスの
+   rAF の輪は止まる。scroll と resize ではライブラリ側が別に起こすので、送っても追従する */
+export function glass(options: LiquidGlassElementOptions, repaintMs?: number) {
 	return (node: Element) => {
 		const instance = new LiquidGlass(node as HTMLElement, {
-			live: true,
+			live: !repaintMs,
 			respectReducedTransparency: false,
 			...options
 		});
-		return () => instance.destroy();
+		const timer = repaintMs ? setInterval(() => instance.refresh(), repaintMs) : undefined;
+		return () => {
+			clearInterval(timer);
+			instance.destroy();
+		};
 	};
 }

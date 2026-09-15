@@ -255,6 +255,10 @@ export function undo(logId: string) {
 		// createEvent(withMeeting) が一緒に作った会議を残さない
 		db.meetings = db.meetings.filter((m) => m.eventId !== u.eventId);
 	}
+	if (u.kind === 'event_delete') {
+		db.events.push(u.event);
+		db.meetings.push(...u.meetings);
+	}
 	if (u.kind === 'agenda_share') {
 		const m = db.meetings.find((x) => x.id === u.meetingId);
 		if (m) m.agendaShared = false;
@@ -440,10 +444,17 @@ export function createEvent(
 export function deleteEvent(id: string, origin: Origin = 'calendar') {
 	const e = db.events.find((x) => x.id === id);
 	if (!e) return;
+	// 取り消しで戻せるよう、消す前の中身を控える。配列から外すだけで中身は書き換わらないので、
+	// 控えた参照をそのまま押し戻せばよい
+	const undoPayload: UndoPayload = {
+		kind: 'event_delete',
+		event: e,
+		meetings: db.meetings.filter((m) => m.eventId === id)
+	};
 	integrations.calendar.deleteEvent(db, id);
 	// 予定と一緒に作った会議も残さない
 	db.meetings = db.meetings.filter((m) => m.eventId !== id);
-	log(`予定「${e.title}」を削除しました`, 'other', { actor: 'user', origin });
+	log(`予定「${e.title}」を削除しました`, 'other', { actor: 'user', origin, undo: undoPayload });
 	save();
 }
 

@@ -125,6 +125,12 @@
 		start = toHm(minutes(start) + 30);
 		end = toHm(minutes(end) + 30);
 		bufferBefore = '30';
+		// ずらした先に別の予定があることがあるので、重なりを測り直す
+		hit = conflicts(db, slot);
+		if (hit.length) {
+			stage = 'conflict';
+			return;
+		}
 		stage = 'form';
 		save();
 	}
