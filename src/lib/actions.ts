@@ -37,15 +37,16 @@ export function log(
 		undo: o.undo
 	};
 	db.logs.unshift(l);
-	return l;
+	// $state proxy への書き込みは元のオブジェクトに反映されないので、db 側の要素を返す
+	return db.logs[0];
 }
 
 // 社外への送信だけは自動化レベルによらず必ず承認を求める
 const autoExecutes = (risk: Approval['risk'], level: Automation) => risk !== 'external_send' && level !== 'draft';
 
 export function addApproval(input: Omit<Approval, 'id' | 'status' | 'createdAt'>): Approval {
-	const a: Approval = { ...input, id: uid('ap'), status: 'pending', createdAt: nowIso() };
-	db.approvals.unshift(a);
+	db.approvals.unshift({ ...input, id: uid('ap'), status: 'pending', createdAt: nowIso() });
+	const a = db.approvals[0];
 	if (autoExecutes(a.risk, db.settings.automation)) {
 		executeApproval(a.id, true);
 	}
@@ -90,7 +91,7 @@ export function undoApproval(id: string) {
 
 export function reject(id: string, origin: Origin = 'approval') {
 	const a = db.approvals.find((x) => x.id === id);
-	if (!a || a.status === 'executed') return;
+	if (!a || (a.status !== 'pending' && a.status !== 'sending')) return;
 	// 送信待ちを却下したら、待っている送信も止める
 	clearTimeout(timers.get(id));
 	timers.delete(id);
@@ -173,8 +174,8 @@ export function addTask(
 	},
 	origin: Origin
 ): Task {
-	const t: Task = { id: uid('t'), priority: 'normal', status: 'todo', origin, createdAt: nowIso(), ...input };
-	db.tasks.unshift(t);
+	db.tasks.unshift({ id: uid('t'), priority: 'normal', status: 'todo', origin, createdAt: nowIso(), ...input });
+	const t = db.tasks[0];
 	db.demo.stats.tasksAdded++;
 	log(`ToDo「${t.title}」を登録しました`, 'register', {
 		actor: origin === 'chat' || origin === 'line' || origin === 'meeting' ? 'KUROKO' : 'user',
@@ -204,13 +205,20 @@ export function undo(logId: string) {
 	const l = db.logs.find((x) => x.id === logId);
 	if (!l || !l.undo || l.undone) return;
 	const u = l.undo;
-	if (u.kind === 'task_add') db.tasks = db.tasks.filter((t) => t.id !== u.taskId);
+	if (u.kind === 'task_add') {
+		db.tasks = db.tasks.filter((t) => t.id !== u.taskId);
+		db.demo.stats.tasksAdded = Math.max(0, db.demo.stats.tasksAdded - 1);
+	}
 	if (u.kind === 'task_done') {
 		const t = db.tasks.find((x) => x.id === u.taskId);
 		if (t) t.status = 'todo';
 		db.demo.stats.tasksDone = Math.max(0, db.demo.stats.tasksDone - 1);
 	}
-	if (u.kind === 'event_add') db.events = db.events.filter((e) => e.id !== u.eventId);
+	if (u.kind === 'event_add') {
+		db.events = db.events.filter((e) => e.id !== u.eventId);
+		// createEvent(withMeeting) が一緒に作った会議を残さない
+		db.meetings = db.meetings.filter((m) => m.eventId !== u.eventId);
+	}
 	if (u.kind === 'agenda_share') {
 		const m = db.meetings.find((x) => x.id === u.meetingId);
 		if (m) m.agendaShared = false;
@@ -246,7 +254,7 @@ export function insertSlots(threadId: string): SchedulingRequest {
 	db.scheduling.push(s);
 	log('日程候補 3 件を提案しました', 'draft', { origin: 'inbox' });
 	save();
-	return s;
+	return db.scheduling[db.scheduling.length - 1];
 }
 
 export function sendReply(threadId: string, body: string, origin: Origin = 'inbox'): Approval {
@@ -327,13 +335,13 @@ export function confirmSlot(token: string, slotId: string) {
 	s.eventId = event.id;
 	s.meetingId = meeting.id;
 	if (!redo) db.demo.stats.confirmed++;
+	// 相手が確定した予定は「元に戻す」の対象にしない。戻すのは /schedule の「日時を変更する」「キャンセルする」
 	log(`${fmtMDW(parse(slot.date))} ${slot.start} に ${p.name} 様との打ち合わせを確定しました`, 'hold', {
 		origin: 'schedule',
-		approved: true,
-		undo: { kind: 'event_add', eventId: event.id }
+		approved: true
 	});
 	save();
-	return { event, meeting };
+	return { event: db.events[db.events.length - 1], meeting: db.meetings[db.meetings.length - 1] };
 }
 
 export function changeSlot(token: string) {
@@ -365,6 +373,7 @@ export function createEvent(
 	const e: CalendarEvent = { ...rest, id: uid('ev'), source: 'kuroko' };
 	if (e.online) e.url = integrations.conference.createMeetingUrl(e.online);
 	db.events.push(e);
+	const ev = db.events[db.events.length - 1];
 	if (withMeeting) {
 		const m: Meeting = {
 			id: uid('m'),
@@ -381,16 +390,16 @@ export function createEvent(
 			brief: integrations.document.brief(db, e.personIds[0], e.projectId)
 		};
 		m.brief!.note = '通常は前日夜に届きます (デモのため即時生成)';
-		e.meetingId = m.id;
+		ev.meetingId = m.id;
 		db.meetings.push(m);
 	}
-	log(`予定「${e.title}」を登録しました`, 'hold', {
+	log(`予定「${ev.title}」を登録しました`, 'hold', {
 		actor: 'user',
 		origin,
-		undo: { kind: 'event_add', eventId: e.id }
+		undo: { kind: 'event_add', eventId: ev.id }
 	});
 	save();
-	return e;
+	return ev;
 }
 
 export function deleteEvent(id: string) {

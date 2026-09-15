@@ -18,6 +18,15 @@ export const ui = $state({
 	voice: false
 });
 
+let overlays = 0;
+
+/** app.css の body[data-overlay='on'] を生かす。ドロワーとモーダルが 1 枚でも出ている間だけ立てる */
+export function markOverlay(open: boolean) {
+	overlays = Math.max(0, overlays + (open ? 1 : -1));
+	if (overlays > 0) document.body.dataset.overlay = 'on';
+	else delete document.body.dataset.overlay;
+}
+
 let seq = 0;
 let timer: ReturnType<typeof setInterval> | null = null;
 

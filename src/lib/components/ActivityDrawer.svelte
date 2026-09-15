@@ -24,6 +24,9 @@
 		{/each}
 	{/if}
 	{#snippet footer()}
-		<a class="btn text" href="/activity" onclick={() => (ui.activityDrawer = false)}>すべて見る</a>
+		<!-- ドロワーが積んだ履歴を遷移先で置き換える。戻ると元の画面に返る -->
+		<a class="btn text" href="/activity" data-sveltekit-replacestate onclick={() => (ui.activityDrawer = false)}>
+			すべて見る
+		</a>
 	{/snippet}
 </Drawer>

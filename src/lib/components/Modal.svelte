@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { Dialog } from 'bits-ui';
+	import { markOverlay } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 
 	let {
@@ -43,6 +44,12 @@
 			render = false;
 			leaving = false;
 		}, EXIT_MS);
+	});
+
+	$effect(() => {
+		if (!open) return;
+		markOverlay(true);
+		return () => markOverlay(false);
 	});
 
 	$effect(() => () => clearTimeout(timer));

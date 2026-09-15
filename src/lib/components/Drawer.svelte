@@ -2,8 +2,9 @@
 	import type { Snippet } from 'svelte';
 	import { Dialog } from 'bits-ui';
 	import { page } from '$app/state';
-	import { pushState } from '$app/navigation';
+	import { pushState, replaceState } from '$app/navigation';
 	import { media } from '$lib/media.svelte';
+	import { markOverlay } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 
 	let {
@@ -46,12 +47,18 @@
 			render = false;
 			leaving = false;
 		}, EXIT_MS);
-		// 自分が積んだ履歴が今の位置にあるときだけ下ろす。
+		// 自分が積んだ印を消すだけにする。history.back() はドロワー内リンクの遷移と順序を争うので使わない。
 		// 戻るで閉じたときは popstate 側で pushed を下ろし、画面遷移したときは page.state が空になる
 		if (pushed) {
 			pushed = false;
-			if (page.state.drawer) history.back();
+			if (page.state.drawer) replaceState('', {});
 		}
+	});
+
+	$effect(() => {
+		if (!open) return;
+		markOverlay(true);
+		return () => markOverlay(false);
 	});
 
 	$effect(() => {

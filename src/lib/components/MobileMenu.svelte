@@ -15,6 +15,7 @@
 			class="list-row lg"
 			class:on
 			href={nav.href}
+			data-sveltekit-replacestate
 			aria-current={on ? 'page' : undefined}
 			onclick={() => (ui.mobileMenu = false)}
 		>

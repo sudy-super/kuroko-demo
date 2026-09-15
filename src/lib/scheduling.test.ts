@@ -35,6 +35,22 @@ describe('scheduling', () => {
 		expect(nextMeeting(db)!.meeting.id).toBe('m-abc'); // 次の会議は変わらない
 		expect(db.logs[0].approved).toBe(true);
 	});
+	it('確定の履歴に「元に戻す」は付かない', () => {
+		const s = insertSlots('th-tanaka-next');
+		s.status = 'sent';
+		s.token = 'tok';
+		confirmSlot('tok', s.slots[0].id);
+		expect(db.logs[0].undo).toBeUndefined();
+	});
+	it('action の返り値は db の中の要素と同一', () => {
+		const s = insertSlots('th-tanaka-next');
+		expect(s).toBe(db.scheduling[db.scheduling.length - 1]);
+		s.status = 'sent';
+		s.token = 'tok';
+		const r = confirmSlot('tok', s.slots[0].id)!;
+		expect(r.event).toBe(db.events[db.events.length - 1]);
+		expect(r.meeting).toBe(db.meetings[db.meetings.length - 1]);
+	});
 	it('無効 token は null', () => {
 		expect(confirmSlot('nope', 'x')).toBeNull();
 	});
