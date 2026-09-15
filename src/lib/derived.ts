@@ -1,4 +1,4 @@
-import type { Db, MessageThread, Reason, TodayItem, Meeting, CalendarEvent } from './types';
+import type { Db, MessageThread, Reason, TodayItem, Meeting, CalendarEvent, Task } from './types';
 import { REASON_ORDER } from './types';
 import { key, parse, addDays, minutes, toHm, hm } from './dates';
 
@@ -18,14 +18,43 @@ export const pendingApprovals = (db: Db) => db.approvals.filter((a) => a.status 
 
 const T = (db: Db) => db.seededOn; // 「今日」の基準。実時刻ではなくシードの基準日を使う
 
-export const todayTasks = (db: Db) => db.tasks.filter((t) => t.due === T(db) && t.status !== 'done');
-export const overdueTasks = (db: Db) =>
-	db.tasks.filter((t) => t.due && t.due < T(db) && t.status !== 'done');
-export const weekTasks = (db: Db) => {
+export type TaskFilter = 'overdue' | 'today' | 'week' | 'all';
+
+/** 期限の判定はここだけに置く。画面のフィルタと Today の件数で同じ規則を使う */
+export function inTaskFilter(db: Db, t: Task, f: TaskFilter): boolean {
+	if (f === 'all') return true;
+	if (!t.due) return false;
 	const k = T(db);
-	const w = key(addDays(6, parse(k)));
-	return db.tasks.filter((t) => t.due && t.due >= k && t.due <= w && t.status !== 'done');
-};
+	if (f === 'overdue') return t.due < k;
+	if (f === 'today') return t.due === k;
+	return t.due >= k && t.due <= key(addDays(6, parse(k)));
+}
+
+const open = (t: Task) => t.status !== 'done';
+export const todayTasks = (db: Db) => db.tasks.filter((t) => inTaskFilter(db, t, 'today') && open(t));
+export const overdueTasks = (db: Db) =>
+	db.tasks.filter((t) => inTaskFilter(db, t, 'overdue') && open(t));
+export const weekTasks = (db: Db) => db.tasks.filter((t) => inTaskFilter(db, t, 'week') && open(t));
+
+/** 一覧用。未完了が先、その中は期限の早い順 (期限なしは末尾)、同じ日は時刻の早い順 */
+export const filterTasks = (db: Db, f: TaskFilter) =>
+	db.tasks
+		.filter((t) => inTaskFilter(db, t, f))
+		.sort(
+			(a, b) =>
+				Number(!open(a)) - Number(!open(b)) ||
+				(a.due ?? '9999').localeCompare(b.due ?? '9999') ||
+				(a.time ?? '99:99').localeCompare(b.time ?? '99:99')
+		);
+
+/** チップの件数バッジ。残っている件数を出したいので完了は数えない */
+export const openTaskCount = (db: Db, f: TaskFilter) =>
+	db.tasks.filter((t) => inTaskFilter(db, t, f) && open(t)).length;
+
+/** 完了行の「元に戻す」が使う直近のログ。logs は新しい順に積まれる */
+export const doneLogOf = (db: Db, taskId: string) =>
+	db.logs.find((l) => !l.undone && l.undo?.kind === 'task_done' && l.undo.taskId === taskId);
+
 // 時刻は '9:00' のように 1 桁時もあるので、文字列ではなく分に直して比べる
 export const todayEvents = (db: Db) =>
 	db.events.filter((e) => e.date === T(db)).sort((a, b) => minutes(a.start) - minutes(b.start));

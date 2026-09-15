@@ -9,7 +9,8 @@ import type {
 	SchedulingRequest,
 	CalendarEvent,
 	Meeting,
-	Automation
+	Automation,
+	Suggestion
 } from './types';
 import { db, save, resetDb } from './store.svelte';
 import { toast } from './ui.svelte';
@@ -198,6 +199,34 @@ export function toggleTask(id: string, origin: Origin = 'tasks') {
 			undo: { kind: 'task_done', taskId: t.id }
 		});
 	}
+	save();
+}
+
+// 候補の出所をそのまま登録経路にする (ToDo の行に出る)
+const SUGGESTION_ORIGIN: Record<Suggestion['source'], Origin> = {
+	chat: 'chat',
+	transcript: 'meeting',
+	ocr: 'people',
+	email: 'inbox',
+	line: 'line'
+};
+
+/** ToDo 候補を登録する。KUROKO が勝手に登録することはない (仕様 5.4) ので、必ずここを通す */
+export function acceptTaskSuggestions(ids: string[]): Task[] {
+	const out: Task[] = [];
+	for (const id of ids) {
+		const s = db.suggestions.find((x) => x.id === id);
+		if (!s || s.status !== 'pending' || s.payload.type !== 'task') continue;
+		const { type, ...input } = s.payload;
+		out.push(addTask(input, SUGGESTION_ORIGIN[s.source]));
+		s.status = 'accepted';
+	}
+	save();
+	return out;
+}
+
+export function rejectSuggestions(ids: string[]) {
+	for (const s of db.suggestions) if (ids.includes(s.id) && s.status === 'pending') s.status = 'rejected';
 	save();
 }
 
