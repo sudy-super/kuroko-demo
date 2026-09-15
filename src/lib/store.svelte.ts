@@ -37,8 +37,12 @@ export function resetDb() {
 }
 
 export function installStorageSync(): () => void {
+	// storage イベントは受信側の localStorage が更新された後に発火するので、
+	// 自前で解析せず loadFromStorage の検証を通す
 	const h = (e: StorageEvent) => {
-		if (e.key === STORAGE_KEY && e.newValue) replaceDb(JSON.parse(e.newValue));
+		if (e.key !== STORAGE_KEY) return;
+		const next = loadFromStorage();
+		if (next) replaceDb(next);
 	};
 	window.addEventListener('storage', h);
 	return () => window.removeEventListener('storage', h);

@@ -18,8 +18,7 @@ export function toast(msg: string, opts: { undo?: () => void; seconds?: number; 
 	if (timer) clearInterval(timer);
 	const t: Toast = { id: ++seq, msg, undo: opts.undo, secondsLeft: opts.seconds, done: opts.done };
 	ui.toast = t;
-	const total = opts.seconds ?? 4;
-	let left = total;
+	let left = opts.seconds ?? 4;
 	timer = setInterval(() => {
 		left -= 1;
 		if (ui.toast?.id !== t.id) {
