@@ -1540,7 +1540,11 @@ body[data-overlay='on'] .card {
 	/* Task 9c — 公開画面の時間差の入場、チェックマークの拡大、画面遷移の横スライドから
 	   translateY / scale / translateX を落とし、opacity の変化だけ残す */
 	.public .in,
-	.public-list .badge.ok .i,
+	.public-list .badge.ok .i {
+		animation: fade-in 120ms linear both !important;
+	}
+	/* 擬似要素は別の規則にする。CSS はセレクタ列に解釈できないものが 1 つでもあると
+	   規則ごと捨てるので、対応しないブラウザで上の指定まで消えてしまう */
 	::view-transition-new(root) {
 		animation: fade-in 120ms linear both !important;
 	}
@@ -1603,13 +1607,16 @@ body[data-overlay='on'] .card {
 	/* 壁紙の上に文字が直接載る。ガラスの面の上で決めた --ink-2 では、説明の 2 行目の背後
 	   (紫の塊の縁) で実測が 4.47:1 と 4.5 を割った。背景ではなく文字を濃くする (ブリーフ)。
 	   この 2 画面の中だけ一段濃くし、--ink → --ink-2 → --ink-3 の順に薄くなる約束は保つ
-	   (相対輝度 0.024 → 0.056 → 0.078) */
+	   (相対輝度 0.024 → 0.054 → 0.072) */
 	--ink-2: #3a4252;
 	position: relative;
 	z-index: 1;
 	display: flex;
 	justify-content: center;
-	min-height: 100dvh;
+	/* min-height ではなく height。縦の空きを確定させないと、下のオーブが flex で縮めない。
+	   オーブを下限まで縮めても入りきらない窓 (e.g. 横向きの電話) だけここがスクロールする */
+	height: 100dvh;
+	overflow-y: auto;
 	padding: var(--sp-6);
 	padding-bottom: max(var(--sp-6), env(safe-area-inset-bottom));
 	/* オーブのキャンバスは球の直径の約 2 倍の光彩と破片を含むので、狭い画面では横にはみ出す */
@@ -1626,13 +1633,18 @@ body[data-overlay='on'] .card {
 }
 /* オーブと本文の塊は上下の空きを等分した位置に、操作群は下端に置く (下の margin-top: auto と対) */
 .public-col > .orb {
-	flex: none;
+	/* 縮む余地を持つのはオーブだけ。窓が低ければ他の要素の実寸のぶんだけ自動で縮む。
+	   「オーブの下に要る高さ」を定数で持つと、「続きから (Today へ)」の有無や文字の
+	   折り返しで実際の値が変わったときに合わなくなる (レビュー Important 1)。
+	   下限は 120px。これ以上は縮めず、入らなければ .public 側がスクロールする */
+	flex: 0 1 auto;
+	min-height: 120px;
 	margin-top: auto;
-	/* Orb は width / height をインラインの style に書くので、抑えられるのは max-* だけ。
-	   縦が足りない窓ではここで縮め、ページ全体のスクロールを出さない。
-	   400px はオーブの下に必ず要る高さ (見出し + 説明 + 下端の操作群 + 上下の余白) */
-	max-width: min(100%, calc(100dvh - 400px));
-	max-height: calc(100dvh - 400px);
+	/* Orb は width も height もインラインの style に書く。width を下ろして
+	   高さ (flex が縮める側) から正方形を作らないと、縮んだときに楕円になる */
+	width: auto !important;
+	max-width: 100%;
+	aspect-ratio: 1;
 }
 
 /* 見出しと説明。記事 11 に従い、大見出しは行間 1.25、字間 0 */
