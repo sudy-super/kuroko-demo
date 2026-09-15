@@ -55,6 +55,10 @@ export const openTaskCount = (db: Db, f: TaskFilter) =>
 export const doneLogOf = (db: Db, taskId: string) =>
 	db.logs.find((l) => !l.undone && l.undo?.kind === 'task_done' && l.undo.taskId === taskId);
 
+/** 登録直後のトーストが使うログ。db.logs[0] を見ると後から積むログを取り違える */
+export const addLogOf = (db: Db, taskId: string) =>
+	db.logs.find((l) => !l.undone && l.undo?.kind === 'task_add' && l.undo.taskId === taskId);
+
 // 時刻は '9:00' のように 1 桁時もあるので、文字列ではなく分に直して比べる
 export const todayEvents = (db: Db) =>
 	db.events.filter((e) => e.date === T(db)).sort((a, b) => minutes(a.start) - minutes(b.start));

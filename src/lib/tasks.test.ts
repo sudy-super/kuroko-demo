@@ -80,6 +80,25 @@ describe('doneLogOf', () => {
 		// 取り消し済みのログは二度と拾わない
 		expect(doneLogOf(db, t.id)).toBeUndefined();
 	});
+	it('チェックを外すと、ログも本日の実績も戻る', () => {
+		replaceDb(seed(BASE));
+		const t = addTask({ title: '名刺を登録する' }, 'tasks');
+		const before = db.demo.stats.tasksDone;
+		toggleTask(t.id);
+		const l = doneLogOf(db, t.id)!;
+		expect(db.demo.stats.tasksDone).toBe(before + 1);
+		toggleTask(t.id);
+		expect(db.tasks.find((x) => x.id === t.id)!.status).toBe('todo');
+		expect(db.demo.stats.tasksDone).toBe(before);
+		expect(db.logs.find((x) => x.id === l.id)!.undone).toBe(true);
+	});
+	it('初期データの完了済みを外しても実績は減らない', () => {
+		replaceDb(seed(BASE));
+		const before = db.demo.stats.tasksDone;
+		toggleTask('t-expense');
+		expect(db.tasks.find((x) => x.id === 't-expense')!.status).toBe('todo');
+		expect(db.demo.stats.tasksDone).toBe(before);
+	});
 	it('同じ ToDo を何度も完了にしたら直近のログを返す', () => {
 		replaceDb(seed(BASE));
 		const t = addTask({ title: '資料を直す' }, 'tasks');

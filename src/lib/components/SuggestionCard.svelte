@@ -36,20 +36,20 @@
 
 <!-- 仕様 5 — 提案には必ず「なぜこれを出したか」の 1 行を付ける -->
 <section class="card sg" aria-label={title}>
-	<div class="row sg-head">
+	<div class="tc-head sg-head">
 		<Icon name="ic-spark" size={20} />
 		<h2>{title}</h2>
 	</div>
 	{#each suggestions as s (s.id)}
 		<label class="list-row lg sg-row">
 			<input type="checkbox" checked={picked.has(s.id)} onchange={() => toggle(s.id)} />
-			<span class="sg-col">
+			<span class="tc-col">
 				<span>{label(s)}</span>
 				<span class="sub">{s.reason}</span>
 			</span>
 		</label>
 	{/each}
-	<div class="row sg-foot">
+	<div class="row tc-foot sg-foot">
 		<button class="btn pri" disabled={chosen.length === 0} onclick={() => onaccept(chosen)}>
 			選択した {chosen.length} 件を登録
 		</button>
@@ -65,29 +65,20 @@
 		margin-bottom: var(--sp-6);
 		padding-inline: 0;
 	}
-	.sg-head {
-		gap: var(--sp-3);
-		padding: 0 var(--sp-5) var(--sp-3);
+	/* カードの左右の余白を消して行を端まで見せるので、見出しとボタン列にだけ戻す */
+	.sg-head,
+	.sg-foot {
+		padding-inline: var(--sp-5);
 	}
-	.sg-head h2 {
-		font-size: 18px;
+	.sg-head {
+		padding-bottom: var(--sp-3);
 	}
 	.sg-row {
 		align-items: flex-start;
 		height: auto;
 		padding-block: var(--sp-3);
 	}
-	.sg-col {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sp-1);
-	}
-	.sg-col .sub {
-		color: var(--ink-3);
-		font-size: 14px;
-	}
 	.sg-foot {
 		gap: var(--sp-4);
-		padding: var(--sp-4) var(--sp-5) 0;
 	}
 </style>

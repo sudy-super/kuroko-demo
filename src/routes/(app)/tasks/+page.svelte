@@ -20,9 +20,10 @@
 
 	let filter = $state<TaskFilter>('today');
 	const current = $derived(FILTERS.find((f) => f.key === filter)!);
+	// 完了は見出しを挙げて分ける。「…はありません」と完了の行が並んでも矛盾しない
 	const tasks = $derived(filterTasks(db, filter));
-	// 残りが 0 件なら、完了の行が残っていても「ありません」を出す。チップの件数と食い違わせない
-	const left = $derived(openTaskCount(db, filter));
+	const open = $derived(tasks.filter((t) => t.status !== 'done'));
+	const closed = $derived(tasks.filter((t) => t.status === 'done'));
 
 	// 会議やチャットが出した ToDo 候補。KUROKO が勝手に登録することはない (仕様 5.4)
 	const suggestions = $derived(
@@ -76,12 +77,18 @@
 	{/if}
 
 	<section class="card tasks-list" aria-label="{current.label}の ToDo">
-		{#if left === 0}
+		{#if open.length === 0}
 			<p class="muted tasks-empty">{current.empty}</p>
 		{/if}
-		{#each tasks as t (t.id)}
+		{#each open as t (t.id)}
 			<TaskRow task={t} />
 		{/each}
+		{#if closed.length}
+			<h2 class="tasks-sub">完了 ({closed.length})</h2>
+			{#each closed as t (t.id)}
+				<TaskRow task={t} />
+			{/each}
+		{/if}
 	</section>
 </div>
 
@@ -114,5 +121,10 @@
 	}
 	.tasks-empty {
 		padding: var(--sp-5);
+	}
+	.tasks-sub {
+		padding: var(--sp-4) var(--sp-4) var(--sp-2);
+		color: var(--ink-3);
+		font-size: 14px;
 	}
 </style>

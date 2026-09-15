@@ -15,7 +15,7 @@ import type {
 import { db, save, resetDb } from './store.svelte';
 import { toast } from './ui.svelte';
 import { nowIso, parse, fmtMDW, minutes, toHm } from './dates';
-import { personOf } from './derived';
+import { personOf, doneLogOf } from './derived';
 import { slotsFor, slotsText, uid } from './kuroko/generate';
 import { integrations } from './integrations';
 
@@ -190,15 +190,22 @@ export function addTask(
 export function toggleTask(id: string, origin: Origin = 'tasks') {
 	const t = db.tasks.find((x) => x.id === id);
 	if (!t) return;
-	t.status = t.status === 'done' ? 'todo' : 'done';
 	if (t.status === 'done') {
-		db.demo.stats.tasksDone++;
-		log(`ToDo「${t.title}」を完了にしました`, 'other', {
-			actor: 'user',
-			origin,
-			undo: { kind: 'task_done', taskId: t.id }
-		});
+		// 完了を外すのは「完了にしました」の取り消しと同じこと。ログと実績の戻しを undo に任せる
+		const l = doneLogOf(db, t.id);
+		if (l) return undo(l.id);
+		// 初期データの完了済みなど、この画面で完了にしたのではないものは実績を減らさない
+		t.status = 'todo';
+		save();
+		return;
 	}
+	t.status = 'done';
+	db.demo.stats.tasksDone++;
+	log(`ToDo「${t.title}」を完了にしました`, 'other', {
+		actor: 'user',
+		origin,
+		undo: { kind: 'task_done', taskId: t.id }
+	});
 	save();
 }
 

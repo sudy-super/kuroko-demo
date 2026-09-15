@@ -2,6 +2,7 @@
 	import type { Task } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { addTask, undo } from '$lib/actions';
+	import { addLogOf } from '$lib/derived';
 	import { toast } from '$lib/ui.svelte';
 	import Modal from './Modal.svelte';
 	import SelectField, { type Opt } from './SelectField.svelte';
@@ -24,9 +25,11 @@
 		{ value: 'normal', label: '標準' },
 		{ value: 'low', label: '低' }
 	];
-	const people = $derived<Opt[]>(db.people.map((p) => ({ value: p.id, label: p.name })));
-	const companies = $derived<Opt[]>(db.companies.map((c) => ({ value: c.id, label: c.name })));
-	const projects = $derived<Opt[]>(db.projects.map((p) => ({ value: p.id, label: p.name })));
+	// 先頭の空の値で、一度選んだ関連先を外せるようにする
+	const NONE: Opt = { value: '', label: '指定しない' };
+	const people = $derived<Opt[]>([NONE, ...db.people.map((p) => ({ value: p.id, label: p.name }))]);
+	const companies = $derived<Opt[]>([NONE, ...db.companies.map((c) => ({ value: c.id, label: c.name }))]);
+	const projects = $derived<Opt[]>([NONE, ...db.projects.map((p) => ({ value: p.id, label: p.name }))]);
 
 	function reset() {
 		title = '';
@@ -39,7 +42,7 @@
 
 	function submit(e: SubmitEvent) {
 		e.preventDefault();
-		addTask(
+		const t = addTask(
 			{
 				title: title.trim(),
 				due: due || undefined,
