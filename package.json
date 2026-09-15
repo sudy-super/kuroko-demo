@@ -21,6 +21,7 @@
 		"vitest": "^5.0.0"
 	},
 	"dependencies": {
+		"apple-liquid-glass-webgl": "^2.5.0",
 		"bits-ui": "^2.19.2"
 	}
 }

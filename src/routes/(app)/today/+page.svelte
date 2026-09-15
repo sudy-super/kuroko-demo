@@ -19,6 +19,7 @@
 	import TodayCard from '$lib/components/TodayCard.svelte';
 	import DoneScreen from '$lib/components/DoneScreen.svelte';
 	import ScenarioMenu from '$lib/components/ScenarioMenu.svelte';
+	import { glass, REGULAR } from '$lib/glass';
 
 	const count = $derived(todayCount(db));
 	const items = $derived(todayItems(db));
@@ -52,6 +53,8 @@
 		<h1 class="today-count">
 			<a href="#items"><span class="num">{count}</span>今日やること</a>
 		</h1>
+		<!-- 副ボタンはガラスにしない。この列はオーブの真上に並び、実測でどの不透明度でも
+		     文字が 4.5:1 に届かなかった (task-10c-report.md) -->
 		<div class="row today-actions">
 			<a class="btn sec" href="/calendar?new=1"><Icon name="ic-plus" size={18} />予定</a>
 			<a class="btn sec" href="/tasks?new=1"><Icon name="ic-plus" size={18} />ToDo</a>
@@ -72,7 +75,7 @@
 				<DoneScreen />
 			</div>
 		{:else}
-			<div class="bento">
+			<div class="bento" {@attach glass({ ...REGULAR, targets: '.card' })}>
 				{#if ap.length}
 					<TodayCard
 						size="hero"

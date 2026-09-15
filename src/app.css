@@ -12,19 +12,22 @@
 	--bg: #f4f7fc;
 
 	/* 文字と線 */
+	/* Task 10c — ガラスを透明に寄せたぶん、文字の背後が白ではなく背景の色そのものになった。
+	   実測 (下の値は 4.5:1 を満たす上限) に合わせて --ink-2 / --ink-3 / --accent を濃くした。
+	   ブリーフ 6 の「満たさない場合は塗りを厚くせず文字色を濃くする」に従う */
 	--ink: #1e2a47;
-	--ink-2: #5a6785;
-	--ink-3: #646f8a;
+	--ink-2: #515d78;
+	--ink-3: #4d5569;
 	--line: rgba(140, 160, 200, 0.18);
 	--line-2: rgba(140, 160, 200, 0.3);
 
 	/* アクセント */
-	--accent: #1b62d6;
+	--accent: #1552b6;
 	--accent-top: #2a6fe0;
 	--accent-2: #4f95ff;
-	--accent-soft: rgba(27, 98, 214, 0.1);
-	--accent-soft-2: rgba(27, 98, 214, 0.16);
-	--accent-glow: rgba(27, 98, 214, 0.28);
+	--accent-soft: rgba(21, 82, 182, 0.1);
+	--accent-soft-2: rgba(21, 82, 182, 0.16);
+	--accent-glow: rgba(21, 82, 182, 0.28);
 
 	/* ruling — 合否の色と入力欄の枠、選択中の塗り */
 	--ok: #107a48;
@@ -32,7 +35,7 @@
 	--warn: #c62129;
 	--warn-soft: #fdecec;
 	--border: #8593b0;
-	--sel: rgba(27, 98, 214, 0.12);
+	--sel: rgba(21, 82, 182, 0.12);
 	/* components 3.2 / 3.11 — 一覧行、ボトムナビ、コマンドパレットの選択中の塗り */
 	--sel-soft: rgba(214, 228, 252, 0.75);
 
@@ -40,8 +43,8 @@
 	--hover: rgba(30, 42, 71, 0.08);
 	--press: rgba(30, 42, 71, 0.1);
 	--hover-light: rgba(255, 255, 255, 0.45);
-	--hover-accent: rgba(27, 98, 214, 0.08);
-	--press-accent: rgba(27, 98, 214, 0.1);
+	--hover-accent: rgba(21, 82, 182, 0.08);
+	--press-accent: rgba(21, 82, 182, 0.1);
 	--disabled-bg: rgba(30, 42, 71, 0.12);
 	--disabled-ink: rgba(30, 42, 71, 0.38);
 	--disabled-soft: rgba(30, 42, 71, 0.04);
@@ -61,10 +64,6 @@
 	   彩度と明度で背後の色を拾う (visual 4.2) */
 	--blur-s: blur(12px) saturate(190%) brightness(1.05);
 	--blur-m: blur(16px) saturate(190%) brightness(1.05);
-	/* 屈折を足した版。Chromium だけが backdrop-filter で SVG フィルターを受け付ける (記事 5)。
-	   受け付けない環境ではこの宣言が捨てられ、直前の --blur-m の宣言が残る */
-	--blur-lens: var(--blur-m) url(#lens);
-
 	/* visual 3.1 — 左上から差す鏡面ハイライト。厚みのある板に見せる。
 	   塗りの上に重ねる背景画像なので、疑似要素を足さずに済む */
 	--sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 45%);
@@ -213,7 +212,7 @@ svg.i {
 
 /* ruling — フォーカスの見た目は全部品共通 */
 :focus-visible {
-	outline: 2px solid #1b62d6;
+	outline: 2px solid var(--accent);
 	outline-offset: 2px;
 }
 
@@ -227,25 +226,25 @@ svg.i {
 		radial-gradient(900px 600px at 52% 48%, #e9f1ff 0%, rgba(233, 241, 255, 0) 70%),
 		linear-gradient(180deg, #f9fbfe 0%, #f2f6fb 100%);
 }
-/* 記事 5 — 屈折に使う SVG フィルターの置き場。display: none にすると参照が切れる */
-.filter-defs {
-	position: fixed;
-	width: 0;
-	height: 0;
-	pointer-events: none;
-}
-
 /* 5 個置くが色相は 3 つのまま (visual 3.3: 4 色を超えると重なりが濁る)。
    ガラス面 (サイドナビ、上部バー、公開パネル、Today のカード、依頼バー) の背後に
-   必ず 1 つ以上来るよう配置する。塊自体のぼかしは輪郭が残る 28px に下げた
-   (visual 4.3 の「直径の 1 割」より弱い)。ガラス越しに「形のあるもの」が見えないと
-   ぼかしも屈折も働かないので、塊は溶かしきらない (visual 3.2) */
+   必ず 1 つ以上来るよう配置する。ガラス越しに「形のあるもの」が見えないとぼかしも屈折も
+   働かないので、塊は溶かしきらない (visual 3.2)。
+   Task 10c — 輪郭の柔らかさはぼかしではなく放射状の階調で作る。ライブラリはガラスの背後を
+   自分で描き直すが、そこに CSS の filter と mix-blend-mode は再現されない。ぼかしで作った塊は
+   ガラスの中だけ硬い円になり、乗算はガラスの中だけ黒く沈む。階調と不透明度なら、
+   画面とガラスの中で同じ形と同じ色が出る。
+   消える側の色は transparent と書かず塊自身の色の不透明度 0 で書く。transparent の計算値は
+   rgba(0, 0, 0, 0) で、ライブラリはそこへ向けて黒く補間するため、ガラスの中だけ灰色に濁る */
 .bg-blob {
 	position: absolute;
-	border-radius: 50%;
-	filter: blur(28px);
-	mix-blend-mode: multiply;
-	opacity: 0.55;
+	background: radial-gradient(
+		closest-side,
+		rgb(var(--blob)) 0%,
+		rgb(var(--blob)) 62%,
+		rgb(var(--blob) / 0) 100%
+	);
+	opacity: 0.62;
 	/* transform だけを 72 秒で動かす。filter と opacity は動かさない (visual 4.3) */
 	animation: blob-drift 72s var(--ease-out) infinite alternate;
 }
@@ -254,14 +253,14 @@ svg.i {
 	top: 2%;
 	width: 62vmin;
 	height: 62vmin;
-	background: #cfe0ff;
+	--blob: 183 209 255;
 }
 .bg-blob.b {
 	right: -8%;
 	top: 38%;
 	width: 58vmin;
 	height: 58vmin;
-	background: #d7f0f6;
+	--blob: 188 230 240;
 	animation-duration: 84s;
 	animation-delay: -18s;
 }
@@ -270,7 +269,7 @@ svg.i {
 	bottom: -8%;
 	width: 70vmin;
 	height: 70vmin;
-	background: #dcdcff;
+	--blob: 198 198 255;
 	animation-duration: 66s;
 	animation-delay: -34s;
 }
@@ -280,7 +279,7 @@ svg.i {
 	top: -14%;
 	width: 56vmin;
 	height: 56vmin;
-	background: #d7f0f6;
+	--blob: 188 230 240;
 	animation-duration: 90s;
 	animation-delay: -50s;
 }
@@ -290,7 +289,7 @@ svg.i {
 	bottom: -6%;
 	width: 54vmin;
 	height: 54vmin;
-	background: #dcdcff;
+	--blob: 198 198 255;
 	animation-duration: 78s;
 	animation-delay: -9s;
 }
@@ -579,20 +578,6 @@ body[data-overlay='on'] .card {
 	box-shadow: var(--rim), var(--e3);
 }
 
-/* 記事 5 — 屈折 (レンズ効果)。変位写像を backdrop-filter に通せるのは Chromium 系だけで、
-   Safari と Firefox はぼかしと縁の光までになる。これは段階分けとして決めたものである。
-   ぼかしを設定する規則すべてより後ろに置いて上書きする。覆いが出ている間の .card と
-   印刷は、より強い指定で backdrop-filter: none に倒れるのでここでは触れない */
-.glass,
-.sidebar,
-.rail,
-.header.glass,
-.card,
-.chatbar {
-	-webkit-backdrop-filter: var(--blur-lens);
-	backdrop-filter: var(--blur-lens);
-}
-
 .chatbar input {
 	flex: 1;
 	min-width: 0;
@@ -634,7 +619,7 @@ body[data-overlay='on'] .card {
 	cursor: default;
 }
 
-/* visual 4.8 + components 3.4 — ボタン (ruling: 文字 14 / 700、階調は #2a6fe0 → #1b62d6) */
+/* visual 4.8 + components 3.4 — ボタン (ruling: 文字 14 / 700、階調は --accent-top → --accent) */
 .btn {
 	position: relative;
 	display: inline-flex;
@@ -675,7 +660,7 @@ body[data-overlay='on'] .card {
 	transform: translateY(0);
 	box-shadow: inset 0 2px 4px rgba(12, 48, 110, 0.28);
 }
-/* components 3.4: 副ボタンの枠は 1px 実線 #1b62d6 (白地に 5.58:1) */
+/* components 3.4: 副ボタンの枠は 1px 実線の --accent (白地に 7.21:1) */
 .btn.sec {
 	background: #fff;
 	color: var(--accent);
@@ -916,8 +901,11 @@ body[data-overlay='on'] .card {
 	width: 12px;
 	height: 12px;
 }
+/* Task 10c — 出所のバッジだけは塗りを不透明にする。半透明のままだとガラスの上でオーブが
+   透けて、12px の文字が実測 2.5:1 まで落ちた。白地での見え方は rgba(120, 140, 180, .12) を
+   白に重ねた色と同じなので、見た目は変わらない (--ink-2 との比は 5.82:1) */
 .badge.src {
-	background: rgba(120, 140, 180, 0.12);
+	background: #eef1f6;
 	color: var(--ink-2);
 }
 .badge.warn {
@@ -1913,5 +1901,39 @@ section.tc:hover {
 	}
 	.today-done {
 		padding: 0;
+	}
+}
+
+/* ==========================================================================
+   Liquid Glass (Task 10c) — ガラスの面は apple-liquid-glass-webgl が WebGL2 で描く。
+   ライブラリは要素の背後のページを自分で描き直し、角丸長方形の符号付き距離場で縁だけを
+   曲げる。塗り (tint)、背景の下ぼかし (backdropBlur)、縁の光と鏡面 (rim / highlight /
+   hairline) もその中で描かれるので、CSS 側の同じ役の指定は二重になる。下ろす。
+   ガラスの canvas は z-index -1 の子要素で、要素自身の background より上に描かれる。
+   塗りを残すと canvas の下に白い板が残り、背後が透けなくなる。
+   WebGL2 が無い環境では data-liquid-glass="fallback" が付いてこの指定は当たらず、
+   これまでどおり backdrop-filter のすりガラスになる。
+   ========================================================================== */
+:root [data-liquid-glass='webgl'],
+:root [data-liquid-glass='webgl'] .card {
+	background: none;
+	-webkit-backdrop-filter: none;
+	backdrop-filter: none;
+	/* --rim は inset の影で縁の光を描いていた。ライブラリの縁と重なるので無効な影に置き換える */
+	--rim: 0 0 rgba(0, 0, 0, 0);
+}
+
+/* ガラスの canvas は bleed の分だけ要素の外へ出る。位置の基準になる親が要る */
+.bento {
+	position: relative;
+}
+
+/* visual 4.11 — ガラスを 2 枚重ねない。覆いが出ている間と印刷ではガラスの層ごと落とす */
+body[data-overlay='on'] [data-liquid-glass-layer] {
+	display: none;
+}
+@media print {
+	[data-liquid-glass-layer] {
+		display: none;
 	}
 }

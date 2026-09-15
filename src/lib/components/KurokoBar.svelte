@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { ui, type ContextChip } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
+	import { glass, CLEAR } from '$lib/glass';
 
 	let { context = null }: { context?: ContextChip | null } = $props();
 
@@ -21,6 +22,7 @@
 
 <form
 	class="chatbar"
+	{@attach glass(CLEAR)}
 	onsubmit={(e) => {
 		e.preventDefault();
 		send();

@@ -14,6 +14,7 @@
 	import ActivityDrawer from '$lib/components/ActivityDrawer.svelte';
 	import Palette from '$lib/components/Palette.svelte';
 	import GuideCard from '$lib/components/GuideCard.svelte';
+	import { glass, CLEAR } from '$lib/glass';
 
 	let { children } = $props();
 
@@ -54,7 +55,7 @@
 	<Header />
 	<main class="main">{@render children()}</main>
 	{#if connected.length > 0}
-		<aside class="rail" aria-label="連携中のサービス">
+		<aside class="rail" aria-label="連携中のサービス" {@attach glass(CLEAR)}>
 			{#each connected as c (c.id)}
 				<a
 					class="iconbtn"

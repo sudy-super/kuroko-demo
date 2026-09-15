@@ -4,6 +4,7 @@
 	import { queue } from '$lib/derived';
 	import { PRIMARY, SECONDARY, isActive, guideTarget, type NavItem } from '$lib/nav';
 	import Icon from './Icon.svelte';
+	import { glass, CLEAR } from '$lib/glass';
 
 	const inbox = $derived(queue(db).length);
 	const target = $derived(db.demo.guide.on ? guideTarget(db) : null);
@@ -27,7 +28,7 @@
 	</a>
 {/snippet}
 
-<nav class="sidebar" aria-label="画面の切り替え">
+<nav class="sidebar" aria-label="画面の切り替え" {@attach glass(CLEAR)}>
 	{#each PRIMARY as nav (nav.href)}{@render item(nav)}{/each}
 	<hr class="nav-sep" />
 	<div class="nav-head">その他</div>
