@@ -21,7 +21,7 @@ mat3 rotZ(float a) { float c = cos(a), s = sin(a); return mat3(c, s, 0.0, -s, c,
 /* 3D → 画面。奥ほど少し縮む弱い遠近 */
 vec2 project(vec3 p) { return p.xy * (1.0 + 0.12 * p.z); }
 /* 球の裏側 (z < 0 で円盤の内側) は隠す */
-float behind(vec3 p, float R) { return (p.z < 0.0) ? smoothstep(R * 1.0, R * 1.14, length(p.xy)) : 1.0; } /* 滲んだ輪郭 (1.12R) に合わせる */
+float behind(vec3 p, float R) { return (p.z < 0.0) ? smoothstep(R * 0.85, R * 1.2, length(p.xy)) : 1.0; } /* 崩れた外縁に合わせて広く柔らかく隠す */
 /* 1 を超えた色は色相を保ったまま白へ寄せる (単純な clamp だと青がシアンに転ぶ) */
 vec3 softWhite(vec3 c) {
 	float m = max(c.r, max(c.g, c.b));
@@ -100,7 +100,8 @@ void main() {
 	/* 2 段の光彩 (R→1.45R、1.45R→1.97R = 直径の約 2 倍)。遠いほど白へ寄せ、淡い背景でも「光」に見せる */
 	float h1 = smoothstep(R * 1.45, R, d);
 	float h2 = smoothstep(R * 1.97, R * 1.45, d);
-	float haloA = 0.6 * h1 * h1 + 0.22 * h2 * h2;
+	float haloN = fbm(vec3(p * 1.3, 7.0 + uTime * 0.03)); /* 光彩も真円にしない */
+	float haloA = (0.6 * h1 * h1 + 0.22 * h2 * h2) * (0.8 + 0.5 * haloN);
 	/* 光彩は白ではなく青 (#9cc4ff〜#4f95ff)。白を混ぜると全体が白く濁る */
 	vec3 haloC = mix(C_LIGHT, C_SOFT, h1 * 0.6);
 
@@ -108,26 +109,30 @@ void main() {
 	float cov = 0.0;
 	float leak = 0.0;
 	vec3 leakC = C_LIGHT;
-	if (d < R * 1.22) {
+	if (d < R * 1.35) {
 		vec2 s = p / R;
 		vec3 n = vec3(s, sqrt(max(0.0, 1.0 - min(dot(s, s), 1.0))));
 		/* 自転にも差動を付ける: 中心は 20 秒、外殻は 45 秒 */
 		float spin = uTime * 2.0 * PI / mix(20.0, 45.0, min(d / R, 1.0));
 		vec3 q = rotY(spin) * n;
 
-		/* 輪郭は fbm で崩し、0.92R〜1.12R の広い範囲で徐々に落として気体のように見せる */
-		float edgeN = fbm(vec3(p * 2.4, uTime * 0.05));
-		float dn = d - 0.06 * R * edgeN;
-		cov = smoothstep(R * 1.1, R * 0.93, dn);
+		/* オーブは円ではない。距離場を低周波の fbm で大きく歪め (±22%)、0.72R〜1.3R の広い範囲で
+		   徐々に薄くし、外側ほどノイズで斑に抜けさせる。円周が線として見えない光の塊にする */
+		float edgeN = fbm(vec3(p * 1.6, uTime * 0.04));
+		float dn = d * (1.0 + 0.3 * edgeN);
+		cov = smoothstep(R * 1.3, R * 0.72, dn);
 
 		float f1 = fbm(q * 2.2 + vec3(0.0, uTime * 0.04, 0.0));
 		float f2 = fbm(q * 2.2 + vec3(5.2, -uTime * 0.03, 1.3));
 		/* domain warp: ノイズでノイズの座標をずらすと液体の渦に見える */
 		float fw = fbm(q * 2.0 + vec3(f1, f2, f1 * f2) * 1.1 + vec3(0.0, uTime * 0.03, 0.0));
 
-		/* 深い青 → 明るい青 → 白 の急な階調。中心ほど白へ寄る */
+		/* 外側は渦のノイズに沿って斑に抜ける (輪郭の代わりに密度で外縁を決める) */
+		cov *= mix(1.0, smoothstep(-0.35, 0.25, fw), smoothstep(R * 0.5, R * 1.15, d));
+
+		/* 深い青 → 明るい青 → 白 の急な階調。中心ほど白へ、外ほど深い青へ */
 		float core = pow(max(1.0 - d / R, 0.0), 1.5);
-		float band = clamp(0.12 + 2.2 * fw + 0.5 * core, 0.0, 1.0);
+		float band = clamp(0.12 + 2.2 * fw + 0.5 * core - 0.3 * smoothstep(R * 0.5, R * 1.2, d), 0.0, 1.0);
 		vec3 base = mix(C_EDGE, C_DEEP, smoothstep(0.0, 0.3, band));
 		base = mix(base, C_MID, smoothstep(0.25, 0.55, band));
 		base = mix(base, C_LIGHT, smoothstep(0.5, 0.8, band));
@@ -164,23 +169,16 @@ void main() {
 		vec3 nn = normalize(n + vec3(f1, f2, 0.0) * 0.14);
 		vec3 L = normalize(vec3(-0.55, 0.65, 0.55));
 		float diff = 0.85 + 0.15 * max(dot(nn, L), 0.0);
-		vec3 H = normalize(L + vec3(0.0, 0.0, 1.0));
-		float spec = pow(max(dot(normalize(mix(n, nn, 0.35)), H), 0.0), 48.0);
 		col = mix(C_EDGE * 0.8, base, diff);
 
-		/* 外周は深い青で締め、淡い背景に埋もれないようにする */
-		float rim = 1.0 - n.z;
-		col = mix(col, C_EDGE, smoothstep(0.45, 1.0, rim) * 0.75 * (1.0 - core)); /* 外周は深い青で締め、核との差を出す */
+		/* 球面の縁光・外周の締め・鏡面は円を意識させるので使わない。外側の深さは band と密度で出す */
 		/* 核: 中心ほど白く飛ぶ emission */
 		float glow = pow(max(1.0 - d / (R * 0.6), 0.0), 2.6);
 		col += mix(C_LIGHT, vec3(1.0), 0.6) * glow * 1.5;
-		/* Schlick のフレネル。指数を下げて縁光の幅を広げ、外へ滲ませる */
-		col += C_LIGHT * pow(rim, 2.5) * 0.55;
-		col += spec * 0.15;
 		col = softWhite(col);
 
 		/* fbm の筋が縁を越えて外に漏れる薄い発光 (R〜1.2R)。輪郭を光や気体のように見せる */
-		leak = smoothstep(R * 1.2, R * 0.95, d) * (1.0 - cov) * (0.25 * max(fw + 0.25, 0.0) + 0.25 * streak);
+		leak = smoothstep(R * 1.35, R * 0.8, d) * (1.0 - cov) * (0.3 * max(fw + 0.25, 0.0) + 0.3 * streak);
 		leakC = mix(C_LIGHT, vec3(1.0), 0.4);
 	}
 	float a = cov + (leak + haloA * (1.0 - leak)) * (1.0 - cov);

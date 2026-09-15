@@ -93,7 +93,8 @@ export function plexus(
 	const cz = Math.cos(-0.3), sz = Math.sin(-0.3); /* orbitTilt(0) = rotX(0.35) * rotZ(-0.3) */
 	const cx = Math.cos(0.35), sx = Math.sin(0.35);
 	for (let i = 0; i < n; i++) {
-		const rad = R * (1.05 + 0.03 * Math.sin(time * 0.7 + i));
+		/* 結節点を球面に乗せると網が「球の骨組み」に見える。0.9R〜1.3R の厚みに散らして球の輪郭を作らない */
+		const rad = R * (0.9 + 0.4 * (((i * 7919) % 1000) / 1000) + 0.03 * Math.sin(time * 0.7 + i));
 		let x = dirs[i * 3] * rad, y = dirs[i * 3 + 1] * rad, z = dirs[i * 3 + 2] * rad;
 		let t = x * cy + z * sy; z = -x * sy + z * cy; x = t;
 		t = x * cz - y * sz; y = x * sz + y * cz; x = t;
@@ -101,7 +102,7 @@ export function plexus(
 		const k = 1 + 0.12 * z;
 		px[i] = x * k; py[i] = y * k;
 		/* 裏側は滲んだ輪郭 (1.0R〜1.14R) に合わせて柔らかく隠す。shader.ts の behind() と同じ */
-		const q = Math.min(Math.max((Math.hypot(x, y) / R - 1.0) / 0.14, 0), 1);
+		const q = Math.min(Math.max((Math.hypot(x, y) / R - 0.85) / 0.35, 0), 1);
 		const shown = z < 0 ? q * q * (3 - 2 * q) : 1;
 		vis[i] = shown * (0.35 + 0.65 * (0.5 + 0.5 * z / rad));
 		nodes.set([px[i], py[i], vis[i] * 0.9], i * 3);
