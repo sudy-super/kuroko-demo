@@ -1,0 +1,433 @@
+import type {
+	Approval,
+	ActivityLog,
+	LogKind,
+	Origin,
+	Task,
+	UndoPayload,
+	SchedulingRequest,
+	CalendarEvent,
+	Meeting,
+	Automation
+} from './types';
+import { db, save, resetDb } from './store.svelte';
+import { toast } from './ui.svelte';
+import { nowIso, parse, fmtMDW, minutes, toHm } from './dates';
+import { personOf } from './derived';
+import { slotsFor, slotsText, uid } from './kuroko/generate';
+import { integrations } from './integrations';
+
+export const SEND_DELAY_MS = 5000;
+const timers = new Map<string, ReturnType<typeof setTimeout>>();
+
+export function log(
+	text: string,
+	kind: LogKind,
+	o: { actor?: 'user' | 'KUROKO'; origin?: Origin; approved?: boolean; undo?: UndoPayload } = {}
+): ActivityLog {
+	const l: ActivityLog = {
+		id: uid('log'),
+		at: nowIso(),
+		actor: o.actor ?? 'KUROKO',
+		kind,
+		text,
+		origin: o.origin ?? 'today',
+		approved: o.approved ?? false,
+		undo: o.undo
+	};
+	db.logs.unshift(l);
+	return l;
+}
+
+// 社外への送信だけは自動化レベルによらず必ず承認を求める
+const autoExecutes = (risk: Approval['risk'], level: Automation) => risk !== 'external_send' && level !== 'draft';
+
+export function addApproval(input: Omit<Approval, 'id' | 'status' | 'createdAt'>): Approval {
+	const a: Approval = { ...input, id: uid('ap'), status: 'pending', createdAt: nowIso() };
+	db.approvals.unshift(a);
+	if (autoExecutes(a.risk, db.settings.automation)) {
+		executeApproval(a.id, true);
+	}
+	save();
+	return a;
+}
+
+export function approve(id: string, origin: Origin = 'approval') {
+	const a = db.approvals.find((x) => x.id === id);
+	if (!a || a.status !== 'pending') return;
+	if (a.risk === 'external_send') {
+		a.status = 'sending';
+		a.sendingAt = nowIso();
+		a.origin = origin;
+		timers.set(
+			id,
+			setTimeout(() => executeApproval(id), SEND_DELAY_MS)
+		);
+		toast('5 秒後に送信します', {
+			seconds: 5,
+			undo: () => undoApproval(id),
+			done: '送信しました (デモのため実送信していません)'
+		});
+	} else {
+		executeApproval(id);
+		toast('実行しました', { undo: () => undo(db.logs[0].id) });
+	}
+	save();
+}
+
+export function undoApproval(id: string) {
+	const a = db.approvals.find((x) => x.id === id);
+	if (!a || a.status !== 'sending') return;
+	clearTimeout(timers.get(id));
+	timers.delete(id);
+	a.status = 'pending';
+	a.sendingAt = undefined;
+	save();
+}
+
+export function reject(id: string, origin: Origin = 'approval') {
+	const a = db.approvals.find((x) => x.id === id);
+	if (!a) return;
+	a.status = 'rejected';
+	log(`${a.title}を却下しました`, 'other', { actor: 'user', origin });
+	save();
+}
+
+// 送信待ちのままタブが閉じられた分は、起動時に承認待ちへ戻す
+export function restoreStaleSending() {
+	for (const a of db.approvals)
+		if (a.status === 'sending' && a.sendingAt && Date.now() - Date.parse(a.sendingAt) > 10000) {
+			a.status = 'pending';
+			a.sendingAt = undefined;
+		}
+	save();
+}
+
+export function executeApproval(id: string, auto = false) {
+	const a = db.approvals.find((x) => x.id === id);
+	if (!a || a.status === 'executed') return;
+	a.status = 'executed';
+	a.executedAt = nowIso();
+	timers.delete(id);
+	const p = a.payload;
+	const ext = a.risk === 'external_send';
+	if (p.type === 'reply') {
+		const th = db.threads.find((t) => t.id === p.threadId)!;
+		integrations.mail.sendMessage(th, p.body);
+		th.needsReply = false;
+		th.done = true;
+		const s = p.schedulingId && db.scheduling.find((x) => x.id === p.schedulingId);
+		if (s) {
+			s.status = 'sent';
+			s.token = uid('tok');
+			s.threadId = th.id;
+		}
+		db.demo.stats.replied++;
+		log(`${a.to.split(' <')[0]}へメールを送信しました`, 'send', { actor: 'user', origin: a.origin, approved: true });
+	} else if (p.type === 'share') {
+		log(`${a.title}を実行しました`, 'send', { actor: 'user', origin: a.origin, approved: true });
+	} else if (p.type === 'agenda') {
+		const m = db.meetings.find((x) => x.id === p.meetingId)!;
+		m.agendaShared = true;
+		log('アジェンダを参加者に共有しました', 'send', {
+			actor: 'user',
+			origin: a.origin,
+			approved: true,
+			undo: { kind: 'agenda_share', meetingId: m.id }
+		});
+	} else if (p.type === 'document') {
+		log(`${a.title}を送信しました`, 'send', { actor: 'user', origin: a.origin, approved: true });
+	} else if (p.type === 'followup') {
+		log('フォローメールを送信しました', 'send', { actor: 'user', origin: a.origin, approved: true });
+	} else if (p.type === 'line') {
+		integrations.chat.post('line', p.text);
+		log('LINE に返信しました', 'send', { actor: 'user', origin: a.origin, approved: true });
+	}
+	if (auto) {
+		db.logs[0].approved = false;
+		db.logs[0].text += ' (自動化レベルにより承認を省略)';
+	}
+	if (ext && !auto) db.demo.stats.approved++;
+	save();
+}
+
+export function addTask(
+	input: {
+		title: string;
+		due?: string;
+		time?: string;
+		priority?: Task['priority'];
+		personId?: string;
+		companyId?: string;
+		projectId?: string;
+		meetingId?: string;
+		memo?: string;
+	},
+	origin: Origin
+): Task {
+	const t: Task = { id: uid('t'), priority: 'normal', status: 'todo', origin, createdAt: nowIso(), ...input };
+	db.tasks.unshift(t);
+	db.demo.stats.tasksAdded++;
+	log(`ToDo「${t.title}」を登録しました`, 'register', {
+		actor: origin === 'chat' || origin === 'line' || origin === 'meeting' ? 'KUROKO' : 'user',
+		origin,
+		undo: { kind: 'task_add', taskId: t.id }
+	});
+	save();
+	return t;
+}
+
+export function toggleTask(id: string, origin: Origin = 'tasks') {
+	const t = db.tasks.find((x) => x.id === id);
+	if (!t) return;
+	t.status = t.status === 'done' ? 'todo' : 'done';
+	if (t.status === 'done') {
+		db.demo.stats.tasksDone++;
+		log(`ToDo「${t.title}」を完了にしました`, 'other', {
+			actor: 'user',
+			origin,
+			undo: { kind: 'task_done', taskId: t.id }
+		});
+	}
+	save();
+}
+
+export function undo(logId: string) {
+	const l = db.logs.find((x) => x.id === logId);
+	if (!l || !l.undo || l.undone) return;
+	const u = l.undo;
+	if (u.kind === 'task_add') db.tasks = db.tasks.filter((t) => t.id !== u.taskId);
+	if (u.kind === 'task_done') {
+		const t = db.tasks.find((x) => x.id === u.taskId);
+		if (t) t.status = 'todo';
+	}
+	if (u.kind === 'event_add') db.events = db.events.filter((e) => e.id !== u.eventId);
+	if (u.kind === 'agenda_share') {
+		const m = db.meetings.find((x) => x.id === u.meetingId);
+		if (m) m.agendaShared = false;
+	}
+	if (u.kind === 'link_identity') {
+		const i = db.identities.find((x) => x.id === u.identityId);
+		if (i) {
+			i.personId = undefined;
+			for (const t of db.threads) if (t.identityId === i.id) t.personId = undefined;
+		}
+	}
+	l.undone = true;
+	save();
+}
+
+export function insertSlots(threadId: string): SchedulingRequest {
+	const th = db.threads.find((t) => t.id === threadId)!;
+	const existing = db.scheduling.find((s) => s.threadId === threadId && s.status === 'draft');
+	if (existing) return existing;
+	const slots = slotsFor(db, th.personId ?? '');
+	const s: SchedulingRequest = {
+		id: uid('sr'),
+		token: '',
+		personId: th.personId ?? '',
+		duration: 60,
+		range: { from: slots[0].date, to: slots[3].date },
+		online: 'meet',
+		slots,
+		status: 'draft',
+		threadId,
+		text: slotsText(slots, personOf(db, th.personId)?.name.split(' ')[0] ?? '')
+	};
+	db.scheduling.push(s);
+	log('日程候補 3 件を提案しました', 'draft', { origin: 'inbox' });
+	save();
+	return s;
+}
+
+export function sendReply(threadId: string, body: string, origin: Origin = 'inbox'): Approval {
+	const th = db.threads.find((t) => t.id === threadId)!;
+	const p = personOf(db, th.personId);
+	const idn = db.identities.find((i) => i.id === th.identityId)!;
+	const draft = db.scheduling.find((s) => s.threadId === threadId && s.status === 'draft');
+	const to = p ? `${p.name} <${idn.value}>` : idn.value;
+	return addApproval({
+		title: `${p?.name.split(' ')[0] ?? '相手'}様への返信`,
+		risk: 'external_send',
+		kind: 'mail',
+		to,
+		subject: `Re: ${th.subject}`,
+		body,
+		effectLine: `承認すると、${p?.name.replace(' ', '') ?? ''}様 (${idn.value}) にこのメールが送信されます${draft ? '。相手が候補を選ぶと、その日時で予定が確定します' : ''}`,
+		payload: { type: 'reply', threadId, body, schedulingId: draft?.id },
+		origin
+	});
+}
+
+export function markDone(threadId: string) {
+	const th = db.threads.find((t) => t.id === threadId);
+	if (th) {
+		th.done = true;
+		th.needsReply = false;
+		save();
+	}
+}
+
+export function confirmSlot(token: string, slotId: string) {
+	const s = db.scheduling.find((x) => x.token === token && (x.status === 'sent' || x.status === 'confirmed'));
+	if (!s) return null;
+	const slot = s.slots.find((x) => x.id === slotId);
+	if (!slot) return null;
+	const p = personOf(db, s.personId)!;
+	const event: CalendarEvent = {
+		id: uid('ev'),
+		date: slot.date,
+		start: slot.start,
+		end: slot.end,
+		title: `${db.companies.find((c) => c.id === p.companyId)?.name ?? ''} 打ち合わせ`,
+		place: 'オンライン',
+		online: 'meet',
+		url: integrations.conference.createMeetingUrl('meet'),
+		personIds: [p.id],
+		companyId: p.companyId,
+		projectId: p.projectIds[0],
+		source: 'kuroko',
+		purpose: '次回の打ち合わせ'
+	};
+	const meeting: Meeting = {
+		id: uid('m'),
+		eventId: event.id,
+		title: event.title,
+		personIds: [p.id],
+		companyId: p.companyId,
+		projectId: p.projectIds[0],
+		purpose: event.purpose!,
+		briefRead: false,
+		agenda: [],
+		agendaShared: false,
+		transcriptIds: [],
+		brief: integrations.document.brief(db, p.id, p.projectIds[0])
+	};
+	meeting.brief!.note = '通常は前日夜に届きます (デモのため即時生成)';
+	event.meetingId = meeting.id;
+	db.events.push(event);
+	db.meetings.push(meeting);
+	s.status = 'confirmed';
+	s.chosenSlotId = slotId;
+	s.eventId = event.id;
+	s.meetingId = meeting.id;
+	db.demo.stats.confirmed++;
+	log(`${fmtMDW(parse(slot.date))} ${slot.start} に ${p.name} 様との打ち合わせを確定しました`, 'hold', {
+		origin: 'schedule',
+		approved: true,
+		undo: { kind: 'event_add', eventId: event.id }
+	});
+	save();
+	return { event, meeting };
+}
+
+export function changeSlot(token: string) {
+	const s = db.scheduling.find((x) => x.token === token);
+	if (!s || s.status !== 'confirmed') return;
+	db.events = db.events.filter((e) => e.id !== s.eventId);
+	db.meetings = db.meetings.filter((m) => m.id !== s.meetingId);
+	s.status = 'sent';
+	s.chosenSlotId = s.eventId = s.meetingId = undefined;
+	save();
+}
+
+export function cancelScheduling(token: string) {
+	const s = db.scheduling.find((x) => x.token === token);
+	if (!s) return;
+	db.events = db.events.filter((e) => e.id !== s.eventId);
+	db.meetings = db.meetings.filter((m) => m.id !== s.meetingId);
+	s.status = 'cancelled';
+	log(`${personOf(db, s.personId)?.name} 様との打ち合わせがキャンセルされました`, 'other', { origin: 'schedule' });
+	save();
+}
+
+export function createEvent(
+	input: Omit<CalendarEvent, 'id' | 'source'> & { withMeeting?: boolean },
+	origin: Origin = 'calendar'
+): CalendarEvent {
+	const { withMeeting, ...rest } = input;
+	const e: CalendarEvent = { ...rest, id: uid('ev'), source: 'kuroko' };
+	if (e.online) e.url = integrations.conference.createMeetingUrl(e.online);
+	db.events.push(e);
+	if (withMeeting) {
+		const m: Meeting = {
+			id: uid('m'),
+			eventId: e.id,
+			title: e.title,
+			personIds: e.personIds,
+			companyId: e.companyId,
+			projectId: e.projectId,
+			purpose: e.purpose ?? '',
+			briefRead: false,
+			agenda: [],
+			agendaShared: false,
+			transcriptIds: [],
+			brief: integrations.document.brief(db, e.personIds[0], e.projectId)
+		};
+		m.brief!.note = '通常は前日夜に届きます (デモのため即時生成)';
+		e.meetingId = m.id;
+		db.meetings.push(m);
+	}
+	log(`予定「${e.title}」を登録しました`, 'hold', {
+		actor: 'user',
+		origin,
+		undo: { kind: 'event_add', eventId: e.id }
+	});
+	save();
+	return e;
+}
+
+export function deleteEvent(id: string) {
+	db.events = db.events.filter((e) => e.id !== id);
+	save();
+}
+
+// 時刻は '9:00' のように 1 桁時もあるので、文字列ではなく分に直して足す
+export function addBuffer(eventId: string, min: number) {
+	const e = db.events.find((x) => x.id === eventId);
+	if (!e) return;
+	e.bufferBefore = min;
+	e.start = toHm(minutes(e.start) + min);
+	e.end = toHm(minutes(e.end) + min);
+	save();
+}
+
+export function setAutomation(level: Automation) {
+	db.settings.automation = level;
+	save();
+}
+export function toggleConnection(id: 'gmail' | 'gcal' | 'slack' | 'line') {
+	const c = db.settings.connections.find((x) => x.id === id)!;
+	c.connected = !c.connected;
+	c.lastSync = c.connected ? nowIso() : undefined;
+	save();
+}
+export function connectAll() {
+	for (const c of db.settings.connections) {
+		c.connected = true;
+		c.lastSync = nowIso();
+	}
+	save();
+}
+export function resetDemo() {
+	for (const t of timers.values()) clearTimeout(t);
+	timers.clear();
+	resetDb();
+}
+export function startGuide() {
+	db.demo.started = true;
+	db.demo.guide.on = true;
+	save();
+}
+export function stopGuide() {
+	db.demo.guide.on = false;
+	save();
+}
+export function startScenario(n: number) {
+	db.demo.scenario = n;
+	save();
+}
+export function noteRecent(href: string) {
+	db.demo.recent = [href, ...db.demo.recent.filter((h) => h !== href)].slice(0, 5);
+	save();
+}

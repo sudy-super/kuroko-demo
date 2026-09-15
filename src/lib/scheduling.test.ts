@@ -1,0 +1,50 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { db, resetDb } from './store.svelte';
+import { insertSlots, sendReply, approve, confirmSlot, cancelScheduling, SEND_DELAY_MS } from './actions';
+import { todayCount, nextMeeting } from './derived';
+
+beforeEach(() => {
+	(globalThis as any).localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
+	resetDb();
+	vi.useFakeTimers();
+});
+
+describe('scheduling', () => {
+	it('draft → sent → confirmed、件数は 5 → 5 → 4 (承認 2 件処理後)', () => {
+		for (const a of db.approvals.filter((a) => a.status === 'pending')) {
+			approve(a.id);
+		}
+		vi.advanceTimersByTime(SEND_DELAY_MS);
+		expect(todayCount(db)).toBe(5);
+		const s = insertSlots('th-tanaka-next');
+		expect(s.status).toBe('draft');
+		expect(s.slots.filter((x) => x.selected).length).toBe(3);
+		const ap = sendReply('th-tanaka-next', 'body ' + s.text, 'inbox');
+		expect(todayCount(db)).toBe(6);
+		approve(ap.id);
+		expect(todayCount(db)).toBe(5); // 承認待ち +1 が sending になって消え、要返信 1 はまだ残る
+		vi.advanceTimersByTime(SEND_DELAY_MS);
+		expect(s.status).toBe('sent');
+		expect(s.token).toBeTruthy();
+		expect(todayCount(db)).toBe(5);
+		const r = confirmSlot(s.token, s.slots[1].id)!;
+		expect(s.status).toBe('confirmed');
+		expect(r.event.url).toMatch(/^meet\.google\.com\//);
+		expect(r.meeting.brief).toBeTruthy();
+		expect(todayCount(db)).toBe(4);
+		expect(nextMeeting(db)!.meeting.id).toBe('m-abc'); // 次の会議は変わらない
+		expect(db.logs[0].approved).toBe(true);
+	});
+	it('無効 token は null', () => {
+		expect(confirmSlot('nope', 'x')).toBeNull();
+	});
+	it('cancel で予定と会議が消える', () => {
+		const s = insertSlots('th-tanaka-next');
+		s.status = 'sent';
+		s.token = 'tok';
+		confirmSlot('tok', s.slots[0].id);
+		cancelScheduling('tok');
+		expect(s.status).toBe('cancelled');
+		expect(db.events.find((e) => e.id === s.eventId)).toBeUndefined();
+	});
+});
