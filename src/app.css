@@ -1284,54 +1284,6 @@ body[data-overlay='on'] .card {
 	}
 }
 
-/* visual 4.2 — 透明度を下げる設定に応答する */
-@media (prefers-reduced-transparency: reduce) {
-	.glass,
-	.sidebar,
-	.rail,
-	.header.glass,
-	.header.solid,
-	.chatbar,
-	.card,
-	.drawer,
-	.sheet,
-	.modal,
-	.screen,
-	.bottomnav {
-		background: #fff;
-		-webkit-backdrop-filter: none;
-		backdrop-filter: none;
-	}
-	.bg-blob {
-		display: none;
-	}
-}
-
-/* visual 4.2 — コントラストを上げる設定では境界を強調する */
-@media (prefers-contrast: more) {
-	.glass,
-	.sidebar,
-	.rail,
-	.header.glass,
-	.chatbar,
-	.card,
-	.screen,
-	.box {
-		box-shadow: inset 0 0 0 1px var(--ink-2), var(--e2);
-	}
-	.input,
-	.textarea {
-		border-color: var(--ink);
-	}
-	.chip {
-		box-shadow: inset 0 0 0 1px var(--ink);
-	}
-	.list-row::after,
-	.nav-sep {
-		background: var(--ink-2);
-	}
-}
-
 /* ruling 13 — 1280px: Inbox の右パネルを畳む */
 @media (max-width: 1280px) {
 	.inbox .pane-right {
@@ -1571,13 +1523,10 @@ body[data-overlay='on'] .card {
 	max-width: 86vw;
 	max-height: 86vw;
 }
-/* visual 4.2 / 4.5 — 塗りとぼかしと縁は .glass のまま。大きい面なので影だけ 1 段上げ、
-   角丸は 24px にする (visual 4.13 の「画面の外枠」の段)。
-   box-shadow を直接書くとコントラストを上げる設定への応答を潰すので、
-   .glass が読む変数の側を差し替える */
+/* visual 4.2 / 4.5 — ぼかしと縁は .glass のまま。大きい面なので塗りは --glass-panel (.82)、
+   影は 1 段上げて --e3、角丸は 24px にする (visual 3.1 / 4.13 の「画面の外枠」の段) */
 .public-panel {
 	--pad: var(--sp-8);
-	--e2: var(--e3);
 	position: relative;
 	z-index: 1;
 	display: grid;
@@ -1586,6 +1535,8 @@ body[data-overlay='on'] .card {
 	max-width: 560px;
 	padding: var(--pad);
 	border-radius: var(--r-l);
+	background: var(--glass-panel);
+	box-shadow: var(--rim), var(--e3);
 	text-align: center;
 	animation: panel-in var(--d-enter) var(--ease-enter) both;
 }
