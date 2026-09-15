@@ -51,15 +51,15 @@ export const PANEL: LiquidGlassElementOptions = {
 /* live: true で毎フレーム描き直す。背景の色の塊は 72 秒の CSS アニメーションで漂い、
    オーブは <canvas> の中で毎フレーム描き変わる。どちらもライブラリには変化の通知が来ないので、
    静止させるとガラスの中だけ背景が止まって見える。
-   maxDpr: 1 — ガラスの canvas は背後を 2D で描き直してから WebGL に渡すので、画素数が
-   そのまま毎フレームの費用になる。既定の 2 だと実測で描画が 3 割ほど落ちた。中身はぼかしと
-   屈折で元から滑らかなので、1 に落としても縁の細い光以外は見た目が変わらない。
+   maxDpr は指定しない (ライブラリの既定 2)。一度 1 に落としていたが、画素の密度が高い
+   ディスプレイでガラスの中だけ解像度が半分になる。裁定は「性能よりカッコよさ」で、
+   既定の 2 でも本番ビルドの実測で 59.4 フレーム/秒、1 フレームの JavaScript は中央値 1.20ms
+   (95% 分位 1.57ms) と 60Hz の予算 16.67ms に十分収まる。
    respectReducedTransparency: false — OS 設定には応答しない (裁定済み) */
 export function glass(options: LiquidGlassElementOptions) {
 	return (node: Element) => {
 		const instance = new LiquidGlass(node as HTMLElement, {
 			live: true,
-			maxDpr: 1,
 			respectReducedTransparency: false,
 			...options
 		});

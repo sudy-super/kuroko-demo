@@ -13,11 +13,15 @@
 
 	/* 文字と線 */
 	/* Task 10c — ガラスを透明に寄せたぶん、文字の背後が白ではなく背景の色そのものになった。
-	   実測 (下の値は 4.5:1 を満たす上限) に合わせて --ink-2 / --ink-3 / --accent を濃くした。
-	   ブリーフ 6 の「満たさない場合は塗りを厚くせず文字色を濃くする」に従う */
+	   実測に合わせて --ink-2 / --ink-3 / --accent を濃くした。ブリーフ 6 の
+	   「満たさない場合は塗りを厚くせず文字色を濃くする」に従う。
+	   --ink → --ink-2 → --ink-3 の順に薄くなるという約束は保つ。--ink-3 が載る最も色の濃い
+	   背後 (#b2d1fd、カードの補助文字) のほうが --ink-2 のそれ (#cfdcf2) より暗いので、
+	   厳しいほうの上限を --ink-3 に当て、--ink-2 はそこからさらに一段濃くしている。
+	   実測: --ink-2 は 5.06:1 以上、--ink-3 は 4.62:1 以上 (4 フレームの下位 5% 分位) */
 	--ink: #1e2a47;
-	--ink-2: #515d78;
-	--ink-3: #4d5569;
+	--ink-2: #47516a;
+	--ink-3: #4e576d;
 	--line: rgba(140, 160, 200, 0.18);
 	--line-2: rgba(140, 160, 200, 0.3);
 
@@ -28,6 +32,8 @@
 	--accent-soft: rgba(21, 82, 182, 0.1);
 	--accent-soft-2: rgba(21, 82, 182, 0.16);
 	--accent-glow: rgba(21, 82, 182, 0.28);
+	/* 主ボタンと送信ボタンの落ち影。--accent と同じ RGB にそろえる */
+	--accent-shadow: rgba(21, 82, 182, 0.36);
 
 	/* ruling — 合否の色と入力欄の枠、選択中の塗り */
 	--ok: #107a48;
@@ -325,13 +331,13 @@ svg.i {
 	border-radius: 50%;
 	background:
 		radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 22%),
-		radial-gradient(circle at 50% 50%, #9cc4ff 0%, #2f7cf6 45%, #1b62d6 78%, #9cc4ff 100%);
+		radial-gradient(circle at 50% 50%, #9cc4ff 0%, #2f7cf6 45%, var(--accent) 78%, #9cc4ff 100%);
 	/* 縁は硬い円にせず、内側の縁光と外へ抜ける 3 段の光彩で柔らかくする */
 	box-shadow:
 		inset 0 0 24px rgba(156, 196, 255, 0.9),
 		0 0 24px 4px rgba(156, 196, 255, 0.55),
 		0 0 64px 24px rgba(79, 149, 255, 0.3),
-		0 0 160px 64px rgba(27, 98, 214, 0.12);
+		0 0 160px 64px var(--accent-soft);
 }
 
 /* visual 4.2 — ガラスの基本形 */
@@ -607,7 +613,7 @@ body[data-overlay='on'] .card {
 		box-shadow var(--d-fast) var(--ease-out);
 }
 .chatbar .send:hover {
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 8px 22px rgba(27, 98, 214, 0.36);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 8px 22px var(--accent-shadow);
 }
 .chatbar .send:active {
 	transform: scale(0.96);
@@ -654,13 +660,16 @@ body[data-overlay='on'] .card {
 }
 .btn.pri:hover {
 	transform: translateY(-1px);
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 10px 24px rgba(27, 98, 214, 0.36);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 10px 24px var(--accent-shadow);
 }
 .btn.pri:active {
 	transform: translateY(0);
 	box-shadow: inset 0 2px 4px rgba(12, 48, 110, 0.28);
 }
-/* components 3.4: 副ボタンの枠は 1px 実線の --accent (白地に 7.21:1) */
+/* components 3.4: 副ボタンの枠は 1px 実線の --accent (白地に 7.21:1)。
+   Task 10c — 副ボタンにはガラスを当てていない。Today の見出しの列はオーブの真上に並び、
+   塗りをどこまで上げても文字が 4.5:1 に届かなかった (実測 1.02:1、task-10c-report.md 2 節)。
+   ここを塗りのまま残すのは意図的で、ガラス化するならまずコントラストを測り直すこと */
 .btn.sec {
 	background: #fff;
 	color: var(--accent);
@@ -1307,7 +1316,7 @@ body[data-overlay='on'] .card {
 		box-shadow: 0 0 0 0 var(--accent-glow);
 	}
 	50% {
-		box-shadow: 0 0 0 8px rgba(27, 98, 214, 0);
+		box-shadow: 0 0 0 8px rgba(21, 82, 182, 0);
 	}
 }
 
@@ -1527,6 +1536,19 @@ body[data-overlay='on'] .card {
 		background: #fff;
 		-webkit-backdrop-filter: none;
 		backdrop-filter: none;
+	}
+	/* Task 10c — ガラスの canvas も落とす。display はライブラリがインラインの style で
+	   書き込むので !important でしか下ろせない。canvas を消すだけだと塗りが none のままで
+	   カードが透明になるので、不透明な塗りも対で戻す。
+	   この @media print は下の Liquid Glass の節より前にあり、詳細度が同じだと後ろが勝つ。
+	   :root [data-liquid-glass='webgl'] .card (0,3,0) に勝たせるため body を足して (0,3,1)
+	   にしている */
+	[data-liquid-glass-layer] {
+		display: none !important;
+	}
+	:root body [data-liquid-glass='webgl'] .card,
+	:root body [data-liquid-glass='webgl'].public-panel {
+		background: #fff;
 	}
 }
 
@@ -1750,9 +1772,13 @@ section.tc .list-row:not(label):hover {
 .today .bento > * {
 	z-index: 1;
 }
+/* Task 10c — オーブはガラスが屈折させる対象なので、ガラスの canvas より下に置く。
+   canvas は要素の z-index: -1 の子なので、穴は -2 にする。どちらも .app (z-index 1) の
+   積み重ねの文脈の中なので、背景の色の塊 (.bg、根の z-index 0) より上には残る。
+   0 のままだと canvas の上に出て、オーブが屈折もぼかしも受けずに鮮明に載る */
 .today .bento .hole {
 	position: relative;
-	z-index: 0;
+	z-index: -2;
 }
 .orb-slot .orb {
 	position: absolute;
@@ -1947,12 +1973,19 @@ section.tc .list-row:not(label):hover {
 	position: relative;
 }
 
-/* visual 4.11 — ガラスを 2 枚重ねない。覆いが出ている間と印刷ではガラスの層ごと落とす */
-body[data-overlay='on'] [data-liquid-glass-layer] {
-	display: none;
+/* visual 4.11 — ガラスを 2 枚重ねない。覆いが出ている間はカードのガラスを落とし、
+   同時に塗りを不透明に戻す。この 2 つは必ず対で当てる。canvas だけ消すと
+   カードが完全に透明になり、文字が背景の上に直接浮く。
+
+   !important が要る理由: ライブラリは canvas を作るときに display: block を
+   インラインの style として書き込む (dom.js の createCanvas)。インラインの style は
+   スタイルシートの宣言より強いので、これを下ろす手段が !important しかない。
+
+   塗りを戻す側は :root [data-liquid-glass='webgl'] .card (0,3,0) に勝つ必要があるので、
+   body と属性を足して (0,4,1) にしている */
+body[data-overlay='on'] .bento > [data-liquid-glass-layer] {
+	display: none !important;
 }
-@media print {
-	[data-liquid-glass-layer] {
-		display: none;
-	}
+:root body[data-overlay='on'] [data-liquid-glass='webgl'] .card {
+	background: rgba(255, 255, 255, 0.9);
 }
