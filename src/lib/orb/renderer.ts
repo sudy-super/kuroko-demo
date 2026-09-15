@@ -16,7 +16,13 @@ import {
 	SPHERE_FS
 } from './shader';
 
-export type OrbOptions = { reducedMotion: boolean; mobile: boolean; particles?: boolean };
+export type OrbOptions = {
+	reducedMotion: boolean;
+	mobile: boolean;
+	particles?: boolean;
+	/** 初期化後 (コンテキスト復帰やリサイズ時) に WebGL が失敗したときに呼ぶ。呼び出し側は CSS の代替に落とす */
+	onFail?: (e: unknown) => void;
+};
 export type Orb = { start(): void; stop(): void; destroy(): void; resize(): void };
 
 type GL = WebGLRenderingContext;
@@ -71,7 +77,7 @@ export function fibonacciSphere(count: number): Float32Array {
 
 /**
  * plexus: 結節点を球面の層 (差動回転の最内層、周期約 38 秒) で回して投影し、近い組を線で結ぶ。
- * O(n²) だが n ≤ 120 なので毎フレームでよい。戻り値の nodes / lines は (x, y, alpha) の並び。球の裏側は落とす
+ * O(n²) だが n ≤ 120 なので毎フレームでよい。戻り値の nodes / lines は (x, y, alpha) の並び。球の裏側は柔らかく減衰させる
  */
 export type PlexusScratch = { px: Float32Array; py: Float32Array; vis: Float32Array; nodes: Float32Array; lines: Float32Array };
 /** plexus が毎フレーム使う配列。閉包側で 1 回確保して使い回す */
@@ -411,16 +417,44 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		if (w === canvas.width && h === canvas.height) return;
 		canvas.width = w;
 		canvas.height = h;
-		if (!lost) { allocTargets(); kick(); }
+		if (lost) return;
+		try { allocTargets(); kick(); } catch (e) { fail(e); }
 	};
 
 	const onVisibility = () => (document.hidden ? halt() : kick());
 	const io = new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; onScreen ? kick() : halt(); });
 	const ro = new ResizeObserver(resize);
-	const onLost = (e: Event) => { e.preventDefault(); lost = true; halt(); };
-	const onRestored = () => { lost = false; initGl(); kick(); };
+	const onLost = (e: Event) => {
+		e.preventDefault();
+		lost = true;
+		halt();
+		scene = halfA = halfB = trailA = trailB = null; /* 失ったコンテキストの資源は削除できないので忘れる */
+	};
+	const destroy = () => {
+		running = false;
+		halt();
+		io.disconnect();
+		ro.disconnect();
+		canvas.removeEventListener('webglcontextlost', onLost);
+		canvas.removeEventListener('webglcontextrestored', onRestored);
+		document.removeEventListener('visibilitychange', onVisibility);
+		for (const t of [scene, halfA, halfB, trailA, trailB]) dropTarget(t);
+		gl.getExtension('WEBGL_lose_context')?.loseContext();
+	};
+	/* 復帰やリサイズでシェーダーや framebuffer が失敗したら、片付けて呼び出し側に知らせる */
+	const fail = (e: unknown) => { destroy(); opts.onFail?.(e); };
+	const onRestored = () => {
+		lost = false;
+		try { initGl(); kick(); } catch (e) { fail(e); }
+	};
 
-	initGl();
+	try {
+		initGl();
+	} catch (e) {
+		/* 初期化に失敗したらコンテキストを手放してから呼び出し側に投げる (代替へ落とす) */
+		gl.getExtension('WEBGL_lose_context')?.loseContext();
+		throw e;
+	}
 	canvas.addEventListener('webglcontextlost', onLost);
 	canvas.addEventListener('webglcontextrestored', onRestored);
 	document.addEventListener('visibilitychange', onVisibility);
@@ -431,16 +465,6 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		start() { running = true; t0 = performance.now(); resize(); kick(); },
 		stop() { running = false; halt(); },
 		resize,
-		destroy() {
-			running = false;
-			halt();
-			io.disconnect();
-			ro.disconnect();
-			canvas.removeEventListener('webglcontextlost', onLost);
-			canvas.removeEventListener('webglcontextrestored', onRestored);
-			document.removeEventListener('visibilitychange', onVisibility);
-			for (const t of [scene, halfA, halfB, trailA, trailB]) dropTarget(t);
-			gl.getExtension('WEBGL_lose_context')?.loseContext();
-		}
+		destroy
 	};
 }

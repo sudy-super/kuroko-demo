@@ -8,16 +8,22 @@
 
 	onMount(() => {
 		let orb: ReturnType<typeof createOrb> = null;
+		/* シェーダーのコンパイル・リンク失敗や framebuffer の不完全は、初期化時もコンテキスト復帰時も
+		   マウントを壊さず CSS の代替に落とす */
+		const toFallback = (e: unknown) => {
+			console.warn('orb: WebGL の描画に失敗したので CSS の代替を出します', e);
+			fallback = true;
+		};
 		try {
 			orb = createOrb(canvas!, {
 				reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
 				/* 低性能の判定はブリーフどおり「モバイル幅 かつ コア数 4 以下」の AND */
 				mobile: matchMedia('(max-width: 960px)').matches && navigator.hardwareConcurrency <= 4,
-				particles: sparks
+				particles: sparks,
+				onFail: toFallback
 			});
 		} catch (e) {
-			/* シェーダーのコンパイル・リンク失敗や framebuffer の不完全もマウントを壊さず CSS の代替に落とす */
-			console.warn('orb: WebGL の初期化に失敗したので CSS の代替を出します', e);
+			toFallback(e);
 		}
 		if (!orb) {
 			fallback = true;

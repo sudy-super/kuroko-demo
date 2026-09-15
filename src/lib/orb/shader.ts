@@ -260,7 +260,7 @@ void main() {
 	float glint = pow(max(sin(rot * 2.0 + aSeed.w * 20.0), 0.0), 24.0);
 	vC = mix(vC, vec3(1.0), glint * 0.6);
 	vA = alpha;
-	vCorner = corner / max(stretch, 1.0); /* 面の明暗は回転後の隅で決めるので、自転で明るい側が回る */
+	vCorner = vec2(corner.x / max(stretch, 1.0), corner.y); /* 幾何は進行方向だけ伸ばすので x だけ割る。面の明暗は回転後の隅で決める */
 	vSmear = trailing;
 }
 `;
