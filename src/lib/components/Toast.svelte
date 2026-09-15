@@ -3,9 +3,9 @@
 </script>
 
 {#if ui.toast}
-	<div class="toast" role="status" aria-live="polite">
+	<div class="toast" class:leave={ui.toast.leaving} role="status" aria-live="polite">
 		{#if ui.toast.secondsLeft !== undefined}
-			<span class="toast-ring num" style="--p:{ui.toast.secondsLeft / 5}">{ui.toast.secondsLeft}</span>
+			<span class="toast-ring num" aria-hidden="true" style="--p:{ui.toast.secondsLeft / 5}">{ui.toast.secondsLeft}</span>
 		{/if}
 		<span class="toast-msg">{ui.toast.msg}</span>
 		{#if ui.toast.undo}

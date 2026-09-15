@@ -1,5 +1,12 @@
 export type ContextChip = { label: string; personId?: string; threadId?: string; meetingId?: string };
-export type Toast = { id: number; msg: string; undo?: () => void; secondsLeft?: number; done?: string };
+export type Toast = {
+	id: number;
+	msg: string;
+	undo?: () => void;
+	secondsLeft?: number;
+	done?: string;
+	leaving?: boolean;
+};
 
 export const ui = $state({
 	toast: null as Toast | null,
@@ -13,6 +20,19 @@ export const ui = $state({
 
 let seq = 0;
 let timer: ReturnType<typeof setInterval> | null = null;
+
+/** 退場の長さ。visual.md 4.12 の表 (退場 200ms) と app.css の --d-exit に合わせる */
+const EXIT_MS = 200;
+
+/** 退場のアニメーションを見せてから消す。先に leaving を立て、200 ミリ秒後に null にする */
+function closeToast(id: number) {
+	const t = ui.toast;
+	if (!t || t.id !== id) return;
+	t.leaving = true;
+	setTimeout(() => {
+		if (ui.toast?.id === id) ui.toast = null;
+	}, EXIT_MS);
+}
 
 export function toast(msg: string, opts: { undo?: () => void; seconds?: number; done?: string } = {}) {
 	if (timer) clearInterval(timer);
@@ -31,14 +51,12 @@ export function toast(msg: string, opts: { undo?: () => void; seconds?: number; 
 			// done があれば完了表示に差し替え、4 秒後に消す
 			if (opts.done) {
 				ui.toast = { id: t.id, msg: opts.done };
-				setTimeout(() => {
-					if (ui.toast?.id === t.id) ui.toast = null;
-				}, 4000);
-			} else ui.toast = null;
+				setTimeout(() => closeToast(t.id), 4000);
+			} else closeToast(t.id);
 		}
 	}, 1000);
 }
 
 export function dismissToast() {
-	ui.toast = null;
+	if (ui.toast) closeToast(ui.toast.id);
 }

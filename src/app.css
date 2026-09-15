@@ -33,11 +33,15 @@
 	--warn-soft: #fdecec;
 	--border: #8593b0;
 	--sel: rgba(27, 98, 214, 0.12);
+	/* components 3.2 / 3.11 — 一覧行、ボトムナビ、コマンドパレットの選択中の塗り */
+	--sel-soft: rgba(214, 228, 252, 0.75);
 
 	/* ruling — 状態レイヤー (ホバー 8% / フォーカス 10% / 押下 10%) */
 	--hover: rgba(30, 42, 71, 0.08);
 	--press: rgba(30, 42, 71, 0.1);
 	--hover-light: rgba(255, 255, 255, 0.45);
+	--hover-accent: rgba(27, 98, 214, 0.08);
+	--press-accent: rgba(27, 98, 214, 0.1);
 	--disabled-bg: rgba(30, 42, 71, 0.12);
 	--disabled-ink: rgba(30, 42, 71, 0.38);
 	--disabled-soft: rgba(30, 42, 71, 0.04);
@@ -618,10 +622,10 @@ body[data-overlay='on'] .card {
 	box-shadow: inset 0 0 0 1px var(--accent), var(--e1);
 }
 .btn.sec:hover {
-	background: rgba(27, 98, 214, 0.08);
+	background: var(--hover-accent);
 }
 .btn.sec:active {
-	background: var(--sel);
+	background: var(--press-accent);
 }
 .btn.text {
 	padding: 0 var(--sp-3);
@@ -629,10 +633,10 @@ body[data-overlay='on'] .card {
 	font-weight: 500;
 }
 .btn.text:hover {
-	background: rgba(27, 98, 214, 0.08);
+	background: var(--hover-accent);
 }
 .btn.text:active {
-	background: var(--sel);
+	background: var(--press-accent);
 }
 .btn.danger {
 	background: #fff;
@@ -814,12 +818,12 @@ body[data-overlay='on'] .card {
 	height: 18px;
 }
 .chip:hover {
-	background: rgba(27, 98, 214, 0.08);
+	background: var(--hover-accent);
 }
 .chip:active {
-	background: var(--sel);
+	background: var(--press-accent);
 }
-/* 選択中は塗りを変えるだけでなく先頭にチェック印を出す (components 3.6、WCAG 1.4.1) */
+/* 選択中は塗りを変えるだけでなくチェック印を出す。印はマークアップ側 (Icon の ic-check) で置く (components 3.6、WCAG 1.4.1) */
 .chip.on {
 	background: var(--accent);
 	color: #fff;
@@ -933,7 +937,7 @@ body[data-overlay='on'] .card {
 	outline-offset: -2px;
 }
 .list-row.on {
-	background: var(--sel);
+	background: var(--sel-soft);
 }
 .list-row.on::after {
 	background: transparent;
@@ -1018,6 +1022,10 @@ body[data-overlay='on'] .card {
 	mask: radial-gradient(circle, transparent 11px, #000 12px);
 }
 /* visual 4.10 — 入場は減速、退場は加速。上端から出るので符号を反転する */
+.toast.leave {
+	animation: toast-out var(--d-exit) var(--ease-exit) both;
+	pointer-events: none; /* 退場中の二重押しを防ぐ */
+}
 @keyframes toast-in {
 	from {
 		opacity: 0;
@@ -1028,6 +1036,16 @@ body[data-overlay='on'] .card {
 		transform: translate(-50%, 0) scale(1);
 	}
 }
+@keyframes toast-out {
+	from {
+		opacity: 1;
+		transform: translate(-50%, 0) scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: translate(-50%, -8px) scale(0.98);
+	}
+}
 
 /* visual 4.11 + components 3.8〜3.9 — 覆い、ドロワー、ボトムシート、モーダル */
 .scrim {
@@ -1035,7 +1053,10 @@ body[data-overlay='on'] .card {
 	inset: 0;
 	z-index: 70;
 	background: rgba(30, 42, 71, 0.25);
-	transition: opacity var(--d-base) var(--ease-out);
+	animation: fade-in var(--d-enter) var(--ease-enter) both;
+}
+.scrim.leave {
+	animation: fade-out var(--d-exit) var(--ease-exit) both;
 }
 .drawer {
 	position: fixed;
@@ -1048,7 +1069,7 @@ body[data-overlay='on'] .card {
 	width: min(400px, 100vw);
 	padding: var(--sp-6);
 	border-radius: var(--r-m) 0 0 var(--r-m);
-	background: rgba(255, 255, 255, 0.96);
+	background: var(--solid);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--e3);
@@ -1057,6 +1078,14 @@ body[data-overlay='on'] .card {
 }
 @keyframes drawer-in {
 	from {
+		transform: translateX(100%);
+	}
+}
+.drawer.leave {
+	animation: drawer-out var(--d-exit) var(--ease-exit) both;
+}
+@keyframes drawer-out {
+	to {
 		transform: translateX(100%);
 	}
 }
@@ -1075,7 +1104,7 @@ body[data-overlay='on'] .card {
 	max-height: calc(100dvh - 72px);
 	padding: 0 var(--sp-4) calc(var(--sp-6) + env(safe-area-inset-bottom));
 	border-radius: var(--r-xl) var(--r-xl) 0 0;
-	background: rgba(255, 255, 255, 0.96);
+	background: var(--solid);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--e3);
@@ -1084,6 +1113,14 @@ body[data-overlay='on'] .card {
 }
 @keyframes sheet-in {
 	from {
+		transform: translateY(100%);
+	}
+}
+.sheet.leave {
+	animation: sheet-out var(--d-exit) var(--ease-exit) both;
+}
+@keyframes sheet-out {
+	to {
 		transform: translateY(100%);
 	}
 }
@@ -1108,7 +1145,7 @@ body[data-overlay='on'] .card {
 	max-height: calc(100dvh - 96px);
 	padding: var(--sp-6);
 	border-radius: var(--r-l);
-	background: rgba(255, 255, 255, 0.96);
+	background: var(--solid);
 	box-shadow: var(--e3);
 	overflow-y: auto;
 	animation: modal-in var(--d-enter) var(--ease-enter) both;
@@ -1118,6 +1155,15 @@ body[data-overlay='on'] .card {
 }
 @keyframes modal-in {
 	from {
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(0.96);
+	}
+}
+.modal.leave {
+	animation: modal-out var(--d-exit) var(--ease-exit) both;
+}
+@keyframes modal-out {
+	to {
 		opacity: 0;
 		transform: translate(-50%, -50%) scale(0.96);
 	}
@@ -1175,7 +1221,7 @@ body[data-overlay='on'] .card {
 	font-weight: 700;
 }
 .bottomnav-item.on::before {
-	background: var(--sel);
+	background: var(--sel-soft);
 }
 .bottomnav-item .i,
 .bottomnav-item .badge {
@@ -1195,7 +1241,7 @@ body[data-overlay='on'] .card {
 	max-width: calc(100vw - 48px);
 	padding: var(--sp-5);
 	border-radius: var(--r-m);
-	background: rgba(255, 255, 255, 0.96);
+	background: var(--solid);
 	box-shadow: var(--e3);
 }
 .pulse {
@@ -1327,10 +1373,7 @@ body[data-overlay='on'] .card {
 		right: var(--sp-4);
 		width: auto;
 		transform: none;
-		bottom: calc(80px + env(safe-area-inset-bottom) + 8px);
-	}
-	.drawer {
-		border-radius: var(--r-xl) var(--r-xl) 0 0;
+		bottom: calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + var(--sp-2) + var(--sp-2));
 	}
 	/* components 3.7 — モバイルのトーストは上端いっぱい */
 	.toast {
@@ -1349,6 +1392,16 @@ body[data-overlay='on'] .card {
 		to {
 			opacity: 1;
 			transform: translateY(0) scale(1);
+		}
+	}
+	@keyframes toast-out {
+		from {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+		to {
+			opacity: 0;
+			transform: translateY(-8px) scale(0.98);
 		}
 	}
 	.guide {
@@ -1398,8 +1451,16 @@ body[data-overlay='on'] .card {
 	.toast,
 	.drawer,
 	.sheet,
-	.modal {
+	.modal,
+	.scrim {
 		animation: fade-in 120ms linear both !important;
+	}
+	.toast.leave,
+	.drawer.leave,
+	.sheet.leave,
+	.modal.leave,
+	.scrim.leave {
+		animation: fade-out 120ms linear both !important;
 	}
 	/* オーブは静止画として残す。粒子も消さずに止める (visual 2.8) */
 	.orb img,
@@ -1412,6 +1473,11 @@ body[data-overlay='on'] .card {
 }
 @keyframes fade-in {
 	from {
+		opacity: 0;
+	}
+}
+@keyframes fade-out {
+	to {
 		opacity: 0;
 	}
 }
