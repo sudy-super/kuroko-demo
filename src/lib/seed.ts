@@ -13,7 +13,8 @@ export function seed(base: Date = new Date()): Db {
 		B4 = key(bizDay(4, b)),
 		B5 = key(bizDay(5, b));
 	const Y = key(addDays(-1, b)),
-		WED = key(nextWeekday(3, b));
+		// 商談当日 (B1) と重ならないよう、B1 より後の直近の水曜にする
+		WED = key(nextWeekday(3, bizDay(1, b)));
 	const at = (dayKey: string, h: string) => `${dayKey}T${h.padStart(5, '0')}:00`;
 	// 過去の出来事は base からの相対日数で表す (基準日 9/15 のとき 7/20、8/5、8/25、8/28、9/1 になる)
 	const md = (n: number) => fmtMD(addDays(n, b));
@@ -278,7 +279,7 @@ export function seed(base: Date = new Date()): Db {
 			sections: [...DOC_TEMPLATES['見積書']('XYZ 株式会社', 'AI 研修')]
 		},
 		{
-			id: 'doc-report-aug',
+			id: 'doc-report-prev',
 			kind: '報告書',
 			title: `${prevMonth} 月活動報告`,
 			createdBy: 'user',
@@ -410,7 +411,7 @@ export function seed(base: Date = new Date()): Db {
 				status: '見積提出',
 				amount: '120 万円',
 				personIds: ['p-sato'],
-				documentIds: ['doc-xyz-training']
+				documentIds: ['doc-xyz-training', 'doc-xyz-quote']
 			}
 		],
 		threads: [...queueThreads, ...sunriseThreads, ...fillerThreads],
@@ -469,7 +470,7 @@ export function seed(base: Date = new Date()): Db {
 			{ id: 't-cards', title: '名刺の登録 (展示会分)', due: T, priority: 'low', status: 'todo', origin: 'tasks', createdAt: at(Y, '9:00') },
 			{ id: 't-training', title: '研修日程を佐藤様に連絡する', due: B3, priority: 'normal', personId: 'p-sato', status: 'todo', origin: 'tasks', memo: `${md(-18)} の打ち合わせで依頼`, createdAt: at(Y, '9:00') },
 			{ id: 't-standup-doc', title: '社内定例の資料をまとめる', due: B4, priority: 'normal', status: 'todo', origin: 'tasks', createdAt: at(Y, '9:00') },
-			{ id: 't-expense', title: '先週分の経費を提出する', due: key(addDays(-3, b)), priority: 'low', status: 'done', origin: 'tasks', createdAt: key(addDays(-7, b)) }
+			{ id: 't-expense', title: '先週分の経費を提出する', due: key(addDays(-3, b)), priority: 'low', status: 'done', origin: 'tasks', createdAt: at(key(addDays(-7, b)), '9:00') }
 		],
 		documents,
 		approvals: [
@@ -505,7 +506,7 @@ export function seed(base: Date = new Date()): Db {
 		scheduling: [],
 		logs: [
 			{ id: 'log-1', at: at(T, '9:58'), actor: 'KUROKO', kind: 'draft', text: 'XYZ 社 見積書 (修正版) の下書きを作成し承認待ちにしました', origin: 'inbox', approved: false },
-			{ id: 'log-2', at: at(T, '9:12'), actor: 'KUROKO', kind: 'other', text: '受信 47 件から 8 件を要対応として選びました', origin: 'inbox', approved: false },
+			{ id: 'log-2', at: at(T, '9:12'), actor: 'KUROKO', kind: 'other', text: `受信 ${8 + FILLER_SUBJECTS.length} 件から 8 件を要対応として選びました`, origin: 'inbox', approved: false },
 			{ id: 'log-3', at: at(T, '8:55'), actor: 'KUROKO', kind: 'draft', text: '前回議事録の共有を承認待ちにしました', origin: 'meeting', approved: false },
 			{ id: 'log-4', at: at(T, '8:30'), actor: 'user', kind: 'register', text: 'ToDo「XYZ 社の見積を確認する」を登録しました', origin: 'today', approved: false },
 			{ id: 'log-5', at: at(Y, '21:00'), actor: 'KUROKO', kind: 'other', text: 'ABC 株式会社商談の Brief を作成しました', origin: 'meeting', approved: false },
