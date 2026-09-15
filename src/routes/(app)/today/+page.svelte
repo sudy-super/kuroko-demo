@@ -32,7 +32,9 @@
 
 	// 700px 以下は Bento をやめて 1 枚の折りたたみカードにするので、オーブも 1 つだけ差し替える
 	const narrow = new MediaQuery('(max-width: 700px)');
-	const orbSize = $derived(narrow.current ? 240 : 560);
+	/* 560 だと穴からはみ出した箱の上端が見出しのボタン列に掛かる。440 なら掛からず、
+	   箱は穴 (4 列 = 約 340px) より広いままなので光彩は左右の hero のガラスに重なる */
+	const orbSize = $derived(narrow.current ? 240 : 440);
 
 	const APPROVAL_KIND: Record<string, string> = { mail: 'Gmail', share: '外部共有', line: 'LINE' };
 	const SOURCE: Record<string, string> = { gmail: 'Gmail', slack: 'Slack', line: 'LINE' };
@@ -51,7 +53,7 @@
 <div class="today">
 	<header class="today-head">
 		<h1 class="today-count">
-			<a href="#items"><span class="num">{count}</span>今日やること</a>
+			<a href="#items">今日やること <span class="num">{count}</span> 件</a>
 		</h1>
 		<!-- 副ボタンはガラスにしない。この列はオーブの真上に並び、実測でどの不透明度でも
 		     文字が 4.5:1 に届かなかった (task-10c-report.md) -->
@@ -153,11 +155,8 @@
 				<TodayCard size="wide" title="今日の ToDo {tasks.length} 件" icon="ic-todo">
 					{#each tasks.slice(0, 3) as t (t.id)}
 						<label class="list-row">
-							<input
-								type="checkbox"
-								checked={t.status === 'done'}
-								onchange={() => toggleTask(t.id, 'today')}
-							/>
+							<!-- todayTasks は未完了だけを返すので checked は常に false。式にしない -->
+							<input type="checkbox" onchange={() => toggleTask(t.id, 'today')} />
 							<span class="tc-text">{t.title}</span>
 							{#if t.time}<span class="num muted">{t.time}</span>{/if}
 						</label>

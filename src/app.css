@@ -1648,14 +1648,15 @@ body[data-overlay='on'] .card {
 	gap: var(--sp-4);
 	padding: 0 var(--sp-6) var(--sp-5);
 }
-/* 見出しは h1 のまま。数字だけ 40px に上げ、語句は 24px に落とす */
+/* 見出しは h1 のまま。数字だけ 40px に上げ、語句は 24px に落とす。
+   間隔はモバイルの summary と揃える (同じ「今日やること N 件」を出すため) */
 .today-count {
 	font-size: 24px;
 }
 .today-count a {
 	display: inline-flex;
 	align-items: baseline;
-	gap: var(--sp-3);
+	gap: var(--sp-2);
 	color: inherit;
 	text-decoration: none;
 }
@@ -1685,11 +1686,17 @@ body[data-overlay='on'] .card {
 	text-decoration: none;
 	cursor: pointer;
 }
-/* 押せないタイルは浮かせない */
-section.tc,
-section.tc:hover {
+/* 押せないカード (押せないタイルと完了画面) は浮かせない */
+section.card,
+section.card:hover {
 	transform: none;
 	box-shadow: var(--rim), var(--e2);
+	cursor: default;
+}
+/* 4 — 押せないタイルの中の行も押せない。ToDo の label だけは中のチェックボックスが押せる */
+section.tc .list-row:not(label),
+section.tc .list-row:not(label):hover {
+	background: none;
 	cursor: default;
 }
 .tc-head {
@@ -1747,12 +1754,19 @@ section.tc:hover {
 	position: relative;
 	z-index: 0;
 }
-.orb-slot .orb,
-.today .bento .hole .orb {
+.orb-slot .orb {
 	position: absolute;
 	top: 50%;
 	left: 50%;
 	translate: -50% -50%;
+}
+/* 穴のオーブだけは上端を基準にする。穴の中央にそろえると箱の上が見出しのボタン列に掛かる。
+   穴の上端から --sp-8 だけ上に出し、残りは下 (3 行目のタイルの背後) へ逃がす */
+.today .bento .hole .orb {
+	position: absolute;
+	top: calc(var(--sp-8) * -1);
+	left: 50%;
+	translate: -50% 0;
 }
 
 /* 完了画面。球の下側がカードに隠れてガラスのぼかす対象になるよう、画の 3 割を重ねる */
@@ -1800,7 +1814,7 @@ section.tc:hover {
 }
 
 /* 仕様 11.4 — シナリオのメニュー。文言が長いので折り返させ、高さは行数に任せる */
-.menu {
+.scenario-menu {
 	z-index: 70;
 	width: 420px;
 	max-width: calc(100vw - var(--sp-8));
@@ -1810,10 +1824,10 @@ section.tc:hover {
 	box-shadow: var(--e3);
 }
 /* 開いた直後は入れ物に焦点が当たる。枠は項目側の [data-highlighted] で示すので入れ物には出さない */
-.menu:focus-visible {
+.scenario-menu:focus-visible {
 	outline: none;
 }
-.menu-item {
+.scenario-item {
 	display: flex;
 	align-items: flex-start;
 	gap: var(--sp-3);
@@ -1825,10 +1839,10 @@ section.tc:hover {
 	cursor: pointer;
 	transition: background var(--d-fast) var(--ease-out);
 }
-.menu-item[data-highlighted] {
+.scenario-item[data-highlighted] {
 	background: var(--sel-soft);
 }
-.menu-n {
+.scenario-n {
 	color: var(--accent);
 	font-weight: 700;
 }
@@ -1843,6 +1857,11 @@ section.tc:hover {
 		position: absolute;
 		inset: 0;
 		pointer-events: none;
+	}
+	/* 穴が .bento 全体になるので、上端ぞろえをやめてタイルの中央の背後に戻す */
+	.today .bento .hole .orb {
+		top: 50%;
+		translate: -50% -50%;
 	}
 }
 

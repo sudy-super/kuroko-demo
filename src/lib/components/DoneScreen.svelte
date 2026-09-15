@@ -27,7 +27,7 @@
 		{/each}
 	</dl>
 	<p class="muted">
-		KUROKO は今日、下書き {sum.drafts} 件、予定の確保 {sum.holds} 件、送信 {sum.sends} 件、登録 {sum.registers}
+		KUROKO は今日、下書き {sum.drafts} 件、予定の仮押さえ {sum.holds} 件、送信 {sum.sends} 件、登録 {sum.registers}
 		件を行いました。
 	</p>
 	<div class="row done-links">

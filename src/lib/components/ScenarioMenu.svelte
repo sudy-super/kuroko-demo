@@ -57,10 +57,10 @@
 		{/snippet}
 	</DropdownMenu.Trigger>
 	<DropdownMenu.Portal>
-		<DropdownMenu.Content class="menu scenario-menu" align="end" sideOffset={8}>
+		<DropdownMenu.Content class="scenario-menu" align="end" sideOffset={8}>
 			{#each SCENARIOS as s, i (i)}
-				<DropdownMenu.Item class="menu-item" onSelect={() => pick(i)}>
-					<span class="num menu-n">{i + 1}</span>
+				<DropdownMenu.Item class="scenario-item" onSelect={() => pick(i)}>
+					<span class="num scenario-n">{i + 1}</span>
 					<span>{s.label}</span>
 				</DropdownMenu.Item>
 			{/each}
