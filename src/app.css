@@ -1523,6 +1523,16 @@ body[data-overlay='on'] .card {
 	.scrim.leave {
 		animation: fade-out 120ms linear both !important;
 	}
+	/* Task 9c — 公開画面の時間差の入場、チェックマークの拡大、画面遷移の横スライドから
+	   translateY / scale / translateX を落とし、opacity の変化だけ残す */
+	.public .in,
+	.public-list .badge.ok .i,
+	::view-transition-new(root) {
+		animation: fade-in 120ms linear both !important;
+	}
+	::view-transition-old(root) {
+		animation: fade-out 120ms linear both !important;
+	}
 }
 @keyframes fade-in {
 	from {
@@ -1566,93 +1576,84 @@ body[data-overlay='on'] .card {
 		display: none !important;
 	}
 	:root body [data-liquid-glass='webgl'] .card,
-	:root body [data-liquid-glass='webgl'].public-panel {
+	:root body [data-liquid-glass='webgl'].public-list {
 		background: #fff;
 	}
 }
 
-/* public (Task 9) — Welcome と /connect。アプリの骨格 (.app) は使わない。
-   ガラスは 1 枚だけ。文字はすべてその上に載せ、オーブや背景の階調の上には置かない
-   (visual 3.1 / 4.2 / 4.5 / 2.8 の 3 項) */
+/* public (Task 9c) — Welcome と /connect。アプリの骨格 (.app) は使わない。
+   iPhone の初期設定と同じく、ビューポート全体を 1 本の縦の列にする。上から図案 (オーブ) →
+   見出し → 説明、主ボタンと副操作は下端に寄せる。パネルにまとめない (カードにまとめる構成
+   そのものが典型的な SaaS の見た目を作っていた)。オーブの上に文字は載せない (visual 2.8) */
 .public {
+	/* 壁紙の上に文字が直接載る。ガラスの面の上で決めた --ink-2 では、説明の 2 行目の背後
+	   (紫の塊の縁) で実測が 4.47:1 と 4.5 を割った。背景ではなく文字を濃くする (ブリーフ)。
+	   この 2 画面の中だけ一段濃くし、--ink → --ink-2 → --ink-3 の順に薄くなる約束は保つ
+	   (相対輝度 0.024 → 0.056 → 0.078) */
+	--ink-2: #3a4252;
 	position: relative;
 	z-index: 1;
-	display: grid;
-	place-items: center;
-	/* 内容が画面より高いときに上が切れないよう safe を付ける */
-	align-content: safe center;
+	display: flex;
+	justify-content: center;
 	min-height: 100dvh;
 	padding: var(--sp-6);
-	/* オーブのキャンバスは球の直径の約 2 倍の光彩と破片を含むので、狭い画面では横にはみ出す。
-	   clip なら縦の溢れは見えたままになる */
+	padding-bottom: max(var(--sp-6), env(safe-area-inset-bottom));
+	/* オーブのキャンバスは球の直径の約 2 倍の光彩と破片を含むので、狭い画面では横にはみ出す */
 	overflow-x: clip;
 }
-.public-stage {
-	/* オーブの半径と、パネルの上端から中心までの持ち上げ量。
-	   画面が低いと /connect のパネルが折り返しの下に沈むので、上に空ける分を連続的に縮める。
-	   568px = /connect のパネルの高さ 520px + .public の上下の余白 48px */
-	--orb-room: max(200px, calc(100dvh - 568px));
-	--orb-half: min(260px, calc(var(--orb-room) * 0.65));
-	--orb-rise: min(70px, calc(var(--orb-room) * 0.35));
-	position: relative;
-	width: 100%;
-	max-width: 560px;
-	/* オーブが画面の上に出ないよう、パネルの上に場所を空ける */
-	padding-top: calc(var(--orb-half) + var(--orb-rise));
-}
-/* 中心をパネルの上端より --orb-rise だけ上に置く。明るい中心と縁の光はパネルの上に出て、
-   下側はパネルに隠れてガラスのぼかす対象になる (visual 2.8 の 6 項)。
-   ビューポートではなくパネルを基準にするので、画面の高さが変わっても関係は崩れない */
-.public .orb {
-	position: absolute;
-	z-index: 0;
-	top: calc(var(--orb-half) + var(--orb-rise));
-	left: 50%;
-	translate: -50% calc(-50% - var(--orb-rise));
-	/* 寸法は Orb 側のインラインの style に入るので、抑えるのは max-* でしかできない */
-	max-width: calc(var(--orb-half) * 2);
-	max-height: calc(var(--orb-half) * 2);
-}
-/* visual 4.2 / 4.5 — ぼかしと縁は .glass のまま。影は 1 段上げて --e3、角丸は 24px
-   (visual 3.1 / 4.13 の「画面の外枠」の段)。塗りはサイドナビ用の --glass-panel ではなく
-   最も薄い --glass-1 を使う。この面に載る文字は --ink と --ink-2 だけで、--ink-3 を
-   --ink-2 に落とす指定が下にあるため、実測でまだ余裕がある */
-.public-panel {
-	--pad: var(--sp-8);
-	position: relative;
-	z-index: 1;
-	display: grid;
+.public-col {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 	gap: var(--sp-5);
 	width: 100%;
-	padding: var(--pad);
-	border-radius: var(--r-l);
-	background: var(--sheen), var(--glass-1);
-	box-shadow: var(--rim), var(--e3);
+	max-width: 560px;
 	text-align: center;
-	animation: panel-in var(--d-enter) var(--ease-enter) both;
 }
-/* visual 4.12 — 入場は 300ms の減速で 6px 持ち上げながら現れる。
-   prefers-reduced-motion では app.css 末尾の一括指定が持続時間を潰す */
-@keyframes panel-in {
-	from {
-		opacity: 0;
-		transform: translateY(6px);
-	}
+/* オーブと本文の塊は上下の空きを等分した位置に、操作群は下端に置く (下の margin-top: auto と対) */
+.public-col > .orb {
+	flex: none;
+	margin-top: auto;
+	/* Orb は width / height をインラインの style に書くので、抑えられるのは max-* だけ。
+	   縦が足りない窓ではここで縮め、ページ全体のスクロールを出さない。
+	   400px はオーブの下に必ず要る高さ (見出し + 説明 + 下端の操作群 + 上下の余白) */
+	max-width: min(100%, calc(100dvh - 400px));
+	max-height: calc(100dvh - 400px);
+}
+
+/* 見出しと説明。記事 11 に従い、大見出しは行間 1.25、字間 0 */
+.public-main {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-3);
+	width: 100%;
+}
+.public-main h1 {
+	font-size: 32px;
+	font-weight: 700;
+	line-height: 1.25;
+	letter-spacing: 0;
 }
 /* 仕様 12.3 — Welcome の見出しだけ 40px。文字寸法の段階 (12〜40) の上端 */
-.public-panel .brand {
+.public-main .brand {
 	font-size: 40px;
 }
-/* balance は狭い画面で「す」のような 1 文字だけの行が残るのを防ぐ。
+.public-main p {
+	color: var(--ink-2);
+	font-size: 16px;
+}
+/* balance は狭い画面で 1 文字だけの行が残るのを防ぐ。
    ただし日本語では語の途中で割ることがあるので auto-phrase で文節の切れ目に寄せる */
-.public-panel h1,
-.public-panel p {
+.public-main h1,
+.public-main p {
 	text-wrap: balance;
 	word-break: auto-phrase;
 }
-/* 一覧はパネルの余白を打ち消して端まで伸ばす。区切り線は行の内側 16px に入る */
+
+/* iOS の inset grouped list に当たる 1 枚のガラス面。行は 56px、区切り線は .list-row 側 */
 .public-list {
-	margin-inline: calc(var(--pad) * -1);
+	width: 100%;
+	border-radius: 20px;
 	text-align: left;
 }
 /* 行そのものは押せない。押せるのは右端のボタンだけなので、指しても反応させない */
@@ -1665,18 +1666,71 @@ body[data-overlay='on'] .card {
 .public-list .name {
 	flex: 1;
 }
-/* 背後がオーブの光彩で青く残るぶん、白地で測った --ink-3 では 4.5:1 を割る。一段濃くする */
-.public-panel .muted {
-	color: var(--ink-2);
+/* onboarding.md 3.2 — 完了は進捗バーではなくチェックマークで締める */
+.public-list .badge.ok .i {
+	animation: check-in var(--d-base) var(--ease-out) backwards;
+}
+@keyframes check-in {
+	from {
+		opacity: 0;
+		scale: 0.85;
+	}
+}
+
+/* 下端に寄せる操作群。主ボタンは幅いっぱいの pill、副操作は文字リンク */
+.public-foot {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--sp-3);
+	width: 100%;
+	margin-top: auto;
+}
+/* 裁定 — ボタンにはガラスを当てない (文字のコントラストが持たない)。--accent の平らな塗り */
+.btn.pri.public-cta {
+	width: 100%;
+	max-width: 360px;
+	height: 52px;
+	border-radius: var(--r-pill);
+	background: var(--accent);
+	font-size: 16px;
 }
 /* components 3.6 — 補足の文字は 12px まで。文字寸法の段階の下端 */
-.public-panel .note {
+.public .note {
+	color: var(--ink-3);
 	font-size: 12px;
+	line-height: 1.6;
 }
-/* 狭い画面では文字が折り返してパネルが高くなるぶん、空ける分の基準を下げる */
-@media (max-width: 960px) {
-	.public-stage {
-		--orb-room: max(160px, calc(100dvh - 660px));
+
+/* onboarding.md 3.1 — 時間差のフェードイン。遅れは要素側の --delay で渡す。
+   backwards にして、終わったあとは下ろす (.btn の hover の transform を殺さないため) */
+.public .in {
+	animation: public-in var(--d-enter) var(--ease-out) var(--delay, 0ms) backwards;
+}
+@keyframes public-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+}
+
+/* 画面遷移は横スライド。startViewTransition があるブラウザだけで動く (機能検出は layout 側) */
+::view-transition-old(root) {
+	animation: vt-out var(--d-base) var(--ease-enter) both;
+}
+::view-transition-new(root) {
+	animation: vt-in var(--d-base) var(--ease-enter) both;
+}
+@keyframes vt-out {
+	to {
+		opacity: 0;
+		translate: -24px 0;
+	}
+}
+@keyframes vt-in {
+	from {
+		opacity: 0;
+		translate: 24px 0;
 	}
 }
 

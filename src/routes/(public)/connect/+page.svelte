@@ -4,6 +4,7 @@
 	import { connect, connectAll, markStarted } from '$lib/actions';
 	import type { Connection } from '$lib/types';
 	import Icon from '$lib/components/Icon.svelte';
+	import { glass, PANEL } from '$lib/glass';
 
 	const NAME: Record<Connection['id'], string> = {
 		gmail: 'Gmail',
@@ -31,16 +32,15 @@
 	}
 </script>
 
-<div>
-	<h1>使うツールをつなぎます</h1>
-	<p class="muted">各 1 クリック、合計 10 秒。あとから設定で変更できます。</p>
+<div class="public-main">
+	<h1 class="in" style="--delay: 80ms">使うツールをつなぎます</h1>
+	<p class="muted in" style="--delay: 130ms">各 1 クリック、合計 10 秒。あとから設定で変更できます。</p>
 </div>
 
-<button class="btn pri lg" onclick={() => open(true)}>4 つすべて接続して開く</button>
-
-<div class="public-list">
-	{#each db.settings.connections as c (c.id)}
-		<div class="list-row lg">
+<!-- 接続中と接続済みの切り替わりを読み上げる (行の中の文字が入れ替わるだけなので入れ物に置く) -->
+<div class="public-list" aria-live="polite" {@attach glass(PANEL)}>
+	{#each db.settings.connections as c, i (c.id)}
+		<div class="list-row lg in" style="--delay: {180 + i * 70}ms">
 			<Icon name="b-{c.id}" />
 			<span class="name">{NAME[c.id]}</span>
 			{#if c.connected}
@@ -55,4 +55,11 @@
 	{/each}
 </div>
 
-<button class="btn text" onclick={() => open(false)}>スキップして開く</button>
+<div class="public-foot">
+	<button class="btn pri public-cta in" style="--delay: 460ms" onclick={() => open(true)}>
+		4 つすべて接続して開く
+	</button>
+	<button class="btn text in" style="--delay: 520ms" onclick={() => open(false)}>
+		スキップして開く
+	</button>
+</div>
