@@ -244,14 +244,16 @@ svg.i {
 .orb {
 	position: relative;
 	display: grid;
+	/* トラックを size で固定する。auto のままだと中身の実寸がトラックを押し広げ、
+	   size が小さいときにオーブが箱からはみ出す */
+	grid-template: 100% / 100%;
 	place-items: center;
 	pointer-events: none;
 }
 .orb-glow {
 	grid-area: 1 / 1;
-	width: 600px;
-	height: 600px;
-	max-width: 100%;
+	width: 100%;
+	height: 100%;
 	border-radius: 50%;
 	background: radial-gradient(circle, rgba(120, 170, 255, 0.2) 0%, rgba(120, 170, 255, 0) 62%);
 	pointer-events: none;
@@ -1536,5 +1538,96 @@ body[data-overlay='on'] .card {
 		background: #fff;
 		-webkit-backdrop-filter: none;
 		backdrop-filter: none;
+	}
+}
+
+/* public (Task 9) — Welcome と /connect。アプリの骨格 (.app) は使わない。
+   ガラスは 1 枚だけ。文字はすべてその上に載せ、オーブや背景の階調の上には置かない
+   (visual 3.1 / 4.3 / 2.8 の 3 項) */
+.public {
+	position: relative;
+	z-index: 1;
+	display: grid;
+	place-items: center;
+	/* 内容が画面より高いときに上が切れないよう safe を付ける */
+	align-content: safe center;
+	min-height: 100dvh;
+	padding: var(--sp-6);
+	/* 回転するオーブの角が狭い画面で横にはみ出す。clip なら縦の溢れは見えたままになる */
+	overflow-x: clip;
+}
+.public-stage {
+	position: relative;
+	width: 100%;
+	max-width: 560px;
+}
+/* 中心をパネルの上端に合わせる。上半分は素のまま覗き、下半分はガラスの背後に入って
+   ぼかす対象になる。背後が均一だとガラスはただの白い面になる (visual 2.8 の 6 項) */
+.public .orb {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	translate: -50% -50%;
+	max-width: 86vw;
+	max-height: 86vw;
+}
+/* 大きい面なので角丸は 24px (visual 4.13)。塗りとぼかしと縁は .glass のまま使い、
+   透明度とコントラストの設定への応答を効かせ続ける */
+.public-panel {
+	--pad: var(--sp-8);
+	/* 大きい面ほど不透明にする (visual 3.1)。background を直接上書きすると
+	   透明度を下げる設定への応答を潰すので、.glass が読む変数の側を差し替える */
+	--glass-1: var(--glass-panel);
+	position: relative;
+	display: grid;
+	justify-items: center;
+	gap: var(--sp-5);
+	width: 100%;
+	padding: var(--pad);
+	border-radius: var(--r-l);
+	text-align: center;
+	animation: panel-in var(--d-enter) var(--ease-enter) both;
+}
+/* visual 4.12 — 入場は 300ms の減速で、6px 持ち上げながら現れる。
+   prefers-reduced-motion では末尾の一括指定が持続時間を潰す */
+@keyframes panel-in {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+}
+.public-panel .brand {
+	font-size: 40px;
+}
+/* 狭い画面で「す」のような 1 文字だけの行が残らないようにする */
+.public-panel h1,
+.public-panel p {
+	text-wrap: balance;
+}
+.public-panel .row {
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: var(--sp-3);
+}
+/* 一覧はパネルの余白を打ち消して端まで伸ばす。区切り線は行の内側 16px に入る */
+.public-list {
+	justify-self: stretch;
+	margin-inline: calc(var(--pad) * -1);
+	text-align: left;
+}
+/* 行そのものは押せない。押せるのは右端のボタンだけ */
+.public-list .list-row {
+	cursor: default;
+}
+/* 背後がオーブの光彩で青く残るぶん、白地で測った --ink-3 では 4.5:1 を割る。一段濃くする */
+.public-panel .muted {
+	color: var(--ink-2);
+}
+.public-panel .note {
+	font-size: 12px;
+}
+@media (max-width: 960px) {
+	.public-panel {
+		--pad: var(--sp-5);
 	}
 }

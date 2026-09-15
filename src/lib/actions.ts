@@ -429,6 +429,11 @@ export function resetDemo() {
 	timers.clear();
 	resetDb();
 }
+// 接続直後は案内を出さない。案内は Today の「デモを開始する」から始める
+export function markStarted() {
+	db.demo.started = true;
+	save();
+}
 export function startGuide() {
 	db.demo.started = true;
 	db.demo.guide.on = true;
