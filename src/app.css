@@ -6,7 +6,7 @@
    ruling     = 設計仕様 12.3 の裁定 (visual / components より優先)
    ========================================================================== */
 
-/* visual 4.1 — トークン (ruling: --glass-panel .82、saturate は 170% に統一) */
+/* visual 4.1 — トークン (Task 10b: ガラスの塗り・彩度・縁・鏡面は実測で決め直した) */
 :root {
 	/* 地の色 */
 	--bg: #f4f7fc;
@@ -46,19 +46,24 @@
 	--disabled-ink: rgba(30, 42, 71, 0.38);
 	--disabled-soft: rgba(30, 42, 71, 0.04);
 
-	/* ガラスの塗り */
-	--glass-1: rgba(255, 255, 255, 0.72);
-	--glass-2: rgba(255, 255, 255, 0.88);
-	--glass-panel: rgba(255, 255, 255, 0.82);
+	/* ガラスの塗り (visual 3.2「明るい地では塗りを高めに」と 4.5:1 の実測の折り合い。
+	   visual 3.1「大きい要素ほど不透明」に従い、面が大きい --glass-panel を --glass-1 より濃くする) */
+	--glass-1: rgba(255, 255, 255, 0.62);
+	--glass-2: rgba(255, 255, 255, 0.76);
+	--glass-panel: rgba(255, 255, 255, 0.66);
 	--solid: rgba(255, 255, 255, 0.97);
 
-	/* ぼかし。12px と 16px の 2 段だけ */
-	--blur-s: blur(12px) saturate(170%);
-	--blur-m: blur(16px) saturate(170%);
+	/* ぼかし。12px と 16px の 2 段だけ (性能規則)。彩度と明度で背後の色を拾う (visual 4.2) */
+	--blur-s: blur(12px) saturate(190%) brightness(1.05);
+	--blur-m: blur(16px) saturate(190%) brightness(1.05);
 
-	/* 縁の光 */
+	/* visual 3.1 — 左上から差す鏡面ハイライト。厚みのある板に見せる。
+	   塗りの上に重ねる背景画像なので、疑似要素を足さずに済む */
+	--sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 45%);
+
+	/* 縁の光 (visual 3.2 の 1px の白い縁、4.2) */
 	--rim:
-		inset 0 0 0 1px rgba(255, 255, 255, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.95),
+		inset 0 0 0 1px rgba(255, 255, 255, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.95),
 		0 0 0 1px rgba(30, 42, 71, 0.05);
 
 	/* 影 3 段 */
@@ -211,33 +216,67 @@ svg.i {
 		radial-gradient(900px 600px at 52% 48%, #e9f1ff 0%, rgba(233, 241, 255, 0) 70%),
 		linear-gradient(180deg, #f9fbfe 0%, #f2f6fb 100%);
 }
+/* 5 個置くが色相は 3 つのまま (visual 3.3: 4 色を超えると重なりが濁る)。
+   ガラス面 (サイドナビ、上部バー、公開パネル、Today のカード、依頼バー) の背後に
+   必ず 1 つ以上来るよう配置する。ぼかしは直径の 1 割を目安 (visual 4.3) */
 .bg-blob {
 	position: absolute;
 	border-radius: 50%;
-	filter: blur(40px);
+	filter: blur(56px);
 	mix-blend-mode: multiply;
-	opacity: 0.25;
+	opacity: 0.45;
+	/* transform だけを 72 秒で動かす。filter と opacity は動かさない (visual 4.3) */
+	animation: blob-drift 72s var(--ease-out) infinite alternate;
 }
 .bg-blob.a {
-	left: -8%;
-	top: 6%;
-	width: 46vmin;
-	height: 46vmin;
+	left: -10%;
+	top: 2%;
+	width: 62vmin;
+	height: 62vmin;
 	background: #cfe0ff;
 }
 .bg-blob.b {
-	right: -6%;
-	top: 44%;
-	width: 40vmin;
-	height: 40vmin;
+	right: -8%;
+	top: 38%;
+	width: 58vmin;
+	height: 58vmin;
 	background: #d7f0f6;
+	animation-duration: 84s;
+	animation-delay: -18s;
 }
 .bg-blob.c {
-	left: 30%;
-	bottom: -12%;
-	width: 52vmin;
-	height: 52vmin;
+	left: 24%;
+	bottom: -8%;
+	width: 70vmin;
+	height: 70vmin;
 	background: #dcdcff;
+	animation-duration: 66s;
+	animation-delay: -34s;
+}
+/* 上部バーと、公開パネルの上半分の背後 */
+.bg-blob.d {
+	left: 24%;
+	top: -14%;
+	width: 56vmin;
+	height: 56vmin;
+	background: #d7f0f6;
+	animation-duration: 90s;
+	animation-delay: -50s;
+}
+/* サイドナビの下半分の背後 */
+.bg-blob.e {
+	left: -14%;
+	bottom: -6%;
+	width: 54vmin;
+	height: 54vmin;
+	background: #dcdcff;
+	animation-duration: 78s;
+	animation-delay: -9s;
+}
+@keyframes blob-drift {
+	to {
+		transform: translate3d(6%, -7%, 0) scale(1.12);
+	}
 }
 
 /* visual 2.8 / 4.3 — オーブ本体と光彩 */
@@ -277,7 +316,7 @@ svg.i {
 
 /* visual 4.2 — ガラスの基本形 */
 .glass {
-	background: var(--glass-1);
+	background: var(--sheen), var(--glass-1);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e2);
@@ -309,7 +348,7 @@ svg.i {
 	width: var(--side-w);
 	padding: var(--sp-2);
 	border-radius: var(--r-l);
-	background: var(--glass-panel);
+	background: var(--sheen), var(--glass-panel);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e2);
@@ -396,7 +435,7 @@ svg.i {
 	width: var(--rail-w);
 	padding: var(--sp-2);
 	border-radius: var(--r-pill);
-	background: var(--glass-panel);
+	background: var(--sheen), var(--glass-panel);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e2);
@@ -417,7 +456,7 @@ svg.i {
 	left: calc(var(--side-w) + 32px);
 	right: var(--sp-6);
 	border-radius: var(--r-l);
-	background: var(--glass-panel);
+	background: var(--sheen), var(--glass-panel);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e2);
@@ -439,7 +478,7 @@ svg.i {
 	position: relative;
 	border-radius: var(--r-m);
 	padding: var(--sp-5) var(--sp-5) var(--sp-4);
-	background: var(--glass-1);
+	background: var(--sheen), var(--glass-1);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e2);
@@ -513,7 +552,7 @@ body[data-overlay='on'] .card {
 	height: var(--chatbar-h);
 	padding: 0 var(--sp-2) 0 var(--sp-5);
 	border-radius: var(--r-pill);
-	background: var(--glass-2);
+	background: var(--sheen), var(--glass-2);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e3);
@@ -1509,7 +1548,7 @@ body[data-overlay='on'] .card {
 	max-width: calc(var(--orb-half) * 2);
 	max-height: calc(var(--orb-half) * 2);
 }
-/* visual 4.2 / 4.5 — ぼかしと縁は .glass のまま。大きい面なので塗りは --glass-panel (.82)、
+/* visual 4.2 / 4.5 — ぼかしと縁は .glass のまま。大きい面なので塗りは --glass-panel、
    影は 1 段上げて --e3、角丸は 24px にする (visual 3.1 / 4.13 の「画面の外枠」の段) */
 .public-panel {
 	--pad: var(--sp-8);
@@ -1520,7 +1559,7 @@ body[data-overlay='on'] .card {
 	width: 100%;
 	padding: var(--pad);
 	border-radius: var(--r-l);
-	background: var(--glass-panel);
+	background: var(--sheen), var(--glass-panel);
 	box-shadow: var(--rim), var(--e3);
 	text-align: center;
 	animation: panel-in var(--d-enter) var(--ease-enter) both;
