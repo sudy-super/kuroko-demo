@@ -24,7 +24,7 @@
 				<Icon name={nav.icon} size={24} />
 				{#if nav.href === '/inbox' && inbox > 0}
 					<span class="badge count num" style="position: absolute; top: -6px; left: 14px">
-						{inbox}
+						{inbox}<span class="sr-only">件の要対応</span>
 					</span>
 				{/if}
 			</span>

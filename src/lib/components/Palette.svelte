@@ -36,7 +36,7 @@
 		/>
 	</form>
 	{#snippet actions()}
-		<button class="btn text" onclick={() => (ui.palette = false)}>閉じる</button>
 		<button class="btn pri" disabled={!text.trim()} onclick={send}>KUROKO に頼む</button>
+		<button class="btn text" onclick={() => (ui.palette = false)}>閉じる</button>
 	{/snippet}
 </Modal>

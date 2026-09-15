@@ -21,18 +21,13 @@ export const SECONDARY: NavItem[] = [
 	{ href: '/settings', label: '設定', icon: 'ic-gear' }
 ];
 
-const SHORT: Record<string, string> = {
-	'/today': 'Today',
-	'/inbox': 'メール',
-	'/tasks': 'ToDo',
-	'/people': '人物',
-	'/chat': 'KUROKO'
-};
-
-export const BOTTOM: NavItem[] = Object.keys(SHORT).map((href) => ({
-	...PRIMARY.find((i) => i.href === href)!,
-	short: SHORT[href]
-}));
+export const BOTTOM: NavItem[] = [
+	{ href: '/today', label: 'Today', icon: 'ic-home' },
+	{ href: '/inbox', label: 'メール', icon: 'ic-mail' },
+	{ href: '/tasks', label: 'ToDo', icon: 'ic-todo' },
+	{ href: '/people', label: '会社・人物・案件', icon: 'ic-people', short: '人物' },
+	{ href: '/chat', label: 'KUROKO', icon: 'ic-chat' }
+];
 
 export const isActive = (pathname: string, href: string) => pathname.startsWith(href);
 

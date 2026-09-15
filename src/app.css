@@ -308,8 +308,11 @@ svg.i {
 }
 .main {
 	margin-left: calc(var(--side-w) + 32px);
-	margin-right: calc(var(--rail-w) + 32px);
 	padding: calc(var(--header-h) + 32px) var(--sp-6) calc(var(--chatbar-h) + 64px);
+}
+/* レールがある画面だけ右を空ける。ヘッダーと本文の右端は必ずそろえる */
+.app.has-rail .main {
+	margin-right: calc(var(--rail-w) + 32px);
 }
 
 /* visual 4.4 + components 3.1 — 左サイドナビ (ruling: 幅 256、項目 48、角丸 16) */
@@ -432,12 +435,15 @@ svg.i {
 	position: fixed;
 	top: var(--sp-4);
 	left: calc(var(--side-w) + 32px);
-	right: calc(var(--rail-w) + 32px);
+	right: var(--sp-6);
 	border-radius: var(--r-l);
 	background: var(--glass-panel);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e2);
+}
+.app.has-rail .header.glass {
+	right: calc(var(--rail-w) + 32px);
 }
 /* ruling: モバイルのヘッダーは不透明、ぼかしなし */
 .header.solid {
@@ -518,13 +524,15 @@ body[data-overlay='on'] .card {
 .chatbar {
 	position: fixed;
 	bottom: var(--sp-4);
-	left: 50%;
-	transform: translateX(-50%);
+	/* 画面ではなく本文領域の中央に置く。左右を止めて余白を auto で分けると中央にそろう */
+	left: calc(var(--side-w) + 32px);
+	right: var(--sp-6);
+	margin-inline: auto;
 	z-index: 55;
 	display: flex;
 	align-items: center;
 	gap: var(--sp-3);
-	width: min(760px, calc(100vw - 32px));
+	max-width: 760px;
 	height: var(--chatbar-h);
 	padding: 0 var(--sp-2) 0 var(--sp-5);
 	border-radius: var(--r-pill);
@@ -1234,7 +1242,8 @@ body[data-overlay='on'] .card {
 /* 仕様 11.3 — 案内カード。ガラスは 5 か所だけなので不透明にする */
 .guide {
 	position: fixed;
-	left: var(--sp-6);
+	left: auto;
+	right: var(--sp-6);
 	bottom: calc(var(--chatbar-h) + 32px);
 	z-index: 65;
 	width: 320px;
@@ -1243,6 +1252,11 @@ body[data-overlay='on'] .card {
 	border-radius: var(--r-m);
 	background: var(--solid);
 	box-shadow: var(--e3);
+}
+/* レールがある画面では、依頼バーと誘導カードの右端をレールの左にそろえる */
+.app.has-rail .chatbar,
+.app.has-rail .guide {
+	right: calc(var(--rail-w) + 32px);
 }
 .pulse {
 	animation: pulse 2s var(--ease-out) infinite;
@@ -1410,6 +1424,18 @@ body[data-overlay='on'] .card {
 		width: auto;
 		max-width: none;
 		bottom: calc(var(--bottomnav-h) + var(--chatbar-h) + 32px);
+	}
+}
+
+/* 縦が短い窓でサイドナビの最後の項目が隠れるのを防ぐ。
+   11 項目を 48px で並べると窓の高さが 657px 必要になるため、44px (Apple HIG の操作領域の下限)
+   まで詰めて 597px までは全項目を出す。それより短い窓は overflow-y: auto で送る */
+@media (max-height: 720px) {
+	.nav-item {
+		height: 44px;
+	}
+	.nav-sep {
+		margin: var(--sp-3) 0;
 	}
 }
 

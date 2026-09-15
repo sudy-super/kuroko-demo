@@ -29,14 +29,14 @@
 
 <aside class="guide" aria-label="操作の案内">
 	{#if section === 0}
-		<h4>完了しました</h4>
+		<h2>完了しました</h2>
 		<p style="margin: var(--sp-2) 0 var(--sp-3); font-size: 14px; color: var(--ink-2)">
 			ひととおりの流れをお試しいただきました。
 		</p>
 		<button class="btn text sm" onclick={stopGuide}>閉じる</button>
 	{:else}
 		<div class="row" style="justify-content: space-between">
-			<h4>{SECTIONS[section].title}</h4>
+			<h2>{SECTIONS[section].title}</h2>
 			<span class="num muted">{section} / 5</span>
 		</div>
 		<p style="margin: var(--sp-2) 0 var(--sp-3); font-size: 14px; color: var(--ink-2)">

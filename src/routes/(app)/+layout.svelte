@@ -49,7 +49,7 @@
 	});
 </script>
 
-<div class="app">
+<div class="app" class:has-rail={connected.length > 0}>
 	<Sidebar />
 	<Header />
 	<main class="main">{@render children()}</main>

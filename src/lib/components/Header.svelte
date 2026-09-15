@@ -76,7 +76,7 @@
 	onclose={() => (confirming = false)}
 >
 	{#snippet actions()}
-		<button class="btn text" onclick={() => (confirming = false)}>やめる</button>
 		<button class="btn pri" onclick={reset}>初期状態に戻す</button>
+		<button class="btn text" onclick={() => (confirming = false)}>やめる</button>
 	{/snippet}
 </Modal>
