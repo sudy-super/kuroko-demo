@@ -26,8 +26,9 @@ export const weekTasks = (db: Db) => {
 	const w = key(addDays(6, parse(k)));
 	return db.tasks.filter((t) => t.due && t.due >= k && t.due <= w && t.status !== 'done');
 };
+// 時刻は '9:00' のように 1 桁時もあるので、文字列ではなく分に直して比べる
 export const todayEvents = (db: Db) =>
-	db.events.filter((e) => e.date === T(db)).sort((a, b) => a.start.localeCompare(b.start));
+	db.events.filter((e) => e.date === T(db)).sort((a, b) => minutes(a.start) - minutes(b.start));
 // nextEvent だけは実時刻と比べる (今まさに次の予定を出すため)
 export const nextEvent = (db: Db) => {
 	const now = minutes(hm());
@@ -38,7 +39,7 @@ export function nextMeeting(db: Db): { meeting: Meeting; event: CalendarEvent } 
 	const k = T(db);
 	const ev = db.events
 		.filter((e) => e.meetingId && e.date >= k)
-		.sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))[0];
+		.sort((a, b) => a.date.localeCompare(b.date) || minutes(a.start) - minutes(b.start))[0];
 	const meeting = ev && db.meetings.find((m) => m.id === ev.meetingId);
 	return meeting ? { meeting, event: ev } : undefined;
 }

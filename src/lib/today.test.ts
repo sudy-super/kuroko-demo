@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { seed } from './seed';
-import { todayCount, todayItems, freeSlots, guideSection } from './derived';
+import { todayCount, todayItems, freeSlots, guideSection, todayEvents, nextMeeting } from './derived';
 import { addDays } from './dates';
 
 describe('todayItems', () => {
@@ -42,5 +42,32 @@ describe('todayItems', () => {
 	});
 	it('guideSection は初期 1', () => {
 		expect(guideSection(seed(new Date(2026, 8, 15)))).toBe(1);
+	});
+});
+
+describe('予定の並べ替え', () => {
+	// freeSlots が返す 1 桁時 (9:00) の予定が日程確定で実際に作られるため、
+	// 文字列比較だと '9:00' が '10:00' より後ろに来てしまう
+	it('todayEvents は 9:00 を先頭にする', () => {
+		const db = seed(new Date(2026, 8, 15));
+		db.events.push({
+			id: 'ev-morning',
+			date: '2026-09-15',
+			start: '9:00',
+			end: '9:30',
+			title: '朝の打ち合わせ',
+			personIds: [],
+			source: 'kuroko'
+		});
+		expect(todayEvents(db).map((e) => e.start)).toEqual(['9:00', '10:00', '13:00', '17:30']);
+	});
+	it('nextMeeting は同じ日なら 9:00 の会議を返す', () => {
+		const db = seed(new Date(2026, 8, 15));
+		const base = db.events.find((e) => e.id === 'ev-abc-meeting')!;
+		db.events.push({ ...base, id: 'ev-am', date: '2026-09-15', start: '9:00', end: '9:30', meetingId: 'm-am' });
+		db.events.push({ ...base, id: 'ev-ten', date: '2026-09-15', start: '10:00', end: '11:00', meetingId: 'm-ten' });
+		db.meetings.push({ ...db.meetings[0], id: 'm-am', eventId: 'ev-am' });
+		db.meetings.push({ ...db.meetings[0], id: 'm-ten', eventId: 'ev-ten' });
+		expect(nextMeeting(db)?.meeting.id).toBe('m-am');
 	});
 });
