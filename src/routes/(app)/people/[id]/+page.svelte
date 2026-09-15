@@ -7,7 +7,6 @@
 	import { ui, toast } from '$lib/ui.svelte';
 	import { updatePersonMemo } from '$lib/actions';
 	import Icon from '$lib/components/Icon.svelte';
-	import { glass, REGULAR } from '$lib/glass';
 
 	const CHANNELS = [
 		{ kind: 'email', label: 'Gmail', icon: 'b-gmail' },
@@ -74,7 +73,7 @@
 	{#if !person}
 		<p class="people-missing">この人物は登録されていません。</p>
 	{:else}
-		<div class="people-cards" {@attach glass({ ...REGULAR, targets: '.card' })}>
+		<div class="people-cards">
 			<section class="card people-sec">
 				<h2>基本情報</h2>
 				<dl class="kv">

@@ -4,79 +4,58 @@
    WebGL2 が無い環境では backdrop-filter に落ち、要素に data-liquid-glass="fallback" が付く */
 import { LiquidGlass, type LiquidGlassElementOptions } from 'apple-liquid-glass-webgl';
 
-/* 縁のレンズ。どの段でも同じ強さにする (ブリーフ 3)。
-   edgeReach 0.17 は縁から内側 17% の帯だけを曲げるという意味で、ブリーフ 1 の
-   「縁から内側 10〜18% の帯」に当たる。refraction は上限の 110。
-   lightAngle 136 は左上から差す光で、鏡面ハイライトと縁の光の向きを決める (ブリーフ 4) */
+/* Task 10f — 縁のレンズ。Apple の参考画像 (Liquid Glass の紹介、2025-06-09) では、
+   面の中はほぼ素通しで、縁の帯の中だけ下の内容が引き伸ばされて曲がり、上と左に白い線が走る。
+   ここの 2 つの値がその帯を作る (ライブラリの v2 シェーダー、v2-shaders.js 230 行目と 252 行目)。
+   - edgeWidth: 帯の幅。実寸は「要素の短辺の半分 x edgeWidth」画素。高さ 64px の上部バーなら
+     32 x 0.42 = 約 13px で、完了条件の「幅 6〜12px の帯」に当たる。高さ 44px の副ボタンなら
+     22 x 0.42 = 約 9px と、面の大きさに比例して細くなる。
+   - edgeReach: 帯の中で下の内容をどれだけ引き寄せるか。実寸は「短辺の半分 x 2 x 1.24 x この値」
+     画素で、上部バーなら約 46px 引く。0.17 (Task 10c の値) では約 13px しか動かず、
+     3 倍に拡大しても帯の中で何が曲がっているのか分からなかった。
+   dispersion は帯の中だけに出る色ずれ。参考画像の縁にも薄く出ている。
+   lightAngle 136 は左上から差す光で、鏡面ハイライトと縁の光の向きを決める */
 const LENS = {
 	refraction: 110,
-	edgeReach: 0.17,
-	edgeWidth: 0.3,
-	dispersion: 2.4,
-	rim: 0.34,
-	reflection: 0.34,
-	highlight: 0.46,
+	edgeReach: 0.58,
+	edgeWidth: 0.42,
+	dispersion: 4.2,
+	rim: 0.82,
+	reflection: 0.62,
+	highlight: 0.95,
 	lightAngle: 136,
-	hairline: 0.95
+	echo: 0.55,
+	hairline: 1.25
 } as const;
 
-/* 段ごとに違うのは面の濁り (tint) と背景の下ぼかし (backdropBlur) だけ。
-   tint はライブラリの 0〜1.5 の目盛りで、CSS の不透明度とは一致しない。値はすべて
-   「文字のコントラストを実測して 4.5:1 を満たす下限」で決めた (task-10c-report.md) */
-
-/* ナビ層 (上部バー、サイドナビ、依頼バー、連携中の列): 文字は要素自身の上に載り、
-   背後は色の塊だけなので、いちばん透明にできる */
+/* Task 10f — 段は 1 つだけ。iOS 26 でガラスになるのはナビ層 (バー、ボタン、ツールバー) で、
+   文字が並ぶ内容はガラスではない。内容カードは CSS の白い面に戻したので、
+   段を分ける理由 (カードだけ塗りを濃くする) が無くなった。
+   tint はライブラリの 0〜1.5 の目盛り。0.14 は参考画像の「ほぼ素通し」に合わせた値で、
+   ここから上げると面が白く濁り、屈折した縁より面のほうが目立つ。
+   backdropBlur 3 はナビ層の下を通る文字を溶かすためのごく弱いぼかし。
+   強くするとすりガラスになり、厚みのある透明な板に見えなくなる */
 export const CLEAR: LiquidGlassElementOptions = {
-	tint: 0.22,
+	tint: 0.14,
 	tintTone: 'light',
 	material: { ...LENS, backdropBlur: 3 }
 };
 
-/* Today の内容カード: 12px の小さな文字が並び、しかも裏でオーブが毎フレーム動く。
-   ここだけは塗りと下ぼかしを上げないと文字が読めない。
-   Task 10d で背景が壁紙になり、塗りが濃いと面の中で背後の色が透けず板に見えたので
-   0.72 → 0.52、下ぼかし 12 → 10 まで薄くした (文字のコントラストは実測で 4.5:1 以上) */
-export const REGULAR: LiquidGlassElementOptions = {
-	tint: 0.52,
-	tintTone: 'light',
-	material: { ...LENS, backdropBlur: 10 }
-};
-
-/* 公開パネル (Welcome と /connect): 載る文字が大きく数も少ないので実測に余裕があり、
-   カードより薄く、ぼかしも弱くできる。オーブの下半分がガラス越しに形のまま見える */
-export const PANEL: LiquidGlassElementOptions = {
-	tint: 0.42,
-	tintTone: 'light',
-	material: { ...LENS, backdropBlur: 6 }
-};
-
-/* live: true で毎フレーム描き直す。背景の色の塊は 72 秒の CSS アニメーションで漂い、
-   オーブは <canvas> の中で毎フレーム描き変わる。どちらもライブラリには変化の通知が来ないので、
-   静止させるとガラスの中だけ背景が止まって見える。
+/* live: true で毎フレーム描き直す。オーブは <canvas> の中で毎フレーム描き変わり、
+   ライブラリには変化の通知が来ないので、静止させるとガラスの中だけ背景が止まって見える。
    maxDpr は指定しない (ライブラリの既定 2)。一度 1 に落としていたが、画素の密度が高い
-   ディスプレイでガラスの中だけ解像度が半分になる。裁定は「性能よりカッコよさ」で、
-   既定の 2 でも本番ビルドの実測で 59.4 フレーム/秒、1 フレームの JavaScript は中央値 1.20ms
-   (95% 分位 1.57ms) と 60Hz の予算 16.67ms に十分収まる。
+   ディスプレイでガラスの中だけ解像度が半分になる。
    respectReducedTransparency: false — OS 設定には応答しない (裁定済み) */
-/* repaintMs — 背後を描き直す間隔 (ミリ秒)。省くと毎フレーム (live: true)。
-   1 フレームの費用は面の画素数にほぼ比例する。カレンダーの面は幅いっぱい x 約 660px
-   (実測 2412x1564 画素)あり、Today のカードより広い。毎フレーム描き直すと、
-   隔離した Chrome の本番ビルドでも月表示 30〜33 フレーム/秒しか出ない。
-   この面の背後にあるのは 72〜90 秒かけて漂う壁紙だけなので、毎フレームではなく
-   一定の間隔で描き直しても見た目は変わらない (1 フレームあたりの塊の動きは 0.1px 未満)。
-   refresh() は「次のフレームで背後を描き直す」印を立てるだけで、その間ガラスの
-   rAF の輪は止まる。scroll と resize ではライブラリ側が別に起こすので、送っても追従する */
-export function glass(options: LiquidGlassElementOptions, repaintMs?: number) {
+/* Task 10f — 間引いて描き直す repaintMs は消した。使っていたのはカレンダーの面 1 か所だけで、
+   そこは内容なので普通のカードに戻した。ガラスが残るのはナビ層だけになり、
+   どれも毎フレーム描き直しても本番ビルドで 54 フレーム/秒以上出る */
+export function glass(options: LiquidGlassElementOptions) {
 	return (node: Element) => {
 		const instance = new LiquidGlass(node as HTMLElement, {
-			live: !repaintMs,
+			live: true,
 			respectReducedTransparency: false,
 			...options
 		});
-		const timer = repaintMs ? setInterval(() => instance.refresh(), repaintMs) : undefined;
-		return () => {
-			clearInterval(timer);
-			instance.destroy();
-		};
+		return () => instance.destroy();
 	};
 }

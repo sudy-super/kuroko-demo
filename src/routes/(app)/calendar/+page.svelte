@@ -8,7 +8,6 @@
 	import { parse, key, addDays, fmtMD, fmtYMDW } from '$lib/dates';
 	import { weekOf } from '$lib/calendar';
 	import { personOf, projectOf } from '$lib/derived';
-	import { glass, REGULAR } from '$lib/glass';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import WeekView from '$lib/components/WeekView.svelte';
@@ -87,7 +86,7 @@
 		<h2 class="cal-title" aria-live="polite">{title}</h2>
 	</div>
 
-	<section class="card cal-panel" aria-label="{title}の予定" {@attach glass(REGULAR, 120)}>
+	<section class="card cal-panel" aria-label="{title}の予定">
 		{#if view === 'month'}
 			<MonthView {cursor} onopen={(e) => (detail = e)} onpick={pick} />
 		{:else}

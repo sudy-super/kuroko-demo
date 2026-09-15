@@ -8,13 +8,7 @@
 
 <Icons />
 
-<div class="bg" aria-hidden="true">
-	<div class="bg-blob a"></div>
-	<div class="bg-blob b"></div>
-	<div class="bg-blob c"></div>
-	<div class="bg-blob d"></div>
-	<div class="bg-blob e"></div>
-</div>
+<div class="bg" aria-hidden="true"></div>
 
 {@render children()}
 

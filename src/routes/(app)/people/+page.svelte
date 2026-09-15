@@ -3,7 +3,6 @@
 	import { companyOf } from '$lib/derived';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import { glass, REGULAR } from '$lib/glass';
 
 	type Tab = 'people' | 'companies' | 'projects';
 	const TABS: { key: Tab; label: string }[] = [
@@ -53,7 +52,7 @@
 		{/each}
 	</div>
 
-	<div class="people-cards" {@attach glass({ ...REGULAR, targets: '.card' })}>
+	<div class="people-cards">
 		<section class="card people-list" aria-label={TABS.find((t) => t.key === tab)!.label}>
 			{#if tab === 'people'}
 				{#each db.people as p (p.id)}

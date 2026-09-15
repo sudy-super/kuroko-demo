@@ -4,7 +4,6 @@
 	import { companyOf, personOf } from '$lib/derived';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import Icon from '$lib/components/Icon.svelte';
-	import { glass, REGULAR } from '$lib/glass';
 
 	const id = $derived(page.params.id!);
 	const project = $derived(db.projects.find((p) => p.id === id));
@@ -39,7 +38,7 @@
 	{#if !project}
 		<p class="people-missing">この案件は登録されていません。</p>
 	{:else}
-		<div class="people-cards" {@attach glass({ ...REGULAR, targets: '.card' })}>
+		<div class="people-cards">
 			<section class="card people-sec">
 				<h2>基本情報</h2>
 				<dl class="kv">

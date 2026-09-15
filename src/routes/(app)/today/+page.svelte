@@ -19,7 +19,7 @@
 	import TodayCard from '$lib/components/TodayCard.svelte';
 	import DoneScreen from '$lib/components/DoneScreen.svelte';
 	import ScenarioMenu from '$lib/components/ScenarioMenu.svelte';
-	import { glass, REGULAR } from '$lib/glass';
+	import { glass, CLEAR } from '$lib/glass';
 
 	const count = $derived(todayCount(db));
 	const items = $derived(todayItems(db));
@@ -55,9 +55,11 @@
 		<h1 class="today-count">
 			<a href="#items">今日やること <span class="num">{count}</span> 件</a>
 		</h1>
-		<!-- 副ボタンはガラスにしない。この列はオーブの真上に並び、実測でどの不透明度でも
-		     文字が 4.5:1 に届かなかった (task-10c-report.md) -->
-		<div class="row today-actions">
+		<!-- Task 10f — 副ボタンはナビ層なのでガラスにする。列はオーブの上端に少し重なる位置にあり、
+		     ボタンの縁がオーブの破片を曲げるところが屈折の見せ場になる。
+		     WebGL の文脈は 1 ページ約 16 個までなので、列全体で 1 つにまとめて各ボタンを targets で描く。
+		     主ボタン (.btn.pri) は塗りつぶしの面なので対象から外す -->
+		<div class="row today-actions" {@attach glass({ ...CLEAR, targets: '.btn.sec' })}>
 			<a class="btn sec" href="/calendar?new=1"><Icon name="ic-plus" size={18} />予定</a>
 			<a class="btn sec" href="/tasks?new=1"><Icon name="ic-plus" size={18} />ToDo</a>
 			<button class="btn sec" onclick={askKuroko}>
@@ -77,7 +79,7 @@
 				<DoneScreen />
 			</div>
 		{:else}
-			<div class="bento" {@attach glass({ ...REGULAR, targets: '.card' })}>
+			<div class="bento">
 				{#if ap.length}
 					<TodayCard
 						size="hero"

@@ -5,7 +5,7 @@
 	import { connect, connectAll, markStarted } from '$lib/actions';
 	import type { Connection } from '$lib/types';
 	import Icon from '$lib/components/Icon.svelte';
-	import { glass, PANEL } from '$lib/glass';
+	import { glass, CLEAR } from '$lib/glass';
 
 	const NAME: Record<Connection['id'], string> = {
 		gmail: 'Gmail',
@@ -46,7 +46,7 @@
 	<p class="muted in" style="--delay: 130ms">各 1 クリック、合計 10 秒。あとから設定で変更できます。</p>
 </div>
 
-<div class="public-list" {@attach glass(PANEL)}>
+<div class="public-list" {@attach glass(CLEAR)}>
 	{#each db.settings.connections as c, i (c.id)}
 		<div class="list-row lg in" style="--delay: {180 + i * 70}ms">
 			<Icon name="b-{c.id}" />

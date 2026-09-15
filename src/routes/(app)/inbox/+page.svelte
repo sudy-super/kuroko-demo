@@ -12,7 +12,6 @@
 	import ThreadRow from '$lib/components/ThreadRow.svelte';
 	import ThreadView from '$lib/components/ThreadView.svelte';
 	import PersonPanel from '$lib/components/PersonPanel.svelte';
-	import { glass, REGULAR } from '$lib/glass';
 
 	const q = $derived(queue(db));
 	// ?t= が指すスレッド。無ければキューの先頭 (対応済みにした直後もここに落ちる)
@@ -90,7 +89,7 @@
 		</button>
 	</header>
 
-	<div class="panes" {@attach glass({ ...REGULAR, targets: '.card' })}>
+	<div class="panes">
 		<section class="card pane pane-list" aria-label="要対応のメール">
 			{#if q.length === 0}
 				<p class="empty">要対応のメールはありません</p>

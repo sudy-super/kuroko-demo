@@ -3,7 +3,6 @@
 	import { db } from '$lib/store.svelte';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import Icon from '$lib/components/Icon.svelte';
-	import { glass, REGULAR } from '$lib/glass';
 
 	const id = $derived(page.params.id!);
 	const company = $derived(db.companies.find((c) => c.id === id));
@@ -34,7 +33,7 @@
 	{#if !company}
 		<p class="people-missing">この会社は登録されていません。</p>
 	{:else}
-		<div class="people-cards" {@attach glass({ ...REGULAR, targets: '.card' })}>
+		<div class="people-cards">
 			<section class="card people-sec">
 				<h2>基本情報</h2>
 				<dl class="kv">
