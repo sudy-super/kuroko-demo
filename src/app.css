@@ -12,12 +12,19 @@
 	--bg: #f4f7fc;
 
 	/* 文字と線 */
-	/* Task 10d — 背景を壁紙にしたので、文字の背後は白ではなく色の塊そのものになった。
+	/* Task 10e — 塊は 72〜90 秒かけて漂うので、1 フレームだけ測っても最悪の位置とは限らない。
+	   漂いを位相 0 から 1 まで等間隔 (1440x900 は 6 点、1100x900 は 5 点)で止めて撮り直し、
+	   文字を透明にした画面とそのままの画面の差分で文字の乗る画素だけを取り出して、
+	   その背後の輝度の下位 5% 分位で測った。
+	   1440x900 と 1100x900 の /today の全文字を通した最悪値:
+	   --ink 7.55:1 (サイドナビ「会議・議事録」、位相 1.0)、--ink-2 8.13:1 (出所のバッジ)、
+	   --ink-3 4.77:1 (上部バーの時刻、1100x900、位相 1.0)、--accent 4.60:1 (サイドナビの「Today」、位相 0)。
+	   位相 1.0 で 4.54:1 まで落ちた --ink-3 を #474f63 から一段濃くして 4.77:1 に戻した。
+	   --ink → --ink-2 → --ink-3 の順に薄くなるという約束は保つ (相対輝度 0.024 → 0.064 → 0.072)。
+
+	   Task 10d — 背景を壁紙にしたので、文字の背後は白ではなく色の塊そのものになった。
 	   最も色の濃い背後 (サイドナビの上半分に掛かる青 #4f7bff の塊) で実測し、4.5:1 を割った
 	   --ink-2 / --ink-3 / --accent をさらに濃くした。ブリーフ 3 の「塗りを厚くせず文字色を濃くする」に従う。
-	   実測 (1440x900 の /today、各文字の周り 28px から glyph と部品を除いた画素の下位 5% 分位):
-	   --ink 7.26:1、--ink-2 7.06:1、--ink-3 4.61:1、--accent 4.66:1。
-	   --ink → --ink-2 → --ink-3 の順に薄くなるという約束は保つ (相対輝度 0.024 → 0.064 → 0.078)。
 
 	   Task 10c — ガラスを透明に寄せたぶん、文字の背後が白ではなく背景の色そのものになった。
 	   実測に合わせて --ink-2 / --ink-3 / --accent を濃くした。ブリーフ 6 の
@@ -28,14 +35,13 @@
 	   実測: --ink-2 は 5.06:1 以上、--ink-3 は 4.62:1 以上 (4 フレームの下位 5% 分位) */
 	--ink: #1e2a47;
 	--ink-2: #3f4859;
-	--ink-3: #474f63;
+	--ink-3: #444c5f;
 	--line: rgba(140, 160, 200, 0.18);
 	--line-2: rgba(140, 160, 200, 0.3);
 
 	/* アクセント */
 	--accent: #10408e;
 	--accent-top: #2a6fe0;
-	--accent-2: #4f95ff;
 	--accent-soft: rgba(16, 64, 142, 0.1);
 	--accent-soft-2: rgba(16, 64, 142, 0.16);
 	--accent-glow: rgba(16, 64, 142, 0.28);
@@ -70,6 +76,9 @@
 	--glass-2: rgba(255, 255, 255, 0.6);
 	--glass-panel: rgba(255, 255, 255, 0.58);
 	--solid: rgba(255, 255, 255, 0.97);
+	/* Task 10e — 覆いが出ている間のカードの塗り。ガラスを 2 枚重ねないために面を不透明へ戻す。
+	   代替の経路 (backdrop-filter) と WebGL の経路の 2 か所で使うので、値はここ 1 つにまとめる */
+	--overlay-card: rgba(255, 255, 255, 0.9);
 
 	/* ぼかしは 12px と 16px のまま。Liquid Glass のぼかしはごく弱く、強くすると
 	   すりガラスになって「厚みのある透明な板」に見えなくなる。背景をぼかして見せる役は
@@ -244,7 +253,7 @@ svg.i {
    大きさは 1440x900 の実験値を vmin に直した (760px → 84vmin など)。小さい画面でも同じ構図になる。
 
    Task 10c からの制約 — ライブラリはガラスの背後を自分で描き直すが、そこに CSS の filter は
-   再現されない (node_modules/apple-liquid-glass-webgl/src/dom-content.js の 62 行目)。
+   再現されない (node_modules/apple-liquid-glass-webgl/src/dom-content.js の 13 行目のコメント)。
    ぼかしで柔らかくした塊はガラスの中だけ硬い円になるので、filter: blur() は使わず、
    放射状の階調 (40% から 70% にかけて消える) で輪郭の柔らかさを作る。
    opacity と mix-blend-mode は再現されるので使ってよい (dom-backdrop.js の 152 行目と 460 行目)。
@@ -293,10 +302,15 @@ svg.i {
 	animation-duration: 90s;
 	animation-delay: -50s;
 }
-/* 青緑 — 中央下。下段のカードと依頼バーの裏 */
+/* 青緑 — 中央下。下段のカードと依頼バーの裏。
+   Task 10e — top を 61% から 76% に下げた。1100x900 では Today のカードが縦に積み上がって
+   オーブが下 (中心 y=678) へ来るため、61% のままだと漂いの途中でこの塊の色が完全に乗る
+   範囲にオーブの中心が入り、オーブの青が壁紙に紛れる。76% にすると、漂いのどの位置でも
+   縁の薄いところしか掛からない。オーブの中心から半径 120px の壁紙の平均色は
+   rgb(170, 231, 231) から rgb(207, 238, 243) になった (task-10d-report.md 修正ラウンド 1 節) */
 .bg-blob.c {
 	left: 28.5%;
-	top: 61%;
+	top: 76%;
 	width: calc(78 * var(--blob-unit));
 	height: calc(78 * var(--blob-unit));
 	--blob: 63 210 199;
@@ -546,7 +560,7 @@ svg.i {
 body[data-overlay='on'] .card {
 	-webkit-backdrop-filter: none;
 	backdrop-filter: none;
-	background: rgba(255, 255, 255, 0.9);
+	background: var(--overlay-card);
 }
 
 /* visual 2.7 — Bento grid (ruling: hero は span 4、中央 4 列を空けてオーブを見せる) */
@@ -685,7 +699,7 @@ body[data-overlay='on'] .card {
 	transform: translateY(0);
 	box-shadow: inset 0 2px 4px rgba(12, 48, 110, 0.28);
 }
-/* components 3.4: 副ボタンの枠は 1px 実線の --accent (白地に 7.21:1)。
+/* components 3.4: 副ボタンの枠は 1px 実線の --accent (白地に 9.78:1)。
    Task 10c — 副ボタンにはガラスを当てていない。Today の見出しの列はオーブの真上に並び、
    塗りをどこまで上げても文字が 4.5:1 に届かなかった (実測 1.02:1、task-10c-report.md 2 節)。
    ここを塗りのまま残すのは意図的で、ガラス化するならまずコントラストを測り直すこと */
@@ -931,7 +945,7 @@ body[data-overlay='on'] .card {
 }
 /* Task 10c — 出所のバッジだけは塗りを不透明にする。半透明のままだとガラスの上でオーブが
    透けて、12px の文字が実測 2.5:1 まで落ちた。白地での見え方は rgba(120, 140, 180, .12) を
-   白に重ねた色と同じなので、見た目は変わらない (--ink-2 との比は 5.82:1) */
+   白に重ねた色と同じなので、見た目は変わらない (--ink-2 との比は 6.99:1) */
 .badge.src {
 	background: #eef1f6;
 	color: var(--ink-2);
@@ -1846,9 +1860,11 @@ section.tc .list-row:not(label):hover {
 	z-index: 1;
 }
 /* Task 10c — オーブはガラスが屈折させる対象なので、ガラスの canvas より下に置く。
-   canvas は要素の z-index: -1 の子なので、穴は -2 にする。どちらも .app (z-index 1) の
-   積み重ねの文脈の中なので、背景の色の塊 (.bg、根の z-index 0) より上には残る。
-   0 のままだと canvas の上に出て、オーブが屈折もぼかしも受けずに鮮明に載る */
+   canvas は要素の z-index: -1 の子なので、穴は -2 にする。0 のままだと canvas の上に出て、
+   オーブが屈折もぼかしも受けずに鮮明に載る。
+   Task 10e — -2 を閉じ込めているのは .bento の isolation: isolate で、.app の z-index: 1 では
+   ない。.bento が積み重ねの文脈になるので、-2 は .bento の中で止まり、背景の色の塊
+   (.bg、根の z-index 0) より下へは抜けない */
 .today .bento .hole {
 	position: relative;
 	z-index: -2;
@@ -2041,9 +2057,14 @@ section.tc .list-row:not(label):hover {
 	--rim: 0 0 rgba(0, 0, 0, 0);
 }
 
-/* ガラスの canvas は bleed の分だけ要素の外へ出る。位置の基準になる親が要る */
+/* ガラスの canvas は bleed の分だけ要素の外へ出る。位置の基準になる親が要る。
+   Task 10e — isolation: isolate も CSS で持つ。ライブラリは mountCanvas でこれをインラインに
+   書き込むが (dom.js:189)、WebGL2 が使えない環境では mountCanvas 自体が呼ばれない
+   (dom.js:144-146)。そのとき .bento が積み重ねの文脈にならないと、下の .hole の z-index: -2 が
+   .bento の外へ抜けて、塗りを持つ祖先の裏に回った瞬間にオーブが消える */
 .bento {
 	position: relative;
+	isolation: isolate;
 }
 
 /* visual 4.11 — ガラスを 2 枚重ねない。覆いが出ている間はカードのガラスを落とし、
@@ -2051,7 +2072,7 @@ section.tc .list-row:not(label):hover {
    カードが完全に透明になり、文字が背景の上に直接浮く。
 
    !important が要る理由: ライブラリは canvas を作るときに display: block を
-   インラインの style として書き込む (dom.js の createCanvas)。インラインの style は
+   インラインの style として書き込む (dom.js の mountCanvas)。インラインの style は
    スタイルシートの宣言より強いので、これを下ろす手段が !important しかない。
 
    塗りを戻す側は :root [data-liquid-glass='webgl'] .card (0,3,0) に勝つ必要があるので、
@@ -2060,5 +2081,5 @@ body[data-overlay='on'] .bento > [data-liquid-glass-layer] {
 	display: none !important;
 }
 :root body[data-overlay='on'] [data-liquid-glass='webgl'] .card {
-	background: rgba(255, 255, 255, 0.9);
+	background: var(--overlay-card);
 }
