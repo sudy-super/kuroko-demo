@@ -401,8 +401,7 @@ export function createEvent(
 	const { withMeeting, ...rest } = input;
 	const e: CalendarEvent = { ...rest, id: uid('ev'), source: 'kuroko' };
 	if (e.online) e.url = integrations.conference.createMeetingUrl(e.online);
-	db.events.push(e);
-	const ev = db.events[db.events.length - 1];
+	const ev = integrations.calendar.createEvent(db, e);
 	if (withMeeting) {
 		const m: Meeting = {
 			id: uid('m'),
@@ -431,8 +430,13 @@ export function createEvent(
 	return ev;
 }
 
-export function deleteEvent(id: string) {
-	db.events = db.events.filter((e) => e.id !== id);
+export function deleteEvent(id: string, origin: Origin = 'calendar') {
+	const e = db.events.find((x) => x.id === id);
+	if (!e) return;
+	integrations.calendar.deleteEvent(db, id);
+	// 予定と一緒に作った会議も残さない
+	db.meetings = db.meetings.filter((m) => m.eventId !== id);
+	log(`予定「${e.title}」を削除しました`, 'other', { actor: 'user', origin });
 	save();
 }
 
