@@ -134,7 +134,7 @@ void main() {
 
 		/* 深い青 → 明るい青 → 白 の急な階調。中心ほど白へ、外ほど深い青へ */
 		float core = pow(max(1.0 - d / R, 0.0), 1.5);
-		float band = clamp(0.12 + 2.2 * fw + 0.3 * core - 0.3 * smoothstep(R * 0.5, R * 1.2, dn), 0.0, 1.0); /* 核の集中を弱める */
+		float band = clamp(0.12 + 2.2 * fw + 0.5 * core - 0.3 * smoothstep(R * 0.5, R * 1.2, dn), 0.0, 1.0);
 		vec3 base = mix(C_EDGE, C_DEEP, smoothstep(0.0, 0.3, band));
 		base = mix(base, C_MID, smoothstep(0.25, 0.55, band));
 		base = mix(base, C_LIGHT, smoothstep(0.5, 0.8, band));
@@ -170,16 +170,13 @@ void main() {
 		/* 照明は控えめ (エネルギー体なので陰は浅い)。鏡面は揺らぎを弱めた法線で小さく (ローブが割れない) */
 		vec3 nn = normalize(n + vec3(f1, f2, 0.0) * 0.14);
 		vec3 L = normalize(vec3(-0.55, 0.65, 0.55));
-		float diff = 0.75 + 0.25 * max(dot(nn, L), 0.0); /* 立体感は少しだけ (左上がわずかに明るい) */
+		float diff = 0.85 + 0.15 * max(dot(nn, L), 0.0);
 		col = mix(C_EDGE * 0.8, base, diff);
 
-		/* 縁の締めと縁光はごく弱く (輪郭のはっきりした球に見せない)。境界の曖昧さは cov の波打ちが担う */
-		float rim = 1.0 - n.z;
-		col = mix(col, C_EDGE, smoothstep(0.55, 1.0, rim) * 0.3 * (1.0 - core));
-		col += C_LIGHT * pow(rim, 3.0) * 0.15;
-		/* 中心は白い核ではなく明るい青へ、広く緩やかに寄せる (密度を下げ、詰まった玉に見せない) */
-		float glow = pow(max(1.0 - d / (R * 0.9), 0.0), 1.5);
-		col = mix(col, mix(C_SOFT, C_LIGHT, 0.75), glow * 0.5);
+		/* 球面の縁光・外周の締め・鏡面は円を意識させるので使わない。外側の深さは band と密度で出す */
+		/* 中心は白い核ではなく明るい青へ寄せる (加算ではなく補間なので白へ飛ばない) */
+		float glow = pow(max(1.0 - d / (R * 0.7), 0.0), 2.0);
+		col = mix(col, mix(C_SOFT, C_LIGHT, 0.75), glow * 0.85);
 		col = softWhite(col);
 
 		/* fbm の筋が縁を越えて外に漏れる薄い発光 (R〜1.2R)。輪郭を光や気体のように見せる */
