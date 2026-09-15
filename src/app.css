@@ -1573,3 +1573,268 @@ body[data-overlay='on'] .card {
 		--orb-room: max(160px, calc(100dvh - 660px));
 	}
 }
+
+/* today (Task 10) — 仕様 5.1 / visual 2.7・2.8・4.5。既存のトークンだけで組む */
+.today-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--sp-4);
+	padding: 0 var(--sp-6) var(--sp-5);
+}
+/* 見出しは h1 のまま。数字だけ 40px に上げ、語句は 24px に落とす */
+.today-count {
+	font-size: 24px;
+}
+.today-count a {
+	display: inline-flex;
+	align-items: baseline;
+	gap: var(--sp-3);
+	color: inherit;
+	text-decoration: none;
+}
+.today-count .num {
+	font-size: 40px;
+	font-weight: 700;
+}
+.today-actions {
+	flex-wrap: wrap;
+	gap: var(--sp-3);
+}
+/* 上部バーが固定なので、見出しから飛んだときに先頭が隠れないようにする */
+.today-items {
+	scroll-margin-top: calc(var(--header-h) + var(--sp-4));
+}
+
+/* カードの中身。.card の見た目は触らず、並べ方と文字だけ決める */
+.tc {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-3);
+	width: 100%;
+	border: 0;
+	color: var(--ink);
+	font: inherit;
+	text-align: left;
+	text-decoration: none;
+	cursor: pointer;
+}
+/* 押せないタイルは浮かせない */
+section.tc,
+section.tc:hover {
+	transform: none;
+	box-shadow: var(--rim), var(--e2);
+	cursor: default;
+}
+.tc-head {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-2);
+	color: var(--ink-2);
+}
+.tc-head h2 {
+	font-size: 18px;
+	color: var(--ink);
+}
+.tc-body {
+	display: flex;
+	flex-direction: column;
+}
+/* 行はカードの余白に合わせて左右を詰める。区切り線も端までにする */
+.tc .list-row {
+	padding: 0;
+}
+.tc .list-row::after {
+	left: 0;
+	right: 0;
+}
+.tc .list-row input[type='checkbox'] {
+	flex: none;
+	width: 20px;
+	height: 20px;
+	accent-color: var(--accent);
+}
+.tc-text {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+.tc-col {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-1);
+	min-width: 0;
+	line-height: 1.4;
+}
+.tc-foot {
+	margin-top: var(--sp-3);
+}
+
+/* visual 2.8 — オーブは箱の中央に描かれて周りは透明なので、穴からはみ出させてガラスに重ねる */
+.today .bento {
+	position: relative;
+}
+.today .bento > * {
+	z-index: 1;
+}
+.today .bento .hole {
+	position: relative;
+	z-index: 0;
+}
+.orb-slot .orb,
+.today .bento .hole .orb {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	translate: -50% -50%;
+}
+
+/* 完了画面。球の下側がカードに隠れてガラスのぼかす対象になるよう、画の 3 割を重ねる */
+.today-done {
+	display: grid;
+	justify-items: center;
+	padding: 0 var(--sp-6);
+}
+.today-done .orb-slot {
+	position: relative;
+	width: var(--orb);
+	height: var(--orb);
+}
+.today-done .card {
+	position: relative;
+	z-index: 1;
+	width: 100%;
+	max-width: 560px;
+	margin-top: calc(var(--orb) * -0.3);
+}
+.done h2 {
+	font-size: 24px;
+}
+.done-stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--sp-6);
+	margin: var(--sp-5) 0;
+}
+.done-stats dt {
+	color: var(--ink-3);
+	font-size: 14px;
+}
+.done-stats dd {
+	margin: 0;
+	font-size: 14px;
+}
+.done-stats dd .num {
+	font-size: 24px;
+	font-weight: 700;
+}
+.done-links {
+	gap: var(--sp-4);
+	margin-top: var(--sp-5);
+}
+
+/* 仕様 11.4 — シナリオのメニュー。文言が長いので折り返させ、高さは行数に任せる */
+.menu {
+	z-index: 70;
+	width: 420px;
+	max-width: calc(100vw - var(--sp-8));
+	padding: var(--sp-2);
+	border-radius: var(--r-m);
+	background: var(--solid);
+	box-shadow: var(--e3);
+}
+/* 開いた直後は入れ物に焦点が当たる。枠は項目側の [data-highlighted] で示すので入れ物には出さない */
+.menu:focus-visible {
+	outline: none;
+}
+.menu-item {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--sp-3);
+	min-height: 44px;
+	padding: var(--sp-3) var(--sp-4);
+	border-radius: var(--r-s);
+	font-size: 14px;
+	line-height: 1.4;
+	cursor: pointer;
+	transition: background var(--d-fast) var(--ease-out);
+}
+.menu-item[data-highlighted] {
+	background: var(--sel-soft);
+}
+.menu-n {
+	color: var(--accent);
+	font-weight: 700;
+}
+
+/* 1100px 以下は穴を閉じるので、オーブはタイルの背後に回す (仕様 5.1) */
+@media (max-width: 1100px) {
+	.today .bento .hole {
+		display: block;
+		/* grid-column を残すと、絶対配置の基準が 6 列の外に作られた暗黙の列になる。
+		   auto に戻して基準を .bento 全体にし、オーブをタイルの中央の背後に置く */
+		grid-area: auto;
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+}
+
+/* 700px 以下は Bento をやめ、折りたたみカード 1 枚にする (仕様 5.1) */
+@media (max-width: 700px) {
+	.today .bento {
+		display: none;
+	}
+	.today-orb {
+		position: relative;
+		height: 160px;
+	}
+	.today-mobile {
+		padding: 0;
+	}
+	.today-mobile summary {
+		position: sticky;
+		top: var(--header-h);
+		z-index: 2;
+		display: flex;
+		align-items: center;
+		gap: var(--sp-2);
+		height: 56px;
+		padding: 0 var(--sp-4);
+		border-radius: var(--r-m) var(--r-m) 0 0;
+		background: var(--solid);
+		font-size: 18px;
+		font-weight: 700;
+		list-style: none;
+		cursor: pointer;
+	}
+	.today-mobile summary::-webkit-details-marker {
+		display: none;
+	}
+	/* 開閉の向きを示す山形。Icon の回転より部品が少ない */
+	.today-mobile summary::after {
+		content: '';
+		width: 10px;
+		height: 10px;
+		margin-left: auto;
+		border-right: 2px solid var(--ink-3);
+		border-bottom: 2px solid var(--ink-3);
+		rotate: 45deg;
+		translate: 0 -3px;
+		transition: rotate var(--d-base) var(--ease-out);
+	}
+	.today-mobile[open] summary::after {
+		rotate: -135deg;
+		translate: 0 3px;
+	}
+	.today-mobile .list-row {
+		padding: 0 var(--sp-4);
+	}
+	.today-head {
+		padding: 0 0 var(--sp-4);
+	}
+	.today-done {
+		padding: 0;
+	}
+}
