@@ -98,10 +98,11 @@ void main() {
 	float R = breathe(uTime);
 
 	/* 2 段の光彩 (R→1.45R、1.45R→1.97R = 直径の約 2 倍)。遠いほど白へ寄せ、淡い背景でも「光」に見せる */
-	float h1 = smoothstep(R * 1.45, R, d);
-	float h2 = smoothstep(R * 1.97, R * 1.45, d);
-	float haloN = fbm(vec3(p * 1.3, 7.0 + uTime * 0.03)); /* 光彩も真円にしない */
-	float haloA = (0.6 * h1 * h1 + 0.22 * h2 * h2) * (0.8 + 0.5 * haloN);
+	float haloN = fbm(vec3(p * 1.1, 7.0 + uTime * 0.03)); /* 光彩も円盤にしない: 距離を歪め、濃さも揺らす */
+	float dh = d * (1.0 + 0.35 * haloN);
+	float h1 = smoothstep(R * 1.45, R, dh);
+	float h2 = smoothstep(R * 1.97, R * 1.45, dh);
+	float haloA = (0.6 * h1 * h1 + 0.22 * h2 * h2) * (0.85 + 0.4 * haloN);
 	/* 光彩は白ではなく青 (#9cc4ff〜#4f95ff)。白を混ぜると全体が白く濁る */
 	vec3 haloC = mix(C_LIGHT, C_SOFT, h1 * 0.6);
 
@@ -109,18 +110,19 @@ void main() {
 	float cov = 0.0;
 	float leak = 0.0;
 	vec3 leakC = C_LIGHT;
-	if (d < R * 1.35) {
+	if (d < R * 1.45) {
 		vec2 s = p / R;
 		vec3 n = vec3(s, sqrt(max(0.0, 1.0 - min(dot(s, s), 1.0))));
-		/* 自転にも差動を付ける: 中心は 20 秒、外殻は 45 秒 */
-		float spin = uTime * 2.0 * PI / mix(20.0, 45.0, min(d / R, 1.0));
+		/* 自転は半径によらず一様に 45 秒。半径ごとに角速度を変えて累積させると、時間とともにノイズが
+		   同心円状に巻き取られる (バウムクーヘン状) ので、流れは fbm の時間方向のずらしで出す */
+		float spin = uTime * 2.0 * PI / 45.0;
 		vec3 q = rotY(spin) * n;
 
 		/* オーブは円ではない。距離場を低周波の fbm で大きく歪め (±22%)、0.72R〜1.3R の広い範囲で
 		   徐々に薄くし、外側ほどノイズで斑に抜けさせる。円周が線として見えない光の塊にする */
-		float edgeN = fbm(vec3(p * 1.6, uTime * 0.04));
-		float dn = d * (1.0 + 0.3 * edgeN);
-		cov = smoothstep(R * 1.3, R * 0.72, dn);
+		float edgeN = fbm(vec3(p * 1.1, uTime * 0.03));
+		float dn = d * (1.0 + 0.5 * edgeN); /* 半径が 0.65R〜1.35R の間で大きく波打つ塊にする */
+		cov = smoothstep(R * 1.3, R * 0.7, dn);
 
 		float f1 = fbm(q * 2.2 + vec3(0.0, uTime * 0.04, 0.0));
 		float f2 = fbm(q * 2.2 + vec3(5.2, -uTime * 0.03, 1.3));
@@ -128,15 +130,15 @@ void main() {
 		float fw = fbm(q * 2.0 + vec3(f1, f2, f1 * f2) * 1.1 + vec3(0.0, uTime * 0.03, 0.0));
 
 		/* 外側は渦のノイズに沿って斑に抜ける (輪郭の代わりに密度で外縁を決める) */
-		cov *= mix(1.0, smoothstep(-0.35, 0.25, fw), smoothstep(R * 0.5, R * 1.15, d));
+		cov *= mix(1.0, smoothstep(-0.35, 0.25, fw), smoothstep(R * 0.5, R * 1.15, dn));
 
 		/* 深い青 → 明るい青 → 白 の急な階調。中心ほど白へ、外ほど深い青へ */
 		float core = pow(max(1.0 - d / R, 0.0), 1.5);
-		float band = clamp(0.12 + 2.2 * fw + 0.5 * core - 0.3 * smoothstep(R * 0.5, R * 1.2, d), 0.0, 1.0);
+		float band = clamp(0.12 + 2.2 * fw + 0.5 * core - 0.3 * smoothstep(R * 0.5, R * 1.2, dn), 0.0, 1.0);
 		vec3 base = mix(C_EDGE, C_DEEP, smoothstep(0.0, 0.3, band));
 		base = mix(base, C_MID, smoothstep(0.25, 0.55, band));
 		base = mix(base, C_LIGHT, smoothstep(0.5, 0.8, band));
-		base = mix(base, vec3(1.0), smoothstep(0.75, 1.0, band) * (0.25 + 0.75 * core));
+		base = mix(base, mix(C_LIGHT, vec3(1.0), 0.2), smoothstep(0.75, 1.0, band) * (0.25 + 0.75 * core)); /* 白い円盤にしない */
 
 		/* 結晶の面: 2D Voronoi の面ごとの明暗と、面の縁の細い明るい線 */
 		vec2 vq = (q.xy + q.z * 0.35) * 9.0;
@@ -163,7 +165,7 @@ void main() {
 		float hf = fbm(q * 3.4 + vec3(uTime * 0.06, 3.3, -uTime * 0.02));
 		float patch = smoothstep(-0.1, 0.3, f2);
 		float streak = (1.0 - smoothstep(0.0, 0.07, abs(hf))) * 0.6 * patch + smoothstep(0.2, 0.5, hf) * 0.35;
-		base = 1.0 - (1.0 - base) * (1.0 - streak * vec3(0.9, 0.96, 1.0));
+		base = 1.0 - (1.0 - base) * (1.0 - streak * 0.8 * C_LIGHT);
 
 		/* 照明は控えめ (エネルギー体なので陰は浅い)。鏡面は揺らぎを弱めた法線で小さく (ローブが割れない) */
 		vec3 nn = normalize(n + vec3(f1, f2, 0.0) * 0.14);
@@ -172,14 +174,14 @@ void main() {
 		col = mix(C_EDGE * 0.8, base, diff);
 
 		/* 球面の縁光・外周の締め・鏡面は円を意識させるので使わない。外側の深さは band と密度で出す */
-		/* 核: 中心ほど白く飛ぶ emission */
-		float glow = pow(max(1.0 - d / (R * 0.6), 0.0), 2.6);
-		col += mix(C_LIGHT, vec3(1.0), 0.6) * glow * 1.5;
+		/* 中心は白い核ではなく明るい青へ寄せる (加算ではなく補間なので白へ飛ばない) */
+		float glow = pow(max(1.0 - d / (R * 0.7), 0.0), 2.0);
+		col = mix(col, mix(C_SOFT, C_LIGHT, 0.75), glow * 0.85);
 		col = softWhite(col);
 
 		/* fbm の筋が縁を越えて外に漏れる薄い発光 (R〜1.2R)。輪郭を光や気体のように見せる */
 		leak = smoothstep(R * 1.35, R * 0.8, d) * (1.0 - cov) * (0.3 * max(fw + 0.25, 0.0) + 0.3 * streak);
-		leakC = mix(C_LIGHT, vec3(1.0), 0.4);
+		leakC = C_LIGHT;
 	}
 	float a = cov + (leak + haloA * (1.0 - leak)) * (1.0 - cov);
 	vec3 rgb = col * cov + (leakC * leak + haloC * haloA * (1.0 - leak)) * (1.0 - cov);
@@ -229,7 +231,7 @@ void main() {
 		float flash = 1.0 + 1.2 * smoothstep(0.2, 0.0, life); /* 剥がれる瞬間は明るい */
 		alpha = smoothstep(0.0, 0.05, life) * smoothstep(1.0, 0.7, life) * mix(0.35, 1.0, jet) * flash;
 	} else {
-		float rr = aSeed.z < 0.5 ? 1.0 + 0.1 * fract(aSeed.z * 9.0) : 1.18 + 0.12 * fract(aSeed.z * 9.0);
+		float rr = 0.9 + 0.6 * fract(aSeed.z * 9.0); /* 帯にせず 0.9R〜1.5R に散らす (円周をなぞらせない) */
 		float layer = orbitLayer(rr);
 		float a = ang + orbitDir(layer) * uTime * 2.0 * PI / orbitPeriod(rr);
 		mat3 tilt = orbitTilt(layer);
@@ -254,11 +256,11 @@ void main() {
 	gl_Position = vec4((c + off) * min(uRes.x, uRes.y) / uRes, 0.0, 1.0);
 
 	float tone = fract(aSeed.x * 13.0);
-	vC = tone < 0.55 ? mix(C_EDGE * 0.8, C_DEEP, fract(aSeed.w * 9.0)) : (tone < 0.85 ? C_MID : mix(C_LIGHT, vec3(1.0), 0.6));
+	vC = tone < 0.55 ? mix(C_EDGE * 0.8, C_DEEP, fract(aSeed.w * 9.0)) : (tone < 0.85 ? C_MID : mix(C_LIGHT, vec3(1.0), 0.3));
 	if (tone < 0.85) vC = mix(vC * 0.8, vC, depth); /* 青い破片だけ奥を少し暗く。白寄りは減光すると灰色の紙に見える */
 	/* 自転で面が光を捉える瞬間の白いきらめき */
 	float glint = pow(max(sin(rot * 2.0 + aSeed.w * 20.0), 0.0), 24.0);
-	vC = mix(vC, vec3(1.0), glint * 0.6);
+	vC = mix(vC, mix(C_LIGHT, vec3(1.0), 0.5), glint * 0.6);
 	vA = alpha;
 	vCorner = vec2(corner.x / max(stretch, 1.0), corner.y); /* 幾何は進行方向だけ伸ばすので x だけ割る。面の明暗は回転後の隅で決める */
 	vSmear = trailing;
@@ -339,7 +341,7 @@ void main() {
 		alpha = mix(0.15, 0.8, depth) * (0.6 + 0.4 * blink) + 0.6 * blink;
 		px = mix(4.5, 2.0, depth); /* 奥はぼけて大きく、手前は小さく鋭く */
 		vSoft = mix(1.0, 0.3, depth);
-		vC = mix(mix(C_LIGHT, vec3(1.0), 0.5), C_SOFT, 1.0 - depth);
+		vC = mix(mix(C_LIGHT, vec3(1.0), 0.25), C_SOFT, 1.0 - depth);
 	} else {
 		float rr = 0.5 + 0.4 * fract(aSeed.z * 5.1); /* 核の白い部分には置かない */
 		float a = ang + uTime * 2.0 * PI / mix(20.0, 45.0, rr);
@@ -348,7 +350,7 @@ void main() {
 		alpha = 0.2 * depth * step(0.0, pos.z);
 		px = 2.2;
 		vSoft = 0.5;
-		vC = mix(C_LIGHT, vec3(1.0), 0.6);
+		vC = C_LIGHT;
 	}
 	alpha *= behind(pos, R);
 	gl_Position = vec4(project(pos) * min(uRes.x, uRes.y) / uRes, 0.0, 1.0);
@@ -405,7 +407,7 @@ void main() {
 	gl_Position = vec4((c + nrm * aRing.y * width) * min(uRes.x, uRes.y) / uRes, 0.0, 1.0);
 	/* 弧: 周の 55% だけ光り、両端は柔らかく。弧そのものが周に沿って進む */
 	float w = fract(aRing.x - uTime * uCfg.z + uPhase);
-	float arc = smoothstep(0.0, 0.2, w) * smoothstep(0.55, 0.3, w);
+	float arc = smoothstep(0.0, 0.12, w) * smoothstep(0.32, 0.2, w); /* 周の 3 割だけの短い弧。円周をなぞらせない */
 	vA = arc * behind(p, R) * mix(0.35, 1.0, 0.5 + 0.5 * p.z / length(p));
 	vSide = aRing.y;
 }
@@ -416,8 +418,8 @@ precision highp float;
 varying float vA;
 varying float vSide;
 void main() {
-	float k = (1.0 - vSide * vSide) * vA * 0.9;
-	vec3 c = mix(vec3(0.612, 0.769, 1.0), vec3(1.0), 0.5);
+	float k = (1.0 - vSide * vSide) * vA * 0.6;
+	vec3 c = mix(vec3(0.612, 0.769, 1.0), vec3(1.0), 0.2);
 	gl_FragColor = vec4(c * k, k);
 }
 `;

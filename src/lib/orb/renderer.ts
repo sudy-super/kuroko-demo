@@ -100,7 +100,7 @@ export function plexus(
 	const cx = Math.cos(0.35), sx = Math.sin(0.35);
 	for (let i = 0; i < n; i++) {
 		/* 結節点を球面に乗せると網が「球の骨組み」に見える。0.9R〜1.3R の厚みに散らして球の輪郭を作らない */
-		const rad = R * (0.9 + 0.4 * (((i * 7919) % 1000) / 1000) + 0.03 * Math.sin(time * 0.7 + i));
+		const rad = R * (0.8 + 0.6 * (((i * 7919) % 1000) / 1000) + 0.03 * Math.sin(time * 0.7 + i));
 		let x = dirs[i * 3] * rad, y = dirs[i * 3 + 1] * rad, z = dirs[i * 3 + 2] * rad;
 		let t = x * cy + z * sy; z = -x * sy + z * cy; x = t;
 		t = x * cz - y * sz; y = x * sz + y * cz; x = t;
@@ -121,7 +121,7 @@ export function plexus(
 			if (!vis[j]) continue;
 			const dd = Math.hypot(px[i] - px[j], py[i] - py[j]);
 			if (dd > maxDist) continue;
-			const a = (0.15 + 0.3 * (1 - dd / maxDist)) * Math.min(vis[i], vis[j]); /* 近いほど明るく 0.15〜0.45 */
+			const a = (0.1 + 0.25 * (1 - dd / maxDist)) * Math.min(vis[i], vis[j]); /* 近いほど明るく 0.1〜0.35 */
 			lines.set([px[i], py[i], a, px[j], py[j], a], c * 6);
 			c++;
 			links++;
@@ -291,7 +291,7 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		gl.clear(gl.COLOR_BUFFER_BIT);
 		fullscreen(sphere, scene);
 
-		/* 2. 光の帯 2 本 (加算)、周期違い */
+		/* 2. 光の弧 1 本 (加算)。2 本にすると円周をなぞって球に見えるので 1 本の短い弧にする */
 		additive();
 		gl.useProgram(ring.p);
 		gl.uniform2f(ring.u.uRes, w, h);
@@ -299,9 +299,6 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		const ringLoc = attrib(ring, 'aRing', ringBuf, 2);
 		gl.uniform3f(ring.u.uCfg, 1.15, 1.18, 1 / 22);
 		gl.uniform1f(ring.u.uPhase, 0);
-		gl.drawArrays(gl.TRIANGLE_STRIP, 0, (RING_SEGS + 1) * 2);
-		gl.uniform3f(ring.u.uCfg, -0.75, 1.32, 1 / 34);
-		gl.uniform1f(ring.u.uPhase, 2.1);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, (RING_SEGS + 1) * 2);
 		gl.disableVertexAttribArray(ringLoc);
 
@@ -367,7 +364,7 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		gl.useProgram(bright.p);
 		bind(0, scene);
 		gl.uniform1i(bright.u.uTex, 0);
-		gl.uniform1f(bright.u.uThreshold, 0.6); /* 光彩 (#9cc4ff の輝度 0.76) の芯だけ拾う。低いと全体が白く覆われる */
+		gl.uniform1f(bright.u.uThreshold, 0.7); /* #9cc4ff (輝度 0.76) より明るい所だけ拾う。低いと全体が白く覆われる */
 		fullscreen(bright, halfA);
 
 		const step = (blurRadius * dpr) / 2 / 8; /* 半分解像度のテクセルで 8 タップ分に収める */
@@ -386,7 +383,7 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		bind(1, halfA);
 		gl.uniform1i(composite.u.uScene, 0);
 		gl.uniform1i(composite.u.uBloom, 1);
-		gl.uniform1f(composite.u.uStrength, 1.3);
+		gl.uniform1f(composite.u.uStrength, 1.0);
 		fullscreen(composite, null);
 	};
 
