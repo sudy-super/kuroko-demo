@@ -14,6 +14,10 @@ describe('seed', () => {
 			key(bizDay(1, new Date(2026, 8, 15)))
 		);
 	});
+	it('すべてのスレッドに表示用の差出人名がある', () => {
+		const db = seed(new Date(2026, 8, 15));
+		expect(db.threads.filter((t) => !t.sender.trim())).toEqual([]);
+	});
 	it('未登録の差出人は personId を持たない', () => {
 		const db = seed(new Date(2026, 8, 15));
 		const sunrise = db.identities.find((i) => i.value === 'suzuki@sunrise.co.jp')!;

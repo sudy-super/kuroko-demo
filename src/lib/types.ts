@@ -14,7 +14,7 @@ export interface ChannelIdentity { id: string; personId?: string; kind: 'email' 
 export interface Company { id: string; name: string; domain: string; industry: string; size: string }
 export type ProjectStatus = '商談前' | '提案中' | '見積提出' | '検討中' | '受注' | '失注';
 export interface Project { id: string; name: string; companyId: string; status: ProjectStatus; amount: string; nextDate?: string; personIds: string[]; documentIds: string[] }
-export interface MessageThread { id: string; source: Source; subject: string; identityId: string; personId?: string; companyId?: string; projectId?: string; reasons: Reason[]; needsReply: boolean; done: boolean; inQueue: boolean; lastAt: string }
+export interface MessageThread { id: string; source: Source; subject: string; sender: string; identityId: string; personId?: string; companyId?: string; projectId?: string; reasons: Reason[]; needsReply: boolean; done: boolean; inQueue: boolean; lastAt: string }
 export interface Message { id: string; threadId: string; from: 'me' | 'them'; body: string; at: string; sentVia?: 'approval' }
 export interface CalendarEvent { id: string; date: string; start: string; end: string; title: string; place?: string; online?: 'meet' | 'zoom'; url?: string; personIds: string[]; companyId?: string; projectId?: string; meetingId?: string; source: 'gcal' | 'kuroko'; tentative?: boolean; bufferBefore?: number; bufferAfter?: number; purpose?: string }
 export interface Brief { createdAt: string; note?: string; history: string[]; lastPoints: string[]; homework: string[]; recentContacts: string[]; documentIds: string[] }
