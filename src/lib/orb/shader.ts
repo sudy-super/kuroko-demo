@@ -17,15 +17,23 @@ const vec3 C_LIGHT = vec3(0.612, 0.769, 1.000); /* #9cc4ff */
 float breathe(float t) { return R0 * (1.0 + 0.015 * sin(t * 2.0 * PI / 4.0)); } /* 呼吸 ±1.5%、4 秒 */
 mat3 rotY(float a) { float c = cos(a), s = sin(a); return mat3(c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c); }
 mat3 rotX(float a) { float c = cos(a), s = sin(a); return mat3(1.0, 0.0, 0.0, 0.0, c, s, 0.0, -s, c); }
+mat3 rotZ(float a) { float c = cos(a), s = sin(a); return mat3(c, s, 0.0, -s, c, 0.0, 0.0, 0.0, 1.0); }
 /* 3D → 画面。奥ほど少し縮む弱い遠近 */
 vec2 project(vec3 p) { return p.xy * (1.0 + 0.12 * p.z); }
+/* 球の裏側 (z < 0 で円盤の内側) は隠す */
+float behind(vec3 p, float R) { return (p.z < 0.0) ? smoothstep(R * 0.96, R * 1.02, length(p.xy)) : 1.0; }
 /* 1 を超えた色は色相を保ったまま白へ寄せる (単純な clamp だと青がシアンに転ぶ) */
 vec3 softWhite(vec3 c) {
 	float m = max(c.r, max(c.g, c.b));
 	return m > 1.0 ? mix(c / m, vec3(1.0), 1.0 - exp(-(m - 1.0) * 1.2)) : c;
 }
-/* 球の裏側 (z < 0 で円盤の内側) は隠す */
-float behind(vec3 p, float R) { return (p.z < 0.0) ? smoothstep(R * 0.96, R * 1.02, length(p.xy)) : 1.0; }
+/* 差動回転 (Atom のロゴの作法): 中心に近い層ほど速く公転する。rr は R の倍率 (1.0 = 球面)。
+   周期は球面で 35 秒、2.2R で 115 秒。層は 0.25R 刻みの 5 層で、傾きを少しずつ変え、中央の層だけ逆回転 */
+float orbitPeriod(float rr) { return mix(35.0, 115.0, clamp((rr - 1.0) / 1.2, 0.0, 1.0)); }
+float orbitLayer(float rr) { return floor(clamp((rr - 1.0) / 0.25, 0.0, 4.0)); }
+float orbitDir(float layer) { return layer == 2.0 ? -1.0 : 1.0; }
+mat3 orbitTilt(float layerF) { return rotX(0.35 + 0.12 * layerF) * rotZ(0.15 * layerF - 0.3); }
+vec3 onSphere(float ang, float lat) { return vec3(sin(lat) * cos(ang), cos(lat), sin(lat) * sin(ang)); }
 `;
 
 const NOISE = /* glsl */ `
@@ -88,25 +96,29 @@ void main() {
 	vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / (0.5 * min(uRes.x, uRes.y));
 	float d = length(p);
 	float R = breathe(uTime);
-	float spin = uTime * 2.0 * PI / 45.0; /* 自転 45 秒 */
 
-	/* 2 段の光彩 (R→0.75、0.75→0.98)。球の直径の約 2 倍まで。二乗で減衰させ縁に光を溜める */
-	float h1 = smoothstep(0.75, R * 0.9, d);
-	float h2 = smoothstep(0.98, 0.7, d);
-	float haloA = 0.6 * h1 * h1 + 0.22 * h2 * h2;
-	vec3 haloC = mix(C_LIGHT, C_SOFT, h1 * 0.6); /* 淡い背景で消えないよう球の近くほど青を濃くする */
+	/* 2 段の光彩 (R→1.45R、1.45R→1.97R = 直径の約 2 倍)。遠いほど白へ寄せ、淡い背景でも「光」に見せる */
+	float h1 = smoothstep(R * 1.45, R, d);
+	float h2 = smoothstep(R * 1.97, R * 1.45, d);
+	float haloA = 0.55 * pow(h1, 1.4) + 0.28 * pow(h2, 1.6);
+	/* 淡い背景では白い光は見えないので、光彩は #9cc4ff を軸にした明るい青。遠いほど少し白へ */
+	vec3 haloC = mix(mix(C_LIGHT, vec3(1.0), 0.2), mix(C_LIGHT, C_SOFT, 0.35), h1);
 
 	vec3 col = vec3(0.0);
 	float cov = 0.0;
-	if (d < R * 1.08) {
+	float leak = 0.0;
+	vec3 leakC = C_LIGHT;
+	if (d < R * 1.22) {
 		vec2 s = p / R;
 		vec3 n = vec3(s, sqrt(max(0.0, 1.0 - min(dot(s, s), 1.0))));
+		/* 自転にも差動を付ける: 中心は 20 秒、外殻は 45 秒 */
+		float spin = uTime * 2.0 * PI / mix(20.0, 45.0, min(d / R, 1.0));
 		vec3 q = rotY(spin) * n;
 
-		/* 輪郭は fbm で崩し、破片に砕けて散る途中に見せる (輪郭のノイズは自転させない) */
+		/* 輪郭は fbm で崩し、0.92R〜1.12R の広い範囲で徐々に落として気体のように見せる */
 		float edgeN = fbm(vec3(p * 3.0, uTime * 0.05));
-		float Rn = R * (1.0 + 0.05 * edgeN);
-		cov = smoothstep(Rn * 1.02, Rn * 0.95, d);
+		float dn = d - 0.05 * R * edgeN;
+		cov = smoothstep(R * 1.12, R * 0.92, dn);
 
 		float f1 = fbm(q * 2.2 + vec3(0.0, uTime * 0.04, 0.0));
 		float f2 = fbm(q * 2.2 + vec3(5.2, -uTime * 0.03, 1.3));
@@ -139,7 +151,7 @@ void main() {
 			float fi = fbm(rotY(-spin * 0.7) * ni * 3.0 + vec3(2.7, uTime * 0.05, 8.1));
 			vec3 innerCol = mix(C_EDGE, C_SOFT, clamp(0.5 + 1.6 * fi, 0.0, 1.0));
 			float innerCov = smoothstep(Ri, Ri - 0.08, di) * (0.4 + 0.5 * ni.z);
-			base = mix(base, innerCol, innerCov * 0.5 * (1.0 - core));
+			base = mix(base, innerCol, innerCov * 0.65 * (1.0 - core));
 		}
 
 		/* 白い筋: 高周波 fbm の零点付近を細い脈として、別ノイズで場所を区切って screen で足す */
@@ -148,12 +160,12 @@ void main() {
 		float streak = (1.0 - smoothstep(0.0, 0.07, abs(hf))) * 0.6 * patch + smoothstep(0.2, 0.5, hf) * 0.35;
 		base = 1.0 - (1.0 - base) * (1.0 - streak * vec3(0.9, 0.96, 1.0));
 
-		/* 照明は控えめ (エネルギー体なので陰は浅い)、鏡面は小さく弱く */
+		/* 照明は控えめ (エネルギー体なので陰は浅い)。鏡面は揺らぎを弱めた法線で小さく (ローブが割れない) */
 		vec3 nn = normalize(n + vec3(f1, f2, 0.0) * 0.14);
 		vec3 L = normalize(vec3(-0.55, 0.65, 0.55));
 		float diff = 0.85 + 0.15 * max(dot(nn, L), 0.0);
 		vec3 H = normalize(L + vec3(0.0, 0.0, 1.0));
-		float spec = pow(max(dot(nn, H), 0.0), 48.0);
+		float spec = pow(max(dot(normalize(mix(n, nn, 0.35)), H), 0.0), 48.0);
 		col = mix(C_EDGE * 0.8, base, diff);
 
 		/* 外周は深い青で締め、淡い背景に埋もれないようにする */
@@ -162,82 +174,108 @@ void main() {
 		/* 核: 中心ほど白く飛ぶ emission */
 		float glow = pow(max(1.0 - d / (R * 0.6), 0.0), 2.6);
 		col += mix(C_LIGHT, vec3(1.0), 0.6) * glow * 1.5;
-		/* Schlick のフレネル: 縁に細い光の線 */
-		col += C_LIGHT * pow(rim, 5.0) * 0.9;
+		/* Schlick のフレネル。指数を下げて縁光の幅を広げ、外へ滲ませる */
+		col += C_LIGHT * pow(rim, 2.5) * 0.55;
 		col += spec * 0.15;
 		col = softWhite(col);
+
+		/* fbm の筋が縁を越えて外に漏れる薄い発光 (R〜1.2R)。輪郭を光や気体のように見せる */
+		leak = smoothstep(R * 1.2, R * 0.95, d) * (1.0 - cov) * (0.3 * max(fw + 0.25, 0.0) + 0.3 * streak);
+		leakC = mix(C_LIGHT, vec3(1.0), 0.4);
 	}
-	float a = cov + haloA * (1.0 - cov);
-	vec3 rgb = col * cov + haloC * haloA * (1.0 - cov);
+	float a = cov + (leak + haloA * (1.0 - leak)) * (1.0 - cov);
+	vec3 rgb = col * cov + (leakC * leak + haloC * haloA * (1.0 - leak)) * (1.0 - cov);
 	gl_FragColor = vec4(rgb, a);
 }
 `;
 
 /**
- * 破片: 1 個 = 6 頂点 (三角形 2 枚)。aSeed = (角度, 緯度, 半径/寿命, 群と位相)、aCorner = 四角の隅 [-1, 1]。
- * w < 0.55 は球面から放射状に飛び出して減速しながら消える群、それ以外は表面に張り付いて回る群。
- * 進行方向に伸び (速度で 1〜4 倍)、各自回転する
+ * 破片: 1 個 = 6 頂点 (三角形 2 枚)。aSeed = (角度, 緯度, 大きさ/位相, 群と位相)、aCorner = 形の隅 [-1, 1]。
+ * w < 0.6 は球面から剥がれて渦を巻きながら飛び去る群、それ以外は球面付近の 2 層を公転する群。
+ * 大きさは 2〜14px の対数分布 (大きいほど少なく、ゆっくり回る)。噴出は fbm で決まる 2〜3 か所から多く出る
  */
 export const SHARD_VS = /* glsl */ `
 ${COMMON}
+${NOISE}
 attribute vec4 aSeed;
 attribute vec2 aCorner;
 uniform vec2 uRes;
 uniform float uTime;
 varying float vA;
 varying vec3 vC;
+varying vec2 vCorner;
 void main() {
 	float R = breathe(uTime);
 	float ang = aSeed.x * 2.0 * PI;
 	float lat = acos(2.0 * aSeed.y - 1.0); /* 球面に一様に配る */
+	float u = fract(aSeed.z * 7.3);
+	float size = 0.004 * pow(7.0, pow(u, 1.6)); /* 半幅。2px〜14px (520px 基準) の対数分布 */
+	float sizeN = pow(u, 1.6);
 	vec3 pos, vel;
-	float alpha, size;
-	if (aSeed.w < 0.55) {
-		float T = 4.0 + 5.0 * aSeed.z; /* 寿命 4〜9 秒 */
+	float alpha;
+	if (aSeed.w < 0.6) {
+		float T = 5.0 + 6.0 * aSeed.z; /* 寿命 5〜11 秒 */
 		float life = fract(uTime / T + aSeed.w * 17.0);
 		float e = 1.0 - (1.0 - life) * (1.0 - life); /* ease-out: 飛び出して減速 */
-		vec3 dirv = rotY(uTime * 2.0 * PI / 120.0) * vec3(sin(lat) * cos(ang), cos(lat), sin(lat) * sin(ang));
-		pos = dirv * R * (1.0 + 1.25 * e);
-		vel = dirv * (1.0 - life);
-		alpha = smoothstep(0.0, 0.06, life) * smoothstep(1.0, 0.7, life);
-		size = mix(0.004, 0.022, pow(fract(aSeed.z * 5.0), 2.5));
+		float rr = 1.0 + 1.3 * e;
+		/* 剥がれた球面の公転 (35 秒) を引き継ぎ、外へ行くほど接線方向に 0.7 rad ねじれて渦を巻く */
+		float a = ang + uTime * 2.0 * PI / 35.0 + 0.7 * e;
+		mat3 tilt = orbitTilt((rr - 1.0) / 0.25);
+		pos = tilt * (onSphere(a, lat) * rr * R);
+		vec3 radial = tilt * onSphere(a, lat);
+		vec3 tangent = tilt * vec3(-sin(lat) * sin(a), 0.0, sin(lat) * cos(a));
+		vel = (radial * (1.0 - life) * 1.3 + tangent * 0.35) * (1.0 - 0.5 * life);
+		/* 噴出点: 方向と時間の fbm で 2〜3 か所に偏らせる */
+		float jet = smoothstep(-0.05, 0.35, fbm(onSphere(ang, lat) * 1.6 + vec3(0.0, uTime * 0.04, 0.0)));
+		float flash = 1.0 + 1.2 * smoothstep(0.2, 0.0, life); /* 剥がれる瞬間は明るい */
+		alpha = smoothstep(0.0, 0.05, life) * smoothstep(1.0, 0.7, life) * mix(0.35, 1.0, jet) * flash;
 	} else {
-		float dir = aSeed.z < 0.5 ? 1.0 : -1.0;
-		float a = ang + dir * uTime * 2.0 * PI / 70.0; /* 公転 70 秒 */
-		vec3 p0 = vec3(sin(lat) * cos(a), cos(lat), sin(lat) * sin(a));
-		mat3 tilt = rotX(0.4);
-		pos = tilt * p0 * R * (1.0 + 0.1 * fract(aSeed.z * 3.0));
-		vel = tilt * vec3(-sin(lat) * sin(a), 0.0, sin(lat) * cos(a)) * 0.25 * dir;
+		float rr = aSeed.z < 0.5 ? 1.0 + 0.1 * fract(aSeed.z * 9.0) : 1.18 + 0.12 * fract(aSeed.z * 9.0);
+		float layer = orbitLayer(rr);
+		float a = ang + orbitDir(layer) * uTime * 2.0 * PI / orbitPeriod(rr);
+		mat3 tilt = orbitTilt(layer);
+		pos = tilt * (onSphere(a, lat) * rr * R);
+		vel = tilt * vec3(-sin(lat) * sin(a), 0.0, sin(lat) * cos(a)) * 0.3 * orbitDir(layer);
 		alpha = 1.0;
-		size = mix(0.004, 0.013, pow(fract(aSeed.y * 7.0), 2.0));
 	}
 	float depth = 0.5 + 0.5 * pos.z / length(pos);
-	alpha *= behind(pos, R) * mix(0.6, 1.0, depth);
+	alpha *= behind(pos, R) * mix(0.55, 1.0, depth);
+	size *= mix(0.7, 1.15, depth); /* 奥は小さく、手前は大きく */
 
 	vec2 c = project(pos);
 	vec2 v2 = vel.xy;
 	float sp = length(v2);
 	vec2 d2 = sp > 1e-4 ? v2 / sp : vec2(1.0, 0.0);
-	float rot = uTime * (0.4 + aSeed.x * 1.6) * (aSeed.y < 0.5 ? 1.0 : -1.0);
+	float rot = uTime * mix(2.4, 0.5, sizeN) * (aSeed.y < 0.5 ? 1.0 : -1.0) + aSeed.x * 6.0; /* 小さいほど速く自転 */
 	vec2 corner = mat2(cos(rot), sin(rot), -sin(rot), cos(rot)) * aCorner;
-	float stretch = 1.0 + 2.0 * sp;
+	float stretch = 1.0 + 2.5 * sp; /* 進行方向に伸びる */
 	vec2 off = d2 * corner.x * size * stretch + vec2(-d2.y, d2.x) * corner.y * size;
 	gl_Position = vec4((c + off) * min(uRes.x, uRes.y) / uRes, 0.0, 1.0);
 
 	float tone = fract(aSeed.x * 13.0);
-	vC = tone < 0.42 ? mix(C_EDGE * 0.8, C_DEEP, fract(aSeed.w * 9.0)) : (tone < 0.7 ? C_MID : mix(C_LIGHT, vec3(1.0), 0.8));
-	vA = alpha * (0.85 + 0.15 * aCorner.y); /* 面の明暗 */
+	vC = tone < 0.5 ? mix(C_EDGE * 0.8, C_DEEP, fract(aSeed.w * 9.0)) : (tone < 0.75 ? C_MID : mix(C_LIGHT, vec3(1.0), 0.8));
+	vC = mix(vC * 0.75, vC, depth); /* 奥は暗く */
+	vA = alpha;
+	vCorner = aCorner;
 }
 `;
 
+/** 破片の材質: 縁が明るく中心が濃い「ガラスの欠片」。中心からの距離で明度と alpha を変える */
 export const SHARD_FS = /* glsl */ `
-precision mediump float;
+precision highp float;
 varying float vA;
 varying vec3 vC;
-void main() { gl_FragColor = vec4(vC * vA, vA); }
+varying vec2 vCorner;
+void main() {
+	float e = max(abs(vCorner.x), abs(vCorner.y)); /* 0 = 中心、1 = 縁 */
+	float edge = smoothstep(0.55, 1.0, e);
+	vec3 c = mix(vC, mix(vC, vec3(0.612, 0.769, 1.0), 0.75), edge); /* 縁は #9cc4ff 寄りに光る */
+	float a = vA * mix(0.9, 1.0, edge);
+	gl_FragColor = vec4(c * a, a);
+}
 `;
 
-/** plexus の線と結節点、細かい塵。aPos = (x, y, alpha) を CPU で毎フレーム作る */
+/** plexus の線と結節点。aPos = (x, y, alpha) を CPU で毎フレーム作る */
 export const LINE_VS = /* glsl */ `
 attribute vec3 aPos;
 uniform vec2 uRes;
@@ -251,7 +289,7 @@ void main() {
 `;
 
 export const LINE_FS = /* glsl */ `
-precision mediump float;
+precision highp float;
 uniform vec3 uColor;
 uniform float uPoint;
 varying float vA;
@@ -260,6 +298,77 @@ void main() {
 	if (uPoint > 0.5) { vec2 c = gl_PointCoord - 0.5; k *= exp(-dot(c, c) * 14.0); }
 	gl_FragColor = vec4(uColor * k, k);
 }
+`;
+
+/**
+ * 浮遊粒子 (GL_POINTS)。aSeed = (角度, 緯度, 半径/位相, 群)。
+ * w < 0.75 は球の周囲 1.2〜2.2R を差動回転の層に乗って漂う群 (奥はぼけて大きく薄く、手前は小さく鋭い)、
+ * それ以外は球の内部 0.3〜0.9R に薄く散る群。軌跡用の半分解像度のターゲットに描く
+ */
+export const FLOAT_VS = /* glsl */ `
+${COMMON}
+attribute vec4 aSeed;
+uniform vec2 uRes;
+uniform float uTime;
+uniform float uScale;
+varying float vA;
+varying float vSoft;
+varying vec3 vC;
+void main() {
+	float R = breathe(uTime);
+	float ang = aSeed.x * 2.0 * PI;
+	float lat = acos(2.0 * aSeed.y - 1.0);
+	vec3 pos;
+	float alpha, px;
+	if (aSeed.w < 0.75) {
+		float rr = 1.2 + 1.0 * fract(aSeed.z * 5.1);
+		float layer = orbitLayer(rr);
+		float a = ang + orbitDir(layer) * uTime * 2.0 * PI / orbitPeriod(rr);
+		float wob = 0.03 * sin(uTime * 0.5 + aSeed.z * 40.0); /* ゆっくり漂う */
+		pos = orbitTilt(layer) * (onSphere(a, lat + wob) * (rr + wob) * R);
+		float depth = 0.5 + 0.5 * pos.z / length(pos);
+		float blink = pow(0.5 + 0.5 * sin(uTime * (0.6 + fract(aSeed.w * 7.0) * 1.5) + aSeed.x * 50.0), 8.0); /* ときどき明滅 */
+		alpha = mix(0.15, 0.8, depth) * (0.6 + 0.4 * blink) + 0.6 * blink;
+		px = mix(4.5, 2.0, depth); /* 奥はぼけて大きく、手前は小さく鋭く */
+		vSoft = mix(1.0, 0.3, depth);
+		vC = mix(mix(C_LIGHT, vec3(1.0), 0.5), C_SOFT, 1.0 - depth);
+	} else {
+		float rr = 0.3 + 0.6 * fract(aSeed.z * 5.1);
+		float a = ang + uTime * 2.0 * PI / mix(20.0, 45.0, rr);
+		pos = rotY(0.3) * (onSphere(a, lat) * rr * R);
+		float depth = 0.5 + 0.5 * pos.z / (rr * R);
+		alpha = 0.35 * depth * step(0.0, pos.z);
+		px = 2.2;
+		vSoft = 0.5;
+		vC = mix(C_LIGHT, vec3(1.0), 0.6);
+	}
+	alpha *= behind(pos, R);
+	gl_Position = vec4(project(pos) * min(uRes.x, uRes.y) / uRes, 0.0, 1.0);
+	gl_PointSize = max(2.0, px * uScale);
+	vA = alpha;
+}
+`;
+
+export const FLOAT_FS = /* glsl */ `
+precision highp float;
+varying float vA;
+varying float vSoft;
+varying vec3 vC;
+void main() {
+	vec2 c = gl_PointCoord - 0.5;
+	float r2 = dot(c, c) * 4.0;
+	float k = exp(-r2 * mix(9.0, 3.0, vSoft)) * (1.0 - smoothstep(0.7, 1.0, r2)) * vA;
+	gl_FragColor = vec4(vC * k, k);
+}
+`;
+
+/** 軌跡: 前のフレームを uGain 倍して写す (減衰合成)。加算の合成にも使う */
+export const COPY_FS = /* glsl */ `
+precision highp float;
+uniform sampler2D uTex;
+uniform float uGain;
+varying vec2 vUv;
+void main() { gl_FragColor = texture2D(uTex, vUv) * uGain; }
 `;
 
 /**
@@ -295,7 +404,7 @@ void main() {
 `;
 
 export const RING_FS = /* glsl */ `
-precision mediump float;
+precision highp float;
 varying float vA;
 varying float vSide;
 void main() {
@@ -305,40 +414,44 @@ void main() {
 }
 `;
 
-/** bloom 1/3: 明るい部分の抽出 */
+/** bloom 1/3: 明るい部分の抽出。輝度は alpha を割り戻してから測り (半透明の光彩も拾う)、出力は premultiplied に戻す */
 export const BRIGHT_FS = /* glsl */ `
-precision mediump float;
+precision highp float;
 uniform sampler2D uTex;
 uniform float uThreshold;
 varying vec2 vUv;
 void main() {
 	vec4 c = texture2D(uTex, vUv);
-	float lum = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-	gl_FragColor = c * smoothstep(uThreshold, uThreshold + 0.3, lum);
+	vec3 straight = c.rgb / max(c.a, 0.004);
+	float lum = dot(straight, vec3(0.299, 0.587, 0.114));
+	float k = smoothstep(uThreshold, uThreshold + 0.3, lum);
+	gl_FragColor = vec4(straight * k * c.a, c.a * k);
 }
 `;
 
-/** bloom 2/3: 13 タップの分離ガウスぼかし (σ = 2.4 タップ)。uDir にテクセル単位の刻みを入れる */
+/** bloom 2/3: 17 タップの分離ガウスぼかし (σ = 3.2 タップ)。uDir にテクセル単位の刻みを入れる */
 export const BLUR_FS = /* glsl */ `
-precision mediump float;
+precision highp float;
 uniform sampler2D uTex;
 uniform vec2 uDir;
 varying vec2 vUv;
 void main() {
-	vec4 s = texture2D(uTex, vUv) * 0.167;
-	s += (texture2D(uTex, vUv + uDir) + texture2D(uTex, vUv - uDir)) * 0.153;
-	s += (texture2D(uTex, vUv + uDir * 2.0) + texture2D(uTex, vUv - uDir * 2.0)) * 0.118;
-	s += (texture2D(uTex, vUv + uDir * 3.0) + texture2D(uTex, vUv - uDir * 3.0)) * 0.077;
-	s += (texture2D(uTex, vUv + uDir * 4.0) + texture2D(uTex, vUv - uDir * 4.0)) * 0.042;
-	s += (texture2D(uTex, vUv + uDir * 5.0) + texture2D(uTex, vUv - uDir * 5.0)) * 0.019;
-	s += (texture2D(uTex, vUv + uDir * 6.0) + texture2D(uTex, vUv - uDir * 6.0)) * 0.007;
+	vec4 s = texture2D(uTex, vUv) * 0.1256;
+	s += (texture2D(uTex, vUv + uDir) + texture2D(uTex, vUv - uDir)) * 0.1196;
+	s += (texture2D(uTex, vUv + uDir * 2.0) + texture2D(uTex, vUv - uDir * 2.0)) * 0.1033;
+	s += (texture2D(uTex, vUv + uDir * 3.0) + texture2D(uTex, vUv - uDir * 3.0)) * 0.0810;
+	s += (texture2D(uTex, vUv + uDir * 4.0) + texture2D(uTex, vUv - uDir * 4.0)) * 0.0575;
+	s += (texture2D(uTex, vUv + uDir * 5.0) + texture2D(uTex, vUv - uDir * 5.0)) * 0.0371;
+	s += (texture2D(uTex, vUv + uDir * 6.0) + texture2D(uTex, vUv - uDir * 6.0)) * 0.0217;
+	s += (texture2D(uTex, vUv + uDir * 7.0) + texture2D(uTex, vUv - uDir * 7.0)) * 0.0115;
+	s += (texture2D(uTex, vUv + uDir * 8.0) + texture2D(uTex, vUv - uDir * 8.0)) * 0.0055;
 	gl_FragColor = s;
 }
 `;
 
 /** bloom 3/3: 加算合成。明るい背景でも光が見えるよう alpha を色の最大成分まで引き上げる */
 export const COMPOSITE_FS = /* glsl */ `
-precision mediump float;
+precision highp float;
 uniform sampler2D uScene;
 uniform sampler2D uBloom;
 uniform float uStrength;

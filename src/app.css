@@ -267,9 +267,12 @@ svg.i {
 	background:
 		radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 22%),
 		radial-gradient(circle at 50% 50%, #9cc4ff 0%, #2f7cf6 45%, #1b62d6 78%, #9cc4ff 100%);
+	/* 縁は硬い円にせず、内側の縁光と外へ抜ける 3 段の光彩で柔らかくする */
 	box-shadow:
-		0 0 48px 16px rgba(79, 149, 255, 0.35),
-		0 0 120px 48px rgba(27, 98, 214, 0.18);
+		inset 0 0 24px rgba(156, 196, 255, 0.9),
+		0 0 24px 4px rgba(156, 196, 255, 0.55),
+		0 0 64px 24px rgba(79, 149, 255, 0.3),
+		0 0 160px 64px rgba(27, 98, 214, 0.12);
 }
 
 /* visual 4.2 — ガラスの基本形 */

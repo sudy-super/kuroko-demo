@@ -9,7 +9,8 @@
 	onMount(() => {
 		const orb = createOrb(canvas!, {
 			reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
-			mobile: matchMedia('(max-width: 960px)').matches || navigator.hardwareConcurrency <= 4,
+			/* 低性能の判定はブリーフどおり「モバイル幅 かつ コア数 4 以下」の AND */
+			mobile: matchMedia('(max-width: 960px)').matches && navigator.hardwareConcurrency <= 4,
 			particles: sparks
 		});
 		if (!orb) {

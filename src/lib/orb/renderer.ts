@@ -2,6 +2,9 @@ import {
 	BLUR_FS,
 	BRIGHT_FS,
 	COMPOSITE_FS,
+	COPY_FS,
+	FLOAT_FS,
+	FLOAT_VS,
 	LINE_FS,
 	LINE_VS,
 	QUAD_VS,
@@ -34,15 +37,17 @@ export function randoms(count: number, seed = 7): Float32Array {
 	return out;
 }
 
-/** 破片の頂点。1 個につき 6 頂点 (三角形 2 枚)。半分は 1 隅を潰して三角形にする */
+/** 破片の頂点。1 個につき 6 頂点 (三角形 2 枚)。形は三角形・四角・細長い欠片の 3 種 */
 export function shardGeometry(count: number, seed = 11): { seeds: Float32Array; corners: Float32Array } {
 	const r = randoms(count * 5, seed);
 	const seeds = new Float32Array(count * 6 * 4);
 	const corners = new Float32Array(count * 6 * 2);
 	const quad = [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1];
 	const tri = [-1, -1, 1, -1, 0, 1, -1, -1, 0, 1, 0, 1];
+	const sliver = quad.map((v, i) => (i % 2 ? v * 0.3 : v));
 	for (let i = 0; i < count; i++) {
-		const shape = r[i * 5 + 4] < 0.5 ? tri : quad;
+		const k = r[i * 5 + 4];
+		const shape = k < 0.4 ? tri : k < 0.75 ? quad : sliver;
 		for (let v = 0; v < 6; v++) {
 			seeds.set([r[i * 5], r[i * 5 + 1], r[i * 5 + 2], r[i * 5 + 3]], (i * 6 + v) * 4);
 			corners.set([shape[v * 2], shape[v * 2 + 1]], (i * 6 + v) * 2);
@@ -65,8 +70,8 @@ export function fibonacciSphere(count: number): Float32Array {
 }
 
 /**
- * plexus: 結節点を回して画面に投影し、近い組を線で結ぶ。O(n²) だが n ≤ 120 なので毎フレームでよい。
- * 戻り値の nodes / lines は (x, y, alpha) の並び。球の裏側は落とす
+ * plexus: 結節点を球面の層 (差動回転の最内層、周期約 38 秒) で回して投影し、近い組を線で結ぶ。
+ * O(n²) だが n ≤ 120 なので毎フレームでよい。戻り値の nodes / lines は (x, y, alpha) の並び。球の裏側は落とす
  */
 export function plexus(
 	dirs: Float32Array,
@@ -75,20 +80,19 @@ export function plexus(
 	maxDist: number
 ): { nodes: Float32Array; lines: Float32Array; lineCount: number } {
 	const n = dirs.length / 3;
-	const ay = (time * 2 * Math.PI) / 65; /* 公転 65 秒 */
+	const period = 35 + 80 * (0.05 / 1.2); /* shader.ts の orbitPeriod(1.05) と同じ */
+	const ay = (time * 2 * Math.PI) / period;
 	const cy = Math.cos(ay), sy = Math.sin(ay);
-	const tilt = 0.4;
-	const cx = Math.cos(tilt), sx = Math.sin(tilt);
+	const cz = Math.cos(-0.3), sz = Math.sin(-0.3); /* orbitTilt(0) = rotX(0.35) * rotZ(-0.3) */
+	const cx = Math.cos(0.35), sx = Math.sin(0.35);
 	const px = new Float32Array(n), py = new Float32Array(n), vis = new Float32Array(n);
 	const nodes = new Float32Array(n * 3);
 	for (let i = 0; i < n; i++) {
 		const rad = R * (1.05 + 0.03 * Math.sin(time * 0.7 + i));
 		let x = dirs[i * 3] * rad, y = dirs[i * 3 + 1] * rad, z = dirs[i * 3 + 2] * rad;
-		/* rotY してから rotX で傾ける */
-		const x1 = x * cy + z * sy, z1 = -x * sy + z * cy;
-		x = x1; z = z1;
-		const y1 = y * cx - z * sx, z2 = y * sx + z * cx;
-		y = y1; z = z2;
+		let t = x * cy + z * sy; z = -x * sy + z * cy; x = t;
+		t = x * cz - y * sz; y = x * sz + y * cz; x = t;
+		t = y * cx - z * sx; z = y * sx + z * cx; y = t;
 		const k = 1 + 0.12 * z;
 		px[i] = x * k; py[i] = y * k;
 		const behind = z < 0 && Math.hypot(x, y) < R * 0.98;
@@ -104,7 +108,7 @@ export function plexus(
 			if (!vis[j]) continue;
 			const dd = Math.hypot(px[i] - px[j], py[i] - py[j]);
 			if (dd > maxDist) continue;
-			const a = 0.4 * (1 - dd / maxDist) * Math.min(vis[i], vis[j]);
+			const a = (0.15 + 0.3 * (1 - dd / maxDist)) * Math.min(vis[i], vis[j]); /* 近いほど明るく 0.15〜0.45 */
 			lines.set([px[i], py[i], a, px[j], py[j], a], c * 6);
 			c++;
 			links++;
@@ -115,6 +119,7 @@ export function plexus(
 
 const REDUCED_TIME = 11.3; /* reduced-motion で描く 1 フレームの時刻 */
 const RING_SEGS = 160;
+const TRAIL_DECAY = 0.85; /* 軌跡: 前のフレームをこの倍率で残す */
 
 export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | null {
 	const attrs = { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false };
@@ -123,18 +128,22 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 
 	const dpr = Math.min(devicePixelRatio || 1, 2);
 	const particles = opts.particles !== false;
-	const shardCount = !particles ? 0 : opts.mobile ? 250 : 500;
+	const shardCount = !particles ? 0 : opts.mobile ? 300 : 700;
+	const floatCount = !particles ? 0 : opts.mobile ? 150 : 270; /* 75% が周囲、25% が内部 */
 	const nodeCount = !particles ? 0 : opts.mobile ? 80 : 120;
 	const blurRadius = opts.mobile ? 18 : 32; /* 表示 px。bloom は半分の解像度で処理する */
 	const shards = shardGeometry(shardCount);
+	const floatSeeds = randoms(floatCount * 4, 23);
 	const nodeDirs = fibonacciSphere(nodeCount);
 	const ringVerts = new Float32Array((RING_SEGS + 1) * 4);
 	for (let i = 0; i <= RING_SEGS; i++) ringVerts.set([i / RING_SEGS, -1, i / RING_SEGS, 1], i * 4);
 
-	let sphere: Prog, shard: Prog, line: Prog, ring: Prog, bright: Prog, blur: Prog, composite: Prog;
-	let quad: WebGLBuffer, seedBuf: WebGLBuffer, cornerBuf: WebGLBuffer, ringBuf: WebGLBuffer;
+	let sphere: Prog, shard: Prog, line: Prog, float_: Prog, ring: Prog, copy: Prog;
+	let bright: Prog, blur: Prog, composite: Prog;
+	let quad: WebGLBuffer, seedBuf: WebGLBuffer, cornerBuf: WebGLBuffer, floatBuf: WebGLBuffer, ringBuf: WebGLBuffer;
 	let lineBuf: WebGLBuffer, nodeBuf: WebGLBuffer;
 	let scene: Target | null = null, halfA: Target | null = null, halfB: Target | null = null;
+	let trailA: Target | null = null, trailB: Target | null = null;
 
 	const compile = (type: number, src: string) => {
 		const sh = gl.createShader(type)!;
@@ -186,6 +195,10 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		const fb = gl.createFramebuffer()!;
 		gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+		const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+		if (status !== gl.FRAMEBUFFER_COMPLETE && !gl.isContextLost()) throw new Error(`orb framebuffer: ${status}`);
+		gl.clearColor(0, 0, 0, 0);
+		gl.clear(gl.COLOR_BUFFER_BIT);
 		return { fb, tex, w, h };
 	};
 	const dropTarget = (t: Target | null) => {
@@ -198,26 +211,32 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		sphere = program(QUAD_VS, SPHERE_FS);
 		shard = program(SHARD_VS, SHARD_FS);
 		line = program(LINE_VS, LINE_FS);
+		float_ = program(FLOAT_VS, FLOAT_FS);
 		ring = program(RING_VS, RING_FS);
+		copy = program(QUAD_VS, COPY_FS);
 		bright = program(QUAD_VS, BRIGHT_FS);
 		blur = program(QUAD_VS, BLUR_FS);
 		composite = program(QUAD_VS, COMPOSITE_FS);
 		quad = buffer(new Float32Array([-1, -1, 3, -1, -1, 3]));
 		seedBuf = buffer(shards.seeds);
 		cornerBuf = buffer(shards.corners);
+		floatBuf = buffer(floatSeeds);
 		ringBuf = buffer(ringVerts);
 		lineBuf = buffer(new Float32Array(0), gl.DYNAMIC_DRAW);
 		nodeBuf = buffer(new Float32Array(0), gl.DYNAMIC_DRAW);
-		scene = halfA = halfB = null;
+		scene = halfA = halfB = trailA = trailB = null;
 		allocTargets();
 	};
 	const allocTargets = () => {
-		dropTarget(scene); dropTarget(halfA); dropTarget(halfB);
+		for (const t of [scene, halfA, halfB, trailA, trailB]) dropTarget(t);
 		const w = canvas.width, h = canvas.height;
-		if (!w || !h) { scene = halfA = halfB = null; return; }
+		if (!w || !h) { scene = halfA = halfB = trailA = trailB = null; return; }
+		const hw = Math.ceil(w / 2), hh = Math.ceil(h / 2);
 		scene = target(w, h);
-		halfA = target(Math.ceil(w / 2), Math.ceil(h / 2));
-		halfB = target(Math.ceil(w / 2), Math.ceil(h / 2));
+		halfA = target(hw, hh);
+		halfB = target(hw, hh);
+		trailA = target(hw, hh);
+		trailB = target(hw, hh);
 	};
 
 	/* 三角形 1 枚で全面を描く */
@@ -233,11 +252,15 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		gl.activeTexture(gl.TEXTURE0 + unit);
 		gl.bindTexture(gl.TEXTURE_2D, t.tex);
 	};
+	const into = (t: Target) => {
+		gl.bindFramebuffer(gl.FRAMEBUFFER, t.fb);
+		gl.viewport(0, 0, t.w, t.h);
+	};
 	const additive = () => { gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); };
 	const over = () => { gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); };
 
 	const draw = (time: number) => {
-		if (!scene || !halfA || !halfB) return;
+		if (!scene || !halfA || !halfB || !trailA || !trailB) return;
 		const w = canvas.width, h = canvas.height;
 		const R = R0 * (1 + 0.015 * Math.sin((time * 2 * Math.PI) / 4));
 		gl.disable(gl.DEPTH_TEST);
@@ -248,11 +271,11 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		gl.useProgram(sphere.p);
 		gl.uniform2f(sphere.u.uRes, w, h);
 		gl.uniform1f(sphere.u.uTime, time);
-		gl.bindFramebuffer(gl.FRAMEBUFFER, scene.fb);
+		into(scene);
 		gl.clear(gl.COLOR_BUFFER_BIT);
 		fullscreen(sphere, scene);
 
-		/* 2. 光の帯 2 本 (加算) */
+		/* 2. 光の帯 2 本 (加算)、周期違い */
 		additive();
 		gl.useProgram(ring.p);
 		gl.uniform2f(ring.u.uRes, w, h);
@@ -267,8 +290,32 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		gl.disableVertexAttribArray(ringLoc);
 
 		if (particles) {
-			/* 3. 破片 (通常の重ね合わせ。深い青の破片は光彩の上で暗く見える) */
+			/* 3. 浮遊粒子を半分解像度の軌跡ターゲットへ。前のフレームを減衰させて写してから加算で重ねる */
+			gl.disable(gl.BLEND);
+			gl.useProgram(copy.p);
+			bind(0, trailA);
+			gl.uniform1i(copy.u.uTex, 0);
+			gl.uniform1f(copy.u.uGain, opts.reducedMotion ? 0 : TRAIL_DECAY);
+			fullscreen(copy, trailB);
+			additive();
+			into(trailB);
+			gl.useProgram(float_.p);
+			gl.uniform2f(float_.u.uRes, trailB.w, trailB.h);
+			gl.uniform1f(float_.u.uTime, time);
+			gl.uniform1f(float_.u.uScale, Math.min(trailB.w, trailB.h) / 260);
+			const fl = attrib(float_, 'aSeed', floatBuf, 4);
+			gl.drawArrays(gl.POINTS, 0, floatCount);
+			gl.disableVertexAttribArray(fl);
+			[trailA, trailB] = [trailB, trailA];
+			/* 軌跡をシーンへ加算 */
+			gl.useProgram(copy.p);
+			bind(0, trailA);
+			gl.uniform1f(copy.u.uGain, 1);
+			fullscreen(copy, scene);
+
+			/* 4. 破片 (通常の重ね合わせ。深い青の破片は光彩の上で暗く見える) */
 			over();
+			into(scene);
 			gl.useProgram(shard.p);
 			gl.uniform2f(shard.u.uRes, w, h);
 			gl.uniform1f(shard.u.uTime, time);
@@ -278,13 +325,13 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 			gl.disableVertexAttribArray(a1);
 			gl.disableVertexAttribArray(a2);
 
-			/* 4. plexus の線と結節点 (加算) */
+			/* 5. plexus の線と結節点 (加算) */
 			const px = plexus(nodeDirs, time, R, R * 0.42);
 			additive();
 			gl.useProgram(line.p);
 			gl.uniform2f(line.u.uRes, w, h);
 			gl.uniform1f(line.u.uPoint, 0);
-			gl.uniform3f(line.u.uColor, 0.75, 0.86, 1);
+			gl.uniform3f(line.u.uColor, 0.612, 0.769, 1);
 			gl.bindBuffer(gl.ARRAY_BUFFER, lineBuf);
 			gl.bufferData(gl.ARRAY_BUFFER, px.lines.subarray(0, px.lineCount * 6), gl.DYNAMIC_DRAW);
 			let loc = attrib(line, 'aPos', lineBuf, 3);
@@ -300,14 +347,14 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		}
 		gl.disable(gl.BLEND);
 
-		/* 5. bloom: 明部抽出 → 横ぼかし → 縦ぼかし (半分の解像度) */
+		/* 6. bloom: 明部抽出 → 横ぼかし → 縦ぼかし (半分の解像度) */
 		gl.useProgram(bright.p);
 		bind(0, scene);
 		gl.uniform1i(bright.u.uTex, 0);
 		gl.uniform1f(bright.u.uThreshold, 0.45);
 		fullscreen(bright, halfA);
 
-		const step = (blurRadius * dpr) / 2 / 6; /* 半分解像度のテクセルで 6 タップ分に収める */
+		const step = (blurRadius * dpr) / 2 / 8; /* 半分解像度のテクセルで 8 タップ分に収める */
 		gl.useProgram(blur.p);
 		gl.uniform1i(blur.u.uTex, 0);
 		bind(0, halfA);
@@ -317,13 +364,13 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		gl.uniform2f(blur.u.uDir, 0, step / halfB.h);
 		fullscreen(blur, halfA);
 
-		/* 6. シーン + bloom を画面へ */
+		/* 7. シーン + bloom を画面へ */
 		gl.useProgram(composite.p);
 		bind(0, scene);
 		bind(1, halfA);
 		gl.uniform1i(composite.u.uScene, 0);
 		gl.uniform1i(composite.u.uBloom, 1);
-		gl.uniform1f(composite.u.uStrength, 1.3);
+		gl.uniform1f(composite.u.uStrength, 1.15);
 		fullscreen(composite, null);
 	};
 
@@ -382,7 +429,7 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 			canvas.removeEventListener('webglcontextlost', onLost);
 			canvas.removeEventListener('webglcontextrestored', onRestored);
 			document.removeEventListener('visibilitychange', onVisibility);
-			dropTarget(scene); dropTarget(halfA); dropTarget(halfB);
+			for (const t of [scene, halfA, halfB, trailA, trailB]) dropTarget(t);
 			gl.getExtension('WEBGL_lose_context')?.loseContext();
 		}
 	};
