@@ -21,7 +21,7 @@ mat3 rotZ(float a) { float c = cos(a), s = sin(a); return mat3(c, s, 0.0, -s, c,
 /* 3D → 画面。奥ほど少し縮む弱い遠近 */
 vec2 project(vec3 p) { return p.xy * (1.0 + 0.12 * p.z); }
 /* 球の裏側 (z < 0 で円盤の内側) は隠す */
-float behind(vec3 p, float R) { return (p.z < 0.0) ? smoothstep(R * 0.97, R * 1.06, length(p.xy)) : 1.0; } /* 球の輪郭で隠す (立体の手がかり) */
+float behind(vec3 p, float R) { return (p.z < 0.0) ? smoothstep(R * 0.85, R * 1.2, length(p.xy)) : 1.0; } /* 崩れた外縁に合わせて広く柔らかく隠す */
 /* 1 を超えた色は色相を保ったまま白へ寄せる (単純な clamp だと青がシアンに転ぶ) */
 vec3 softWhite(vec3 c) {
 	float m = max(c.r, max(c.g, c.b));
@@ -98,11 +98,11 @@ void main() {
 	float R = breathe(uTime);
 
 	/* 2 段の光彩 (R→1.45R、1.45R→1.97R = 直径の約 2 倍)。遠いほど白へ寄せ、淡い背景でも「光」に見せる */
-	float haloN = fbm(vec3(p * 1.1, 7.0 + uTime * 0.03)); /* 光彩は球を包む。わずかに揺らすだけ */
-	float dh = d * (1.0 + 0.08 * haloN);
+	float haloN = fbm(vec3(p * 1.1, 7.0 + uTime * 0.03)); /* 光彩も円盤にしない: 距離を歪め、濃さも揺らす */
+	float dh = d * (1.0 + 0.35 * haloN);
 	float h1 = smoothstep(R * 1.45, R, dh);
 	float h2 = smoothstep(R * 1.97, R * 1.45, dh);
-	float haloA = (0.6 * h1 * h1 + 0.22 * h2 * h2) * (0.9 + 0.25 * haloN);
+	float haloA = (0.6 * h1 * h1 + 0.22 * h2 * h2) * (0.85 + 0.4 * haloN);
 	/* 光彩は白ではなく青 (#9cc4ff〜#4f95ff)。白を混ぜると全体が白く濁る */
 	vec3 haloC = mix(C_LIGHT, C_SOFT, h1 * 0.6);
 
@@ -110,7 +110,7 @@ void main() {
 	float cov = 0.0;
 	float leak = 0.0;
 	vec3 leakC = C_LIGHT;
-	if (d < R * 1.25) {
+	if (d < R * 1.45) {
 		vec2 s = p / R;
 		vec3 n = vec3(s, sqrt(max(0.0, 1.0 - min(dot(s, s), 1.0))));
 		/* 自転は半径によらず一様に 45 秒。半径ごとに角速度を変えて累積させると、時間とともにノイズが
@@ -118,20 +118,23 @@ void main() {
 		float spin = uTime * 2.0 * PI / 45.0;
 		vec3 q = rotY(spin) * n;
 
-		/* オーブは立体の球。輪郭は球のまま、fbm で ±5% だけ揺らし、0.94R〜1.06R の柔らかい縁にする。
-		   輪郭の崩れは破片が担う */
-		float edgeN = fbm(vec3(p * 2.4, uTime * 0.04));
-		float dn = d * (1.0 + 0.05 * edgeN);
-		cov = smoothstep(R * 1.06, R * 0.94, dn);
+		/* オーブは円ではない。距離場を低周波の fbm で大きく歪め (±22%)、0.72R〜1.3R の広い範囲で
+		   徐々に薄くし、外側ほどノイズで斑に抜けさせる。円周が線として見えない光の塊にする */
+		float edgeN = fbm(vec3(p * 1.1, uTime * 0.03));
+		float dn = d * (1.0 + 0.5 * edgeN); /* 半径が 0.65R〜1.35R の間で大きく波打つ塊にする */
+		cov = smoothstep(R * 1.3, R * 0.7, dn);
 
 		float f1 = fbm(q * 2.2 + vec3(0.0, uTime * 0.04, 0.0));
 		float f2 = fbm(q * 2.2 + vec3(5.2, -uTime * 0.03, 1.3));
 		/* domain warp: ノイズでノイズの座標をずらすと液体の渦に見える */
 		float fw = fbm(q * 2.0 + vec3(f1, f2, f1 * f2) * 1.1 + vec3(0.0, uTime * 0.03, 0.0));
 
+		/* 外側は渦のノイズに沿って斑に抜ける (輪郭の代わりに密度で外縁を決める) */
+		cov *= mix(1.0, smoothstep(-0.35, 0.25, fw), smoothstep(R * 0.5, R * 1.15, dn));
+
 		/* 深い青 → 明るい青 → 白 の急な階調。中心ほど白へ、外ほど深い青へ */
 		float core = pow(max(1.0 - d / R, 0.0), 1.5);
-		float band = clamp(0.12 + 2.2 * fw + 0.5 * core - 0.2 * smoothstep(R * 0.5, R * 1.0, d), 0.0, 1.0);
+		float band = clamp(0.12 + 2.2 * fw + 0.5 * core - 0.3 * smoothstep(R * 0.5, R * 1.2, dn), 0.0, 1.0);
 		vec3 base = mix(C_EDGE, C_DEEP, smoothstep(0.0, 0.3, band));
 		base = mix(base, C_MID, smoothstep(0.25, 0.55, band));
 		base = mix(base, C_LIGHT, smoothstep(0.5, 0.8, band));
@@ -167,23 +170,17 @@ void main() {
 		/* 照明は控えめ (エネルギー体なので陰は浅い)。鏡面は揺らぎを弱めた法線で小さく (ローブが割れない) */
 		vec3 nn = normalize(n + vec3(f1, f2, 0.0) * 0.14);
 		vec3 L = normalize(vec3(-0.55, 0.65, 0.55));
-		float diff = 0.55 + 0.45 * max(dot(nn, L), 0.0); /* 左上から当たり、縁へ暗くなる (球の陰影) */
-		vec3 H = normalize(L + vec3(0.0, 0.0, 1.0));
-		float spec = pow(max(dot(normalize(mix(n, nn, 0.35)), H), 0.0), 48.0);
+		float diff = 0.85 + 0.15 * max(dot(nn, L), 0.0);
 		col = mix(C_EDGE * 0.8, base, diff);
 
-		/* 縁 (limb) は深い青で締め、薄いフレネルの縁光と小さな鏡面で立体に見せる */
-		float rim = 1.0 - n.z;
-		col = mix(col, C_EDGE, smoothstep(0.5, 1.0, rim) * 0.6 * (1.0 - core));
-		col += C_LIGHT * pow(rim, 3.0) * 0.35;
-		col += C_LIGHT * spec * 0.25;
+		/* 球面の縁光・外周の締め・鏡面は円を意識させるので使わない。外側の深さは band と密度で出す */
 		/* 中心は白い核ではなく明るい青へ寄せる (加算ではなく補間なので白へ飛ばない) */
 		float glow = pow(max(1.0 - d / (R * 0.7), 0.0), 2.0);
 		col = mix(col, mix(C_SOFT, C_LIGHT, 0.75), glow * 0.85);
 		col = softWhite(col);
 
 		/* fbm の筋が縁を越えて外に漏れる薄い発光 (R〜1.2R)。輪郭を光や気体のように見せる */
-		leak = smoothstep(R * 1.2, R * 0.95, d) * (1.0 - cov) * (0.25 * max(fw + 0.25, 0.0) + 0.25 * streak);
+		leak = smoothstep(R * 1.35, R * 0.8, d) * (1.0 - cov) * (0.3 * max(fw + 0.25, 0.0) + 0.3 * streak);
 		leakC = C_LIGHT;
 	}
 	float a = cov + (leak + haloA * (1.0 - leak)) * (1.0 - cov);
@@ -234,7 +231,7 @@ void main() {
 		float flash = 1.0 + 1.2 * smoothstep(0.2, 0.0, life); /* 剥がれる瞬間は明るい */
 		alpha = smoothstep(0.0, 0.05, life) * smoothstep(1.0, 0.7, life) * mix(0.35, 1.0, jet) * flash;
 	} else {
-		float rr = aSeed.z < 0.5 ? 1.0 + 0.1 * fract(aSeed.z * 9.0) : 1.18 + 0.12 * fract(aSeed.z * 9.0); /* 球面に沿う 2 層 */
+		float rr = 0.9 + 0.6 * fract(aSeed.z * 9.0); /* 帯にせず 0.9R〜1.5R に散らす (円周をなぞらせない) */
 		float layer = orbitLayer(rr);
 		float a = ang + orbitDir(layer) * uTime * 2.0 * PI / orbitPeriod(rr);
 		mat3 tilt = orbitTilt(layer);
@@ -410,7 +407,7 @@ void main() {
 	gl_Position = vec4((c + nrm * aRing.y * width) * min(uRes.x, uRes.y) / uRes, 0.0, 1.0);
 	/* 弧: 周の 55% だけ光り、両端は柔らかく。弧そのものが周に沿って進む */
 	float w = fract(aRing.x - uTime * uCfg.z + uPhase);
-	float arc = smoothstep(0.0, 0.2, w) * smoothstep(0.55, 0.3, w); /* 周の 55% の弧。球を回って裏で隠れる */
+	float arc = smoothstep(0.0, 0.12, w) * smoothstep(0.32, 0.2, w); /* 周の 3 割だけの短い弧。円周をなぞらせない */
 	vA = arc * behind(p, R) * mix(0.35, 1.0, 0.5 + 0.5 * p.z / length(p));
 	vSide = aRing.y;
 }
@@ -421,7 +418,7 @@ precision highp float;
 varying float vA;
 varying float vSide;
 void main() {
-	float k = (1.0 - vSide * vSide) * vA * 0.8;
+	float k = (1.0 - vSide * vSide) * vA * 0.6;
 	vec3 c = mix(vec3(0.612, 0.769, 1.0), vec3(1.0), 0.2);
 	gl_FragColor = vec4(c * k, k);
 }
