@@ -310,10 +310,6 @@ svg.i {
 	margin-left: calc(var(--side-w) + 32px);
 	padding: calc(var(--header-h) + 32px) var(--sp-6) calc(var(--chatbar-h) + 64px);
 }
-/* レールがある画面だけ右を空ける。ヘッダーと本文の右端は必ずそろえる */
-.app.has-rail .main {
-	margin-right: calc(var(--rail-w) + 32px);
-}
 
 /* visual 4.4 + components 3.1 — 左サイドナビ (ruling: 幅 256、項目 48、角丸 16) */
 .sidebar {
@@ -441,9 +437,6 @@ svg.i {
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e2);
-}
-.app.has-rail .header.glass {
-	right: calc(var(--rail-w) + 32px);
 }
 /* ruling: モバイルのヘッダーは不透明、ぼかしなし */
 .header.solid {
@@ -1253,10 +1246,10 @@ body[data-overlay='on'] .card {
 	background: var(--solid);
 	box-shadow: var(--e3);
 }
-/* レールがある画面では、依頼バーと誘導カードの右端をレールの左にそろえる */
-.app.has-rail .chatbar,
-.app.has-rail .guide {
-	right: calc(var(--rail-w) + 32px);
+/* カードの幅は 320px なので、本文の h2 (24px) ではなく 18px に落とす (見出しの階層は h2 のまま) */
+.guide h2 {
+	font-size: 18px;
+	margin: 0;
 }
 .pulse {
 	animation: pulse 2s var(--ease-out) infinite;
@@ -1362,6 +1355,19 @@ body[data-overlay='on'] .card {
 	}
 }
 
+/* レールがある画面だけ右をレールのぶん空け、ヘッダー・本文・依頼バー・誘導カードの右端をそろえる。
+   960px 以下ではレールが消えるので、3 クラスの詳細度が下の上書きに勝たないよう幅で囲う */
+@media (min-width: 961px) {
+	.app.has-rail .main {
+		margin-right: calc(var(--rail-w) + 32px);
+	}
+	.app.has-rail .header.glass,
+	.app.has-rail .chatbar,
+	.app.has-rail .guide {
+		right: calc(var(--rail-w) + 32px);
+	}
+}
+
 /* components 2.2 — 960px: サイドナビをボトムナビに替える */
 @media (max-width: 960px) {
 	.sidebar,
@@ -1386,6 +1392,8 @@ body[data-overlay='on'] .card {
 		left: var(--sp-4);
 		right: var(--sp-4);
 		width: auto;
+		max-width: none;
+		margin-inline: 0;
 		transform: none;
 		bottom: calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + var(--sp-2) + var(--sp-2));
 	}
