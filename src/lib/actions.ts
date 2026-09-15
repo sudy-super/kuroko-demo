@@ -1,5 +1,6 @@
 import type {
 	Approval,
+	Connection,
 	ActivityLog,
 	LogKind,
 	Origin,
@@ -416,6 +417,12 @@ export function toggleConnection(id: 'gmail' | 'gcal' | 'slack' | 'line') {
 	c.connected = !c.connected;
 	c.lastSync = c.connected ? nowIso() : undefined;
 	save();
+}
+// 一覧から 1 つずつ繋ぐ。toggleConnection は反転なので、600ms の待ちの間に
+// connectAll が走ると繋いだはずの 1 件が外れる。繋ぐ向きにしか動かさない
+export function connect(id: Connection['id']) {
+	const c = db.settings.connections.find((x) => x.id === id)!;
+	if (!c.connected) toggleConnection(id);
 }
 export function connectAll() {
 	for (const c of db.settings.connections) {

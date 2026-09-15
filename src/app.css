@@ -1548,27 +1548,37 @@ body[data-overlay='on'] .card {
 		transform: translateY(6px);
 	}
 }
+/* 仕様 12.3 — Welcome の見出しだけ 40px。文字寸法の段階 (12〜40) の上端 */
 .public-panel .brand {
 	font-size: 40px;
 }
-/* 狭い画面で「す」のような 1 文字だけの行が残らないようにする */
+/* balance は狭い画面で「す」のような 1 文字だけの行が残るのを防ぐ。
+   ただし日本語では語の途中で割ることがあるので auto-phrase で文節の切れ目に寄せる */
 .public-panel h1,
 .public-panel p {
 	text-wrap: balance;
+	word-break: auto-phrase;
 }
 /* 一覧はパネルの余白を打ち消して端まで伸ばす。区切り線は行の内側 16px に入る */
 .public-list {
 	margin-inline: calc(var(--pad) * -1);
 	text-align: left;
 }
-/* 行そのものは押せない。押せるのは右端のボタンだけ */
-.public-list .list-row {
+/* 行そのものは押せない。押せるのは右端のボタンだけなので、指しても反応させない */
+.public-list .list-row,
+.public-list .list-row:hover {
+	background: none;
 	cursor: default;
+}
+/* 名前を伸ばして、右端のボタンとバッジを行の末尾に寄せる */
+.public-list .name {
+	flex: 1;
 }
 /* 背後がオーブの光彩で青く残るぶん、白地で測った --ink-3 では 4.5:1 を割る。一段濃くする */
 .public-panel .muted {
 	color: var(--ink-2);
 }
+/* components 3.6 — 補足の文字は 12px まで。文字寸法の段階の下端 */
 .public-panel .note {
 	font-size: 12px;
 }
