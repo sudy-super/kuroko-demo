@@ -60,27 +60,33 @@
 <svelte:head><title>カレンダー — KUROKO AI</title></svelte:head>
 
 <div class="cal">
-	<header class="cal-head">
-		<h1>カレンダー</h1>
+	<header class="cal-head page-head">
+		<div class="page-title">
+			<h1>カレンダー</h1>
+			<p class="page-desc">月表示と週表示で、予定を確認・登録します。</p>
+		</div>
 		<a class="btn pri" href="/calendar?new=1"><Icon name="ic-plus" size={20} />予定を追加</a>
 	</header>
 
 	<div class="row cal-bar">
-		<div class="row" role="group" aria-label="表示の切り替え">
-			<button class="chip" class:on={view === 'month'} aria-pressed={view === 'month'} onclick={() => (view = 'month')}>
-				{#if view === 'month'}<Icon name="ic-check" size={18} />{/if}月
-			</button>
-			<button class="chip" class:on={view === 'week'} aria-pressed={view === 'week'} onclick={() => (view = 'week')}>
-				{#if view === 'week'}<Icon name="ic-check" size={18} />{/if}週
-			</button>
+		<!-- Task 10p (参考の良い点 9、調査: Apple HIG Segmented controls「all segments are usually
+		     equal in width」、M3 Segmented buttons「Segment width = Container width / total
+		     segments」) — 月/週は排他の表示切り替えなので絞り込みチップの .chip ではなく
+		     等幅・隣接・単一外枠の segmented control (.seg) にする。選択は塗りだけで示し、
+		     チェック印は出さない (どちらを選んでも幅が変わらない) -->
+		<div class="seg" role="group" aria-label="表示の切り替え">
+			<button class="seg-btn" class:on={view === 'month'} aria-pressed={view === 'month'} onclick={() => (view = 'month')}>月</button>
+			<button class="seg-btn" class:on={view === 'week'} aria-pressed={view === 'week'} onclick={() => (view = 'week')}>週</button>
 		</div>
 		<button class="btn sec" onclick={() => (cursor = parse(db.seededOn))}>今日</button>
 		<div class="row cal-nav">
 			<button class="iconbtn" aria-label={view === 'month' ? '前の月' : '前の週'} onclick={() => shift(-1)}>
 				<Icon name="ic-left" size={20} />
 			</button>
+			<!-- ic-arrow (軸+矢じり) は ic-left (山形) と絵柄の系統が違うとの指摘。対になる山形の
+			     ic-chev に揃える -->
 			<button class="iconbtn" aria-label={view === 'month' ? '次の月' : '次の週'} onclick={() => shift(1)}>
-				<Icon name="ic-arrow" size={20} />
+				<Icon name="ic-chev" size={20} />
 			</button>
 		</div>
 		<h2 class="cal-title" aria-live="polite">{title}</h2>
@@ -147,13 +153,6 @@
 <style>
 	.cal {
 		max-width: 1080px;
-	}
-	.cal-head {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--sp-5);
-		padding: 0 var(--sp-5) var(--sp-5);
 	}
 	.cal-bar {
 		flex-wrap: wrap;

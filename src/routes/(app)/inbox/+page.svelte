@@ -18,6 +18,10 @@
 	const thread = $derived(db.threads.find((t) => t.id === page.url.searchParams.get('t')) ?? q[0]);
 	const total = $derived(db.threads.length);
 	const allMail = $derived([...db.threads].sort((a, b) => b.lastAt.localeCompare(a.lastAt)));
+	// Task 10p (参考の良い点 4) — 「すべての受信メールを見る」の一覧を要対応とそれ以外に分ける
+	const qIds = $derived(new Set(q.map((t) => t.id)));
+	const allNeeds = $derived(allMail.filter((t) => qIds.has(t.id)));
+	const allOthers = $derived(allMail.filter((t) => !qIds.has(t.id)));
 
 	let allOpen = $state(false);
 	let showRight = $state(false);
@@ -80,13 +84,10 @@
 <svelte:head><title>Inbox — KUROKO AI</title></svelte:head>
 
 <div class="inbox" class:show-right={showRight} class:show-thread={showThread}>
-	<header class="inbox-head">
-		<div class="inbox-title">
+	<header class="inbox-head page-head">
+		<div class="page-title">
 			<h1>Inbox</h1>
-			<p class="summary">
-				<span class="num">{total}</span> 件のうち <span class="num">{q.length}</span> 件が要対応です。残り
-				<span class="num">{total - q.length}</span> 件は確認不要と判断しました
-			</p>
+			<p class="page-desc">要対応のメールだけを並べています。</p>
 		</div>
 		<button class="btn text sm" onclick={() => (allOpen = true)}>
 			すべての受信メールを見る ({total} 件)
@@ -94,7 +95,10 @@
 	</header>
 
 	<div class="panes" {@attach glass({ ...CARD, targets: '.card' })}>
-		<section class="card pane pane-list" aria-label="要対応のメール">
+		<section class="card pane pane-list" aria-labelledby="inbox-queue-head">
+			<h2 class="list-head" id="inbox-queue-head">
+				<Icon name="ic-alert" size={16} />要対応<span class="num">{q.length}</span>
+			</h2>
 			{#if q.length === 0}
 				<p class="empty">要対応のメールはありません</p>
 			{:else}
@@ -136,8 +140,20 @@
 	description="件名だけの一覧です。要対応と判断しなかったメールもここに含まれます。"
 	onclose={() => (allOpen = false)}
 >
+	<!-- Task 10p (参考の良い点 4) — 要対応とそれ以外を小見出しで分ける -->
+	<h2 class="list-head">
+		<Icon name="ic-alert" size={16} />要対応<span class="num">{allNeeds.length}</span>
+	</h2>
 	<ul class="all-mail">
-		{#each allMail as t (t.id)}
+		{#each allNeeds as t (t.id)}
+			<li>{t.subject}</li>
+		{/each}
+	</ul>
+	<h2 class="list-head">
+		<Icon name="ic-check-c" size={16} />それ以外<span class="num">{allOthers.length}</span>
+	</h2>
+	<ul class="all-mail">
+		{#each allOthers as t (t.id)}
 			<li>{t.subject}</li>
 		{/each}
 	</ul>
@@ -151,22 +167,6 @@
 </Drawer>
 
 <style>
-	.inbox-head {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: var(--sp-4);
-		padding: 0 var(--sp-5) var(--sp-5);
-	}
-	.inbox-head h1 {
-		margin: 0;
-	}
-	.summary {
-		margin: var(--sp-2) 0 0;
-		color: var(--ink-2);
-		font-size: 14px;
-	}
 	/* ガラスの canvas は bleed の分だけ外へ出るので、位置の基準になる親を置く */
 	.panes {
 		position: relative;
@@ -195,9 +195,10 @@
 		padding: var(--sp-5);
 		color: var(--ink-2);
 	}
+	/* 要対応 / それ以外 の 2 つに分けたので、1 つあたりの高さは半分にする */
 	.all-mail {
-		max-height: 50vh;
-		margin: var(--sp-4) 0 0;
+		max-height: 25vh;
+		margin: 0 0 var(--sp-2);
 		padding-inline-start: var(--sp-5);
 		overflow: auto;
 		color: var(--ink);

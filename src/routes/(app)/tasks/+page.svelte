@@ -11,11 +11,13 @@
 	import TaskForm from '$lib/components/TaskForm.svelte';
 	import SuggestionCard from '$lib/components/SuggestionCard.svelte';
 
-	const FILTERS: { key: TaskFilter; label: string; empty: string }[] = [
-		{ key: 'overdue', label: '期限超過', empty: '期限超過はありません' },
-		{ key: 'today', label: '今日', empty: '今日の ToDo はありません' },
-		{ key: 'week', label: '今週', empty: '今週の ToDo はありません' },
-		{ key: 'all', label: 'すべて', empty: 'ToDo はありません' }
+	/* icon は一覧の小見出し (list-head) にも使う。フィルターの絞り込み条件を表す形なので
+	   期限超過は警告の三角、今日・今週はカレンダー、すべては一覧の形にする */
+	const FILTERS: { key: TaskFilter; label: string; empty: string; icon: string }[] = [
+		{ key: 'overdue', label: '期限超過', empty: '期限超過はありません', icon: 'ic-alert' },
+		{ key: 'today', label: '今日', empty: '今日の ToDo はありません', icon: 'ic-cal' },
+		{ key: 'week', label: '今週', empty: '今週の ToDo はありません', icon: 'ic-cal' },
+		{ key: 'all', label: 'すべて', empty: 'ToDo はありません', icon: 'ic-list' }
 	];
 
 	let filter = $state<TaskFilter>('today');
@@ -46,8 +48,11 @@
 <svelte:head><title>ToDo — KUROKO AI</title></svelte:head>
 
 <div class="tasks">
-	<header class="tasks-head">
-		<h1>ToDo</h1>
+	<header class="tasks-head page-head">
+		<div class="page-title">
+			<h1>ToDo</h1>
+			<p class="page-desc">期限・今日・今週で絞り込んで ToDo を管理します。</p>
+		</div>
 		<a class="btn pri" href="/tasks?new=1"><Icon name="ic-plus" size={20} />新しい ToDo を追加</a>
 	</header>
 
@@ -60,7 +65,7 @@
 				aria-pressed={filter === f.key}
 				onclick={() => (filter = f.key)}
 			>
-				{#if filter === f.key}<Icon name="ic-check" size={18} />{/if}
+				<Icon name="ic-check" size={18} class="chip-check" />
 				{f.label}
 				<span class="badge count" class:warn={f.key === 'overdue' && n > 0}>{n}</span>
 			</button>
@@ -76,7 +81,10 @@
 		/>
 	{/if}
 
-	<section class="card tasks-list" aria-label="{current.label}の ToDo">
+	<section class="card tasks-list" aria-labelledby="tasks-open-head">
+		<h2 class="list-head" id="tasks-open-head">
+			<Icon name={current.icon} size={16} />{current.label}<span class="num">{open.length}</span>
+		</h2>
 		{#if open.length === 0}
 			<p class="muted tasks-empty">{current.empty}</p>
 		{/if}
@@ -84,7 +92,9 @@
 			<TaskRow task={t} />
 		{/each}
 		{#if closed.length}
-			<h2 class="tasks-sub">完了 ({closed.length})</h2>
+			<h2 class="list-head tasks-sub">
+				<Icon name="ic-check-c" size={16} />完了<span class="num">{closed.length}</span>
+			</h2>
 			{#each closed as t (t.id)}
 				<TaskRow task={t} />
 			{/each}
@@ -98,13 +108,6 @@
 	.tasks {
 		max-width: 880px;
 	}
-	.tasks-head {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--sp-5);
-		padding: 0 var(--sp-5) var(--sp-5);
-	}
 	.tasks-filters {
 		flex-wrap: wrap;
 		gap: var(--sp-3);
@@ -117,9 +120,8 @@
 	.tasks-empty {
 		padding: var(--sp-5);
 	}
+	/* list-head の高さ・色・文字は共通。完了の小見出しだけ、直前の行と分ける余白を足す */
 	.tasks-sub {
-		padding: var(--sp-4) var(--sp-4) var(--sp-2);
-		color: var(--ink-3);
-		font-size: 14px;
+		margin-top: var(--sp-2);
 	}
 </style>

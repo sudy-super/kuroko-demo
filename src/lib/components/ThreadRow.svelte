@@ -2,9 +2,11 @@
 	import type { MessageThread } from '$lib/types';
 	import { REASON_ORDER } from '$lib/types';
 	import { db } from '$lib/store.svelte';
+	import { companyOf, personOf } from '$lib/derived';
 	import { parse, rel } from '$lib/dates';
 	import SourceIcon from './SourceIcon.svelte';
 	import ReasonIcon from './ReasonIcon.svelte';
+	import Avatars from './Avatars.svelte';
 
 	let {
 		thread,
@@ -18,6 +20,12 @@
 	const day = $derived(rel(parse(thread.lastAt.slice(0, 10)), parse(db.seededOn)));
 	// 時刻は画面の他の場所と同じく 1 桁時をそのまま出す (8:05 と 08:05 を混ぜない)
 	const when = $derived(day === '今日' ? thread.lastAt.slice(11, 16).replace(/^0/, '') : day);
+	// Task 10p (参考の良い点 6) — 差出人 / 会社 / 返信数 / 時刻を 1 行にまとめる
+	const company = $derived(companyOf(db, thread.companyId)?.name);
+	const meta = $derived(company ? `${thread.sender} / ${company}` : thread.sender);
+	const replies = $derived(db.messages.filter((m) => m.threadId === thread.id).length);
+	// Task 10p (参考の良い点 7) — 送信者が登録済みの人物なら頭文字の丸を出す (未登録は空のまま)
+	const person = $derived(personOf(db, thread.personId));
 </script>
 
 <a
@@ -29,18 +37,30 @@
 	aria-current={on ? 'true' : undefined}
 	onclick={onselect}
 >
-	<span class="line">
-		<SourceIcon source={thread.source} />
-		<span class="sender">{thread.sender}</span>
-		<span class="num when">{when}</span>
+	<span class="inbox-lines">
+		<span class="line">
+			<SourceIcon source={thread.source} />
+			<span class="sender">{meta}</span>
+			<span class="num replies">{replies}件</span>
+			<span class="num when">{when}</span>
+		</span>
+		<span class="line">
+			<span class="subject">{thread.subject}</span>
+			{#each reasons as r (r)}<ReasonIcon reason={r} />{/each}
+		</span>
 	</span>
-	<span class="line">
-		<span class="subject">{thread.subject}</span>
-		{#each reasons as r (r)}<ReasonIcon reason={r} />{/each}
-	</span>
+	{#if person}<Avatars people={[person]} />{/if}
 </a>
 
 <style>
+	.inbox-lines {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		justify-content: center;
+		gap: var(--sp-1);
+		min-width: 0;
+	}
 	.line {
 		display: flex;
 		align-items: center;
@@ -59,6 +79,7 @@
 		color: var(--ink-2);
 		font-size: 14px;
 	}
+	.replies,
 	.when {
 		flex: none;
 		color: var(--ink-3);

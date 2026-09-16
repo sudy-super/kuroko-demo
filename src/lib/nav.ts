@@ -17,9 +17,11 @@ export const SECONDARY: NavItem[] = [
 	{ href: '/meetings', label: '会議・議事録', icon: 'ic-bell' },
 	{ href: '/documents', label: 'ドキュメント生成', icon: 'ic-doc' },
 	{ href: '/integrations', label: 'LINE / Slack', icon: 'ic-grid' },
-	{ href: '/activity', label: '作業履歴', icon: 'ic-history' },
-	{ href: '/settings', label: '設定', icon: 'ic-gear' }
+	{ href: '/activity', label: '作業履歴', icon: 'ic-history' }
 ];
+
+/** Task 10p (参考の良い点 1) — 設定のような補助中の補助は、下端に区切り線で分けて固定する */
+export const UTILITY: NavItem[] = [{ href: '/settings', label: '設定', icon: 'ic-gear' }];
 
 export const BOTTOM: NavItem[] = [
 	{ href: '/today', label: 'Today', icon: 'ic-home' },

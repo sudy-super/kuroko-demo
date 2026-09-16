@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
 	import { queue } from '$lib/derived';
-	import { PRIMARY, SECONDARY, isActive, guideTarget, type NavItem } from '$lib/nav';
+	import { PRIMARY, SECONDARY, UTILITY, isActive, guideTarget, type NavItem } from '$lib/nav';
 	import Icon from './Icon.svelte';
 
 	const inbox = $derived(queue(db).length);
@@ -32,4 +32,7 @@
 	<hr class="nav-sep" />
 	<div class="nav-head">その他</div>
 	{#each SECONDARY as nav (nav.href)}{@render item(nav)}{/each}
+	<div class="nav-spacer"></div>
+	<hr class="nav-sep" />
+	{#each UTILITY as nav (nav.href)}{@render item(nav)}{/each}
 </nav>

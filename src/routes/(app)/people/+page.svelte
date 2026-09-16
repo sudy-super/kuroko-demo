@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { db } from '$lib/store.svelte';
-	import { companyOf, projectStatusClass } from '$lib/derived';
+	import { companyOf, personOf, projectStatusClass } from '$lib/derived';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import Avatars from '$lib/components/Avatars.svelte';
 
 	type Tab = 'people' | 'companies' | 'projects';
 	const TABS: { key: Tab; label: string }[] = [
@@ -27,8 +28,11 @@
 <svelte:head><title>会社・人物・案件 — KUROKO AI</title></svelte:head>
 
 <div class="people">
-	<header class="people-head">
-		<h1>会社・人物・案件</h1>
+	<header class="people-head page-head">
+		<div class="page-title">
+			<h1>会社・人物・案件</h1>
+			<p class="page-desc">人物・会社・案件をタブで切り替えて確認します。</p>
+		</div>
 		{#if tab === 'people'}
 			<button class="btn pri" onclick={() => (cardOpen = true)}>
 				<Icon name="ic-cam" size={20} />名刺から追加
@@ -44,7 +48,7 @@
 				aria-pressed={tab === t.key}
 				onclick={() => (tab = t.key)}
 			>
-				{#if tab === t.key}<Icon name="ic-check" size={18} />{/if}
+				<Icon name="ic-check" size={18} class="chip-check" />
 				{t.label}
 				<span class="badge count">{count[t.key]}</span>
 			</button>
@@ -76,6 +80,7 @@
 				{/each}
 			{:else}
 				{#each db.projects as pj (pj.id)}
+					{@const people = pj.personIds.map((id) => personOf(db, id)).filter((p) => !!p)}
 					<a class="list-row lg" href="/projects/{pj.id}">
 						<span class="people-col">
 							<span class="people-name">{pj.name}</span>
@@ -83,6 +88,7 @@
 						</span>
 						<span class="badge {projectStatusClass(pj.status)}">{pj.status}</span>
 						<span class="num muted people-amount">{pj.amount}</span>
+						<Avatars {people} />
 					</a>
 				{/each}
 			{/if}
