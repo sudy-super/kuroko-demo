@@ -2334,34 +2334,44 @@ section.tc .list-row:not(label):hover {
 	.today .bento > .card {
 		position: absolute;
 		margin: 0;
-		/* 列の間 (球の通り道)を 256px 下回らせない。1101〜1240px では球が細い通り道に入るので、
-		   その帯だけカードが 280px より狭くなる */
+		/* 列の間 (球の通り道)は、幅の式自体は 256px 分を確保する式のまま
+		   (min(280px, (100% - 256px) / 2))。Task 10t 修正で球を隠さない保証は
+		   left/right の寄せ側 (下の clamp())に移した。寄せが 0 まで縮む狭い画面では、
+		   この式どおり通り道 256px が戻る */
 		width: min(280px, calc((100% - 256px) / 2));
 	}
 	/* Task 10t — 内側の縁 (球に近い側の角) を球の中心へさらに寄せ、破片の散る外周に重ねる。
-	   球の本体 (中心から半径 110px 程度の明るい塊) には掛からないよう、どの角も中心から
-	   115px 以上を保った (実測: scratchpad/10t/measure.py)。この 5 つの left/right の値だけを
-	   Task 10l 修正から動かした。top/bottom の値 (環状のばらつき) はそのまま */
+	   Task 10t 修正ラウンド 1 — 寄せの値を bento の幅 (以下 W)に応じて縮める clamp() にした。
+	   固定 px の寄せのままだと、幅の式 (100% - 256px) / 2 が W の縮小に合わせてカードを
+	   細くする一方で寄せは縮まないため、狭い画面 (1101〜1200px 実測)で球の本体 (半径 107.5px)
+	   がカードの下に入っていた (レビュー task-10t C1)。
+	   clamp(0px, calc(50% - Kpx), 現行px) の K は「W = 880px (bento の最大幅、1280px 以上で
+	   到達)のとき現行px に一致する」よう K = 440 - 現行px で逆算した値。W が 880px を下回ると
+	   寄せは線形に浅くなり、W ≦ 2K の狭い画面では寄せ 0 (Task 10l 以前の位置相当、通り道 256px
+	   の保証が満額戻る安全側)まで戻る。5 枚とも 1101/1160/1200/1240/1280/1440/1920px で
+	   球の中心からカードの最短距離 (矩形と円の距離、角とは限らない)が半径 107.5px を
+	   1 画素も割らないことを実測した (scratchpad/10t-fix/measure.mjs)。
+	   top/bottom の値 (環状のばらつき)は Task 10l 修正のまま動かしていない */
 	.today .bento > .card:nth-child(1) {
 		top: 0;
-		left: 61px;
+		left: clamp(0px, calc(50% - 379px), 61px);
 	}
 	.today .bento > .card:nth-child(2) {
 		top: 44%;
-		left: 45px;
+		left: clamp(0px, calc(50% - 395px), 45px);
 	}
 	.today .bento > .card:nth-child(3) {
 		bottom: 0;
 		/* 下端の 2 枚の寄せが浅いのは、通り道の下側を案内カードのぶん空けておくため */
-		left: 89px;
+		left: clamp(0px, calc(50% - 351px), 89px);
 	}
 	.today .bento > .card:nth-child(4) {
 		top: 4%;
-		right: 55px;
+		right: clamp(0px, calc(50% - 385px), 55px);
 	}
 	.today .bento > .card:nth-child(5) {
 		bottom: 0;
-		right: 45px;
+		right: clamp(0px, calc(50% - 395px), 45px);
 	}
 	/* 6 枚目 (日程調整の返信待ち)が出る場面だけ、右を 3 枚にして入れ物を縦に伸ばす。
 	   6 枚は 2 列 450px には収まらないので、この状態では縦の送りが出る (段組みのときも同じ) */
