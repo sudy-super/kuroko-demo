@@ -754,6 +754,12 @@ svg.i {
 	.chatbar .chip span {
 		display: none;
 	}
+	/* 文言を畳むと実寸 42x40 まで縮む。既定の .chip::after (inset: -2px 0、縦だけ広げる)は
+	   文言があって元々横に十分な幅がある前提の値なので、ここでは 4 辺とも広げて 46x44 にする
+	   (.chatbar は overflow を切っていないので .iconbtn::after と同じ手が素直に効く) */
+	.chatbar .chip::after {
+		inset: -2px;
+	}
 }
 /* ruling (2026-09-16) — 入力欄そのものに輪郭を出すと、ガラスのピルの中に白い箱が
    もう 1 枚現れて見える。焦点はバー全体に出し、入力欄の輪郭は消す。
