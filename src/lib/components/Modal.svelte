@@ -112,14 +112,3 @@
 		</Dialog.Content>
 	</Dialog.Portal>
 </Dialog.Root>
-
-<!-- app.css を Task 10n が触っている間はここに置く。app.css の .modal の節へ戻すこと -->
-<style>
-	.modal {
-		overflow: hidden;
-	}
-	.modal-body {
-		min-height: 0;
-		overflow-y: auto;
-	}
-</style>

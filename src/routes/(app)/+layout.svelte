@@ -13,7 +13,6 @@
 	import ApprovalDrawer from '$lib/components/ApprovalDrawer.svelte';
 	import ActivityDrawer from '$lib/components/ActivityDrawer.svelte';
 	import Palette from '$lib/components/Palette.svelte';
-	import GuideCard from '$lib/components/GuideCard.svelte';
 	import { chromeGlass } from '$lib/glass';
 	import { CONNECT_NAME } from '$lib/connect';
 
@@ -74,5 +73,4 @@
 	<ApprovalDrawer />
 	<ActivityDrawer />
 	<Palette />
-	{#if db.demo.guide.on}<GuideCard />{/if}
 </div>

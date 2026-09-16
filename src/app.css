@@ -159,9 +159,18 @@
 	/* 骨格の寸法 (ruling: サイドナビ 256) */
 	--side-w: 256px;
 	--rail-w: 56px;
-	--header-h: 64px;
+	/* Task 10n — 上部バーは帯をやめて中央に浮くピルになった。高さは操作領域の下限 (44px)を
+	   割らないところまでで、island.md「普段の形と寸法」の 48〜52px の上端を取る */
+	--header-h: 52px;
+	/* ピルの下端 (上の余白 16 + 高さ)＋ 8px。本文の先頭をここより下から始めれば、
+	   浮かぶピルに隠れない。960px 以下はピルではなく上端に貼り付く不透明な帯なので式が変わる */
+	--bar-clear: calc(var(--sp-4) + var(--header-h) + var(--sp-2));
 	--chatbar-h: 60px;
 	--bottomnav-h: 72px;
+
+	/* max-content の幅を transition で補間できるようにする。ピルは中身なりの幅なので、
+	   案内が出入りしたり段階が進んだりしたときの幅の変化がこれで滑らかに動く */
+	interpolate-size: allow-keywords;
 }
 
 /* components 2.1 — リセットと本文 (-webkit-font-smoothing は書かない) */
@@ -402,7 +411,7 @@ svg.i {
 }
 .main {
 	margin-left: calc(var(--side-w) + 32px);
-	padding: calc(var(--header-h) + 32px) var(--sp-6) calc(var(--chatbar-h) + 64px);
+	padding: var(--bar-clear) var(--sp-6) calc(var(--chatbar-h) + 64px);
 }
 /* visual 4.4 + components 3.1 — 左サイドナビ (ruling: 幅 256、項目 48、角丸 16) */
 .sidebar {
@@ -513,15 +522,23 @@ svg.i {
 	align-items: center;
 	gap: var(--sp-3);
 	height: var(--header-h);
-	padding: 0 var(--sp-6);
+	padding: 0 var(--sp-4);
 	z-index: 50;
 }
+/* Task 10n — 帯ではなく右上に浮くピル (island.md の結論 + ユーザー裁定 2026-09-16、
+   中央ではなく右上)。top / right は既存の余白トークン (sp-4 / sp-6)のまま、
+   幅だけ中身なりにする。レールがあるときは既存の has-rail の規則がそのまま
+   ピルをレールの左に空けるので (レール幅 56 + 32 = 88 > レールの右余白 16 + 幅 56)、
+   別途レール回避の分岐は要らない。
+   幅の上限 560px は案内が出ているときのいちばん長い並びに合わせてある */
 .header.glass {
 	position: fixed;
 	top: var(--sp-4);
-	left: calc(var(--side-w) + 32px);
 	right: var(--sp-6);
-	border-radius: var(--r-l);
+	width: max-content;
+	max-width: 560px;
+	border-radius: var(--r-pill);
+	transition: width var(--d-enter) var(--ease-out);
 	background: var(--sheen), var(--glass-panel);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
@@ -1279,11 +1296,18 @@ svg.i {
 	border-radius: var(--r-l);
 	background: var(--solid);
 	box-shadow: var(--e3);
-	overflow-y: auto;
+	overflow: hidden;
 	animation: modal-in var(--d-enter) var(--ease-enter) both;
 }
 .modal.sm {
 	width: min(400px, calc(100vw - 32px));
+}
+/* 中身だけスクロールさせる。題と操作の行は箱に留めるので、行数が増えても
+   主ボタンが画面外へ出ない (仕様 5.14)。Task 10m 修正で一時的に Modal.svelte の
+   <style> に置いていたが、app.css が空くこの Task 10n の節へ戻した */
+.modal-body {
+	min-height: 0;
+	overflow-y: auto;
 }
 /* 操作の行 (components 5.1 — 主ボタンは左) */
 .modal-actions {
@@ -1378,24 +1402,86 @@ svg.i {
 	outline-offset: -2px;
 }
 
-/* 仕様 11.3 — 案内カード。ガラスは 5 か所だけなので不透明にする */
-.guide {
-	position: fixed;
-	left: auto;
-	right: var(--sp-6);
-	bottom: calc(var(--chatbar-h) + 32px);
-	z-index: 65;
+/* Task 10n — ピルの中のボタンを押したときだけ開く板 (PillPanel.svelte)。
+   ガラスは 5 か所だけなので不透明。出す中身は直近の数件と全件への導線だけ
+   (island.md「広がったときの中身」) */
+.pill-panel {
+	z-index: 70;
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-2);
 	width: 320px;
-	max-width: calc(100vw - 48px);
-	padding: var(--sp-5);
+	max-width: calc(100vw - var(--sp-8));
+	padding: var(--sp-4);
 	border-radius: var(--r-m);
 	background: var(--solid);
 	box-shadow: var(--e3);
+	/* 開いた直後は板自身に焦点が当たる。枠は中のボタン側で示す */
+	outline: none;
 }
-/* カードの幅は 320px なので、本文の h2 (24px) ではなく 18px に落とす (見出しの階層は h2 のまま) */
-.guide h2 {
-	font-size: 18px;
+/* island.md「動きの時間と緩急」— 300〜400ms の ease-out。動きを減らす設定では、
+   下の @media (prefers-reduced-motion) が全要素の animation-duration を落として即時になる */
+.pill-panel[data-state='open'] {
+	animation: pill-in var(--d-enter) var(--ease-out) both;
+}
+.pill-panel[data-state='closed'] {
+	animation: pill-out var(--d-exit) var(--ease-exit) both;
+}
+@keyframes pill-in {
+	from {
+		opacity: 0;
+		translate: 0 -8px;
+		scale: 0.96;
+	}
+}
+@keyframes pill-out {
+	to {
+		opacity: 0;
+		translate: 0 -4px;
+		scale: 0.98;
+	}
+}
+.pill-title {
 	margin: 0;
+	font-size: 14px;
+	color: var(--ink-2);
+}
+.pill-row {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-2);
+	min-width: 0;
+	font-size: 14px;
+}
+.pill-steps {
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.5;
+	color: var(--ink-2);
+}
+.pill-panel .btn {
+	align-self: flex-start;
+}
+/* 案内の段階の札。ピルの中に収める小さな錠剤で、押すと手順の板が開く */
+.pill-guide {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sp-2);
+	flex: none;
+	height: 32px;
+	padding: 0 var(--sp-3);
+	border: 0;
+	border-radius: var(--r-pill);
+	background: var(--sel-soft);
+	color: var(--ink);
+	font: inherit;
+	font-size: 13px;
+	white-space: nowrap;
+	cursor: pointer;
+}
+.pill-guide .num {
+	color: var(--accent);
+	font-weight: 700;
 }
 .pulse {
 	animation: pulse 2s var(--ease-out) infinite;
@@ -1435,21 +1521,30 @@ svg.i {
 	}
 }
 
-/* レールがある画面だけ右をレールのぶん空け、ヘッダー・本文・依頼バー・誘導カードの右端をそろえる。
-   960px 以下ではレールが消えるので、3 クラスの詳細度が下の上書きに勝たないよう幅で囲う */
+/* レールがある画面だけ右をレールのぶん空け、本文と依頼バーの右端をそろえる。ピルは帯ではないが、
+   同じ right の値を使うことでレール (右から 16px、幅 56px)の左に確実に収まる
+   (88px > 16 + 56px)。960px 以下ではレールが消えるので、
+   2 クラスの詳細度が下の上書きに勝たないよう幅で囲う */
 @media (min-width: 961px) {
 	.app.has-rail .main {
 		margin-right: calc(var(--rail-w) + 32px);
 	}
 	.app.has-rail .header.glass,
-	.app.has-rail .chatbar,
-	.app.has-rail .guide {
+	.app.has-rail .chatbar {
 		right: calc(var(--rail-w) + 32px);
 	}
 }
 
 /* components 2.2 — 960px: サイドナビをボトムナビに替える */
 @media (max-width: 960px) {
+	:root {
+		/* 上端に貼り付く不透明な帯なので、浮かせるぶんの 16px が要らない */
+		--bar-clear: calc(var(--header-h) + var(--sp-4));
+	}
+	/* 幅が足りないので案内の札は段階だけにする。見出しは押して開く板の中に出る */
+	.pg-title {
+		display: none;
+	}
 	.sidebar,
 	.rail,
 	.header.glass {
@@ -1464,8 +1559,7 @@ svg.i {
 	.main {
 		margin-left: 0;
 		margin-right: 0;
-		padding: calc(var(--header-h) + 16px) var(--sp-4)
-			calc(var(--bottomnav-h) + var(--chatbar-h) + 64px);
+		padding: var(--bar-clear) var(--sp-4) calc(var(--bottomnav-h) + var(--chatbar-h) + 64px);
 	}
 	/* 依頼バーはボトムナビの上に載せる */
 	.chatbar {
@@ -1505,13 +1599,6 @@ svg.i {
 			opacity: 0;
 			transform: translateY(-8px) scale(0.98);
 		}
-	}
-	.guide {
-		left: var(--sp-4);
-		right: var(--sp-4);
-		width: auto;
-		max-width: none;
-		bottom: calc(var(--bottomnav-h) + var(--chatbar-h) + 32px);
 	}
 }
 
@@ -1845,7 +1932,7 @@ svg.i {
    flex: 1 は残った空きをカードの側に吸わせ、環状の配置を本文の中央に置くため (.today の節) */
 .today-items {
 	flex: 1;
-	scroll-margin-top: calc(var(--header-h) + var(--sp-4));
+	scroll-margin-top: var(--bar-clear);
 }
 
 /* カードの中身。.card の見た目は触らず、並べ方と文字だけ決める */
@@ -2042,20 +2129,6 @@ section.tc .list-row:not(label):hover {
 	.today .bento > .card:nth-child(6) {
 		bottom: 0;
 		right: 20px;
-	}
-	/* Task 10l 修正 — 案内カードの置き場所。環状の配置では左右の端までカードが並ぶので、
-	   既定の右下だと右下のカードに重なる (1280x800 で 210x103px)。Today のときだけ
-	   球の通り道 (左右の列の間)に移す。ここが唯一の空きで、カードにも依頼バーにも当たらない。
-	   通り道の中央は本文の中央で、本文はサイドナビのぶん右に寄っている */
-	.app:has(.today) .guide {
-		left: calc(50% + (var(--side-w) + 32px) / 2);
-		right: auto;
-		translate: -50% 0;
-		/* 通り道の幅は最も狭い 1101px でも 256px (カードの幅の式を見よ) */
-		width: 240px;
-	}
-	.app.has-rail:has(.today) .guide {
-		left: calc(50% + (var(--side-w) - var(--rail-w)) / 2);
 	}
 }
 /* Task 10c — オーブはガラスが屈折させる対象なので、ガラスの canvas より下に置く。
