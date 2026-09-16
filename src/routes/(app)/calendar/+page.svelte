@@ -9,6 +9,7 @@
 	import { weekOf } from '$lib/calendar';
 	import { personOf, projectOf } from '$lib/derived';
 	import Icon from '$lib/components/Icon.svelte';
+	import { glass, CARD } from '$lib/glass';
 	import Modal from '$lib/components/Modal.svelte';
 	import WeekView from '$lib/components/WeekView.svelte';
 	import MonthView from '$lib/components/MonthView.svelte';
@@ -86,7 +87,10 @@
 		<h2 class="cal-title" aria-live="polite">{title}</h2>
 	</div>
 
-	<section class="card cal-panel" aria-label="{title}の予定">
+	<!-- 面が幅いっぱい x 約 660px と広く、毎フレーム描き直すと本番ビルドでも 30 フレーム/秒台に
+		 落ちる。この面の下に来るのは壁紙の階調だけで、120 ミリ秒ごとに描き直しても見た目は
+		 変わらない (Task 12 の repaintMs を復活させた) -->
+	<section class="card cal-panel" aria-label="{title}の予定" {@attach glass(CARD, 120)}>
 		{#if view === 'month'}
 			<MonthView {cursor} onopen={(e) => (detail = e)} onpick={pick} />
 		{:else}

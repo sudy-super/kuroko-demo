@@ -23,6 +23,7 @@
 	// 受注と失注だけ色を変える。途中のステータスは同じ扱いにする
 	const statusClass = (s: string) => (s === '受注' ? 'ok' : s === '失注' ? 'warn' : '');
 	const staff = (companyId: string) => db.people.filter((p) => p.companyId === companyId).length;
+	import { glass, CARD } from '$lib/glass';
 </script>
 
 <svelte:head><title>会社・人物・案件 — KUROKO AI</title></svelte:head>
@@ -52,7 +53,7 @@
 		{/each}
 	</div>
 
-	<div class="people-cards">
+	<div class="people-cards" {@attach glass({ ...CARD, targets: '.card' })}>
 		<section class="card people-list" aria-label={TABS.find((t) => t.key === tab)!.label}>
 			{#if tab === 'people'}
 				{#each db.people as p (p.id)}

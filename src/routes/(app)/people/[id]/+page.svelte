@@ -48,6 +48,7 @@
 		ui.context = { label: `${person.name}様について`, personId: person.id };
 		document.querySelector<HTMLInputElement>('.chatbar input')?.focus();
 	}
+	import { glass, CARD } from '$lib/glass';
 </script>
 
 <svelte:head><title>{person?.name ?? '人物'} — KUROKO AI</title></svelte:head>
@@ -73,7 +74,7 @@
 	{#if !person}
 		<p class="people-missing">この人物は登録されていません。</p>
 	{:else}
-		<div class="people-cards">
+		<div class="people-cards" {@attach glass({ ...CARD, targets: '.card' })}>
 			<section class="card people-sec">
 				<h2>基本情報</h2>
 				<dl class="kv">

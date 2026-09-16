@@ -15,6 +15,7 @@
 
 	const SOURCE: Record<string, string> = { gmail: 'メール', slack: 'Slack', line: 'LINE' };
 	const dateOf = (eventId: string) => db.events.find((e) => e.id === eventId)?.date;
+	import { glass, CARD } from '$lib/glass';
 </script>
 
 <svelte:head><title>{company?.name ?? '会社'} — KUROKO AI</title></svelte:head>
@@ -33,7 +34,7 @@
 	{#if !company}
 		<p class="people-missing">この会社は登録されていません。</p>
 	{:else}
-		<div class="people-cards">
+		<div class="people-cards" {@attach glass({ ...CARD, targets: '.card' })}>
 			<section class="card people-sec">
 				<h2>基本情報</h2>
 				<dl class="kv">

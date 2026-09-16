@@ -8,7 +8,7 @@
 	import { media } from '$lib/media.svelte';
 	import Icon from './Icon.svelte';
 	import Modal from './Modal.svelte';
-	import { glass, CLEAR } from '$lib/glass';
+	import { glass, BAR } from '$lib/glass';
 
 	let now = $state(new Date());
 	let confirming = $state(false);
@@ -59,7 +59,7 @@
 		<div class="row" style="margin-left: auto">{@render tools()}</div>
 	</header>
 {:else}
-	<header class="header glass" {@attach glass(CLEAR)}>
+	<header class="header glass" {@attach glass(BAR)}>
 		<span class="num">{fmtYMDW(now)}</span>
 		<span class="num muted">{hm(now)}</span>
 		<div class="row" style="margin-left: auto; gap: var(--sp-3)">

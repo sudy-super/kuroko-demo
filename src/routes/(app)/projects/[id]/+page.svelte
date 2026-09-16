@@ -20,6 +20,7 @@
 	const SOURCE: Record<string, string> = { gmail: 'メール', slack: 'Slack', line: 'LINE' };
 	const statusClass = (s: string) => (s === '受注' ? 'ok' : s === '失注' ? 'warn' : '');
 	const dateOf = (eventId: string) => db.events.find((e) => e.id === eventId)?.date;
+	import { glass, CARD } from '$lib/glass';
 </script>
 
 <svelte:head><title>{project?.name ?? '案件'} — KUROKO AI</title></svelte:head>
@@ -38,7 +39,7 @@
 	{#if !project}
 		<p class="people-missing">この案件は登録されていません。</p>
 	{:else}
-		<div class="people-cards">
+		<div class="people-cards" {@attach glass({ ...CARD, targets: '.card' })}>
 			<section class="card people-sec">
 				<h2>基本情報</h2>
 				<dl class="kv">

@@ -33,7 +33,9 @@
 	--accent: #1a5ecb;
 	--accent-top: #2a6fe0;
 	--accent-soft: rgba(26, 94, 203, 0.1);
-	--accent-soft-2: rgba(26, 94, 203, 0.16);
+	/* Task 10f 修正ラウンド 3 — バッジの塗り。カードがガラスになり、この塗りが下の面ごと
+	   沈むようになった。0.16 のままだと、上に載る --accent の実測が 4.24:1 と 4.5:1 を割る */
+	--accent-soft-2: rgba(26, 94, 203, 0.1);
 	--accent-glow: rgba(26, 94, 203, 0.28);
 	/* 主ボタンと送信ボタンの落ち影。--accent と同じ RGB にそろえる */
 	--accent-shadow: rgba(26, 94, 203, 0.36);
@@ -50,7 +52,10 @@
 	   現在地は塗りだけでなく左端の縦バーと太字でも伝わるので、薄くしても分かる */
 	--sel: rgba(26, 94, 203, 0.06);
 	/* components 3.2 / 3.11 — 一覧行、ボトムナビ、コマンドパレットの選択中の塗り */
-	--sel-soft: rgba(214, 228, 252, 0.75);
+	/* Task 10f 修正ラウンド 3 — カードがガラスになり、この塗りが下の面ごと沈むようになった。
+	   0.75 のままだと、選択中の行に載る --ink-3 と --accent の実測が 4.25:1 と 4.5:1 を割る。
+	   0.58 まで薄くすると 4.6:1 台に戻る。選択中は左端の縦バーと太字でも伝わる */
+	--sel-soft: rgba(214, 228, 252, 0.58);
 
 	/* ruling — 状態レイヤー (ホバー 8% / フォーカス 10% / 押下 10%) */
 	--hover: rgba(30, 42, 71, 0.08);
@@ -70,6 +75,9 @@
 	--glass-2: rgba(255, 255, 255, 0.6);
 	--glass-panel: rgba(255, 255, 255, 0.58);
 	--solid: rgba(255, 255, 255, 0.92);
+	/* 覆いが出ている間のカードの塗り。ガラスを 2 枚重ねないために面を不透明へ戻す。
+	   代替の経路 (backdrop-filter)と WebGL の経路の 2 か所で使うので、値はここ 1 つにまとめる */
+	--overlay-card: rgba(255, 255, 255, 0.9);
 
 	/* ぼかしは 12px と 16px のまま。Liquid Glass のぼかしはごく弱く、強くすると
 	   すりガラスになって「厚みのある透明な板」に見えなくなる。背景をぼかして見せる役は
@@ -1539,6 +1547,7 @@ svg.i {
 	[data-liquid-glass-layer] {
 		display: none !important;
 	}
+	:root body [data-liquid-glass='webgl'] .card,
 	:root body [data-liquid-glass='webgl'] .btn.sec,
 	:root body [data-liquid-glass='webgl'].public-list {
 		background: #fff;
@@ -2045,6 +2054,7 @@ section.tc .list-row:not(label):hover {
    これまでどおり backdrop-filter のすりガラスになる。
    ========================================================================== */
 :root [data-liquid-glass='webgl'],
+:root [data-liquid-glass='webgl'] .card,
 :root [data-liquid-glass='webgl'] .btn.sec {
 	background: none;
 	-webkit-backdrop-filter: none;
@@ -2064,7 +2074,8 @@ section.tc .list-row:not(label):hover {
 .header.glass::after,
 .chatbar::after,
 .public-list::after,
-.today-actions .btn.sec::after {
+.today-actions .btn.sec::after,
+:root [data-liquid-glass='webgl'] .card::after {
 	content: '';
 	position: absolute;
 	inset: 0;
@@ -2083,6 +2094,21 @@ section.tc .list-row:not(label):hover {
 .bento {
 	position: relative;
 	isolation: isolate;
+}
+
+/* visual 4.11 — ガラスを 2 枚重ねない。覆い (ドロワー / モーダル)が出ている間はカードの
+   ガラスを落とし、同時に塗りを不透明に戻す。この 2 つは必ず対で当てる。canvas だけ消すと
+   カードが完全に透明になり、文字が背景の上に直接浮く。
+   !important が要る理由: ライブラリは canvas を作るときに display: block をインラインの
+   style として書き込む (dom.js の mountCanvas)。インラインの style はスタイルシートの
+   宣言より強いので、これを下ろす手段が !important しかない */
+body[data-overlay='on'] .bento > [data-liquid-glass-layer],
+body[data-overlay='on'] .panes > [data-liquid-glass-layer],
+body[data-overlay='on'] .people-cards > [data-liquid-glass-layer] {
+	display: none !important;
+}
+:root body[data-overlay='on'] [data-liquid-glass='webgl'] .card {
+	background: var(--overlay-card);
 }
 
 /* ==========================================================================
@@ -2513,7 +2539,10 @@ section.tc .list-row:not(label):hover {
 	color: var(--accent);
 }
 
+/* ガラスの canvas は bleed の分だけ外へ出るので、位置の基準になる親を置く */
 .people-cards {
+	position: relative;
+	isolation: isolate;
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 	gap: var(--sp-5);

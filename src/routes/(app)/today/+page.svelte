@@ -19,7 +19,7 @@
 	import TodayCard from '$lib/components/TodayCard.svelte';
 	import DoneScreen from '$lib/components/DoneScreen.svelte';
 	import ScenarioMenu from '$lib/components/ScenarioMenu.svelte';
-	import { glass, CLEAR } from '$lib/glass';
+	import { glass, CLEAR, CARD } from '$lib/glass';
 
 	const count = $derived(todayCount(db));
 	const items = $derived(todayItems(db));
@@ -83,7 +83,7 @@
 				<DoneScreen />
 			</div>
 		{:else}
-			<div class="bento">
+			<div class="bento" {@attach glass({ ...CARD, targets: '.card' })}>
 				{#if ap.length}
 					<TodayCard
 						size="hero"

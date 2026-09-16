@@ -71,6 +71,7 @@
 		if (media.mobile) sheet = true;
 		else showRight = !showRight;
 	}
+	import { glass, CARD } from '$lib/glass';
 </script>
 
 <svelte:head><title>Inbox — KUROKO AI</title></svelte:head>
@@ -89,7 +90,7 @@
 		</button>
 	</header>
 
-	<div class="panes">
+	<div class="panes" {@attach glass({ ...CARD, targets: '.card' })}>
 		<section class="card pane pane-list" aria-label="要対応のメール">
 			{#if q.length === 0}
 				<p class="empty">要対応のメールはありません</p>
@@ -161,7 +162,10 @@
 		color: var(--ink-2);
 		font-size: 14px;
 	}
+	/* ガラスの canvas は bleed の分だけ外へ出るので、位置の基準になる親を置く */
 	.panes {
+		position: relative;
+		isolation: isolate;
 		display: grid;
 		grid-template-columns: 360px minmax(0, 1fr) 320px;
 		align-items: start;
