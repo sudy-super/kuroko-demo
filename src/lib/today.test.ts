@@ -101,7 +101,10 @@ describe('完了画面からの始め直し', () => {
 	it('未接続で始め直したら未接続のまま (スキップして開いた人の画面に列を生やさない)', () => {
 		const empty = { approvals: [], threads: [], meetings: [], tasks: [] };
 		replaceDb({ ...seed(new Date(2026, 8, 15)), ...empty });
-		for (const c of db.settings.connections) c.connected = false;
+		// 「スキップして開く」で始めた人。seed の既定も未接続だが、この試験が見ているのは
+		// 「始め直しで接続を勝手に足さない」ことなので、前提を明示しておく
+		expect(db.settings.connections.some((c) => c.connected)).toBe(false);
+		expect(todayCount(db)).toBe(0);
 		startGuide();
 		expect(db.settings.connections.some((c) => c.connected)).toBe(false);
 	});
