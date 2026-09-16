@@ -87,6 +87,7 @@
 			>
 				{#if ap.length}
 					<TodayCard
+						card="approvals"
 						title="承認待ち {ap.length} 件"
 						icon="ic-check-c"
 						onclick={() => (ui.approvalDrawer = true)}
@@ -106,6 +107,7 @@
 				{/if}
 
 				<TodayCard
+					card="reply"
 					title="返信が必要な連絡 {rp.length} 件"
 					icon="ic-mail"
 					href={rp[0] ? `/inbox?t=${rp[0].id}` : '/inbox'}
@@ -128,12 +130,12 @@
 				</TodayCard>
 
 				{#if nm}
-					<TodayCard title={meetingHead(nm)} icon="ic-bell" href="/meetings/{nm.meeting.id}">
+					<TodayCard card="meeting" title={meetingHead(nm)} icon="ic-bell" href="/meetings/{nm.meeting.id}">
 						<p>{nm.meeting.briefRead ? 'Brief 確認済み' : 'Brief が届いています'}</p>
 					</TodayCard>
 				{/if}
 
-				<TodayCard title="今日の予定 {events.length} 件" icon="ic-cal" href="/calendar">
+				<TodayCard card="events" title="今日の予定 {events.length} 件" icon="ic-cal" href="/calendar">
 					{#each events.slice(0, 3) as e (e.id)}
 						<div class="list-row">
 							<span class="num">{e.start}</span>
@@ -144,7 +146,7 @@
 					{#if !events.length}<p class="muted">今日の予定はありません</p>{/if}
 				</TodayCard>
 
-				<TodayCard title="今日の ToDo {tasks.length} 件" icon="ic-todo">
+				<TodayCard card="tasks" title="今日の ToDo {tasks.length} 件" icon="ic-todo">
 					{#each tasks.slice(0, 3) as t (t.id)}
 						<label class="list-row">
 							<!-- todayTasks は未完了だけを返すので checked は常に false。式にしない -->
@@ -158,7 +160,7 @@
 				</TodayCard>
 
 				{#if sent.length}
-					<TodayCard title="日程調整の返信待ち {sent.length} 件" icon="ic-clock">
+					<TodayCard card="sent" title="日程調整の返信待ち {sent.length} 件" icon="ic-clock">
 						<!-- リンクを行に並べると 1 列ぶんの幅では題名が「田中 太郎…」まで縮む。
 						     リンクは行の下に落とす -->
 						{#each sent as s (s.id)}

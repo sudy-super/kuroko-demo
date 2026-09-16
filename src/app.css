@@ -2355,48 +2355,65 @@ section.tc .list-row:not(label):hover {
 	   固定 px の寄せのままだと、幅の式 (100% - 256px) / 2 が W の縮小に合わせてカードを
 	   細くする一方で寄せは縮まないため、狭い画面 (1101〜1200px 実測)で球の本体 (半径 107.5px)
 	   がカードの下に入っていた (レビュー task-10t C1)。
-	   clamp(0px, calc(50% - Kpx), 現行px) の K は「W = 880px (bento の最大幅、1280px 以上で
+	   clamp(0px, calc(50% - Kpx), 現行px) の K は「W = 880px (bento の最大幅、画面幅 1216px 以上で
 	   到達)のとき現行px に一致する」よう K = 440 - 現行px で逆算した値。W が 880px を下回ると
 	   寄せは線形に浅くなり、W ≦ 2K の狭い画面では寄せ 0 (Task 10l 以前の位置相当、通り道 256px
 	   の保証が満額戻る安全側)まで戻る。5 枚とも 1101/1160/1200/1240/1280/1440/1920px で
 	   球の中心からカードの最短距離 (矩形と円の距離、角とは限らない)が半径 107.5px を
 	   1 画素も割らないことを実測した (scratchpad/10t-fix/measure.mjs)。
-	   top/bottom の値 (環状のばらつき)は Task 10l 修正のまま動かしていない */
-	.today .bento > .card:nth-child(1) {
-		top: 0;
+	   top/bottom の値 (環状のばらつき)は Task 10l 修正のまま動かしていない。
+
+	   Task 10t 修正ラウンド 2 — 位置の割り当てを :nth-child(n) から data-card (カードの種類、
+	   TodayCard の card prop) に変えた。承認待ち (ap.length)・次の会議 (nm)・送信済み
+	   (sent.length) は +page.svelte の {#if} で出入りするため、:nth-child だと承認待ちを
+	   処理し終えた 4 枚の状態などで後続カードの列の割り当てがずれ、球の円盤 (99 画素)とカード
+	   同士 (236x20px)の両方を覆っていた (レビュー task-10t-fix I1)。data-card は種類ごとに
+	   固定なので、他のカードの有無に関わらず自分の位置に留まる。抜けた枠は単に空くだけで、
+	   残ったカードの詰め直しはしない (環状の配置じたいは変えない方針)。 */
+	.today .bento > .card[data-card='approvals'] {
+		/* Task 10t 修正ラウンド 2 (M1) — 高さ下限 430px では top: 0 だと承認待ちカードの矩形が
+		   球の円盤に 1.47px 食い込み、角丸 18px に頼って画素としては 0 になっていた
+		   (レビュー task-10t-fix M1、余裕 4px)。top を負にしてカードを上へ逃がし、角丸なしの
+		   矩形でも下限の高さで球の円盤を割らないようにした
+		   (scratchpad/10t-fix2/measure.mjs で確認) */
+		top: -8px;
 		left: clamp(0px, calc(50% - 379px), 61px);
 	}
-	.today .bento > .card:nth-child(2) {
+	.today .bento > .card[data-card='reply'] {
 		top: 44%;
 		left: clamp(0px, calc(50% - 395px), 45px);
 	}
-	.today .bento > .card:nth-child(3) {
+	.today .bento > .card[data-card='meeting'] {
 		bottom: 0;
 		/* 下端の 2 枚の寄せが浅いのは、通り道の下側を案内カードのぶん空けておくため */
 		left: clamp(0px, calc(50% - 351px), 89px);
 	}
-	.today .bento > .card:nth-child(4) {
+	.today .bento > .card[data-card='events'] {
 		top: 4%;
 		right: clamp(0px, calc(50% - 385px), 55px);
 	}
-	.today .bento > .card:nth-child(5) {
+	.today .bento > .card[data-card='tasks'] {
 		bottom: 0;
 		right: clamp(0px, calc(50% - 395px), 45px);
 	}
-	/* 6 枚目 (日程調整の返信待ち)が出る場面だけ、右を 3 枚にして入れ物を縦に伸ばす。
-	   6 枚は 2 列 450px には収まらないので、この状態では縦の送りが出る (段組みのときも同じ) */
-	.today .bento:has(> .card:nth-child(6)) {
+	/* 送信済み (日程調整の返信待ち)が出る場面だけ、右を 3 枚にして入れ物を縦に伸ばす。
+	   6 枚は 2 列 450px には収まらないので、この状態では縦の送りが出る (段組みのときも同じ)。
+	   :has() の的を data-card にしたので、承認待ちなどが欠けて送信済みが 6 枚目にならない
+	   (例: 5 枚中の 1 枚)状態でも同じ規則が効く */
+	.today .bento:has(> .card[data-card='sent']) {
 		flex-basis: 640px;
 		min-height: 640px;
 		max-height: 640px;
 	}
-	.today .bento:has(> .card:nth-child(6)) > .card:nth-child(5) {
+	.today .bento:has(> .card[data-card='sent']) > .card[data-card='tasks'] {
 		top: 34%;
 		bottom: auto;
 	}
-	.today .bento > .card:nth-child(6) {
+	.today .bento > .card[data-card='sent'] {
 		bottom: 0;
-		right: 20px;
+		/* Task 10t 修正ラウンド 2 (M4) — 他の 5 枚と同じ clamp(0px, calc(50% - Kpx), 現行px) の
+		   書き方にそろえた。K = 440 - 20 = 420 */
+		right: clamp(0px, calc(50% - 420px), 20px);
 	}
 }
 /* Task 10c — オーブはガラスが屈折させる対象なので、ガラスの canvas より下に置く。
