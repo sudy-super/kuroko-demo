@@ -1468,7 +1468,7 @@ svg.i {
 	/* Task 9c — 公開画面の時間差の入場、チェックマークの拡大、画面遷移の横スライドから
 	   translateY / scale / translateX を落とし、opacity の変化だけ残す */
 	.public .in,
-	.public-list .badge.ok .i {
+	.connect-cta .i {
 		animation: fade-in 120ms linear both !important;
 	}
 	/* 擬似要素は別の規則にする。CSS はセレクタ列に解釈できないものが 1 つでもあると
@@ -1522,8 +1522,7 @@ svg.i {
 	/* カレンダーの枠だけはガラスを要素自身に当てているので、属性も枠自身に付く。
 	   子孫を狙う上の形では当たらない (Task 10f 修正ラウンド 4) */
 	:root body [data-liquid-glass='webgl'].card,
-	:root body [data-liquid-glass='webgl'] .btn.sec,
-	:root body [data-liquid-glass='webgl'].public-list {
+	:root body [data-liquid-glass='webgl'] .btn.sec {
 		background: #fff !important;
 	}
 }
@@ -1573,35 +1572,6 @@ svg.i {
 	aspect-ratio: 1;
 }
 
-/* Task 10f 追記 — 接続画面だけ、オーブの箱を下へはみ出させて接続一覧の上端に重ねる。
-   ガラスは下を通る内容を縁の帯で曲げて初めてガラスに見えるので、一覧の下に必ず
-   オーブの破片と光彩が来るようにする (無地の地の上では一律の面取りにしか見えない)。
-   z-index: -1 で見出しと一覧の裏へ回し、.public-col を積み重ねの文脈にして
-   ページの地より下へは抜けないように閉じ込める。球そのものは見出しより上に出る
-   (箱の中央 48% が球で、下半分は破片と光彩だけ) ので、文字の上に球は載らない */
-.public-col.overlap {
-	position: relative;
-	isolation: isolate;
-}
-/* 見出しと説明はオーブより前に出す。DOM の順 (オーブ → 見出し → 一覧)のままだと
-   球が見出しの真裏に来て文字が読めない。order で見た目の順だけ入れ替える。
-   オーブは読み上げの対象ではないので、読む順との食い違いは起きない */
-.public-col.overlap > .public-main {
-	order: -1;
-	margin-top: auto;
-}
-.public-col.overlap > .orb {
-	order: 0;
-	z-index: -1;
-	margin-top: 0;
-	margin-bottom: -150px;
-}
-@media (max-width: 640px) {
-	.public-col.overlap > .orb {
-		margin-bottom: -104px;
-	}
-}
-
 /* 見出しと説明。記事 11 に従い、大見出しは行間 1.25、字間 0 */
 .public-main {
 	display: flex;
@@ -1631,31 +1601,39 @@ svg.i {
 	word-break: auto-phrase;
 }
 
-/* iOS の inset grouped list に当たる 1 枚のガラス面。行は 56px、区切り線は .list-row 側 */
-/* Task 10f — 接続一覧はナビ層 (操作の列) なのでガラスにする。ここの塗りと影は
-   WebGL2 が無い環境の見た目で、WebGL の経路では下の Liquid Glass の節が塗りを下ろす */
-.public-list {
-	position: relative;
-	width: 100%;
-	border-radius: 20px;
-	text-align: left;
-	background: var(--sheen), var(--glass-panel);
-	-webkit-backdrop-filter: var(--blur-m);
-	backdrop-filter: var(--blur-m);
-	box-shadow: var(--rim), var(--e-glass);
+/* Task 9d — サービスの画面 (/connect/<id>)。一覧をやめ、1 画面 1 サービスにした
+   (ユーザー判定 2026-09-16)。ガラスは使わない (下に曲げる内容がない。ボタンは塗り) */
+
+/* HIG Onboarding の page control 相当。今いる段階だけ塗り、残りは線の色で置く。
+   order で列の先頭 (オーブより上)へ出す */
+.connect-steps {
+	display: flex;
+	gap: var(--sp-2);
+	order: -1;
 }
-/* 行そのものは押せない。押せるのは右端のボタンだけなので、指しても反応させない */
-.public-list .list-row,
-.public-list .list-row:hover {
-	background: none;
-	cursor: default;
+.connect-steps span {
+	width: var(--sp-2);
+	height: var(--sp-2);
+	border-radius: var(--r-pill);
+	background: var(--line-2);
 }
-/* 名前を伸ばして、右端のボタンとバッジを行の末尾に寄せる */
-.public-list .name {
-	flex: 1;
+.connect-steps span.on {
+	background: var(--accent);
+}
+/* ブランドアイコンは 64px。flex の列なので、中央寄せは align-self で行う */
+.connect-mark {
+	align-self: center;
+	margin-bottom: var(--sp-2);
+}
+/* 裁定 4 — 「接続中…」「接続済み」の間も塗りは --accent のまま変えない。
+   .btn[aria-disabled] の灰色にすると、状態の違いが色の変化として読まれてしまう。
+   状態はラベル (NN/g State-Switch Controls)とチェックの形で示す */
+.btn.connect-cta[aria-disabled='true'] {
+	color: #fff;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 16px var(--accent-glow);
 }
 /* onboarding.md 3.2 — 完了は進捗バーではなくチェックマークで締める */
-.public-list .badge.ok .i {
+.connect-cta .i {
 	animation: check-in var(--d-base) var(--ease-out) backwards;
 }
 @keyframes check-in {
@@ -2072,7 +2050,6 @@ section.tc .list-row:not(label):hover {
 .rail::after,
 .header.glass::after,
 .chatbar::after,
-.public-list::after,
 .today-actions .btn.sec::after,
 :root [data-liquid-glass='webgl'] .card::after,
 :root [data-liquid-glass='webgl'].card::after {

@@ -6,14 +6,14 @@
 
 	let { children } = $props();
 
-	/* Welcome はオーブが主役。接続画面は Task 10f 追記で見直した。
-	   小さいアイコンにすると接続一覧のガラスの下に何も来ず、縁が一律の面取りにしか見えない
-	   (ユーザー判定)。箱を一覧の上端に食い込ませ、下半分の破片と光彩が一覧の下を通るようにする。
+	/* Welcome はオーブが主役。導入画面 (/connect) は一段小さく、サービスの画面
+	   (/connect/<id>) はブランドアイコンが主役なのでさらに小さくする。
 	   同じ <Orb> のまま size だけ変える (再マウントすると WebGL の文脈を作り直す) */
 	const narrow = new MediaQuery('(max-width: 640px)');
-	const connect = $derived(page.url.pathname !== '/');
+	const step = $derived(page.url.pathname.startsWith('/connect/'));
+	const intro = $derived(page.url.pathname === '/connect');
 	const size = $derived(
-		connect ? (narrow.current ? 260 : 380) : narrow.current ? 300 : 480
+		step ? (narrow.current ? 170 : 220) : intro ? (narrow.current ? 260 : 380) : narrow.current ? 300 : 480
 	);
 
 	/* 横スライドの画面遷移。startViewTransition が無いブラウザでは何もしない */
@@ -29,7 +29,7 @@
 </script>
 
 <div class="public">
-	<div class="public-col" class:overlap={connect}>
+	<div class="public-col">
 		<Orb {size} />
 		{@render children()}
 	</div>
