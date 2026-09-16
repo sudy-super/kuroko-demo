@@ -2332,26 +2332,30 @@ section.tc .list-row:not(label):hover {
 		   その帯だけカードが 280px より狭くなる */
 		width: min(280px, calc((100% - 256px) / 2));
 	}
+	/* Task 10t — 内側の縁 (球に近い側の角) を球の中心へさらに寄せ、破片の散る外周に重ねる。
+	   球の本体 (中心から半径 110px 程度の明るい塊) には掛からないよう、どの角も中心から
+	   115px 以上を保った (実測: scratchpad/10t/measure.py)。この 5 つの left/right の値だけを
+	   Task 10l 修正から動かした。top/bottom の値 (環状のばらつき) はそのまま */
 	.today .bento > .card:nth-child(1) {
 		top: 0;
-		left: 36px;
+		left: 61px;
 	}
 	.today .bento > .card:nth-child(2) {
 		top: 44%;
-		left: 0;
+		left: 45px;
 	}
 	.today .bento > .card:nth-child(3) {
 		bottom: 0;
 		/* 下端の 2 枚の寄せが浅いのは、通り道の下側を案内カードのぶん空けておくため */
-		left: 16px;
+		left: 89px;
 	}
 	.today .bento > .card:nth-child(4) {
 		top: 4%;
-		right: 24px;
+		right: 55px;
 	}
 	.today .bento > .card:nth-child(5) {
 		bottom: 0;
-		right: 16px;
+		right: 45px;
 	}
 	/* 6 枚目 (日程調整の返信待ち)が出る場面だけ、右を 3 枚にして入れ物を縦に伸ばす。
 	   6 枚は 2 列 450px には収まらないので、この状態では縦の送りが出る (段組みのときも同じ) */
