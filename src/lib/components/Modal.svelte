@@ -12,7 +12,8 @@
 		onclose,
 		openFocus,
 		children,
-		actions
+		actions,
+		box = $bindable(null)
 	}: {
 		open: boolean;
 		title: string;
@@ -23,6 +24,9 @@
 		openFocus?: () => HTMLElement | null;
 		children?: Snippet;
 		actions: Snippet;
+		/** 外枠の要素。closest('.modal') のように内部の class 名へ依存させたくない
+		    呼び出し側 (Palette の ↑↓ 送りなど)向けの公開 API */
+		box?: HTMLElement | null;
 	} = $props();
 
 	/** app.css の --d-exit */
@@ -83,7 +87,13 @@
 		>
 			{#snippet child({ props })}
 				{#if render}
-					<div {...props} class="modal" class:sm={size === 'sm'} class:leave={leaving}>
+					<div
+						{...props}
+						bind:this={box}
+						class="modal"
+						class:sm={size === 'sm'}
+						class:leave={leaving}
+					>
 						<div class="row" style="justify-content: space-between; margin-bottom: var(--sp-3)">
 							<Dialog.Title>
 								{#snippet child({ props: titleProps })}<h3 {...titleProps}>{title}</h3>{/snippet}
@@ -92,16 +102,20 @@
 								<Icon name="ic-x" size={20} />
 							</Dialog.Close>
 						</div>
-						{#if description}
-							<Dialog.Description>
-								{#snippet child({ props: descProps })}
-									<p {...descProps} style="color: var(--ink-2)">{description}</p>
-								{/snippet}
-							</Dialog.Description>
-						{/if}
 						<!-- 中身だけスクロールさせる。題と操作の行は箱に留めるので、行数が増えても
-						     主ボタンが画面外へ出ない (仕様 5.14) -->
-						{#if children}<div class="modal-body">{@render children()}</div>{/if}
+						     主ボタンが画面外へ出ない (仕様 5.14)。children を渡さない呼び出し
+						     (確認モーダルなど)でも description は送れないと、極端に低い窓で
+						     操作の行が箱の外へ出てしまうため常に描く -->
+						<div class="modal-body">
+							{#if description}
+								<Dialog.Description>
+									{#snippet child({ props: descProps })}
+										<p {...descProps} style="color: var(--ink-2)">{description}</p>
+									{/snippet}
+								</Dialog.Description>
+							{/if}
+							{#if children}{@render children()}{/if}
+						</div>
 						<!-- 仕様 5 / components 5.1 — 主ボタンは左。呼び出し側は主 → 副の順に置く -->
 						<div class="row modal-actions">
 							{@render actions()}

@@ -515,8 +515,13 @@ export function markStarted() {
 	save();
 }
 export function startGuide() {
-	// 完了画面 (やること 0 件)からの始め直し。案内する対象が無いので、まず初期状態に戻す
-	if (todayCount(db) === 0) resetDemo();
+	// 完了画面 (やること 0 件)からの始め直し。案内する対象が無いので、まず初期状態に戻す。
+	// Welcome へは戻らずその場に留まるため、seed() が未接続に戻した接続は繋ぎ直す
+	// (「デモをリセット」との違い。あちらは Welcome へ戻るので未接続のままでよい)
+	if (todayCount(db) === 0) {
+		resetDemo();
+		connectAll();
+	}
 	db.demo.started = true;
 	db.demo.guide.on = true;
 	save();

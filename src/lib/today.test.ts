@@ -98,4 +98,12 @@ describe('完了画面からの始め直し', () => {
 		db.demo.guide.on = true;
 		expect(canStartGuide(db)).toBe(false);
 	});
+	it('始め直しても 4 つの接続は残る (Welcome へは戻らないため)', () => {
+		const empty = { approvals: [], threads: [], meetings: [], tasks: [] };
+		replaceDb({ ...seed(new Date(2026, 8, 15)), ...empty });
+		for (const c of db.settings.connections) c.connected = true;
+		expect(todayCount(db)).toBe(0);
+		startGuide();
+		expect(db.settings.connections.every((c) => c.connected)).toBe(true);
+	});
 });

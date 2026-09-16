@@ -1305,9 +1305,14 @@ svg.i {
 /* 中身だけスクロールさせる。題と操作の行は箱に留めるので、行数が増えても
    主ボタンが画面外へ出ない (仕様 5.14)。Task 10m 修正で一時的に Modal.svelte の
    <style> に置いていたが、app.css が空くこの Task 10n の節へ戻した */
+/* 送り箱の内側に 4px の余白を持たせ、外側へ -4px 縮めて元の位置に戻す。中の入力欄は
+   width: 100% で余白なく箱いっぱいに広がるため、この余白が無いと :focus-visible の
+   輪郭 (2px + outline-offset 2px = 4px) が送り箱の外周で切れる */
 .modal-body {
 	min-height: 0;
 	overflow-y: auto;
+	margin: -4px;
+	padding: 4px;
 }
 /* 操作の行 (components 5.1 — 主ボタンは左) */
 .modal-actions {

@@ -10,6 +10,7 @@
 
 	let text = $state('');
 	let input: HTMLInputElement | null = $state(null);
+	let box: HTMLElement | null = $state(null);
 
 	// 上部バーのメニューと同じ出し分け。条件は derived.ts に 1 つだけ置く
 	const canStart = $derived(canStartGuide(db));
@@ -22,21 +23,23 @@
 	   畳んだ details の中の行は描画されないが大きさは残る (Chrome は content-visibility で
 	   隠す)ので、offsetHeight ではなく checkVisibility で並びから外す。
 	   Enter はボタンと link の既定の動き、Esc は Dialog に任せる */
-	function arrows(node: HTMLElement) {
-		// 閉じるボタンや下段のボタンに焦点があるときも効くよう、箱全体で受ける
-		const box = node.closest<HTMLElement>('.modal')!;
+	// 閉じるボタンや下段のボタンに焦点があるときも効くよう、箱全体で受ける。Modal の
+	// 内部の class 名 (.modal)に依存させないため、box は Modal から bind:box で受け取る
+	function arrows() {
 		const onkey = (e: KeyboardEvent) => {
+			const b = box;
+			if (!b || !b.contains(document.activeElement)) return;
 			const d = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
 			if (!d) return;
 			e.preventDefault();
-			const rows = [...box.querySelectorAll<HTMLElement>('.input, .list-row')].filter((r) =>
+			const rows = [...b.querySelectorAll<HTMLElement>('.input, .list-row')].filter((r) =>
 				r.checkVisibility()
 			);
 			const i = rows.indexOf(document.activeElement as HTMLElement);
 			rows[(i + d + rows.length) % rows.length]?.focus();
 		};
-		box.addEventListener('keydown', onkey);
-		return () => box.removeEventListener('keydown', onkey);
+		document.addEventListener('keydown', onkey);
+		return () => document.removeEventListener('keydown', onkey);
 	}
 
 	function send() {
@@ -54,6 +57,7 @@
 	size="sm"
 	openFocus={() => input}
 	onclose={() => (ui.palette = false)}
+	bind:box
 >
 	<form
 		{@attach arrows}
