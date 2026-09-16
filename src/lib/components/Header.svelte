@@ -132,8 +132,12 @@
 {/snippet}
 
 {#snippet bar()}
-	<span class="num">{shortDate ? fmtMDW(now) : fmtYMDW(now)}</span>
-	{#if !guideOn}<span class="num muted">{hm(now)}</span>{/if}
+	<span class="num hdr-date">{shortDate ? fmtMDW(now) : fmtYMDW(now)}</span>
+	<!-- island.md「常時見せる情報」で時計は畳む対象に無い (brief 3 項も時刻を常時表示に挙げる)。
+	     デスクトップは案内中も時計を残し、代わりに利用者名を畳む (review-task-10n.md Minor 2)。
+	     モバイルは 390px 幅にハンバーガー・アイコン 3 個まで並ぶので、案内中に段階の札を出す
+	     ぶんは時計を畳んだままにする (この幅は Minor 2 の指摘の対象外、既存のまま) -->
+	{#if !(guideOn && media.mobile)}<span class="num muted">{hm(now)}</span>{/if}
 	{#if guideOn}
 		<!-- 仕様 11.3 の案内。段階が進んでも入れ物は作り直さず、中の文字だけが変わる
 		     (island.md「動きの時間と緩急」の「既存の要素を保ったまま動かす」)。
@@ -158,7 +162,7 @@
 		</PillPanel>
 	{/if}
 	<div class="row" style="margin-left: auto; gap: var(--sp-3)">
-		{#if !media.mobile}<span class="muted">{db.user.name}</span>{/if}
+		{#if !media.mobile && !guideOn}<span class="muted">{db.user.name}</span>{/if}
 		{@render tools()}
 	</div>
 {/snippet}

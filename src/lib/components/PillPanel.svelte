@@ -29,8 +29,14 @@
 	</Popover.Trigger>
 	<Popover.Portal>
 		<!-- sideOffset 14 — ボタン (40px)はピル (52px)の中で上下 6px ずつ空いているので、
-		     ボタンの下 14px はピルの下端から 8px。板がピルに掛からない最小の値 -->
-		<Popover.Content class="pill-panel" align="center" sideOffset={14}>
+		     ボタンの下 14px はピルの下端から 8px。板がピルに掛からない最小の値。
+		     collisionPadding right 88 — floating-ui はこの余白を画面の外扱いにして板を左へ
+		     押し出す。レールの左端は画面の右端から --rail-w (56) + --sp-4 (16) = 72px の位置
+		     なので、そこからさらに 16px 離すには 72+16=88 が要る (レビューが挙げた 72 だと
+		     レールの左端に触れるだけで実測 0px の余白しか残らないことを elementFromPoint で確認
+		     したので、数値を修正した)。レールが無い画面では画面の右端から 24px を求めれば足りる
+		     が、88 はそれも上回るので同じ 1 値で両方を満たす (review-task-10n.md Important 1) -->
+		<Popover.Content class="pill-panel" align="center" sideOffset={14} collisionPadding={{ right: 88 }}>
 			{@render children()}
 		</Popover.Content>
 	</Popover.Portal>

@@ -167,10 +167,6 @@
 	--bar-clear: calc(var(--sp-4) + var(--header-h) + var(--sp-2));
 	--chatbar-h: 60px;
 	--bottomnav-h: 72px;
-
-	/* max-content の幅を transition で補間できるようにする。ピルは中身なりの幅なので、
-	   案内が出入りしたり段階が進んだりしたときの幅の変化がこれで滑らかに動く */
-	interpolate-size: allow-keywords;
 }
 
 /* components 2.1 — リセットと本文 (-webkit-font-smoothing は書かない) */
@@ -538,11 +534,24 @@ svg.i {
 	width: max-content;
 	max-width: 560px;
 	border-radius: var(--r-pill);
+	/* max-content は既定では transition できないキーワード値なので、この面だけに
+	   allow-keywords を効かせて幅の変化を滑らかにする (Chromium 系のみ、他は瞬時に切り替わる。
+	   review-task-10n.md Minor 3 — :root に置くと文書全体に効いて影響範囲が読めなくなるので、
+	   width を遷移させるこの 1 か所に絞る) */
+	interpolate-size: allow-keywords;
 	transition: width var(--d-enter) var(--ease-out);
 	background: var(--sheen), var(--glass-panel);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e-glass);
+}
+/* 上限 560px に当たったとき、日付だけ縮めて丸い枠の外へ他の要素を押し出さない
+   (review-task-10n.md Minor 4)。flex の既定 min-width: auto を外さないと縮まない */
+.hdr-date {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 /* ruling: モバイルのヘッダーは不透明、ぼかしなし */
 .header.solid {
@@ -1469,6 +1478,7 @@ svg.i {
 }
 /* 案内の段階の札。ピルの中に収める小さな錠剤で、押すと手順の板が開く */
 .pill-guide {
+	position: relative;
 	display: inline-flex;
 	align-items: center;
 	gap: var(--sp-2);
@@ -1483,6 +1493,13 @@ svg.i {
 	font-size: 13px;
 	white-space: nowrap;
 	cursor: pointer;
+}
+/* .iconbtn::after (inset -2px、40→44px)と同じ仕掛け。見た目の高さ 32px のまま
+   タップ領域だけ 44px にする (brief の下限、review-task-10n.md Important 3) */
+.pill-guide::after {
+	content: '';
+	position: absolute;
+	inset: -6px;
 }
 .pill-guide .num {
 	color: var(--accent);
