@@ -49,12 +49,12 @@
 	/* Task 10f — 選択中の塗り。0.12 だと、サイドナビの選択中の項目でこの塗りが背後を沈め、
 	   その上に載る --accent の文字が 4.24:1 と 4.5:1 を割った。0.08 でも 4.51:1 と余裕が
 	   0.01 しかないので 0.06 まで下げた (実測 4.72:1)。
-	   現在地は塗りだけでなく左端の縦バーと太字でも伝わるので、薄くしても分かる */
+	   現在地は塗りだけでなく太字とアイコンの線の太さでも伝わるので、薄くしても分かる */
 	--sel: rgba(26, 94, 203, 0.06);
 	/* components 3.2 / 3.11 — 一覧行、ボトムナビ、コマンドパレットの選択中の塗り */
 	/* Task 10f 修正ラウンド 3 — カードがガラスになり、この塗りが下の面ごと沈むようになった。
 	   0.75 のままだと、選択中の行に載る --ink-3 と --accent の実測が 4.25:1 と 4.5:1 を割る。
-	   0.58 まで薄くすると 4.6:1 台に戻る。選択中は左端の縦バーと太字でも伝わる */
+	   0.58 まで薄くすると 4.6:1 台に戻る。選択中は太字と aria-current でも伝わる */
 	--sel-soft: rgba(214, 228, 252, 0.58);
 
 	/* ruling — 状態レイヤー (ホバー 8% / フォーカス 10% / 押下 10%) */
@@ -399,18 +399,10 @@ svg.i {
 }
 .nav-item.on .i {
 	color: var(--accent);
-}
-/* 塗りだけでは現在地が伝わらないので左端に縦バーを足す (components 3.1) */
-.nav-item.on::before {
-	content: '';
-	position: absolute;
-	left: 0;
-	top: 50%;
-	width: 3px;
-	height: 24px;
-	margin-top: -12px;
-	border-radius: var(--r-pill);
-	background: var(--accent);
+	/* Task 10g (調査 indicators.md「サイドナビの現在地表示」) — 左端の縦バーは Apple HIG の
+	   Sidebars にも M3 の Navigation rail にも無い作法なので廃止した。現在地は行の塗り (面)、
+	   文字の 700、アイコンの線の太さの 3 つで示す。色だけに頼らない (WCAG 1.4.1) */
+	stroke-width: 2.3;
 }
 .nav-item .badge {
 	margin-left: auto;
@@ -985,17 +977,6 @@ svg.i {
 .list-row.on::after {
 	background: transparent;
 }
-.list-row.on::before {
-	content: '';
-	position: absolute;
-	left: 0;
-	top: 50%;
-	width: 3px;
-	height: 24px;
-	margin-top: -12px;
-	border-radius: var(--r-pill);
-	background: var(--accent);
-}
 .list-row .sub {
 	color: var(--ink-3);
 	font-size: 14px;
@@ -1271,6 +1252,11 @@ svg.i {
 }
 .bottomnav-item.on::before {
 	background: var(--sel-soft);
+}
+/* Task 10g — ピル形の面に加えてアイコンの線も太くする (M3 の active indicator は面と
+   アイコンの塗り替えの二重表現。色の違いだけにしない) */
+.bottomnav-item.on .i {
+	stroke-width: 2.3;
 }
 .bottomnav-item .i,
 .bottomnav-item .badge {

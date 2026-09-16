@@ -3,17 +3,8 @@
 	import { pendingApprovals } from '$lib/derived';
 	import { approve, reject } from '$lib/actions';
 	import { ui } from '$lib/ui.svelte';
-	import type { ApprovalKind } from '$lib/types';
 	import Drawer from './Drawer.svelte';
-
-	const KIND: Record<ApprovalKind, string> = {
-		mail: 'メール',
-		line: 'LINE',
-		slack: 'Slack',
-		share: '共有',
-		schedule: '日程',
-		document: '書類'
-	};
+	import ApprovalIcon from './ApprovalIcon.svelte';
 
 	const pending = $derived(pendingApprovals(db));
 </script>
@@ -29,7 +20,7 @@
 			>
 				<div>{a.title}</div>
 				<div class="row" style="justify-content: space-between">
-					<span class="badge src">{KIND[a.kind]}</span>
+					<ApprovalIcon kind={a.kind} size={20} />
 					<span class="row" style="gap: var(--sp-6)">
 						<button class="btn pri sm" onclick={() => approve(a.id, 'approval')}>承認して送信</button>
 						<button class="btn text sm" onclick={() => reject(a.id, 'approval')}>却下</button>

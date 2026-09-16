@@ -1,8 +1,10 @@
 <script lang="ts">
 	import type { MessageThread } from '$lib/types';
+	import { REASON_ORDER, REASON_LABEL } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { parse, rel } from '$lib/dates';
 	import Icon from './Icon.svelte';
+	import SourceIcon from './SourceIcon.svelte';
 	import ReplyBox from './ReplyBox.svelte';
 
 	let { thread, ondone }: { thread: MessageThread; ondone: () => void } = $props();
@@ -13,12 +15,19 @@
 	// 時刻の 1 桁時はそのまま出す (一覧の行と同じ見せ方)
 	const stamp = (at: string) =>
 		`${rel(parse(at.slice(0, 10)), parse(db.seededOn))} ${at.slice(11, 16).replace(/^0/, '')}`;
+
+	/* indicators.md 3 節 — 一覧の行はアイコンだけにするかわりに、詳細側では理由を文言で常時出す
+	   (NN/g「アイコンには可視のラベル」をここで満たす) */
+	const reasons = $derived(
+		REASON_ORDER.filter((r) => thread.reasons.includes(r)).map((r) => REASON_LABEL[r])
+	);
 </script>
 
 <article class="card thread" aria-label="メールの本文">
 	<header class="thread-head">
 		<h1>{thread.subject}</h1>
-		<p class="sender">{thread.sender}</p>
+		<p class="sender"><SourceIcon source={thread.source} />{thread.sender}</p>
+		{#if reasons.length}<p class="why">要対応の理由: {reasons.join(' / ')}</p>{/if}
 	</header>
 
 	{#each messages as m (m.id)}
@@ -50,8 +59,16 @@
 		font-size: 24px;
 	}
 	.sender {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-2);
 		margin: var(--sp-1) 0 0;
 		color: var(--ink-2);
+		font-size: 14px;
+	}
+	.why {
+		margin: var(--sp-1) 0 0;
+		color: var(--ink-3);
 		font-size: 14px;
 	}
 	.msg {

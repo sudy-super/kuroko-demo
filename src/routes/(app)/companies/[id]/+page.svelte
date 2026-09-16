@@ -3,6 +3,7 @@
 	import { db } from '$lib/store.svelte';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import Icon from '$lib/components/Icon.svelte';
+	import SourceIcon from '$lib/components/SourceIcon.svelte';
 
 	const id = $derived(page.params.id!);
 	const company = $derived(db.companies.find((c) => c.id === id));
@@ -13,7 +14,6 @@
 	);
 	const meetings = $derived(db.meetings.filter((m) => m.companyId === id));
 
-	const SOURCE: Record<string, string> = { gmail: 'メール', slack: 'Slack', line: 'LINE' };
 	const dateOf = (eventId: string) => db.events.find((e) => e.id === eventId)?.date;
 	import { glass, CARD } from '$lib/glass';
 </script>
@@ -74,7 +74,7 @@
 				<h2>関連メール</h2>
 				{#each threads.slice(0, 5) as t (t.id)}
 					<a class="list-row" href="/inbox?t={t.id}">
-						<span class="badge src">{SOURCE[t.source] ?? t.source}</span>
+						<SourceIcon source={t.source} />
 						<span class="people-ident">{t.subject}</span>
 						<span class="num muted">{rel(parse(t.lastAt.slice(0, 10)), parse(db.seededOn))}</span>
 					</a>

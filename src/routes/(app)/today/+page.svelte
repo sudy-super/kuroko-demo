@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { MediaQuery } from 'svelte/reactivity';
 	import { db } from '$lib/store.svelte';
+	import { REASON_ORDER } from '$lib/types';
 	import {
 		personOf,
 		pendingApprovals,
@@ -17,6 +18,9 @@
 	import Orb from '$lib/components/Orb.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import TodayCard from '$lib/components/TodayCard.svelte';
+	import SourceIcon from '$lib/components/SourceIcon.svelte';
+	import ReasonIcon from '$lib/components/ReasonIcon.svelte';
+	import ApprovalIcon from '$lib/components/ApprovalIcon.svelte';
 	import DoneScreen from '$lib/components/DoneScreen.svelte';
 	import ScenarioMenu from '$lib/components/ScenarioMenu.svelte';
 	import { glass, CLEAR, CARD } from '$lib/glass';
@@ -37,8 +41,6 @@
 	   光彩は左右の hero のカードにも掛かる */
 	const orbSize = $derived(narrow.current ? 300 : 560);
 
-	const APPROVAL_KIND: Record<string, string> = { mail: 'Gmail', share: '外部共有', line: 'LINE' };
-	const SOURCE: Record<string, string> = { gmail: 'Gmail', slack: 'Slack', line: 'LINE' };
 
 	const meetingHead = (m: NonNullable<typeof nm>) =>
 		`次の会議 ${rel(parse(m.event.date))} ${m.event.start} ${m.meeting.title}`;
@@ -93,7 +95,7 @@
 					>
 						{#each ap.slice(0, 3) as a (a.id)}
 							<div class="list-row">
-								<span class="badge src">{APPROVAL_KIND[a.kind] ?? '社内'}</span>
+								<ApprovalIcon kind={a.kind} />
 								<span class="tc-text">{a.title}</span>
 							</div>
 						{/each}
@@ -125,11 +127,15 @@
 				>
 					{#each rp.slice(0, 3) as t (t.id)}
 						<div class="list-row xl">
-							<span class="badge src">{SOURCE[t.source] ?? t.source}</span>
+							<SourceIcon source={t.source} />
 							<span class="tc-col">
 								<span class="tc-text">{t.sender}</span>
 								<span class="tc-text sub">{t.subject}</span>
 							</span>
+							<!-- 一覧の行と同じ形・同じ順で理由を 2 個まで出す (indicators.md 3 節) -->
+							{#each REASON_ORDER.filter((r) => t.reasons.includes(r)).slice(0, 2) as r (r)}
+								<ReasonIcon reason={r} />
+							{/each}
 						</div>
 					{/each}
 					{#if rp.length > 3}<p class="muted">残り {rp.length - 3} 件</p>{/if}
