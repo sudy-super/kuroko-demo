@@ -6,8 +6,9 @@ import { LiquidGlass, type LiquidGlassElementOptions } from 'apple-liquid-glass-
 import { whileVisible } from './visible';
 
 /* Task 10f 修正ラウンド 3 — 縁のレンズ。ユーザーの裁定は「背景がカードの境目に来たら屈折する。
-   境目から中に入ったら屈折も滲みもしなくてよい」。面の中は素通しにし、像が曲がるのは縁の帯だけ。
-   ここの 3 つの値がその帯を作る (ライブラリの v2 シェーダー、v2-shaders.js 230 行目と 252 行目)。
+   境目から中に入ったら屈折も滲みもしなくてよい」。像が曲がるのは縁の帯だけ、という部分は
+   Task 10o でも変わらない。ここの 3 つの値がその帯を作る
+   (ライブラリの v2 シェーダー、v2-shaders.js 230 行目と 252 行目)。
    - edgeWidth: 帯の幅。実寸は「要素の短辺の半分 x edgeWidth」画素。高さ 64px の上部バーなら
      32 x 0.5 = 16px、高さ 44px の副ボタンなら 11px と、面の大きさに比例する。
    - edgeReach: 帯の中で下の像をどれだけ引き寄せるか。実寸は「短辺の半分 x 2 x 1.24 x この値」
@@ -19,12 +20,24 @@ import { whileVisible } from './visible';
    dispersion は縁の色ずれ。5.5 まで上げていたときは、上部バーの下をくぐる本文に赤と青の
    縞が出て、バー自身の文字と重なって読みにくかった (ユーザー判定)。1.5 にすると
    文字の上では見えず、オーブの破片のような大きい形の縁にだけ薄く残る。
-   frost と backdropBlur は 0。面の中を滲ませない。ただし下を文字が通るバーだけは
-   別 (BAR を見よ)。
-   rim (縁の光)と hairline (輪郭線)は全周に同じ強さで回るので低く抑える。ここを上げると
-   縁が一律の面取りになり、ガラスではなく「ふちどりを付けた板」に見える (ユーザー判定)。
-   代わりに lightAngle 136 (左上から差す光)で向きの付く highlight を上げ、
-   上縁の白い鏡面と下縁の薄い暗線は CSS の疑似要素で置く (app.css の Liquid Glass の節) */
+   frost と backdropBlur はこの共通材質では触らない。面ごとのぼかし量は CLEAR / BAR / CARD
+   側で個別に持つ (Task 10o、下を見よ)。
+
+   Task 10o — ユーザー指摘「左上の反射がひび割れにしか見えない」。3 倍拡大で確認すると、
+   角の丸みに沿って白い筋が斜めに走っていた。原因は reflection と highlight の 2 つ。
+   v2-shaders.js の `key = pow(max(dot(normal, lightDir), 0), 7) * fresnel` が
+   lightAngle (136度、左上方向)と法線の向きが揃う 1 点に鋭い鏡面を作り、丸い角では
+   法線が連続的に向きを変えるので、その 1 点が角の曲線上の斜めの筋に見える
+   (`color += … * key * uHighlight`、hairline 側にも `hairHighlight` として効く)。
+   reflection (rimMix の係数)も同じ帯域を明るくして筋を強めていたので、
+   一緒に 0 にした。echo は筋の主因ではないが、同じ「面上の光沢」の一部なので
+   ユーザー指示 (highlight / reflection / echo を 0 か最小値に) に沿って 0 にした
+   (縁の内側に薄く背景を返すだけの効果で、無くしても縁の見え方は変わらない。
+   3 倍拡大で確認済み、scratchpad/10o 以下の before/after)。
+   rim (縁の光)と hairline (輪郭線)は残す。全周に同じ強さで回る分には筋にならない
+   (ユーザー判定)。上縁の白い鏡面と下縁の薄い暗線は今までどおり CSS の疑似要素が担う
+   (app.css の Liquid Glass の節)。lightAngle は hairline の明るい側の向きにまだ使われて
+   いるので残すが、highlight を 0 にしたため筋には効かない */
 const LENS = {
 	refraction: 12,
 	edgeReach: 0.15,
@@ -32,20 +45,23 @@ const LENS = {
 	dispersion: 1.5,
 	frost: 0,
 	rim: 0.3,
-	reflection: 0.4,
-	highlight: 1.3,
+	reflection: 0,
+	highlight: 0,
 	lightAngle: 136,
-	echo: 0.35,
+	echo: 0,
 	hairline: 0.45
 } as const;
 
 /* ナビ層のうち、下を通るのが色や形だけのもの (サイドナビ、連携アイコンの列、接続一覧)。
-   面の中は素通しで、縁の帯だけが曲げる。
+   Task 10o — 面の中もすりガラスにする指示なので backdropBlur を持たせるが、この 3 面は
+   chromeGlass 経由で 1 枚の canvas にまとめて描かれ、ぼかしは描画面ごとの値なので実際には
+   BAR の 18 が当たる (glass.ts 下の CHROME_TIERS の注記どおり、Task 10i の仕組みは
+   変えない)。ここの 10 は CLEAR を単独で使ったときのための値で、目安の 8〜14px に収まる。
    tint はライブラリの 0〜1.5 の目盛りで、CSS の不透明度とは一致しない */
 export const CLEAR: LiquidGlassElementOptions = {
 	tint: 0.14,
 	tintTone: 'light',
-	material: { ...LENS, backdropBlur: 0 }
+	material: { ...LENS, backdropBlur: 10 }
 };
 
 /* 上部バーと依頼バーだけの段。この 2 つの下は本文の文字が通るので、素通しにすると
@@ -57,13 +73,18 @@ export const BAR: LiquidGlassElementOptions = {
 	material: { ...LENS, backdropBlur: 18 }
 };
 
-/* 内容カード。縁の作りはナビ層と同じで、塗りだけ CSS の rgba(255,255,255,.70) に
-   見た目を合わせた (実測で合わせた値。ライブラリの目盛りは CSS の不透明度とは別物)。
-   面の中は素通しなので、カードの下に来たオーブの破片は形のまま透け、縁の帯でだけ曲がる */
+/* 内容カード。縁の作りはナビ層と同じ。
+   Task 10o — 以前の裁定「面の中は素通し (frost 0)」をユーザーが上書きし、面をすりガラスに
+   する指示が出た。backdropBlur 10px はカードの下に来たオーブの破片や背景の階調を、
+   形は分かるが文字は読めない程度までぼかす (目安 8〜14px の中央値)。カード自身に文字は
+   乗らない下ぼかしなので、カード内の文字の可読性には関わらない。塗り (tint)はぼかしを
+   足したぶん 0.62 → 0.5 に薄くした。背後の色がこれまでより残る。文字のコントラストは
+   report の表を見よ (色ごとに 4.5:1 以上を実測)。CSS の rgba(255,255,255,.70) 相当だった
+   旧 tint の見た目合わせは、ぼかしが増えた今は基準にしていない */
 export const CARD: LiquidGlassElementOptions = {
-	tint: 0.62,
+	tint: 0.5,
 	tintTone: 'light',
-	material: { ...LENS, backdropBlur: 0 }
+	material: { ...LENS, backdropBlur: 10 }
 };
 
 /* live: true で毎フレーム描き直す。オーブは <canvas> の中で毎フレーム描き変わり、
