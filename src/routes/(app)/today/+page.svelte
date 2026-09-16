@@ -55,11 +55,14 @@
 		<h1 class="today-count">
 			<a href="#items">今日やること <span class="num">{count}</span> 件</a>
 		</h1>
-		<!-- Task 10f — 副ボタンはナビ層なのでガラスにする。列はオーブの上端に少し重なる位置にあり、
-		     ボタンの縁がオーブの破片を曲げるところが屈折の見せ場になる。
+		<!-- Task 10f — 副ボタンはナビ層なのでガラスにする。列はオーブの破片がいちばん濃いところに
+		     重なっていて、ボタンの縁が破片を曲げるところが屈折の見せ場になる。
 		     WebGL の文脈は 1 ページ約 16 個までなので、列全体で 1 つにまとめて各ボタンを targets で描く。
-		     主ボタン (.btn.pri) は塗りつぶしの面なので対象から外す -->
-		<div class="row today-actions" {@attach glass({ ...CLEAR, targets: '.btn.sec' })}>
+		     主ボタン (.btn.pri) は塗りつぶしの面なので対象から外す。
+		     塗りだけ CLEAR の 0.06 から上げる。ここは背後が破片で最も暗くなり、0.06 のままだと
+		     文字 (--accent) の実測が 3.84:1 と 4.5:1 を割った。0.34 まで上げる。
+		     段を増やすのではなく、この 1 か所の上書きにとどめる -->
+		<div class="row today-actions" {@attach glass({ ...CLEAR, tint: 0.34, targets: '.btn.sec' })}>
 			<a class="btn sec" href="/calendar?new=1"><Icon name="ic-plus" size={18} />予定</a>
 			<a class="btn sec" href="/tasks?new=1"><Icon name="ic-plus" size={18} />ToDo</a>
 			<button class="btn sec" onclick={askKuroko}>

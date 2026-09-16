@@ -246,6 +246,37 @@ svg.i {
 	pointer-events: none;
 	background: linear-gradient(180deg, #f4f6fa 0%, #eef1f7 100%);
 }
+/* Task 10f 追記 — サイドナビ (画面の左端に固定)と連携アイコンの列 (右端に固定)の下にだけ
+   置く光彩。この 2 つは下を通る内容を持てないので、無地の地の上ではガラスの縁が
+   一律の面取りにしか見えない (ユーザー判定)。Task 10d の 5 色の塊とは別物で、
+   色はオーブと同じ青 1 色、漂うアニメーションも付けない。
+   ライブラリはガラスの背後を自分で描き直すが、そこに CSS の filter と疑似要素は
+   再現されない (README の Limits)。だから実要素にし、輪郭の柔らかさは放射状の階調で作る。
+   消える側は transparent と書かない。計算値が rgba(0,0,0,0) なのでガラスの中だけ黒く濁る */
+.bg-glow {
+	position: absolute;
+	border-radius: 50%;
+	background: radial-gradient(
+		circle,
+		rgb(var(--glow) / 0.15) 0%,
+		rgb(var(--glow) / 0.085) 40%,
+		rgb(var(--glow) / 0) 72%
+	);
+}
+.bg-glow.left {
+	--glow: 79 123 255;
+	left: -20vmin;
+	top: -10vmin;
+	width: 66vmin;
+	height: 66vmin;
+}
+.bg-glow.right {
+	--glow: 96 150 255;
+	right: -22vmin;
+	top: 24vmin;
+	width: 56vmin;
+	height: 56vmin;
+}
 
 /* visual 2.8 / 4.3 — オーブ本体と光彩 */
 .orb {
@@ -349,8 +380,12 @@ svg.i {
 .nav-item:focus-visible {
 	outline-offset: -2px;
 }
+/* Task 10f 追記 — 現在地の塗りは青ではなく白に近い面にする。サイドナビのガラスの下には
+   壁紙の青い光彩があり、そこへさらに青を重ねると背後が沈んで --accent の文字が
+   3.84:1 まで落ちた。白を重ねると逆に明るくなり 4.74:1 になる。
+   ガラスの上で選択中だけ明るく浮くのは iOS のサイドナビと同じ見え方でもある */
 .nav-item.on {
-	background: var(--sel);
+	background: rgba(255, 255, 255, 0.62);
 	color: var(--accent);
 	font-weight: 700;
 }
@@ -1553,6 +1588,35 @@ svg.i {
 	aspect-ratio: 1;
 }
 
+/* Task 10f 追記 — 接続画面だけ、オーブの箱を下へはみ出させて接続一覧の上端に重ねる。
+   ガラスは下を通る内容を縁の帯で曲げて初めてガラスに見えるので、一覧の下に必ず
+   オーブの破片と光彩が来るようにする (無地の地の上では一律の面取りにしか見えない)。
+   z-index: -1 で見出しと一覧の裏へ回し、.public-col を積み重ねの文脈にして
+   ページの地より下へは抜けないように閉じ込める。球そのものは見出しより上に出る
+   (箱の中央 48% が球で、下半分は破片と光彩だけ) ので、文字の上に球は載らない */
+.public-col.overlap {
+	position: relative;
+	isolation: isolate;
+}
+/* 見出しと説明はオーブより前に出す。DOM の順 (オーブ → 見出し → 一覧)のままだと
+   球が見出しの真裏に来て文字が読めない。order で見た目の順だけ入れ替える。
+   オーブは読み上げの対象ではないので、読む順との食い違いは起きない */
+.public-col.overlap > .public-main {
+	order: -1;
+	margin-top: auto;
+}
+.public-col.overlap > .orb {
+	order: 0;
+	z-index: -1;
+	margin-top: 0;
+	margin-bottom: -150px;
+}
+@media (max-width: 640px) {
+	.public-col.overlap > .orb {
+		margin-bottom: -104px;
+	}
+}
+
 /* 見出しと説明。記事 11 に従い、大見出しは行間 1.25、字間 0 */
 .public-main {
 	display: flex;
@@ -1586,6 +1650,7 @@ svg.i {
 /* Task 10f — 接続一覧はナビ層 (操作の列) なのでガラスにする。ここの塗りと影は
    WebGL2 が無い環境の見た目で、WebGL の経路では下の Liquid Glass の節が塗りを下ろす */
 .public-list {
+	position: relative;
 	width: 100%;
 	border-radius: 20px;
 	text-align: left;
@@ -1803,12 +1868,12 @@ section.tc .list-row:not(label):hover {
 }
 /* 穴のオーブだけは上端を基準にする。Task 10f — Task 10 では箱が見出しのボタン列に
    掛からないよう --sp-8 だけ上に出していたが、ボタンをガラスにしたので重なった方がよい。
-   箱の上端がボタン列の上端 (ヘッダーの下端のすぐ下) まで来ると、破片の帯がボタン列を
-   完全にくぐり、4 つのボタンとヘッダーの下縁が破片を曲げる (裁定 5)。
-   残りは下 (3 行目のタイルの背後) へ逃がす */
+   Task 10f 追記 — さらに 48px 持ち上げ、球の上端がボタン列の下端のすぐ下に来る位置にした。
+   破片がいちばん濃いのは球のすぐ外側なので、ここまで上げないとボタンの縁が曲げる対象が
+   薄い破片だけになる。箱の上端はヘッダーの下縁にも掛かる。残りは下 (3 行目のタイルの背後)へ逃がす */
 .today .bento .hole .orb {
 	position: absolute;
-	top: calc((var(--sp-16) + var(--sp-12)) * -1);
+	top: calc((var(--sp-16) * 2 + var(--sp-8)) * -1);
 	left: 50%;
 	translate: -50% 0;
 }
@@ -1982,8 +2047,29 @@ section.tc .list-row:not(label):hover {
 	background: none;
 	-webkit-backdrop-filter: none;
 	backdrop-filter: none;
-	/* --rim は inset の影で縁の光を描いていた。ライブラリの縁と重なるので無効な影に置き換える */
+	/* --rim は inset の影で縁の光を全周に描いていた。下の疑似要素が向きの付いた縁を描くので消す */
 	--rim: 0 0 rgba(0, 0, 0, 0);
+}
+
+/* Task 10f 追記 — 縁を一律の面取りにしない。
+   ライブラリの縁の光 (rim)と輪郭線 (hairline)は全周に同じ強さで回るので低く抑えてあり
+   (src/lib/glass.ts)、向きの付いた縁はここで描く。上縁だけ白い鏡面の線、下縁だけ
+   極薄の暗い線。厚みのある板を斜め上から見たときの見え方で、参考画像もこうなっている。
+   ガラスの canvas は要素の z-index: -1 の子なので、z-index を持たないこの疑似要素は
+   canvas より上に描かれる。inset の影を要素自身に付けると canvas の下に隠れて見えない */
+.sidebar::after,
+.rail::after,
+.header.glass::after,
+.chatbar::after,
+.public-list::after,
+.today-actions .btn.sec::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	pointer-events: none;
+	box-shadow:
+		inset 0 1.5px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(30, 42, 71, 0.18);
 }
 
 /* ガラスの canvas は bleed の分だけ要素の外へ出る。位置の基準になる親が要る。
