@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { MediaQuery } from 'svelte/reactivity';
 	import { db } from '$lib/store.svelte';
-	import { REASON_ORDER } from '$lib/types';
+	import { REASON_ORDER, RISK_LABEL } from '$lib/types';
 	import {
 		personOf,
 		pendingApprovals,
@@ -23,7 +23,7 @@
 	import ApprovalIcon from '$lib/components/ApprovalIcon.svelte';
 	import DoneScreen from '$lib/components/DoneScreen.svelte';
 	import ScenarioMenu from '$lib/components/ScenarioMenu.svelte';
-	import { glass, CLEAR, CARD } from '$lib/glass';
+	import { glass, CARD } from '$lib/glass';
 
 	const count = $derived(todayCount(db));
 	const items = $derived(todayItems(db));
@@ -58,14 +58,11 @@
 		<h1 class="today-count">
 			<a href="#items">今日やること <span class="num">{count}</span> 件</a>
 		</h1>
-		<!-- Task 10f — 副ボタンはナビ層なのでガラスにする。列はオーブの破片がいちばん濃いところに
-		     重なっていて、ボタンの縁が破片を曲げるところが屈折の見せ場になる。
-		     WebGL の文脈は 1 ページ約 16 個までなので、列全体で 1 つにまとめて各ボタンを targets で描く。
-		     主ボタン (.btn.pri) は塗りつぶしの面なので対象から外す。
-		     塗りだけ CLEAR の 0.06 から上げる。ここは背後が破片で最も暗くなり、0.06 のままだと
-		     文字 (--accent) の実測が 3.84:1 と 4.5:1 を割った。0.34 まで上げる。
-		     段を増やすのではなく、この 1 か所の上書きにとどめる -->
-		<div class="row today-actions" {@attach glass({ ...CLEAR, tint: 0.34, targets: '.btn.sec' })}>
+		<!-- Task 10h — この列はガラスにしない。オーブの破片は止まっておらず、破片が真裏に来た
+		     瞬間の文字 (--accent) は行単位で 2.87:1 まで落ちる。塗り (tint) を 0.34 まで上げても
+		     4.5:1 を割る瞬間が残るので、不透明な白い面に戻した。
+		     Today の屈折は下の Bento のカードと画面下端の依頼バーで見せる -->
+		<div class="row today-actions">
 			<a class="btn sec" href="/calendar?new=1"><Icon name="ic-plus" size={18} />予定</a>
 			<a class="btn sec" href="/tasks?new=1"><Icon name="ic-plus" size={18} />ToDo</a>
 			<button class="btn sec" onclick={askKuroko}>
@@ -97,6 +94,8 @@
 							<div class="list-row">
 								<ApprovalIcon kind={a.kind} />
 								<span class="tc-text">{a.title}</span>
+								<!-- ドロワーと同じ区分の Lozenge (仕様 5.11、indicators.md) -->
+								<span class="badge" class:src={a.risk !== 'external_send'}>{RISK_LABEL[a.risk]}</span>
 							</div>
 						{/each}
 						{#if ap.length > 3}<p class="muted">残り {ap.length - 3} 件</p>{/if}
@@ -183,7 +182,7 @@
 						     リンクは行の下に落とす -->
 						{#each sent as s (s.id)}
 							<div class="list-row">
-								<span class="tc-text">{personOf(db, s.personId)?.name} 様 候補 3 件を送信済み</span>
+								<span class="tc-text">{personOf(db, s.personId)?.name}様 候補 3 件を送信済み</span>
 							</div>
 							<div class="row tc-foot">
 								<a class="btn text sm" target="_blank" rel="noreferrer" href="/schedule/{s.token}">

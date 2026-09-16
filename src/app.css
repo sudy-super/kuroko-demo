@@ -625,10 +625,9 @@ svg.i {
 	box-shadow: inset 0 2px 4px rgba(12, 48, 110, 0.28);
 }
 /* components 3.4: 副ボタンの枠は 1px 実線の --accent (白地に 9.78:1)。
-   Task 10f — Today の見出しの列の副ボタンだけはガラスにした (.today-actions に targets で
-   当てている)。オーブの真上に並ぶので塗り (tint) を 0.34 まで上げ、コントラストを測り直した。
-   下の :hover / :active の塗りはガラスの canvas より上に出る。ボタンはガラスを載せた
-   入れ物の通常の内容で、canvas は入れ物の z-index -1 の子だからである */
+   Task 10h — Today の見出しの列もここと同じ不透明な白にした。ガラスにしていた頃は
+   オーブの破片が動いて文字 (--accent) が最悪 2.87:1 まで落ち、塗り (tint) を上げても
+   直らなかった。Today の屈折は Bento のカードと依頼バーで見せる */
 .btn.sec {
 	background: #fff;
 	color: var(--accent);
@@ -888,6 +887,14 @@ svg.i {
 .badge.src {
 	background: #eef1f6;
 	color: var(--ink-2);
+}
+/* audit 4 — 人物のタグは Atlassian の Tag (分類のための控えめなラベル)。状態を示す Lozenge
+   (.badge の色付き) と役割が違うので、塗りを外して枠線だけにし、主張を一段落とす。
+   文字は --ink-2 で白地に 6.55:1、枠は --border で 3.09:1 なので、どちらも基準を満たす */
+.badge.tag {
+	background: none;
+	color: var(--ink-2);
+	box-shadow: inset 0 0 0 1px var(--border);
 }
 .badge.warn {
 	background: var(--warn-soft);
@@ -1717,7 +1724,13 @@ svg.i {
 }
 
 /* today (Task 10) — 仕様 5.1 / visual 2.7・2.8・4.5。既存のトークンだけで組む */
+/* Task 10h — 見出しの列を Bento より上の段に置く。.bento は position: relative なので、
+   その中のオーブ (z-index -2) ごとこの列の上に描かれていた。破片がボタンの面と文字の上に
+   直接乗り、文字 (--accent) が行単位で 2.87:1 まで落ちる。段を上げると破片はボタンに
+   遮られ、ボタンとボタンの間では今までどおり見える */
 .today-head {
+	position: relative;
+	z-index: 1;
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -2030,8 +2043,7 @@ section.tc .list-row:not(label):hover {
    これまでどおり backdrop-filter のすりガラスになる。
    ========================================================================== */
 :root [data-liquid-glass='webgl'],
-:root [data-liquid-glass='webgl'] .card,
-:root [data-liquid-glass='webgl'] .btn.sec {
+:root [data-liquid-glass='webgl'] .card {
 	background: none;
 	-webkit-backdrop-filter: none;
 	backdrop-filter: none;
@@ -2040,16 +2052,6 @@ section.tc .list-row:not(label):hover {
 	isolation: isolate;
 	/* --rim は inset の影で縁の光を全周に描いていた。下の疑似要素が向きの付いた縁を描くので消す */
 	--rim: 0 0 rgba(0, 0, 0, 0);
-}
-
-/* Task 10f 修正ラウンド 4 — 上の打ち消し (0,4,0) が .btn.sec:hover / :active (0,3,0) に勝ち、
-   Today のクイック操作のボタンから指したときと押したときの反応が消えていた。
-   同じ土台に載せて詳細度をそろえ、反応を取り戻す。塗りは半透明なのでガラスは透けたまま */
-:root [data-liquid-glass='webgl'] .btn.sec:hover {
-	background: var(--hover-accent);
-}
-:root [data-liquid-glass='webgl'] .btn.sec:active {
-	background: var(--press-accent);
 }
 
 /* Task 10f 追記 — 縁を一律の面取りにしない。
@@ -2062,7 +2064,6 @@ section.tc .list-row:not(label):hover {
 .rail::after,
 .header.glass::after,
 .chatbar::after,
-.today-actions .btn.sec::after,
 :root [data-liquid-glass='webgl'] .card::after,
 :root [data-liquid-glass='webgl'].card::after {
 	content: '';
@@ -2080,8 +2081,7 @@ section.tc .list-row:not(label):hover {
    WebGL2 が無い経路には付けない。canvas が無いうえ積み重ねの文脈も作られないので、
    負の段に置くと副ボタンの白い塗りの裏へ回って縁が消える */
 :root [data-liquid-glass='webgl']::after,
-:root [data-liquid-glass='webgl'] .card::after,
-:root [data-liquid-glass='webgl'] .btn.sec::after {
+:root [data-liquid-glass='webgl'] .card::after {
 	z-index: -1;
 }
 

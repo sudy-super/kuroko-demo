@@ -541,7 +541,7 @@ export function seed(base: Date = new Date()): Db {
 			{ id: 't-abc-proposal', title: 'ABC 社へ提案書の修正版を送る', due: T, time: '18:00', priority: 'high', projectId: 'pj-abc-dx', status: 'todo', origin: 'tasks', createdAt: at(Y, '9:00') },
 			{ id: 't-xyz-quote', title: 'XYZ 社の見積を確認する', due: T, priority: 'normal', projectId: 'pj-xyz-ai', status: 'todo', origin: 'today', createdAt: at(T, '8:30') },
 			{ id: 't-cards', title: '名刺の登録 (展示会分)', due: T, priority: 'low', status: 'todo', origin: 'tasks', createdAt: at(Y, '9:00') },
-			{ id: 't-training', title: '研修日程を佐藤様に連絡する', due: B3, priority: 'normal', personId: 'p-sato', status: 'todo', origin: 'tasks', memo: `${md(-18)} の打ち合わせで依頼`, createdAt: at(Y, '9:00') },
+			{ id: 't-training', title: '研修日程を佐藤様に連絡する', due: B3, priority: 'normal', personId: 'p-sato', status: 'todo', origin: 'tasks', memo: `${md(-18)}の打ち合わせで依頼`, createdAt: at(Y, '9:00') },
 			{ id: 't-standup-doc', title: '社内定例の資料をまとめる', due: B4, priority: 'normal', status: 'todo', origin: 'tasks', createdAt: at(Y, '9:00') },
 			{ id: 't-expense', title: '先週分の経費を提出する', due: key(addDays(-3, b)), priority: 'low', status: 'done', origin: 'tasks', createdAt: at(key(addDays(-7, b)), '9:00') }
 		],

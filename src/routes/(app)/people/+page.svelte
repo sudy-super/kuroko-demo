@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { db } from '$lib/store.svelte';
-	import { companyOf } from '$lib/derived';
+	import { companyOf, projectStatusClass } from '$lib/derived';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 
@@ -20,8 +20,6 @@
 		projects: db.projects.length
 	});
 
-	// 受注と失注だけ色を変える。途中のステータスは同じ扱いにする
-	const statusClass = (s: string) => (s === '受注' ? 'ok' : s === '失注' ? 'warn' : '');
 	const staff = (companyId: string) => db.people.filter((p) => p.companyId === companyId).length;
 	import { glass, CARD } from '$lib/glass';
 </script>
@@ -62,7 +60,8 @@
 							<span class="people-name">{p.name}</span>
 							<span class="sub">{companyOf(db, p.companyId)?.name ?? '会社の登録なし'} {p.title}</span>
 						</span>
-						{#each p.tags.slice(0, 2) as t (t)}<span class="badge">{t}</span>{/each}
+						<!-- 人物のタグは分類 (Atlassian の Tag) なので、状態の Lozenge とは見た目を分ける (audit 4) -->
+						{#each p.tags.slice(0, 2) as t (t)}<span class="badge tag">{t}</span>{/each}
 					</a>
 				{/each}
 			{:else if tab === 'companies'}
@@ -82,7 +81,7 @@
 							<span class="people-name">{pj.name}</span>
 							<span class="sub">{companyOf(db, pj.companyId)?.name ?? ''}</span>
 						</span>
-						<span class="badge {statusClass(pj.status)}">{pj.status}</span>
+						<span class="badge {projectStatusClass(pj.status)}">{pj.status}</span>
 						<span class="num muted people-amount">{pj.amount}</span>
 					</a>
 				{/each}

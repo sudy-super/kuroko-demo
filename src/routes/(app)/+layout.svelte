@@ -55,7 +55,7 @@
 				<a
 					class="iconbtn"
 					href="/settings"
-					aria-label="{CONNECT_NAME[c.id]} の連携設定"
+					aria-label="{CONNECT_NAME[c.id]}の連携設定"
 					title={CONNECT_NAME[c.id]}
 				>
 					<Icon name="b-{c.id}" size={24} />

@@ -37,7 +37,7 @@
 		schedule: 'ic-clock',
 		palette: 'ic-search'
 	};
-	const originLabel = $derived(`${ORIGIN_LABEL[task.origin]} から登録`);
+	const originLabel = $derived(`${ORIGIN_LABEL[task.origin]}から登録`);
 </script>
 
 <!-- 行全体が押し先。中の「元に戻す」は button なので、押しても label は checkbox に届かない -->

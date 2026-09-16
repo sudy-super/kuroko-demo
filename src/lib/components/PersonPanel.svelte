@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { db } from '$lib/store.svelte';
-	import { companyOf, identityOf, personOfIdentity, projectOf } from '$lib/derived';
+	import { companyOf, identityOf, personOfIdentity, projectOf, projectStatusClass } from '$lib/derived';
 	import { identitiesOf, personStats } from '$lib/people';
 	import { parse, fmtMDW } from '$lib/dates';
 	import Icon from './Icon.svelte';
@@ -34,7 +34,7 @@
 		{#each projects as pj (pj.id)}
 			<a class="list-row" href="/projects/{pj.id}">
 				<span class="people-ident">{pj.name}</span>
-				<span class="badge">{pj.status}</span>
+				<span class="badge {projectStatusClass(pj.status)}">{pj.status}</span>
 				<span class="num muted">{pj.amount}</span>
 			</a>
 		{/each}

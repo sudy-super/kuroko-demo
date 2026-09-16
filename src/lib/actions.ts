@@ -377,7 +377,7 @@ export function confirmSlot(token: string, slotId: string) {
 	s.meetingId = meeting.id;
 	if (!redo) db.demo.stats.confirmed++;
 	// 相手が確定した予定は「元に戻す」の対象にしない。戻すのは /schedule の「日時を変更する」「キャンセルする」
-	log(`${fmtMDW(parse(slot.date))} ${slot.start} に ${p.name} 様との打ち合わせを確定しました`, 'hold', {
+	log(`${fmtMDW(parse(slot.date))} ${slot.start} に ${p.name}様との打ち合わせを確定しました`, 'hold', {
 		origin: 'schedule',
 		approved: true
 	});
@@ -402,7 +402,7 @@ export function cancelScheduling(token: string) {
 	db.events = db.events.filter((e) => e.id !== s.eventId);
 	db.meetings = db.meetings.filter((m) => m.id !== s.meetingId);
 	s.status = 'cancelled';
-	log(`${personOf(db, s.personId)?.name} 様との打ち合わせがキャンセルされました`, 'other', { origin: 'schedule' });
+	log(`${personOf(db, s.personId)?.name}様との打ち合わせがキャンセルされました`, 'other', { origin: 'schedule' });
 	save();
 }
 
@@ -476,7 +476,7 @@ export function updatePersonMemo(personId: string, memo: string): Person | undef
 	const p = db.people.find((x) => x.id === personId);
 	if (!p || p.memo === memo) return p;
 	p.memo = memo;
-	log(`${p.name} 様のメモを更新しました`, 'other', { actor: 'user', origin: 'people' });
+	log(`${p.name}様のメモを更新しました`, 'other', { actor: 'user', origin: 'people' });
 	save();
 	return p;
 }

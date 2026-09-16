@@ -22,7 +22,6 @@
 		</button>
 	{/if}
 	<div class="muted note in" style="--delay: 320ms">
-		<p>Demo Workspace / ログインは不要です</p>
 		<p>※ デモのため実際の接続は行いません</p>
 	</div>
 </div>

@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
-	import { companyOf, projectOf } from '$lib/derived';
+	import { companyOf, projectOf, projectStatusClass } from '$lib/derived';
 	import { identitiesOf, personHistory, personStats } from '$lib/people';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import { ui, toast, focusChatbar } from '$lib/ui.svelte';
 	import { updatePersonMemo } from '$lib/actions';
 	import Icon from '$lib/components/Icon.svelte';
+	import Tip from '$lib/components/Tip.svelte';
 
 	const CHANNELS = [
 		{ kind: 'email', label: 'Gmail', icon: 'b-gmail' },
@@ -104,7 +105,8 @@
 				</dl>
 				{#if person.tags.length}
 					<div class="row people-tagrow">
-						{#each person.tags as t (t)}<span class="badge">{t}</span>{/each}
+						<!-- 人物のタグは分類 (Atlassian の Tag) なので、状態の Lozenge とは見た目を分ける (audit 4) -->
+						{#each person.tags as t (t)}<span class="badge tag">{t}</span>{/each}
 					</div>
 				{/if}
 			</section>
@@ -114,11 +116,16 @@
 				{#each CHANNELS as ch (ch.kind)}
 					{@const found = identities.find((i) => i.kind === ch.kind)}
 					<div class="list-row">
-						<Icon name={ch.icon} size={20} />
 						{#if found}
+							<!-- indicators.md 結論 2 — 出所はブランドの記号 1 個と aria-label にとどめ、
+							     同じ意味の文字バッジを右端に重ねない (audit 5) -->
+							<Tip text="{ch.label} の連絡先">
+								<Icon name={ch.icon} size={20} label="{ch.label} の連絡先" />
+							</Tip>
 							<span class="people-ident">{found.value}</span>
-							<span class="badge src">{ch.label}</span>
 						{:else}
+							<!-- 文言側に名前が出るので、こちらの記号は飾りのままにする -->
+							<Icon name={ch.icon} size={20} />
 							<span class="people-ident muted">{ch.label} 未連携</span>
 						{/if}
 					</div>
@@ -130,7 +137,7 @@
 				{#each shown(projects, 'projects') as pj (pj.id)}
 					<a class="list-row" href="/projects/{pj.id}">
 						<span class="people-ident">{pj.name}</span>
-						<span class="badge">{pj.status}</span>
+						<span class="badge {projectStatusClass(pj.status)}">{pj.status}</span>
 						<span class="num muted">{pj.amount}</span>
 					</a>
 				{/each}

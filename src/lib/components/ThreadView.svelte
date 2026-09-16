@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { MessageThread } from '$lib/types';
-	import { REASON_ORDER, REASON_LABEL } from '$lib/types';
+	import { REASON_ORDER, REASON_SENTENCE } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { parse, rel } from '$lib/dates';
 	import Icon from './Icon.svelte';
@@ -17,17 +17,21 @@
 		`${rel(parse(at.slice(0, 10)), parse(db.seededOn))} ${at.slice(11, 16).replace(/^0/, '')}`;
 
 	/* indicators.md 3 節 — 一覧の行はアイコンだけにするかわりに、詳細側では理由を文言で常時出す
-	   (NN/g「アイコンには可視のラベル」をここで満たす) */
-	const reasons = $derived(
-		REASON_ORDER.filter((r) => thread.reasons.includes(r)).map((r) => REASON_LABEL[r])
-	);
+	   (NN/g「アイコンには可視のラベル」をここで満たす)。ただし単語をスラッシュで並べると
+	   行から外したタグと同じ見え方になるので、読点でつないだ 1 文にする (audit 6) */
+	const why = $derived.by(() => {
+		const rs = REASON_ORDER.filter((r) => thread.reasons.includes(r));
+		if (!rs.length) return '';
+		const heads = rs.slice(0, -1).map((r) => REASON_SENTENCE[r][0]);
+		return [...heads, REASON_SENTENCE[rs[rs.length - 1]][1]].join('、') + '。';
+	});
 </script>
 
 <article class="card thread" aria-label="メールの本文">
 	<header class="thread-head">
 		<h2>{thread.subject}</h2>
 		<p class="sender"><SourceIcon source={thread.source} />{thread.sender}</p>
-		{#if reasons.length}<p class="why">要対応の理由: {reasons.join(' / ')}</p>{/if}
+		{#if why}<p class="why">{why}</p>{/if}
 	</header>
 
 	{#each messages as m (m.id)}

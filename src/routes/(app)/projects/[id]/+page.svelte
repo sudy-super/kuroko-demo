@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
-	import { companyOf, personOf, eventDateOf, meetingsOf } from '$lib/derived';
+	import { companyOf, personOf, eventDateOf, meetingsOf, projectStatusClass } from '$lib/derived';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import Icon from '$lib/components/Icon.svelte';
 	import SourceIcon from '$lib/components/SourceIcon.svelte';
@@ -22,7 +22,6 @@
 			: []
 	);
 
-	const statusClass = (s: string) => (s === '受注' ? 'ok' : s === '失注' ? 'warn' : '');
 	import { glass, CARD } from '$lib/glass';
 
 	/* 仕様 5 — カードの中の一覧は上位 3 件まで。「残り N 件」を押すとその場で全部出す */
@@ -62,7 +61,7 @@
 						{#if company}<a href="/companies/{company.id}">{company.name}</a>{:else}登録なし{/if}
 					</dd>
 					<dt>ステータス</dt>
-					<dd><span class="badge {statusClass(project.status)}">{project.status}</span></dd>
+					<dd><span class="badge {projectStatusClass(project.status)}">{project.status}</span></dd>
 					<dt>金額</dt>
 					<dd class="num">{project.amount}</dd>
 					<dt>次回予定</dt>

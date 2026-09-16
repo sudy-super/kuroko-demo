@@ -13,6 +13,10 @@ export const queue = (db: Db) =>
 export const replyNeeded = (db: Db) => queue(db).filter((t) => t.needsReply);
 export const pendingApprovals = (db: Db) => db.approvals.filter((a) => a.status === 'pending');
 
+/* 案件の状態は Atlassian の Lozenge (ワークフローの状態) にあたるので、一覧・人物詳細・会社・
+   案件のどこでも同じ色で出す。終わった 2 つだけ色を分け、途中の状態は accent のままにする */
+export const projectStatusClass = (s: string) => (s === '受注' ? 'ok' : s === '失注' ? 'warn' : '');
+
 const T = (db: Db) => db.seededOn; // 「今日」の基準。実時刻ではなくシードの基準日を使う
 
 export type TaskFilter = 'overdue' | 'today' | 'week' | 'all';
@@ -109,7 +113,7 @@ export function todayItems(db: Db): TodayItem[] {
 			kind: 'brief',
 			n: 1,
 			label: '次の会議の準備',
-			detail: `${nm.meeting.title} の Brief が届いています`,
+			detail: `${nm.meeting.title}の Brief が届いています`,
 			href: `/meetings/${nm.meeting.id}`
 		});
 	const tt = todayTasks(db);

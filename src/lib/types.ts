@@ -5,6 +5,19 @@ export const ORIGIN_LABEL: Record<Origin, string> = { today: 'Today', chat: 'チ
 export type Reason = 'overdue' | 'unanswered_3d' | 'question' | 'project' | 'known_contact';
 export const REASON_ORDER: Reason[] = ['overdue', 'unanswered_3d', 'question', 'project', 'known_contact'];
 export const REASON_LABEL: Record<Reason, string> = { overdue: '返信期限超過', unanswered_3d: '3日間未返信', question: '質問が含まれています', project: '案件', known_contact: '登録済みの相手' };
+/* スレッドの詳細で理由を 1 文にするための言い回し。[途中の形, 文末の形] で持ち、
+   読点でつないだときに日本語として続くようにする (audit 6。単語をスラッシュで並べない) */
+export const REASON_SENTENCE: Record<Reason, [string, string]> = {
+	overdue: ['返信期限を過ぎており', '返信期限を過ぎています'],
+	unanswered_3d: ['3 日間返信しておらず', '3 日間返信していません'],
+	question: ['質問が含まれており', '質問が含まれています'],
+	project: ['案件に関係し', '案件に関係します'],
+	known_contact: ['登録済みの相手であり', '登録済みの相手です']
+};
+/* 仕様 5.11 の種別バッジのうち、承認の区分を示す文言。
+   indicators.md「承認センターの区分」— 判断に直結する属性なので、記号ではなく
+   Atlassian の Lozenge (短い文言ラベル) のまま出す */
+export const RISK_LABEL: Record<RiskLevel, string> = { external_send: '外部送信', internal: '社内', internal_low: '低リスク' };
 export type LogKind = 'draft' | 'hold' | 'send' | 'register' | 'other';
 export type Automation = 'draft' | 'internal_auto' | 'trusted';
 

@@ -4,8 +4,8 @@
 	import Tip from './Tip.svelte';
 
 	/* indicators.md「メール一覧の出所」の考え方を承認の行にも当てる。
-	   区分 (外部送信 / 社内 / 低リスク) は Atlassian の Lozenge のまま文言で残し、
-	   ここで記号にするのは「何を送るか」の種類だけ */
+	   ここで記号にするのは「何を送るか」の種類だけ。区分 (外部送信 / 社内 / 低リスク) は
+	   Atlassian の Lozenge のまま文言で出す。置き場所は ApprovalDrawer と Today の承認カード */
 	let { kind, size = 16 }: { kind: ApprovalKind; size?: 16 | 20 } = $props();
 
 	const MARK: Record<ApprovalKind, string> = {
