@@ -2,6 +2,7 @@
 	import type { MessageThread } from '$lib/types';
 	import { REASON_ORDER, REASON_SENTENCE } from '$lib/types';
 	import { db } from '$lib/store.svelte';
+	import { threadSenderMeta } from '$lib/derived';
 	import { parse, rel } from '$lib/dates';
 	import Icon from './Icon.svelte';
 	import SourceIcon from './SourceIcon.svelte';
@@ -25,19 +26,23 @@
 		const heads = rs.slice(0, -1).map((r) => REASON_SENTENCE[r][0]);
 		return [...heads, REASON_SENTENCE[rs[rs.length - 1]][1]].join('、') + '。';
 	});
+
+	// 組み立ては threadSenderMeta に集約 (ThreadRow と同じ。rereview-task-10p.md 新規 2 —
+	// 生の thread.sender のままだと一覧の行と開いたスレッドの頭で表記が食い違う)
+	const senderMeta = $derived(threadSenderMeta(db, thread));
 </script>
 
 <article class="card thread" aria-label="メールの本文">
 	<header class="thread-head">
 		<h2>{thread.subject}</h2>
-		<p class="sender"><SourceIcon source={thread.source} />{thread.sender}</p>
+		<p class="sender"><SourceIcon source={thread.source} />{senderMeta}</p>
 		{#if why}<p class="why">{why}</p>{/if}
 	</header>
 
 	{#each messages as m (m.id)}
 		<div class="msg" class:mine={m.from === 'me'}>
 			<p class="stamp">
-				{m.from === 'me' ? '送信済み' : thread.sender} {stamp(m.at)}
+				{m.from === 'me' ? '送信済み' : senderMeta} {stamp(m.at)}
 			</p>
 			<p class="body">{m.body}</p>
 		</div>

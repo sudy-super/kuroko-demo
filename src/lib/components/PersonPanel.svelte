@@ -6,8 +6,15 @@
 	import Icon from './Icon.svelte';
 	import Modal from './Modal.svelte';
 
-	/** compact は狭い場所 (メールのスレッドの頭) 向け。メモと実績を落として身元だけ出す */
-	let { identityId, compact = false }: { identityId: string; compact?: boolean } = $props();
+	/** compact は狭い場所 (メールのスレッドの頭) 向け。メモと実績を落として身元だけ出す。
+	    headingLevel — 人物名の見出しレベルは置かれる場所によって正しい階層が変わるので
+	    呼び出し側から渡す (rereview-task-10p.md 新規 1)。デスクトップの右欄は <h1>Inbox</h1>
+	    の下なので既定の 2、Drawer のシートは題名の <h3> の下なので 4 を渡す */
+	let {
+		identityId,
+		compact = false,
+		headingLevel = 2
+	}: { identityId: string; compact?: boolean; headingLevel?: 2 | 4 } = $props();
 
 	let addOpen = $state(false);
 
@@ -27,7 +34,7 @@
 
 <aside class="card person-panel" aria-label="差出人の情報">
 	{#if person}
-		<h2 class="pp-name">{person.name}</h2>
+		<svelte:element this={`h${headingLevel}`} class="pp-name">{person.name}</svelte:element>
 		<p class="muted">{company?.name ?? '会社の登録なし'} {person.title}</p>
 		<p class="pp-mail">{mail}</p>
 
@@ -53,7 +60,9 @@
 
 		<a class="btn sec sm" href="/people/{person.id}">プロフィールを開く</a>
 	{:else}
-		<h2 class="pp-name">{identity?.value ?? '不明な差出人'}</h2>
+		<svelte:element this={`h${headingLevel}`} class="pp-name"
+			>{identity?.value ?? '不明な差出人'}</svelte:element
+		>
 		<p class="muted">この方はまだ登録されていません</p>
 		<button class="btn pri sm" onclick={() => (addOpen = true)}>
 			<Icon name="ic-plus" size={18} />People に追加

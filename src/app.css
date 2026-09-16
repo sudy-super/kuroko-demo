@@ -553,16 +553,17 @@ svg.i {
 	padding: 0 var(--sp-4);
 	z-index: 50;
 }
-/* Task 10n — 帯ではなく右上に浮くピル (island.md の結論 + ユーザー裁定 2026-09-16、
-   中央ではなく右上)。top / right は既存の余白トークン (sp-4 / sp-6)のまま、
-   幅だけ中身なりにする。レールがあるときは既存の has-rail の規則がそのまま
-   ピルをレールの左に空けるので (レール幅 56 + 32 = 88 > レールの右余白 16 + 幅 56)、
-   別途レール回避の分岐は要らない。
+/* Task 10n/10q — 帯ではなく右上に浮くピル (island.md の結論 + ユーザー裁定 2026-09-16、
+   中央ではなく右上。さらにユーザー裁定 2026-09-16 追補「右上のバーは一番右まで
+   やっていい」で、右の位置を .rail と同じ --sp-4 に揃えた。レールがある画面でも
+   ピルだけは右端に寄せ、本文と依頼バーの回避幅 (has-rail 側、下の calc(--rail-w + 32px))
+   は付けない。列は縦中央に浮くので、ピルの高さ (52px)と重ならないことを検証幅ごとに
+   実測して確認済み (task-10q-report.md)。
    幅の上限 560px は案内が出ているときのいちばん長い並びに合わせてある */
 .header.glass {
 	position: fixed;
 	top: var(--sp-4);
-	right: var(--sp-6);
+	right: var(--sp-4);
 	width: max-content;
 	max-width: 560px;
 	border-radius: var(--r-pill);
@@ -1685,15 +1686,14 @@ svg.i {
 	}
 }
 
-/* レールがある画面だけ右をレールのぶん空け、本文と依頼バーの右端をそろえる。ピルは帯ではないが、
-   同じ right の値を使うことでレール (右から 16px、幅 56px)の左に確実に収まる
-   (88px > 16 + 56px)。960px 以下ではレールが消えるので、
+/* レールがある画面は本文と依頼バーの右をレールのぶん空ける。ピル (.header.glass)は
+   Task 10q で列と同じ右端 (--sp-4)に揃えると決まったので、この回避幅からは外す
+   (上の .header.glass のコメント参照)。960px 以下ではレールが消えるので、
    2 クラスの詳細度が下の上書きに勝たないよう幅で囲う */
 @media (min-width: 961px) {
 	.app.has-rail .main {
 		margin-right: calc(var(--rail-w) + 32px);
 	}
-	.app.has-rail .header.glass,
 	.app.has-rail .chatbar {
 		right: calc(var(--rail-w) + 32px);
 	}

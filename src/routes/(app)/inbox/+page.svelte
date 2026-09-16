@@ -164,7 +164,9 @@
 </Modal>
 
 <Drawer open={sheet} title="差出人" onclose={() => (sheet = false)}>
-	{#if thread}<PersonPanel identityId={thread.identityId} />{/if}
+	<!-- Drawer の題名 (Drawer.svelte の h3) の下なので、PersonPanel の人物名は h4 にする
+	     (rereview-task-10p.md 新規 1、Modal の h4 と同じ考え方) -->
+	{#if thread}<PersonPanel identityId={thread.identityId} headingLevel={4} />{/if}
 </Drawer>
 
 <style>
