@@ -32,9 +32,10 @@
 
 	// 700px 以下は Bento をやめて 1 枚の折りたたみカードにするので、オーブも 1 つだけ差し替える
 	const narrow = new MediaQuery('(max-width: 700px)');
-	/* 560 だと穴からはみ出した箱の上端が見出しのボタン列に掛かる。440 なら掛からず、
-	   箱は穴 (4 列 = 約 340px) より広いままなので光彩は左右の hero のガラスに重なる */
-	const orbSize = $derived(narrow.current ? 240 : 440);
+	/* Task 10f — 560 にすると箱の上端が見出しのボタン列を越えて掛かる。ボタンをガラスにした
+	   今はそれが狙いで、ボタンの縁がオーブの破片を曲げる。箱は穴 (4 列 = 約 340px)より広いので
+	   光彩は左右の hero のカードにも掛かる */
+	const orbSize = $derived(narrow.current ? 300 : 560);
 
 	const APPROVAL_KIND: Record<string, string> = { mail: 'Gmail', share: '外部共有', line: 'LINE' };
 	const SOURCE: Record<string, string> = { gmail: 'Gmail', slack: 'Slack', line: 'LINE' };

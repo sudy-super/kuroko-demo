@@ -8,12 +8,7 @@
 
 <Icons />
 
-<div class="bg" aria-hidden="true">
-	<!-- 画面の左右の端に固定されるサイドナビと連携アイコンの列は、下を通る内容がない。
-	     ガラスが一律の面取りに見えないよう、この 2 つの下にだけ青 1 色の淡い光彩を置く -->
-	<div class="bg-glow left"></div>
-	<div class="bg-glow right"></div>
-</div>
+<div class="bg" aria-hidden="true"></div>
 
 {@render children()}
 

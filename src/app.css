@@ -68,7 +68,7 @@
 	--glass-1: rgba(255, 255, 255, 0.48);
 	--glass-2: rgba(255, 255, 255, 0.6);
 	--glass-panel: rgba(255, 255, 255, 0.58);
-	--solid: rgba(255, 255, 255, 0.97);
+	--solid: rgba(255, 255, 255, 0.92);
 
 	/* ぼかしは 12px と 16px のまま。Liquid Glass のぼかしはごく弱く、強くすると
 	   すりガラスになって「厚みのある透明な板」に見えなくなる。背景をぼかして見せる役は
@@ -246,38 +246,6 @@ svg.i {
 	pointer-events: none;
 	background: linear-gradient(180deg, #f4f6fa 0%, #eef1f7 100%);
 }
-/* Task 10f 追記 — サイドナビ (画面の左端に固定)と連携アイコンの列 (右端に固定)の下にだけ
-   置く光彩。この 2 つは下を通る内容を持てないので、無地の地の上ではガラスの縁が
-   一律の面取りにしか見えない (ユーザー判定)。Task 10d の 5 色の塊とは別物で、
-   色はオーブと同じ青 1 色、漂うアニメーションも付けない。
-   ライブラリはガラスの背後を自分で描き直すが、そこに CSS の filter と疑似要素は
-   再現されない (README の Limits)。だから実要素にし、輪郭の柔らかさは放射状の階調で作る。
-   消える側は transparent と書かない。計算値が rgba(0,0,0,0) なのでガラスの中だけ黒く濁る */
-.bg-glow {
-	position: absolute;
-	border-radius: 50%;
-	background: radial-gradient(
-		circle,
-		rgb(var(--glow) / 0.15) 0%,
-		rgb(var(--glow) / 0.085) 40%,
-		rgb(var(--glow) / 0) 72%
-	);
-}
-.bg-glow.left {
-	--glow: 79 123 255;
-	left: -20vmin;
-	top: -10vmin;
-	width: 66vmin;
-	height: 66vmin;
-}
-.bg-glow.right {
-	--glow: 96 150 255;
-	right: -22vmin;
-	top: 24vmin;
-	width: 56vmin;
-	height: 56vmin;
-}
-
 /* visual 2.8 / 4.3 — オーブ本体と光彩 */
 .orb {
 	position: relative;
@@ -486,7 +454,7 @@ svg.i {
 	position: relative;
 	border-radius: var(--r-m);
 	padding: var(--sp-5) var(--sp-5) var(--sp-4);
-	background: rgba(255, 255, 255, 0.88);
+	background: rgba(255, 255, 255, 0.7);
 	box-shadow:
 		inset 0 0 0 1px rgba(30, 42, 71, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9),
 		0 8px 24px rgba(30, 42, 71, 0.08);
@@ -1868,12 +1836,14 @@ section.tc .list-row:not(label):hover {
 }
 /* 穴のオーブだけは上端を基準にする。Task 10f — Task 10 では箱が見出しのボタン列に
    掛からないよう --sp-8 だけ上に出していたが、ボタンをガラスにしたので重なった方がよい。
-   Task 10f 追記 — さらに 48px 持ち上げ、球の上端がボタン列の下端のすぐ下に来る位置にした。
-   破片がいちばん濃いのは球のすぐ外側なので、ここまで上げないとボタンの縁が曲げる対象が
-   薄い破片だけになる。箱の上端はヘッダーの下縁にも掛かる。残りは下 (3 行目のタイルの背後)へ逃がす */
+   Task 10f 修正ラウンド 1 — 箱を 560px に戻したうえで、球の上端がボタン列の下端の
+   すぐ下に来る位置まで持ち上げた。破片がいちばん濃いのは球のすぐ外側なので、ここまで
+   上げないとボタンの縁が曲げる対象が薄い破片だけになる。球そのものをボタンの下に
+   入れると、いくら塗りを上げてもボタンの文字が読めなくなるので、そこまでは上げない。
+   箱の上端はヘッダーの下縁にも掛かる。残りは下 (3 行目のタイルの背後)へ逃がす */
 .today .bento .hole .orb {
 	position: absolute;
-	top: calc((var(--sp-16) * 2 + var(--sp-8)) * -1);
+	top: calc((var(--sp-16) * 2 + var(--sp-12) + var(--sp-2)) * -1);
 	left: 50%;
 	translate: -50% 0;
 }
@@ -2069,7 +2039,8 @@ section.tc .list-row:not(label):hover {
 	border-radius: inherit;
 	pointer-events: none;
 	box-shadow:
-		inset 0 1.5px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(30, 42, 71, 0.18);
+		inset 0 1.5px 0 rgba(255, 255, 255, 0.95), inset 1.5px 0 0 rgba(255, 255, 255, 0.7),
+		inset 0 -1px 0 rgba(30, 42, 71, 0.18), inset -1px 0 0 rgba(30, 42, 71, 0.12);
 }
 
 /* ガラスの canvas は bleed の分だけ要素の外へ出る。位置の基準になる親が要る。
