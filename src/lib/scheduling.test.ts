@@ -31,6 +31,12 @@ describe('scheduling', () => {
 		expect(s.status).toBe('confirmed');
 		expect(r.event.url).toMatch(/^meet\.google\.com\//);
 		expect(r.meeting.brief).toBeTruthy();
+		// 「前回の論点」は議事録のある会議のうち予定の日付が新しいほう (見積提示)から取る。
+		// 配列の並び順で取ると古いほう (デモ実施)の決定事項が出る
+		expect(r.meeting.brief!.lastPoints).toEqual([
+			'稟議の結果は次回商談までに共有',
+			'導入スケジュールは別途提出'
+		]);
 		expect(todayCount(db)).toBe(4);
 		expect(nextMeeting(db)!.meeting.id).toBe('m-abc'); // 次の会議は変わらない
 		expect(db.logs[0].approved).toBe(true);

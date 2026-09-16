@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
-	import { companyOf, personOf } from '$lib/derived';
+	import { companyOf, personOf, eventDateOf, meetingsOf } from '$lib/derived';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import Icon from '$lib/components/Icon.svelte';
 	import SourceIcon from '$lib/components/SourceIcon.svelte';
@@ -15,7 +15,7 @@
 	const threads = $derived(
 		db.threads.filter((t) => t.projectId === id).sort((a, b) => b.lastAt.localeCompare(a.lastAt))
 	);
-	const meetings = $derived(db.meetings.filter((m) => m.projectId === id));
+	const meetings = $derived(meetingsOf(db, (m) => m.projectId === id));
 	const documents = $derived(
 		project
 			? project.documentIds.map((d) => db.documents.find((x) => x.id === d)).filter((x) => !!x)
@@ -23,7 +23,6 @@
 	);
 
 	const statusClass = (s: string) => (s === '受注' ? 'ok' : s === '失注' ? 'warn' : '');
-	const dateOf = (eventId: string) => db.events.find((e) => e.id === eventId)?.date;
 	import { glass, CARD } from '$lib/glass';
 
 	/* 仕様 5 — カードの中の一覧は上位 3 件まで。「残り N 件」を押すとその場で全部出す */
@@ -99,7 +98,7 @@
 			<section class="card people-sec">
 				<h2>関連会議</h2>
 				{#each shown(meetings, 'meetings') as m (m.id)}
-					{@const d = dateOf(m.eventId)}
+					{@const d = eventDateOf(db, m)}
 					<a class="list-row" href="/meetings/{m.id}">
 						<span class="people-ident">{m.title}</span>
 						<span class="num muted">{d ? fmtMDW(parse(d)) : ''}</span>

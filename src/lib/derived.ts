@@ -65,6 +65,15 @@ export const nextEvent = (db: Db) => {
 	return todayEvents(db).find((e) => minutes(e.end) > now);
 };
 
+/** 会議は自前の日付を持たないので、ひも付く予定の日付で新しい順に並べる。
+    会社・案件の関連会議と Brief の「前回の論点」で同じ順序を使う */
+export const meetingsOf = (db: Db, match: (m: Meeting) => boolean) =>
+	db.meetings
+		.filter(match)
+		.sort((a, b) => (eventDateOf(db, b) ?? '').localeCompare(eventDateOf(db, a) ?? ''));
+
+export const eventDateOf = (db: Db, m: Meeting) => db.events.find((e) => e.id === m.eventId)?.date;
+
 export function nextMeeting(db: Db): { meeting: Meeting; event: CalendarEvent } | undefined {
 	const k = T(db);
 	const ev = db.events

@@ -2,6 +2,7 @@
 import type { Brief, Db } from '../../types';
 import type { DocumentProvider } from '../types';
 import { fmtMD, nowIso, parse } from '../../dates';
+import { meetingsOf } from '../../derived';
 
 export const document: DocumentProvider = {
 	generate() {
@@ -13,7 +14,8 @@ export const document: DocumentProvider = {
 			.sort((a, b) => b.date.localeCompare(a.date))
 			.slice(0, 3)
 			.map((e) => `${fmtMD(parse(e.date))} ${e.title}`);
-		const mins = db.meetings.find((m) => m.projectId === projectId && m.minutes)?.minutes;
+		// 議事録のある会議が複数あるので、配列の並び順ではなく予定の日付が新しいものを取る
+		const mins = meetingsOf(db, (m) => m.projectId === projectId && !!m.minutes)[0]?.minutes;
 		const homework = db.tasks
 			.filter((t) => t.status !== 'done' && (t.personId === personId || (projectId && t.projectId === projectId)))
 			.map((t) => t.title);

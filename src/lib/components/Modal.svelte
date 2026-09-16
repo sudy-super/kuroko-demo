@@ -46,8 +46,10 @@
 		}, EXIT_MS);
 	});
 
+	// Drawer と同じ。退場の 200 ミリ秒が終わるまで印を外さない。open で切ると、覆いが消える前に
+	// カードのガラスが不透明から戻り、ガラスが 2 枚重なった状態が見える
 	$effect(() => {
-		if (!open) return;
+		if (!render) return;
 		markOverlay(true);
 		return () => markOverlay(false);
 	});

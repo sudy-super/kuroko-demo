@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { Dialog } from 'bits-ui';
-	import { page } from '$app/state';
 	import { pushState } from '$app/navigation';
 	import { media } from '$lib/media.svelte';
 	import { markOverlay } from '$lib/ui.svelte';
@@ -38,9 +37,7 @@
 		if (open) {
 			render = true;
 			leaving = false;
-			// 閉じたときに印を消さないので、開き直しでは先頭が既にこの状態になっている。
-			// そのまま積むと同じ URL の履歴が開閉の回数だけ溜まる
-			if (!page.state.drawer) pushState('', { drawer: true });
+			pushState('', { drawer: true });
 			pushed = true;
 			return;
 		}
@@ -49,9 +46,6 @@
 			render = false;
 			leaving = false;
 		}, EXIT_MS);
-		/* 印はそのまま残す。history.back() はドロワー内リンクの遷移と順序を争うので使わない。
-		   残した印は次に開くときに再利用され、戻るで閉じたときは popstate 側で pushed を下ろす。
-		   画面遷移したときは page.state が空になるので、その後の開くで積み直しになる */
 	});
 
 	// 退場の 200 ミリ秒が終わるまでカードの塗りを戻さない。open で切ると覆いが消える前に
@@ -79,7 +73,17 @@
 <Dialog.Root
 	{open}
 	onOpenChange={(v) => {
-		if (!v) onclose();
+		if (v) return;
+		onclose();
+		/* ×・Esc・覆いで閉じたときは、開くときに積んだ履歴を自分で 1 つ戻す。こうしないと
+		   閉じたあとの「戻る」が同じ URL の履歴を 1 つ消すだけで空振りする。
+		   戻るで閉じたときは popstate 側で pushed を下ろすのでここには来ない。
+		   ドロワーの中のリンクは onOpenChange を通らず (呼び出し側が open を false にする)、
+		   遷移が data-sveltekit-replacestate で履歴を置き換えるので、巻き戻しは起きない */
+		if (pushed) {
+			pushed = false;
+			history.back();
+		}
 	}}
 >
 	<Dialog.Portal>

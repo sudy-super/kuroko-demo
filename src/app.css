@@ -47,7 +47,9 @@
 	   これ 1 つにまとめた。0.16 だと上に載る --accent の実測が 4.24:1 と 4.5:1 を割る */
 	--accent-soft: rgba(26, 94, 203, 0.1);
 	--accent-glow: rgba(26, 94, 203, 0.28);
-	/* 主ボタンと送信ボタンの落ち影。--accent と同じ RGB にそろえる */
+	/* 主ボタンと送信ボタンの落ち影。塗りは触らないという裁定どおり、--accent を濃くする前の
+	   26,94,203 のままにしてある (--accent-soft / --accent-glow / --hover-accent / --press-accent と同じ)。
+	   --accent の 24,86,185 とは一致しない */
 	--accent-shadow: rgba(26, 94, 203, 0.36);
 
 	/* ruling — 合否の色と入力欄の枠、選択中の塗り */
