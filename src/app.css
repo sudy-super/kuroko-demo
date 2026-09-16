@@ -577,15 +577,19 @@ svg.i {
    1280x800 では本文が画面に収まらなかった (実測 257px あふれ)。段組みはブラウザが
    左右の高さが釣り合うところで折り返すので、DOM の順序 (要件定義 p.11 の重み順)を
    保ったまま高さが 3 割縮む。列の間隔は割合で指定して、どの幅でもオーブの通り道を空ける */
+/* Task 10l — 入れ物の幅を 8 割に絞る。段の幅は入れ物の 35% なのでカードも 2 割狭くなり
+   (1440px で 386px → 309px)、モックのカードの幅 (242〜283px)に近づく。列の間も同じ比で
+   縮むので、球の外周とカードの縁の間隔はこれまでと変わらない */
 .bento {
 	column-count: 2;
 	column-gap: 30%;
 	position: relative;
+	max-width: 80%;
+	margin-inline: auto;
 }
 .bento > .card {
 	/* 段の途中でカードが割れないようにする。段組みの既定は途中で切ること */
 	break-inside: avoid;
-	margin-bottom: var(--sp-4);
 }
 
 /* visual 4.6 — コンテンツ層。ここではガラスを使わない */
@@ -1814,7 +1818,11 @@ svg.i {
 	z-index: 1;
 	display: flex;
 	justify-content: center;
-	padding: 0 var(--sp-6) var(--sp-4);
+	padding: 0 var(--sp-6);
+	/* Task 10l — 下の空きは padding ではなく margin。この段は本文の幅いっぱいの箱で
+	   z-index: 1 を持つので、padding のままだと段の下 16px の帯がカードの上端の押下を
+	   横取りする (カードが上へ漂うと上端がこの帯に入る) */
+	margin-bottom: var(--sp-4);
 }
 /* 見出しは h1 のまま。オーブの破片が上端まで届くので、面は不透明にする (Task 10h と同じ理由) */
 .today-count {
@@ -1927,10 +1935,75 @@ section.tc .list-row:not(label):hover {
 	margin-top: var(--sp-3);
 }
 
-/* 先頭のカード (承認待ち)の下だけ余白を広く取る。段組みでは幅をそろえるほかないので、
-   大きさの差ではなく周りの余白で重みを付ける (eye.md 2.2「余白に囲まれた要素は重く見える」) */
-.today .bento > .card:first-child {
-	margin-bottom: var(--sp-8);
+/* Task 10l — カードごとに上の余白を変えて縦位置をずらす。2 列に整列していると
+   「浮遊」に見えないというユーザー判定。値はトークンではなく 24〜56px の不揃いな並びで、
+   等間隔の階段にならないようにしてある。
+   段組みは段の先頭に来たカードの margin-top を切り捨てるので、右の段の先頭 (4 枚目)の
+   44px は効かない。左の段の先頭 (1 枚目)に 36px を置くことで、左右の先頭のカードの上端が
+   36px ずれる。4 枚目の値は、カードの増減で割り付けが変わって段の途中に来たときのため。
+   ずらしは余白なので流れの中で起こり、カードが重なることはない。
+   2 枚目 (返信)の上を 56px といちばん広く取ってあるのは、その上の承認待ちを余白で
+   重く見せるため (eye.md 2.2、Task 10j から引き継ぎ) */
+.today .bento > .card:nth-child(1) {
+	margin-top: 36px;
+}
+.today .bento > .card:nth-child(2) {
+	margin-top: 56px;
+}
+.today .bento > .card:nth-child(3) {
+	margin-top: 24px;
+}
+.today .bento > .card:nth-child(4) {
+	margin-top: 44px;
+}
+.today .bento > .card:nth-child(n + 5) {
+	margin-top: 48px;
+}
+/* Task 10l — カードを一回り小さくする。内側の余白を 1 段下げ、押せない行の高さを 48 → 40px
+   (2 段の行は 72 → 60px)に詰める。行は減らさない。ToDo の label の行だけは中の
+   チェックボックスを押すので 48px のまま残す (的の最小 44px) */
+.today .bento .tc {
+	gap: var(--sp-2);
+}
+.today .bento .tc-foot {
+	margin-top: var(--sp-2);
+}
+.today .bento .list-row:not(label) {
+	height: 40px;
+}
+.today .bento .list-row.xl {
+	height: 60px;
+}
+/* Task 10l — ごくゆっくり上下に漂わせる。transform ではなく translate に書くのは、
+   .card:hover の transform (3px 持ち上げる)と取り合わないようにするため。
+   ガラスの canvas は毎フレーム getBoundingClientRect() で測り直されるので、
+   この動きにも追従する (node_modules/apple-liquid-glass-webgl/src/dom.js の measure、
+   frame-loop.js の tick)。prefers-reduced-motion では共通の指定で 1 回・0.01ms に潰れ、
+   fill を持たないのでカードは元の位置に戻る */
+@keyframes today-drift {
+	50% {
+		translate: 0 -6px;
+	}
+}
+.today .bento > .card {
+	padding: var(--sp-4) var(--sp-4) var(--sp-3);
+	animation: today-drift 11s ease-in-out infinite;
+}
+.today .bento > .card:nth-child(2) {
+	animation-duration: 9s;
+	animation-delay: -3s;
+}
+.today .bento > .card:nth-child(3) {
+	animation-duration: 13s;
+	animation-delay: -6s;
+}
+.today .bento > .card:nth-child(4) {
+	animation-duration: 10s;
+	animation-delay: -1.5s;
+}
+.today .bento > .card:nth-child(n + 5) {
+	animation-duration: 12s;
+	animation-delay: -8s;
 }
 /* Task 10c — オーブはガラスが屈折させる対象なので、ガラスの canvas より下に置く。
    canvas は要素の z-index: -1 の子なので、穴は -2 にする。0 のままだと canvas の上に出て、
@@ -1950,10 +2023,10 @@ section.tc .list-row:not(label):hover {
 	left: 50%;
 	translate: -50% -50%;
 }
-/* Task 10j — 球は左右の列の間の中央に置く。箱は一辺 560px、球の直径はその 48%
-   (shader.ts の R0 = 0.48)なので 269px。列の間は本文の幅の 30% (1440px で 304px、
-   1280px で 256px)なので、球の外周と光彩がカードの縁に掛かる。そこでカードのガラスの縁が
-   破片を曲げる (visual 2.8 の 6) */
+/* Task 10l — 球は左右の列の間の中央に置く。箱は一辺 448px、球の直径はその 48%
+   (shader.ts の R0 = 0.48)なので 215px。列の間は入れ物の幅の 30%、入れ物は本文の 80% なので
+   1440px (レールなし)で 265px、1280px (レールあり)で 205px。球の外周と光彩がカードの縁に
+   掛かり、そこでカードのガラスの縁が破片を曲げる (visual 2.8 の 6) */
 .today .bento .hole .orb {
 	position: absolute;
 	top: 50%;

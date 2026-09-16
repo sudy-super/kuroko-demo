@@ -35,10 +35,11 @@
 
 	// 700px 以下は Bento をやめて 1 枚の折りたたみカードにするので、オーブも 1 つだけ差し替える
 	const narrow = new MediaQuery('(max-width: 700px)');
-	/* Task 10j — 箱の一辺。球の直径はその 48% (shader.ts の R0)なので 560 で 269px。
-	   左右のカードの列の間は本文の幅の 30% (1440px で 304px)。球の外周と光彩がカードの縁に
-	   掛かるので、そこでカードのガラスの縁が破片を曲げる (visual 2.8 の 6) */
-	const orbSize = $derived(narrow.current ? 300 : 560);
+	/* Task 10l — 箱の一辺。球の直径はその 48% (shader.ts の R0)なので 448 で 215px。
+	   10j の 560 から 2 割小さくした。カードの列の間も同じ比で縮む (app.css の .bento の
+	   max-width: 80%) ので、球の外周と光彩がカードの縁に掛かる関係は変わらず、
+	   そこでカードのガラスの縁が破片を曲げる (visual 2.8 の 6) */
+	const orbSize = $derived(narrow.current ? 300 : 448);
 
 	const meetingHead = (m: NonNullable<typeof nm>) =>
 		`次の会議 ${rel(parse(m.event.date))} ${m.event.start} ${m.meeting.title}`;
@@ -66,8 +67,9 @@
 		{:else}
 			<!-- 並びは要件定義 p.11 の重み順。左上が最初に見られるので承認待ちを先頭に置く
 			     (eye.md 3.2 の (3)。モックは承認待ちを右下に置いていた)。
-			     段組みは 5 枚とも同じ幅になるので、重みは先頭のカードの下の余白で付ける
-			     (app.css の .card:first-child) -->
+			     Task 10l — カードごとに上の余白を変えて縦位置をずらし、列に整列して見えない
+			     ようにした。重みは 2 枚目の上の余白をいちばん広く取ることで付ける
+			     (app.css の .today .bento > .card:nth-child(n)) -->
 			<div class="bento" {@attach glass({ ...CARD, targets: '.card' })}>
 				{#if ap.length}
 					<TodayCard
