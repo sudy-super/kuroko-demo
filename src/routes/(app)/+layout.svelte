@@ -14,7 +14,7 @@
 	import ActivityDrawer from '$lib/components/ActivityDrawer.svelte';
 	import Palette from '$lib/components/Palette.svelte';
 	import GuideCard from '$lib/components/GuideCard.svelte';
-	import { glass, CLEAR } from '$lib/glass';
+	import { chromeGlass } from '$lib/glass';
 	import { CONNECT_NAME } from '$lib/connect';
 
 	let { children } = $props();
@@ -46,11 +46,16 @@
 </script>
 
 <div class="app" class:has-rail={connected.length > 0}>
+	<!-- Task 10i — 枠の 4 面 (サイドナビ、上部バー、連携の列、依頼バー)のガラスは、この空の層に
+	     1 枚の canvas でまとめて描く。面ごとに描画面 (WebGL context)を取ると、タブを 3 枚
+	     開いただけでブラウザの上限に届き、全面が代替表示に落ちる。層は本文より後・覆いより前に
+	     敷くので、本文はガラスの背後の絵に入り、4 面自身は入らない。src/lib/glass.ts の chromeGlass -->
+	<div class="chrome" {@attach chromeGlass}></div>
 	<Sidebar />
 	<Header />
 	<main class="main">{@render children()}</main>
 	{#if connected.length > 0}
-		<aside class="rail" aria-label="連携中のサービス" {@attach glass(CLEAR)}>
+		<aside class="rail" aria-label="連携中のサービス">
 			{#each connected as c (c.id)}
 				<a
 					class="iconbtn"

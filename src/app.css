@@ -284,21 +284,95 @@ svg.i {
 	/* 球とハローはシェーダーが透明の上に描く。箱の形を出す背景や影は付けない */
 	background: transparent;
 }
-/* WebGL が使えないときだけの代替。多層 radial-gradient の球と光彩 */
+/* WebGL が使えない、または描画面 (context)を使い切っているときの代替 (Task 10i)。
+   承認済みのオーブは「青い塊・白い核・外へ散る破片」で、球面の陰影、縁の光、
+   半径に沿う色の帯は悪化と判定されている。ここも硬い縁を作らず、中心から外へ薄くなる
+   青 1 色の階調と、大きさのまちまちな小さい点の散らばりだけで組む。画像は使わない */
 .orb-fallback {
 	grid-area: 1 / 1;
-	width: 48%;
-	height: 48%;
-	border-radius: 50%;
+	position: relative;
+	width: 100%;
+	height: 100%;
 	background:
-		radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 22%),
-		radial-gradient(circle at 50% 50%, #9cc4ff 0%, #2f7cf6 45%, var(--accent) 78%, #9cc4ff 100%);
-	/* 縁は硬い円にせず、内側の縁光と外へ抜ける 3 段の光彩で柔らかくする */
-	box-shadow:
-		inset 0 0 24px rgba(156, 196, 255, 0.9),
-		0 0 24px 4px rgba(156, 196, 255, 0.55),
-		0 0 64px 24px rgba(79, 149, 255, 0.3),
-		0 0 160px 64px var(--accent-soft);
+		/* 白い核 */
+		radial-gradient(
+			circle at 50% 50%,
+			rgba(255, 255, 255, 0.98) 0%,
+			rgba(255, 255, 255, 0.7) 3%,
+			rgba(255, 255, 255, 0) 10%
+		),
+		/* 塊の濃淡。中心をわずかにずらした 2 枚を重ね、真円に見えないようにする */
+		radial-gradient(circle at 44% 46%, rgba(120, 175, 255, 0.34) 0%, rgba(120, 175, 255, 0) 17%),
+		radial-gradient(circle at 57% 55%, rgba(47, 124, 246, 0.3) 0%, rgba(47, 124, 246, 0) 16%),
+		/* 塊の本体。色相は動かさず濃さだけ落として、輪に見える境目を作らない */
+		radial-gradient(
+			circle at 50% 50%,
+			rgba(47, 124, 246, 0.55) 0%,
+			rgba(47, 124, 246, 0.38) 12%,
+			rgba(47, 124, 246, 0.16) 22%,
+			rgba(79, 149, 255, 0.05) 32%,
+			rgba(79, 149, 255, 0) 44%
+		);
+	animation: orb-breathe 9s ease-in-out infinite;
+}
+/* 外へ散る破片。縦横の比を変えた小さい楕円で、丸い粒の並びに見えないようにする。
+   2 枚を逆向きにゆっくり回して、止まった絵にしない */
+.orb-fallback::before,
+.orb-fallback::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-repeat: no-repeat;
+}
+.orb-fallback::before {
+	background-image:
+		radial-gradient(ellipse 3px 2px at 58% 34%, rgba(214, 231, 255, 0.95) 0 60%, transparent 62%),
+		radial-gradient(ellipse 2px 3px at 39% 36%, rgba(173, 208, 255, 0.9) 0 60%, transparent 62%),
+		radial-gradient(ellipse 4px 2px at 64% 58%, rgba(120, 175, 255, 0.85) 0 60%, transparent 62%),
+		radial-gradient(ellipse 2px 2px at 36% 60%, rgba(173, 208, 255, 0.85) 0 60%, transparent 62%),
+		radial-gradient(ellipse 3px 4px at 70% 45%, rgba(47, 124, 246, 0.7) 0 60%, transparent 62%),
+		radial-gradient(ellipse 2px 3px at 47% 68%, rgba(120, 175, 255, 0.75) 0 60%, transparent 62%),
+		radial-gradient(ellipse 5px 2px at 27% 47%, rgba(47, 124, 246, 0.55) 0 60%, transparent 62%),
+		radial-gradient(ellipse 2px 2px at 78% 27%, rgba(173, 208, 255, 0.5) 0 60%, transparent 62%),
+		radial-gradient(ellipse 3px 2px at 55% 80%, rgba(47, 124, 246, 0.4) 0 60%, transparent 62%),
+		radial-gradient(ellipse 2px 2px at 86% 66%, rgba(120, 175, 255, 0.35) 0 60%, transparent 62%),
+		radial-gradient(ellipse 2px 2px at 17% 71%, rgba(120, 175, 255, 0.3) 0 60%, transparent 62%);
+	animation: orb-drift 64s linear infinite;
+}
+.orb-fallback::after {
+	background-image:
+		radial-gradient(ellipse 2px 3px at 52% 29%, rgba(255, 255, 255, 0.9) 0 60%, transparent 62%),
+		radial-gradient(ellipse 3px 2px at 62% 49%, rgba(214, 231, 255, 0.9) 0 60%, transparent 62%),
+		radial-gradient(ellipse 2px 2px at 43% 53%, rgba(255, 255, 255, 0.8) 0 60%, transparent 62%),
+		radial-gradient(ellipse 4px 3px at 33% 44%, rgba(47, 124, 246, 0.65) 0 60%, transparent 62%),
+		radial-gradient(ellipse 2px 4px at 67% 66%, rgba(120, 175, 255, 0.6) 0 60%, transparent 62%),
+		radial-gradient(ellipse 3px 2px at 49% 19%, rgba(173, 208, 255, 0.45) 0 60%, transparent 62%),
+		radial-gradient(ellipse 2px 2px at 24% 33%, rgba(47, 124, 246, 0.4) 0 60%, transparent 62%),
+		radial-gradient(ellipse 3px 3px at 74% 76%, rgba(120, 175, 255, 0.35) 0 60%, transparent 62%),
+		radial-gradient(ellipse 2px 2px at 12% 55%, rgba(173, 208, 255, 0.3) 0 60%, transparent 62%),
+		radial-gradient(ellipse 2px 2px at 90% 44%, rgba(120, 175, 255, 0.25) 0 60%, transparent 62%);
+	animation: orb-drift 88s linear infinite reverse;
+}
+@keyframes orb-breathe {
+	50% {
+		scale: 1.03;
+	}
+}
+@keyframes orb-drift {
+	to {
+		rotate: 1turn;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.orb-fallback,
+	.orb-fallback::before,
+	.orb-fallback::after {
+		animation: none;
+	}
+}
+/* 描画面を手放している間 (隠れたタブ)と失った直後は、代替を出して canvas を隠す */
+.orb canvas.off {
+	visibility: hidden;
 }
 
 /* visual 4.2 — ガラスの基本形 */
@@ -315,6 +389,15 @@ svg.i {
 	position: relative;
 	z-index: 1;
 	min-height: 100dvh;
+}
+/* Task 10i — 枠のガラスをまとめて描くための空の層。中身はガラスの canvas 1 枚だけ。
+   本文 (段を持たない)より後、覆い (55 以上)より前に敷く。画面いっぱいに広げるので、
+   pointer-events を切らないと画面全体が押せなくなる */
+.chrome {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	pointer-events: none;
 }
 .main {
 	margin-left: calc(var(--side-w) + 32px);
@@ -2042,8 +2125,14 @@ section.tc .list-row:not(label):hover {
    WebGL2 が無い環境では data-liquid-glass="fallback" が付いてこの指定は当たらず、
    これまでどおり backdrop-filter のすりガラスになる。
    ========================================================================== */
+/* Task 10i — 枠の 4 面は .chrome の canvas にまとめて描かれるので、属性は入れ物の .chrome に
+   付く。4 面はその層の子ではなくきょうだいなので、塗りを下ろす指定も ~ で書く */
 :root [data-liquid-glass='webgl'],
-:root [data-liquid-glass='webgl'] .card {
+:root [data-liquid-glass='webgl'] .card,
+.chrome[data-liquid-glass='webgl'] ~ .sidebar,
+.chrome[data-liquid-glass='webgl'] ~ .header.glass,
+.chrome[data-liquid-glass='webgl'] ~ .rail,
+.chrome[data-liquid-glass='webgl'] ~ .chatbar {
 	background: none;
 	-webkit-backdrop-filter: none;
 	backdrop-filter: none;
@@ -2081,8 +2170,19 @@ section.tc .list-row:not(label):hover {
    WebGL2 が無い経路には付けない。canvas が無いうえ積み重ねの文脈も作られないので、
    負の段に置くと副ボタンの白い塗りの裏へ回って縁が消える */
 :root [data-liquid-glass='webgl']::after,
-:root [data-liquid-glass='webgl'] .card::after {
+:root [data-liquid-glass='webgl'] .card::after,
+.chrome[data-liquid-glass='webgl'] ~ .sidebar::after,
+.chrome[data-liquid-glass='webgl'] ~ .header.glass::after,
+.chrome[data-liquid-glass='webgl'] ~ .rail::after,
+.chrome[data-liquid-glass='webgl'] ~ .chatbar::after {
 	z-index: -1;
+}
+
+/* 描画面を失うと canvas には何も描かれない。属性が fallback に変わったら canvas を下ろし、
+   要素自身のすりガラスに戻す (Task 10i)。display はライブラリがインラインの style で
+   書き込むので !important でしか下ろせない */
+[data-liquid-glass='fallback'] > [data-liquid-glass-layer] {
+	display: none !important;
 }
 
 /* ガラスの canvas は bleed の分だけ要素の外へ出る。位置の基準になる親が要る。

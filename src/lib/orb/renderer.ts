@@ -22,6 +22,8 @@ export type OrbOptions = {
 	particles?: boolean;
 	/** 初期化後 (コンテキスト復帰やリサイズ時) に WebGL が失敗したときに呼ぶ。呼び出し側は CSS の代替に落とす */
 	onFail?: (e: unknown) => void;
+	/** 描画面を失ったら false、戻ったら true。呼び出し側は失っている間 CSS の代替を出す (Task 10i) */
+	onLive?: (live: boolean) => void;
 };
 export type Orb = { start(): void; stop(): void; destroy(): void; resize(): void };
 
@@ -426,6 +428,8 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		lost = true;
 		halt();
 		scene = halfA = halfB = trailA = trailB = null; /* 失ったコンテキストの資源は削除できないので忘れる */
+		/* 失った canvas は透明になる。知らせないと球が消えた穴がそのまま残る (Task 10i) */
+		opts.onLive?.(false);
 	};
 	const destroy = () => {
 		running = false;
@@ -442,7 +446,7 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 	const fail = (e: unknown) => { destroy(); opts.onFail?.(e); };
 	const onRestored = () => {
 		lost = false;
-		try { initGl(); kick(); } catch (e) { fail(e); }
+		try { initGl(); kick(); opts.onLive?.(true); } catch (e) { fail(e); }
 	};
 
 	try {

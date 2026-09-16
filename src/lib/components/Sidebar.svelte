@@ -4,7 +4,6 @@
 	import { queue } from '$lib/derived';
 	import { PRIMARY, SECONDARY, isActive, guideTarget, type NavItem } from '$lib/nav';
 	import Icon from './Icon.svelte';
-	import { glass, CLEAR } from '$lib/glass';
 
 	const inbox = $derived(queue(db).length);
 	const target = $derived(db.demo.guide.on ? guideTarget(db) : null);
@@ -28,11 +27,7 @@
 	</a>
 {/snippet}
 
-<!-- bleed: 0 — サイドナビだけは overflow-y: auto を持つ。ガラスの canvas は既定で
-	 要素の箱の外へ 49px はみ出し、絶対配置の子はスクロール範囲に足されるので、
-	 中身が収まっていてもスクロールできる箱になってしまう。どのみち overflow が
-	 外側のはみ出しを切り落とすので、0 にしても見た目は変わらない -->
-<nav class="sidebar" aria-label="画面の切り替え" {@attach glass({ ...CLEAR, bleed: 0 })}>
+<nav class="sidebar" aria-label="画面の切り替え">
 	{#each PRIMARY as nav (nav.href)}{@render item(nav)}{/each}
 	<hr class="nav-sep" />
 	<div class="nav-head">その他</div>
