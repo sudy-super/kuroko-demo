@@ -1279,8 +1279,9 @@ svg.i {
 
 /* Task 10p (参考の良い点 9、調査: Apple HIG Segmented controls / M3 Segmented buttons) —
    排他の表示切り替え。フィルターの .chip とは違い、選択は塗りだけで示しチェック印は出さない。
-   等幅で隣接し、外枠は 1 つ。M3 の Measurements (高さ 40dp、外枠 1dp、Segment width =
-   Container width / total segments) に合わせ、.chip と同じ高さ 40px にする */
+   等幅で隣接し、外枠は 1 つ。M3 の Measurements (外枠 1dp、Segment width =
+   Container width / total segments) を参考にする。高さは下の Task 11r のコメントのとおり
+   44px (タップ領域の下限。M3 の既定 40dp からは外れる) */
 .seg {
 	display: inline-flex;
 	border-radius: var(--r-pill);
@@ -2854,7 +2855,7 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
    「残りの高さ」を flex-grow で配る形にしたところ、844x390 のように見出し+切り替え行だけで
    窓の高さを使い切る画面では残りが 0 近くまで削れ、週表示ごと消えて page のスクロールも
    出せなくなった (.main の高さそのものを固定していたため)。
-   .main の高さは固定しない。.week-body は下の既定の max-height: 576px (auto な .week の中で
+   .main の高さは固定しない。.week-body は下の既定の max-height: 1056px (auto な .week の中で
    自然にこの高さへ収まり、はみ出す分は自身の overflow-y: auto で内側スクロールする) に任せ、
    ページ全体がそれ以上長くなったら通常どおり縦スクロールで届かせる。1280x800 で 17:30 の
    予定が依頼バーの裏に沈んでいた元の崩れ (監査 4)も、Today/Inbox 等と同じ --content-bottom-clear
@@ -2865,6 +2866,24 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 .week {
 	overflow-x: auto;
 }
+/* Task 11r 修正ラウンド 2 (再レビュー 新規 6、検証の結果見送り) — 曜日の行 (.week-head) を
+   position: sticky にして、ページを送っても見えるようにすることを試みたが、CSS だけでは
+   解決できないと判断した。.week-head の祖先である .week が横に流すための overflow-x: auto を
+   持っている限り (狭い携帯幅で格子が潰れないために必須、削れない)、その祖先自身が sticky の
+   基準 (最も近い「送れる祖先」) になってしまう。.week 自身は中身が自分の箱の高さぴったりで
+   実際には縦に送られない (縦の送りは .week-body の内側の overflow-y と、その外のページの
+   2 か所で起きている)ため、その祖先を基準にした sticky は「ページを送っても留まる」効果を
+   一切持てず、ただの static と同じに見える (elementFromPoint と getBoundingClientRect で
+   実測して確認した。.app が使っている overflow-x: clip + overflow-y: visible の手も、
+   overflow-x が auto (clip ではない)の時点で効かない)。
+   横の送りを .week-body 自身に切り離し、.week-head をページ基準の sticky にする案も試したが、
+   その場合 .week-head と .week-body の横位置がずれてしまい、揃えるには JS でどちらかの
+   scrollLeft をもう片方に書き写す同期が要る。今回はその仕組みを足さない指示を受けたため、
+   ここでは何もしない。代わりに .week-body の内側の送りで、送っても曜日の日付・列とその日の
+   予定の対応は保たれている (縦に送っても列そのものはズレない)。ページ全体の送りで曜日が
+   見えなくなる件は、JS の同期か、縦の送りを .week 自身に一本化する構成変更 (Critical の
+   修正で意図的に避けた道)のどちらかが要るため、別タスクで扱うのが妥当 (再レビューの原文の
+   判定どおり) */
 .week-cols {
 	display: grid;
 	grid-template-columns: 64px repeat(7, minmax(72px, 1fr));
@@ -2900,8 +2919,6 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
    (WeekView.svelte の PX 参照) ぶん、576px (12 時間 x 48px)も同じ倍率で 1056px (12 時間 x 88px)
    に上げ、「見える高さは 12 時間分」の設計はそのまま保つ */
 .week-body {
-	flex: 1;
-	min-height: 0;
 	max-height: 1056px;
 	overflow-y: auto;
 	scrollbar-gutter: stable;

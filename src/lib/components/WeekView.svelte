@@ -39,11 +39,14 @@
 	});
 
 	const top = (m: number) => m * PX;
-	/* 最小の高さは 24px (WCAG 2.2 SC 2.5.8)。30 分の予定はちょうど 24px なので、
-	   ここで 1px 引くと下限を割る。上下に隣り合う予定の塗りを離すのは CSS 側の
-	   透明な下線 (.week-ev の border-bottom + background-clip) に任せ、
-	   どの長さでも同じ 1px の隙間にする */
-	const height = (e: CalendarEvent) => Math.max(24, (minutes(e.end) - minutes(e.start)) * PX);
+	/* Task 11r 修正ラウンド 2 (再レビュー 新規 1) — 1 時間を 88px に上げた後も、この下限だけ
+	   48px/時 時代の 24px (WCAG 2.2 SC 2.5.8 の最小)のまま残っていて、16.4 分未満の予定は
+	   44px を割ったまま描かれていた (予定を追加する画面から 2 手で再現できる)。
+	   responsive-policy.md の条件 4 (タップ領域 44px 以上、buttons.md 資料 14 の Baymard の
+	   強化基準)に合わせ、下限も 44px にする。上下に隣り合う予定の塗りを離すのは CSS 側の
+	   透明な下線 (.week-ev の border-bottom + background-clip) に任せ、どの長さでも同じ
+	   1px の隙間にする */
+	const height = (e: CalendarEvent) => Math.max(44, (minutes(e.end) - minutes(e.start)) * PX);
 
 	/* 重なりの横位置。左右の余白を 4px でそろえたいので、幅から 1px 引いて右にずらす手は
 	   使わず、先に列の間の隙間 (cols - 1)px を引いてから均等に割る */
