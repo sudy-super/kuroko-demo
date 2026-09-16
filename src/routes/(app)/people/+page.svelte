@@ -6,10 +6,10 @@
 	import Avatars from '$lib/components/Avatars.svelte';
 
 	type Tab = 'people' | 'companies' | 'projects';
-	const TABS: { key: Tab; label: string }[] = [
-		{ key: 'people', label: '人物' },
-		{ key: 'companies', label: '会社' },
-		{ key: 'projects', label: '案件' }
+	const TABS: { key: Tab; label: string; icon: string }[] = [
+		{ key: 'people', label: '人物', icon: 'ic-user' },
+		{ key: 'companies', label: '会社', icon: 'ic-db' },
+		{ key: 'projects', label: '案件', icon: 'ic-target' }
 	];
 
 	let tab = $state<Tab>('people');
@@ -31,7 +31,7 @@
 	<header class="people-head page-head">
 		<div class="page-title">
 			<h1>会社・人物・案件</h1>
-			<p class="page-desc">人物・会社・案件をタブで切り替えて確認します。</p>
+			<p class="page-desc">人物・会社・案件を切り替えて確認します。</p>
 		</div>
 		{#if tab === 'people'}
 			<button class="btn pri" onclick={() => (cardOpen = true)}>
@@ -56,7 +56,13 @@
 	</div>
 
 	<div class="people-cards" {@attach glass({ ...CARD, targets: '.card' })}>
-		<section class="card people-list" aria-label={TABS.find((t) => t.key === tab)!.label}>
+		<!-- Task 10p 修正ラウンド 1 (Important 2) — /inbox・/tasks と同じ形の小見出しを一覧の先頭に置く。
+		     直上のタブと文言・件数が重なるが、絞り込みの現在値ではなく一覧そのものの見出しなので付ける -->
+		<section class="card people-list" aria-labelledby="people-list-head">
+			<h2 class="list-head" id="people-list-head">
+				<Icon name={TABS.find((t) => t.key === tab)!.icon} size={16} />{TABS.find((t) => t.key === tab)!
+					.label}<span class="num">{count[tab]}</span>
+			</h2>
 			{#if tab === 'people'}
 				{#each db.people as p (p.id)}
 					<a class="list-row lg" href="/people/{p.id}">

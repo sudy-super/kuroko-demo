@@ -185,7 +185,7 @@
 				{#each ONLINE as o (o.value)}
 					<label class="chip" class:on={online === o.value}>
 						<input type="radio" class="sr-only" name="{formId}-online" value={o.value} bind:group={online} />
-						{#if online === o.value}<Icon name="ic-check" size={18} />{/if}{o.label}
+						<Icon name="ic-check" size={18} class="chip-check" />{o.label}
 					</label>
 				{/each}
 			</div>

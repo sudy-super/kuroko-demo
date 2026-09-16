@@ -140,18 +140,19 @@
 	description="件名だけの一覧です。要対応と判断しなかったメールもここに含まれます。"
 	onclose={() => (allOpen = false)}
 >
-	<!-- Task 10p (参考の良い点 4) — 要対応とそれ以外を小見出しで分ける -->
-	<h2 class="list-head">
+	<!-- Task 10p (参考の良い点 4) — 要対応とそれ以外を小見出しで分ける。
+	     モーダルの題名 (Modal.svelte の h3) の下なので h4 にする -->
+	<h4 class="list-head">
 		<Icon name="ic-alert" size={16} />要対応<span class="num">{allNeeds.length}</span>
-	</h2>
+	</h4>
 	<ul class="all-mail">
 		{#each allNeeds as t (t.id)}
 			<li>{t.subject}</li>
 		{/each}
 	</ul>
-	<h2 class="list-head">
+	<h4 class="list-head">
 		<Icon name="ic-check-c" size={16} />それ以外<span class="num">{allOthers.length}</span>
-	</h2>
+	</h4>
 	<ul class="all-mail">
 		{#each allOthers as t (t.id)}
 			<li>{t.subject}</li>

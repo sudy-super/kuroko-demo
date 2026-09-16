@@ -2,7 +2,7 @@
 	import type { MessageThread } from '$lib/types';
 	import { REASON_ORDER } from '$lib/types';
 	import { db } from '$lib/store.svelte';
-	import { companyOf, personOf } from '$lib/derived';
+	import { personOf, threadSenderMeta } from '$lib/derived';
 	import { parse, rel } from '$lib/dates';
 	import SourceIcon from './SourceIcon.svelte';
 	import ReasonIcon from './ReasonIcon.svelte';
@@ -20,9 +20,11 @@
 	const day = $derived(rel(parse(thread.lastAt.slice(0, 10)), parse(db.seededOn)));
 	// 時刻は画面の他の場所と同じく 1 桁時をそのまま出す (8:05 と 08:05 を混ぜない)
 	const when = $derived(day === '今日' ? thread.lastAt.slice(11, 16).replace(/^0/, '') : day);
-	// Task 10p (参考の良い点 6) — 差出人 / 会社 / 返信数 / 時刻を 1 行にまとめる
-	const company = $derived(companyOf(db, thread.companyId)?.name);
-	const meta = $derived(company ? `${thread.sender} / ${company}` : thread.sender);
+	// Task 10p (参考の良い点 6) — 差出人 / 会社 / 返信数 / 時刻を 1 行にまとめる。
+	// 組み立ては threadSenderMeta に集約 (10p 修正ラウンド 1、Critical 参照)
+	const meta = $derived(threadSenderMeta(db, thread));
+	// 10p 修正ラウンド 1 (Minor 1) — 実際は返信数ではなくスレッドのやり取りの総数。
+	// 変数名も表示も「返信」に寄っていたので、読み上げに「のやり取り」を足して数の意味を補う
 	const replies = $derived(db.messages.filter((m) => m.threadId === thread.id).length);
 	// Task 10p (参考の良い点 7) — 送信者が登録済みの人物なら頭文字の丸を出す (未登録は空のまま)
 	const person = $derived(personOf(db, thread.personId));
@@ -41,7 +43,7 @@
 		<span class="line">
 			<SourceIcon source={thread.source} />
 			<span class="sender">{meta}</span>
-			<span class="num replies">{replies}件</span>
+			<span class="num replies">{replies}件<span class="sr-only">のやり取り</span></span>
 			<span class="num when">{when}</span>
 		</span>
 		<span class="line">

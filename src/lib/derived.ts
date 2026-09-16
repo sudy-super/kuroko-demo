@@ -1,4 +1,4 @@
-import type { Db, TodayItem, Meeting, CalendarEvent, Task, ProjectStatus } from './types';
+import type { Db, TodayItem, Meeting, CalendarEvent, Task, ProjectStatus, MessageThread } from './types';
 import { key, parse, addDays, minutes, toHm, hm } from './dates';
 
 export const personOf = (db: Db, id?: string) => db.people.find((p) => p.id === id);
@@ -7,6 +7,17 @@ export const projectOf = (db: Db, id?: string) => db.projects.find((p) => p.id =
 export const identityOf = (db: Db, id: string) => db.identities.find((i) => i.id === id);
 export const personOfIdentity = (db: Db, identityId: string) =>
 	personOf(db, identityOf(db, identityId)?.personId);
+
+/* Task 10p 修正ラウンド 1 (Critical) — 差出人 / 会社を組み立てる。thread.sender は
+   人物が未登録の場合は「部署 / 会社」まで含めた表示用の文字列そのものなのでそのまま使い、
+   人物 (personId) と会社 (companyId) の両方が判明している場合だけ、それらの参照から
+   組み立て直す。sender の文字列の形 (区切り文字や、会社名が含まれるかどうか) を一切見ない
+   ため、シードの書式が変わっても二重表示にはならない */
+export const threadSenderMeta = (db: Db, thread: MessageThread): string => {
+	const person = personOf(db, thread.personId);
+	const company = companyOf(db, thread.companyId);
+	return person && company ? `${person.name} / ${company.name}` : thread.sender;
+};
 
 export const queue = (db: Db) =>
 	db.threads.filter((t) => t.inQueue && !t.done).sort((a, b) => b.lastAt.localeCompare(a.lastAt));

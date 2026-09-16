@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { seed } from './seed';
 import { key, bizDay } from './dates';
 import { FILLER_SUBJECTS } from './kuroko/samples';
+import { threadSenderMeta, companyOf } from './derived';
 
 // 火曜と金曜。曜日によって bizDay の飛び方が変わるため 2 通りで回す
 const BASES = [new Date(2026, 8, 15), new Date(2026, 8, 18)];
@@ -32,6 +33,17 @@ describe('seed', () => {
 	it('すべてのスレッドに表示用の差出人名がある', () => {
 		const db = seed(new Date(2026, 8, 15));
 		expect(db.threads.filter((t) => !t.sender.trim())).toEqual([]);
+	});
+	// Task 10p 修正ラウンド 1 (Critical) — threadSenderMeta が会社名を二重に出さないことの検証。
+	// sender の文字列を見るのではなく、組み立てた結果に会社名が 2 回現れていないかを数える
+	it('要対応キューの差出人 / 会社の表示に会社名が二重に出ない', () => {
+		const db = seed(new Date(2026, 8, 15));
+		for (const t of db.threads.filter((t) => t.inQueue)) {
+			const meta = threadSenderMeta(db, t);
+			const company = companyOf(db, t.companyId)?.name;
+			if (!company) continue;
+			expect(meta.split(company).length - 1).toBe(1);
+		}
 	});
 	it('未登録の差出人は personId を持たない', () => {
 		const db = seed(new Date(2026, 8, 15));
