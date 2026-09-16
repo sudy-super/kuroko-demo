@@ -1,7 +1,8 @@
 /* Liquid Glass — apple-liquid-glass-webgl (WebGL2) を要素に載せる Svelte の attachment。
    ライブラリは要素の背後にあるページの内容 (背景、文字、<canvas>) を自前で描き直し、
-   角丸長方形の符号付き距離場で縁だけを曲げて屈折させる。角丸は CSS の border-radius を読む。
-   WebGL2 が無い環境では backdrop-filter に落ち、要素に data-liquid-glass="fallback" が付く */
+   角丸長方形の符号付き距離場を使って塗り・下ぼかし・縁の光沢を描く。角丸は CSS の
+   border-radius を読む。WebGL2 が無い環境では backdrop-filter に落ち、要素に
+   data-liquid-glass="fallback" が付く */
 import {
 	LiquidGlass,
 	type LiquidGlassElementOptions,
@@ -9,162 +10,57 @@ import {
 } from 'apple-liquid-glass-webgl';
 import { whileVisible } from './visible';
 
-/* Task 10f 修正ラウンド 3 — 縁のレンズ。ユーザーの裁定は「背景がカードの境目に来たら屈折する。
-   境目から中に入ったら屈折も滲みもしなくてよい」。像が曲がるのは縁の帯だけ、という部分は
-   Task 10o でも変わらない。ここの 3 つの値がその帯を作る
-   (ライブラリの v2 シェーダー、v2-shaders.js 230 行目と 252 行目)。
-   - edgeWidth: 帯の幅。実寸は「要素の短辺の半分 x edgeWidth」画素。高さ 64px の上部バーなら
-     32 x 0.5 = 16px、高さ 44px の副ボタンなら 11px と、面の大きさに比例する。
-   - edgeReach: 帯の中で下の像をどれだけ引き寄せるか。実寸は「短辺の半分 x 2 x 1.24 x この値」
-     画素で、上部バーなら約 12px。引き寄せる量が帯の幅を超えると、帯の中身が元の像と
-     繋がらない白い筋になるので、この比 (0.74)は 1 を超えないところに置く。
-   - refraction: 面の中 (帯の外)の湾曲。0〜20 に下げて、中はほぼ素通しにする。
-     縁からの範囲は「短辺の半分 x 0.5」画素で、引きは最大 refraction x 0.32 画素。
-     12 なら上部バーで 3.8px しか動かず、帯の外では像がほぼそのまま見える。
-   dispersion は縁の色ずれ。5.5 まで上げていたときは、上部バーの下をくぐる本文に赤と青の
-   縞が出て、バー自身の文字と重なって読みにくかった (ユーザー判定)。1.5 にすると
-   文字の上では見えず、オーブの破片のような大きい形の縁にだけ薄く残る。
-   backdropBlur はこの共通材質では持たない。面ごとのぼかし量は BAR / CARD 側で個別に持つ
-   (Task 10o、下を見よ)。frost はライブラリの既定 (0) と同じ値なので書かない
-   (書いても書かなくても preBlur は変わらない)。
-
-   Task 10o — ユーザー指摘「左上の反射がひび割れにしか見えない」。3 倍拡大で確認すると、
-   角の丸みに沿って白い筋が斜めに走っていた。原因は reflection と highlight の 2 つ。
-   v2-shaders.js の `key = pow(max(dot(normal, lightDir), 0), 7) * fresnel` が
-   lightAngle (136度、左上方向)と法線の向きが揃う 1 点に鋭い鏡面を作り、丸い角では
-   法線が連続的に向きを変えるので、その 1 点が角の曲線上の斜めの筋に見える
-   (`color += … * key * uHighlight`、hairline 側にも `hairHighlight` として効く)。
-   reflection (rimMix の係数)も同じ帯域を明るくして筋を強めていたので、
-   一緒に 0 にした。echo は筋の主因ではないが、同じ「面上の光沢」の一部なので
-   ユーザー指示 (highlight / reflection / echo を 0 か最小値に) に沿って 0 にした
-   (縁の内側に薄く背景を返すだけの効果で、無くしても縁の見え方は変わらない。
-   3 倍拡大で確認済み、scratchpad/10o 以下の before/after)。
-   rim (縁の光)と hairline (輪郭線)は残す。全周に同じ強さで回る分には筋にならない
-   (ユーザー判定)。上縁の白い鏡面と下縁の薄い暗線は今までどおり CSS の疑似要素が担う
-   (app.css の Liquid Glass の節)。lightAngle は hairline の明るい側の向きにまだ使われて
-   いるので残すが、highlight を 0 にしたため筋には効かない
-
-   Task 10s — 訂正 (下の CARD の節、Task 10r 修正ラウンド1)が「refraction 12 / edgeReach 0.15
-   は backdropBlur 8 の前ぼかしの下では 1 画素も動いておらず、縁の屈折は見た目に存在しない」
-   と確定させた後を受け、ユーザーの 2 つの生きた指示 (「面はすりガラス」「境目に来たら屈折する」)
-   を両方満たす値を選び直した。手順: refraction / edgeReach / CARD.backdropBlur の組を 6 通り
-   (現状 12/0.15/8 を含む) 用意し、同じ静止フレーム (Orb.svelte の reducedMotion、
-   REDUCED_TIME=11.3) で 1440x900 の Today を撮り、各組について「屈折を切った版
-   (refraction 0 / edgeReach 0、backdropBlur は同じ) との画素差」を測った
-   (task-10s-report.md の表、手法は Task 10r 修正ラウンド1 の対照実験を踏襲)。
-
-   | 候補 | refraction | edgeReach | blur | 差の画素数 | 最大差 | 帯の中の割合 |
-   | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-   | F (現状) | 12 | 0.15 | 8 | 3313 | 34 | 100% |
-   | A | 40 | 0.25 | 8 | 5417 | 40 | 100% |
-   | B | 70 | 0.35 | 6 | 6057 | 54 | 100% |
-   | C | 110 | 0.5 | 4 | 6402 | 77 | 100% |
-   | D (採用) | 110 | 0.5 | 2 | 7631 | 156 | 100% |
-   | E | 70 | 0.35 | 0 | 6899 | 219 | 100% |
-
-   5 通りとも差は edgeWidth 由来の帯の中に 100% 収まり (Task 10r 修正ラウンド1 の対照実験と
-   同じ形)、配線どおり縁だけが動いている。E は backdropBlur 0 で「面はすりガラス」の指示に
-   反する (10r report 3 節の標準偏差の比較どおり、ぼかし 0 は前ぼかしが無いという意味で
-   すりガラス感が無い)ので候補から外した。残る A〜D のうち D が最大差・画素数とも最も大きく、
-   backdropBlur 2 でも 10r report 3 節の対照 (2 でも 8 でも「一様な板」にはならない) の
-   とおりすりガラス感は保たれる。コントラスト (--ink 系 4 色、カードに実際に乗る本文の
-   文字ボックス内の最暗背景で測定、text-06 節の手法) は A〜F のどれでも変わらず 5.30:1
-   (本文の文字は edgeWidth の帯の外、面の奥に収まるため refraction/edgeReach/blur の影響を
-   受けない)。以上より D を採用した (task-10s-report.md)。
-   なお、この材質は BAR にも共有される (下の BAR を見よ)。BAR は backdropBlur を自前で
-   持つため、屈折の帯の見え方は BAR 自身の縁でも同じ値で強まるが、BAR の縁を通るのは
-   ナビ層の地の階調だけで、対照実験・コントラストとも今回は CARD 側でのみ測った
-   (CARD の縁だけがオーブという動く高コントラストな絵を持つため、判断材料として十分) */
+/* Task 10u — ユーザーが示した参考画像 (iOS のタブバー、写真の上に浮く) に合わせて作り直した。
+   裁定: 縁の屈折 (境目の像が曲がる見え方)はやめる。等倍で見えず、屈折があってもなくても
+   画素が変わらないことは Task 10r 修正ラウンド1・10s の 2 回の対照実験で確定済み
+   (見えない効果は値を上げ続けず画像で裁定を仰ぐ、というやり方を踏襲)。
+   refraction / edgeReach / dispersion を 0 にし、面の中も縁も像を曲げない。
+   rim / reflection / highlight / echo / hairline も 0 にした。これらは背景を反射で薄く
+   映し込む効果で、参考画像の「太く明るい縁」はそういう反射ではなく不透明に近い白い縁取りな
+   ので (下の CSS 疑似要素の帯で描く)、ライブラリ側で足しても混ざって効きが読めなくなるだけ。
+   lightAngle は上のどれも 0 のときは一切使われない (uRim/uHighlight の係数がすべて 0 になる
+   ため) ので、死んだ値として消した。
+   backdropBlur と tint は BAR / CARD 側で個別に持つ (下を見よ) */
 const LENS = {
-	refraction: 110,
-	edgeReach: 0.5,
-	edgeWidth: 0.5,
-	dispersion: 1.5,
-	rim: 0.3,
+	refraction: 0,
+	edgeReach: 0,
+	edgeWidth: 0,
+	dispersion: 0,
+	rim: 0,
 	reflection: 0,
 	highlight: 0,
-	lightAngle: 136,
 	echo: 0,
-	hairline: 0.45
+	hairline: 0
 } as const;
 
 /* ナビ層のうち、下を通るのが色や形だけのもの (サイドナビ、連携アイコンの列、接続一覧)。
-   塗り (tint)だけが面ごとに違うので、ここは CHROME_TIERS に渡す tint の置き場でしかない。
-   この 3 面は chromeGlass 経由で 1 枚の canvas にまとめて描かれ (Task 10i)、ぼかしは
-   描画面ごとの値なので BAR の backdropBlur が当たる (下の CHROME_TIERS の注記を見よ)。
-   Task 10o 修正ラウンド 1 — 以前ここに material.backdropBlur を持たせていたが、
-   CHROME_TIERS も他のどの呼び出しも CLEAR.material を読まない死んだ値だったので消した
-   (使われない経路を足さない、レビュー task-10o の Important 2)。
+   塗り (tint)だけが面ごとに違うので、ここは CHROME_TIERS に渡す tint の置き場でしかない
+   (ぼかしは描画面ごとの値なので BAR の backdropBlur が当たる。下の CHROME_TIERS の注記を見よ)。
+   Task 10u — 参考画像は面が白っぽい (白の塗りがかなり乗る)。visual 3.1「大きい要素ほど
+   不透明にする」とも向きが合うので、他のナビ層と同じ重さの白まで上げた。
    tint はライブラリの 0〜1.5 の目盛りで、CSS の不透明度とは一致しない */
-export const CLEAR = { tint: 0.14 } as const;
+export const CLEAR = { tint: 1.0 } as const;
 
 /* 上部バーと依頼バーの段、およびナビ層 (サイドナビ・連携アイコンの列・接続一覧)。
-   上部バーと依頼バーの下は本文の文字が通るので、素通しにすると下の文字とバー自身の文字が
-   重なって読めない。iOS のバーと同じく下をぼかして溶かす。
-   Task 10o 修正ラウンド 1 — この backdropBlur は chromeGlass の共有 canvas 経由でナビ層にも
-   当たる (下の CHROME_TIERS の注記を見よ)。目安 8〜14px の上限である 14 に下げた。18 のまま
-   だとナビ層 (サイドナビ・連携アイコンの列)が目安の外だったため (レビュー task-10o の
-   Important 2)。14 でも上部バー・依頼バーの下をくぐる本文の文字は重ならずに読める
-   (3 倍拡大、scratchpad/10o-fix 以下で確認済み、Task 10f の役割は変わらない) */
+   Task 10u — 参考画像 (iOS のタブバー) に合わせ、backdropBlur を大きく上げた。下を通る
+   文字や形が読めず色だけ透けるのが目標で、ライブラリの目盛り上限 (64)の半分ほどの 32 で
+   3 倍拡大でも文字の骨格が残らないことを確認した (compare-ref.png)。この backdropBlur は
+   chromeGlass の共有 canvas 経由でナビ層 (サイドナビ・連携アイコンの列)にも当たる
+   (下の CHROME_TIERS の注記を見よ)。tint も参考画像の白さに合わせて上げた */
 export const BAR: LiquidGlassElementOptions = {
-	tint: 0.8,
+	tint: 1.3,
 	tintTone: 'light',
-	material: { ...LENS, backdropBlur: 14 }
+	material: { ...LENS, backdropBlur: 32 }
 };
 
-/* 内容カード。縁の作りはナビ層と同じ。
-   訂正 (Task 10r) — Task 10o と Task 10o 修正ラウンド 1 は「ぼかしを上げると縁の屈折
-   (オーブの破片が曲がって見える様子) が消える」という前提で 10 / 8 / 6 / 4 / 2 を比較し、
-   曲がりが見えた 2 を選んでいたが、この前提が誤りだった。カードのガラスは `.bento` の中に
-   z-index -1 の canvas 1 枚で描かれ、背後の絵を描く itemsBelow (dom-content.js) は
-   その canvas より DOM の描画順で前にあるものしか描き写さない。オーブは
-   `.orb < .hole < .bento` と `.bento` の子孫なので、この絞り込みで常に落ちていた
-   (ぼかしの値に関係なく、縁の内側は実測で常に一定値)。したがって「曲がって見えた」のは
-   カードの外に見えていたオーブそのものであり、ぼかしの値は無関係だった
-   (rereview-task-10o.md 新規指摘 1〜3)。
-   Task 10r — 上の bug を直し (`orbBackdrop`、下)、renderer.ts の preserveDrawingBuffer も
-   合わせて直した (2 つ目の bug、下の orbBackdrop のコメントを見よ)。その状態で
-   実測すると (report の表)、承認済みの縁のレンズ (LENS.refraction 12 / edgeReach 0.15 /
-   edgeWidth 0.5、上の Task 10f の節)は縁の引き寄せが最大でも 4px 程度と小さく、オーブの
-   破片も細く疎らなため、2 / 4 / 6 / 8 のどれでも縁の屈折・面のすりガラス感とも実測の差は
-   ノイズの範囲だった (取り込み前は常に分散 0、取り込み後はどの値でも同じくらいの
-   微小な分散が出る。値ごとの差ではなく、取り込みの有無だけが効く)。両立しないわけでは
-   ないので「両立しない場合は縁を優先」の場合分けには当たらない。両立する中の上限を採る
-   指示どおり 8 (目安 8〜14 の下限)にした。塗り (tint)は 10o の 0.5 のまま
-   (この面に文字が乗る箇所での実測コントラストは変わらず 5.30:1、report の表を見よ)。
-
-   訂正 (Task 10r 修正ラウンド 1、レビュー review-task-10r.md Important 1) — 上の段落と
-   report 2.2 は「差が縁から 38.5px 以内に収まる」ことを縁のレンズ (refraction / edgeReach)
-   が効いた証拠としていたが、この推論は成り立たない。背後の絵は面全体に効くので、差が
-   縁の近くに集まるのはオーブ自身が中心から離れるほど暗いという、レンズと無関係な理由でも
-   説明できる。正しい実験は「同じ静止フレームで refraction と edgeReach だけを 0 にした版と
-   現行版 (12 / 0.15) を撮って画素の差を取る」こと (bug 1・2 はそのままで、レンズの値だけを
-   切り替える)。実際にやると、1440x900 のカード 5 枚すべてで画素の差は 1 つも無かった
-   (最大差 0、カード外のオーブ自身の領域も最大差 0 で同一フレームであることを確認済み)。
-   一方 refraction を 110 / edgeReach を 1.6 (ライブラリのスライダー上限) まで上げると
-   同じ比較で 57〜3450 画素の差が出て、その 100% が各カードの edgeWidth 由来の帯の幅
-   (短辺の半分 x 0.5) の中に収まる (帯の外は 0 件)。これは配線自体が正しく動いており、
-   帯の中だけを曲げる設計どおりに反応することの証拠になる。つまり現在の承認値
-   (refraction 12 / edgeReach 0.15) は、backdropBlur 8 の前ぼかしの下では実際には
-   1 画素も動かしておらず、「縁の屈折」は今のところ見た目に存在しない。原因は値が
-   小さすぎること (帯の幅換算で最大 4px 程度の引き寄せが、8px 前ぼかし後の滑らかな
-   勾配の中では 8 bit の丸めに埋もれる) と判断した。値を上げれば効かせられることは
-   上の対照実験で確認済みだが、refraction と edgeReach は Task 10f・10o で dispersion
-   (縁の色ずれ) や edgeWidth (引き寄せが帯の幅を超えると白い筋になる、比 0.74 の縛り) と
-   組で承認された値であり、見た目を変える再調整は今回のバグ修正 (取り込みを直す・
-   焼き付きを止める) の範囲を超えると判断し、値は変えていない。再調整するならユーザーの
-   新しい裁定を挟んで別タスクにするのが筋 (詳細は task-10r-report.md 修正ラウンド 1 を見よ)
-
-   Task 10s — 上の「新しい裁定を挟んで別タスクにする」を受けた再調整。backdropBlur を
-   8 から 2 に下げた (上の LENS の Task 10s の節にある表・判断根拠を見よ。2 でも
-   Task 10r report 3 節の標準偏差の対照どおりすりガラス感は保たれ、refraction/edgeReach を
-   110/0.5 に上げた分と合わせて画素差 7631・最大差 156 まで増える)。tint は 10o の 0.5 の
-   ままで変えていない (本文の文字は帯の外にあるため refraction/edgeReach/blur を上げても
-   実測コントラストは変わらず 5.30:1、task-10s-report.md の表を見よ) */
+/* 内容カード (Today のカード、Inbox/People/Projects/Companies の一覧カード)。
+   Task 10u — BAR と同じ考え方で作り直した。背後に来るオーブは動く絵なので、静止画の
+   バーより下 24px に抑えた (fps 実測は task-10u-report.md)。tint は 1.1 で、色は完全には
+   消さず「色だけ透ける」参考画像の見え方を保つ (1.5 の上限まで寄せると色がほぼ消える) */
 export const CARD: LiquidGlassElementOptions = {
-	tint: 0.5,
+	tint: 1.1,
 	tintTone: 'light',
-	material: { ...LENS, backdropBlur: 2 }
+	material: { ...LENS, backdropBlur: 24 }
 };
 
 /* Task 10r — カードのガラスの背後にオーブを届ける描き手。
@@ -216,11 +112,9 @@ export function glass(options: LiquidGlassElementOptions, repaintMs?: number) {
    ので (同じ z-index 50 で DOM の順が後)、面自身の文字や塗りは背後の絵に入らない。
 
    面ごとに違うのは塗り (tint)だけで、塗りは面ごとに渡せる。ぼかし (backdropBlur)は
-   描画面ごとの値なので 4 面すべてに BAR の 14 が当たる (Task 10o 修正ラウンド 1 で
-   18 から下げた。目安 8〜14px に収める指示、レビュー task-10o の Important 2)。
-   サイドナビと連携の列の背後を通るのは地の階調だけ (本文は左右の margin で避けてあり、
-   オーブも届かない)なので、ぼかしの強さが変わっても見た目への影響は小さい
-   (3 倍拡大で確認済み、scratchpad/10o-fix 以下)。
+   描画面ごとの値なので 4 面すべてに BAR の 32 (Task 10u)が当たる。サイドナビと連携の列の
+   背後を通るのは地の階調だけ (本文は左右の margin で避けてあり、オーブも届かない)なので、
+   ぼかしの強さが変わっても見た目への影響は小さい。
    bleed: 0 — 入れ物が画面いっぱいなので、外へはみ出す分はそもそも画面の外にある。
    既定の 63px を足すと縦横 126px ぶん無駄に広い canvas を毎フレーム塗り直すことになる */
 const CHROME_TIERS = {
