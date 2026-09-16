@@ -95,7 +95,7 @@
 		white-space: pre-wrap;
 	}
 	.msg.mine .body {
-		background: var(--accent-soft-2);
+		background: var(--accent-soft);
 		box-shadow: none;
 	}
 	.thread-actions {

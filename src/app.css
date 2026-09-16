@@ -14,14 +14,19 @@
 	/* 文字と線 */
 	/* Task 10f — 壁紙の色の塊を消して地を無彩色に近い階調 1 枚に戻したので、文字の背後は
 	   ほぼ白 (カードは rgba(255,255,255,.88)、地は #f4f6fa〜#eef1f7) に戻った。
-	   Task 10c〜10e で塊の上を通すために濃くしていた 3 色を、塊を置く前の値に戻す。
+	   ただし --ink-2 / --ink-3 / --accent は塊を置く前の値には戻せていない (下を見よ)。
 	   測り方は Task 10e と同じ: 文字を透明にした画面とそのままの画面の差分で文字の乗る
 	   画素だけを取り出し、その背後の輝度の下位 5% 分位で比を出す。
 	   最悪値は task-10f-report.md に載せた。--ink → --ink-2 → --ink-3 の順に薄くなる約束は保つ */
 	--ink: #1e2a47;
 	--ink-2: #545d76;
-	/* Task 10f 修正ラウンド 2 — サイドナビの下に置いた青い光彩の上でこの色が 4.10:1 まで
-	   落ちたので濃くした。光彩を薄める方向ではなく文字を濃くする (裁定)。
+	/* Task 10f 修正ラウンド 4 — 壁紙の光彩を撤去したので、この 3 色 (--ink-2 / --ink-3 /
+	   --accent) を Task 10c 以前の #5a6785 / #616b85 / #1b62d6 へ戻せるか測り直した。
+	   戻せなかった。最悪の位置はサイドナビではなく /inbox を 200px スクロールした状態で、
+	   上部バーの下を本文がくぐり、一覧の選択中の行がガラスの面ごと沈む。そこで戻した値は
+	   4.38:1 / 4.12:1 / 4.32:1 と 4.5:1 を割る。この値のままなら 5.07:1 / 4.65:1 / 4.63:1。
+	   光彩の撤去で余裕自体は増えた (ラウンド 3 は 4.97 / 4.55 / 4.54) が、一段戻すには届かない。
+	   階段は task-10f-report.md の修正ラウンド 4 に載せた。
 	   --ink-2 より薄いという順序は保つ */
 	--ink-3: #5a6379;
 	--line: rgba(140, 160, 200, 0.18);
@@ -32,10 +37,10 @@
 	   Task 10c 以前の #1b62d6 から一段濃くした */
 	--accent: #1a5ecb;
 	--accent-top: #2a6fe0;
+	/* Task 10f 修正ラウンド 3 — バッジと差出人の印もこの塗りを使う。カードがガラスになり、
+	   塗りが下の面ごと沈むようになったので、0.16 の別枠 (--accent-soft-2) をやめて 0.10 の
+	   これ 1 つにまとめた。0.16 だと上に載る --accent の実測が 4.24:1 と 4.5:1 を割る */
 	--accent-soft: rgba(26, 94, 203, 0.1);
-	/* Task 10f 修正ラウンド 3 — バッジの塗り。カードがガラスになり、この塗りが下の面ごと
-	   沈むようになった。0.16 のままだと、上に載る --accent の実測が 4.24:1 と 4.5:1 を割る */
-	--accent-soft-2: rgba(26, 94, 203, 0.1);
 	--accent-glow: rgba(26, 94, 203, 0.28);
 	/* 主ボタンと送信ボタンの落ち影。--accent と同じ RGB にそろえる */
 	--accent-shadow: rgba(26, 94, 203, 0.36);
@@ -46,11 +51,10 @@
 	--warn: #c62129;
 	--warn-soft: #fdecec;
 	--border: #8593b0;
-	/* Task 10f — 選択中の塗り。0.12 だと、サイドナビの選択中の項目でこの塗りが背後を沈め、
-	   その上に載る --accent の文字が 4.24:1 と 4.5:1 を割った。0.08 でも 4.51:1 と余裕が
-	   0.01 しかないので 0.06 まで下げた (実測 4.72:1)。
-	   現在地は塗りだけでなく太字とアイコンの線の太さでも伝わるので、薄くしても分かる */
-	--sel: rgba(26, 94, 203, 0.06);
+	/* Task 10f 修正ラウンド 4 — カレンダーの予定を指したときの塗り。使うのはここだけ。
+	   既定の塗りは下の --sel-soft (0.58) なので、指したときはそれより濃くないと
+	   「指すと薄くなる」逆向きの反応になる。同じ青系のまま濃くする */
+	--sel-strong: rgba(196, 216, 250, 0.92);
 	/* components 3.2 / 3.11 — 一覧行、ボトムナビ、コマンドパレットの選択中の塗り */
 	/* Task 10f 修正ラウンド 3 — カードがガラスになり、この塗りが下の面ごと沈むようになった。
 	   0.75 のままだと、選択中の行に載る --ink-3 と --accent の実測が 4.25:1 と 4.5:1 を割る。
@@ -255,37 +259,6 @@ svg.i {
 	pointer-events: none;
 	background: linear-gradient(180deg, #f4f6fa 0%, #eef1f7 100%);
 }
-/* Task 10f 修正ラウンド 2 — サイドナビ (画面の左端に固定)と連携アイコンの列 (右端に固定)の
-   下にだけ置く光彩。この 2 つは下を通る内容を持てないので、縁の帯が曲げる対象がこれしかない。
-   Task 10d の 5 色の塊とは別物で、色はオーブと同じ青 1 色、漂うアニメーションも付けない。
-   ライブラリはガラスの背後を自分で描き直すが、そこに CSS の filter と疑似要素は
-   再現されない (README の Limits)。だから実要素にし、輪郭の柔らかさは放射状の階調で作る。
-   消える側は transparent と書かない。計算値が rgba(0,0,0,0) なのでガラスの中だけ黒く濁る */
-.bg-glow {
-	position: absolute;
-	border-radius: 50%;
-	background: radial-gradient(
-		circle,
-		rgb(var(--glow) / 0.18) 0%,
-		rgb(var(--glow) / 0.105) 40%,
-		rgb(var(--glow) / 0) 72%
-	);
-}
-.bg-glow.left {
-	--glow: 79 123 255;
-	left: -24vmin;
-	top: -12vmin;
-	width: 78vmin;
-	height: 78vmin;
-}
-.bg-glow.right {
-	--glow: 96 150 255;
-	right: -26vmin;
-	top: 20vmin;
-	width: 66vmin;
-	height: 66vmin;
-}
-
 /* visual 2.8 / 4.3 — オーブ本体と光彩 */
 .orb {
 	position: relative;
@@ -645,9 +618,10 @@ svg.i {
 	box-shadow: inset 0 2px 4px rgba(12, 48, 110, 0.28);
 }
 /* components 3.4: 副ボタンの枠は 1px 実線の --accent (白地に 9.78:1)。
-   Task 10c — 副ボタンにはガラスを当てていない。Today の見出しの列はオーブの真上に並び、
-   塗りをどこまで上げても文字が 4.5:1 に届かなかった (実測 1.02:1、task-10c-report.md 2 節)。
-   ここを塗りのまま残すのは意図的で、ガラス化するならまずコントラストを測り直すこと */
+   Task 10f — Today の見出しの列の副ボタンだけはガラスにした (.today-actions に targets で
+   当てている)。オーブの真上に並ぶので塗り (tint) を 0.34 まで上げ、コントラストを測り直した。
+   下の :hover / :active の塗りはガラスの canvas より上に出る。ボタンはガラスを載せた
+   入れ物の通常の内容で、canvas は入れ物の z-index -1 の子だからである */
 .btn.sec {
 	background: #fff;
 	color: var(--accent);
@@ -876,7 +850,7 @@ svg.i {
 	height: 22px;
 	padding: 0 var(--sp-2);
 	border-radius: 6px;
-	background: var(--accent-soft-2);
+	background: var(--accent-soft);
 	color: var(--accent);
 	font-size: 12px;
 	font-weight: 500;
@@ -1301,6 +1275,7 @@ svg.i {
 /* visual 4.2 — ぼかしが使えない環境では不透明に倒す */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 	.glass,
+	.card,
 	.sidebar,
 	.rail,
 	.header.glass,
@@ -1528,12 +1503,14 @@ svg.i {
 	   書き込むので !important でしか下ろせない。canvas を消すだけだと塗りが none のままで
 	   カードが透明になるので、不透明な塗りも対で戻す。
 	   この @media print は下の Liquid Glass の節より前にあり、詳細度が同じだと後ろが勝つ。
-	   :root [data-liquid-glass='webgl'] .btn.sec (0,4,0) に勝たせるため body を足している
-	   にしている */
+	   :root [data-liquid-glass='webgl'] .btn.sec (0,4,0) に勝たせるため body を足している */
 	[data-liquid-glass-layer] {
 		display: none !important;
 	}
 	:root body [data-liquid-glass='webgl'] .card,
+	/* カレンダーの枠だけはガラスを要素自身に当てているので、属性も枠自身に付く。
+	   子孫を狙う上の形では当たらない (Task 10f 修正ラウンド 4) */
+	:root body [data-liquid-glass='webgl'].card,
 	:root body [data-liquid-glass='webgl'] .btn.sec,
 	:root body [data-liquid-glass='webgl'].public-list {
 		background: #fff;
@@ -2049,6 +2026,16 @@ section.tc .list-row:not(label):hover {
 	--rim: 0 0 rgba(0, 0, 0, 0);
 }
 
+/* Task 10f 修正ラウンド 4 — 上の打ち消し (0,4,0) が .btn.sec:hover / :active (0,3,0) に勝ち、
+   Today のクイック操作のボタンから指したときと押したときの反応が消えていた。
+   同じ土台に載せて詳細度をそろえ、反応を取り戻す。塗りは半透明なのでガラスは透けたまま */
+:root [data-liquid-glass='webgl'] .btn.sec:hover {
+	background: var(--hover-accent);
+}
+:root [data-liquid-glass='webgl'] .btn.sec:active {
+	background: var(--press-accent);
+}
+
 /* Task 10f 追記 — 縁を一律の面取りにしない。
    ライブラリの縁の光 (rim)と輪郭線 (hairline)は全周に同じ強さで回るので低く抑えてあり
    (src/lib/glass.ts)、向きの付いた縁はここで描く。上縁だけ白い鏡面の線、下縁だけ
@@ -2061,7 +2048,8 @@ section.tc .list-row:not(label):hover {
 .chatbar::after,
 .public-list::after,
 .today-actions .btn.sec::after,
-:root [data-liquid-glass='webgl'] .card::after {
+:root [data-liquid-glass='webgl'] .card::after,
+:root [data-liquid-glass='webgl'].card::after {
 	content: '';
 	position: absolute;
 	inset: 0;
@@ -2070,6 +2058,16 @@ section.tc .list-row:not(label):hover {
 	box-shadow:
 		inset 0 1.5px 0 rgba(255, 255, 255, 0.95), inset 1.5px 0 0 rgba(255, 255, 255, 0.7),
 		inset 0 -1px 0 rgba(30, 42, 71, 0.18), inset -1px 0 0 rgba(30, 42, 71, 0.12);
+}
+/* Task 10f 修正ラウンド 4 — canvas と同じ -1 に置く。疑似要素は要素の内容の最後に来るので、
+   同じ段では canvas より後に描かれ、要素自身の背景 → canvas → この縁 → 内容 の順になる。
+   z-index を持たないままだと内容より上にも描かれ、上のコメントの意図より広く効く。
+   WebGL2 が無い経路には付けない。canvas が無いうえ積み重ねの文脈も作られないので、
+   負の段に置くと副ボタンの白い塗りの裏へ回って縁が消える */
+:root [data-liquid-glass='webgl']::after,
+:root [data-liquid-glass='webgl'] .card::after,
+:root [data-liquid-glass='webgl'] .btn.sec::after {
+	z-index: -1;
 }
 
 /* ガラスの canvas は bleed の分だけ要素の外へ出る。位置の基準になる親が要る。
@@ -2093,7 +2091,13 @@ body[data-overlay='on'] .panes > [data-liquid-glass-layer],
 body[data-overlay='on'] .people-cards > [data-liquid-glass-layer] {
 	display: none !important;
 }
-:root body[data-overlay='on'] [data-liquid-glass='webgl'] .card {
+/* カレンダーの枠はガラスを要素自身に当てているので、canvas はその枠の直下の子になり、
+   属性も枠自身に付く。上の「入れ物の子」を狙う形では当たらない (Task 10f 修正ラウンド 4) */
+body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-layer] {
+	display: none !important;
+}
+:root body[data-overlay='on'] [data-liquid-glass='webgl'] .card,
+:root body[data-overlay='on'] [data-liquid-glass='webgl'].card {
 	background: var(--overlay-card);
 }
 
@@ -2319,7 +2323,7 @@ body[data-overlay='on'] .people-cards > [data-liquid-glass-layer] {
 	border-color: var(--accent-top);
 }
 .week-ev:hover {
-	background: var(--sel);
+	background: var(--sel-strong);
 }
 /* 現在時刻線。投影で消えないよう 2px にし、左端に直径 8px の円を置く */
 .week-now {
@@ -2434,7 +2438,7 @@ body[data-overlay='on'] .people-cards > [data-liquid-glass-layer] {
 	outline-offset: -1px;
 }
 .month-ev:hover {
-	background: var(--sel);
+	background: var(--sel-strong);
 }
 .month-more {
 	border: 0;
