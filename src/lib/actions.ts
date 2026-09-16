@@ -516,11 +516,15 @@ export function markStarted() {
 }
 export function startGuide() {
 	// 完了画面 (やること 0 件)からの始め直し。案内する対象が無いので、まず初期状態に戻す。
-	// Welcome へは戻らずその場に留まるため、seed() が未接続に戻した接続は繋ぎ直す
-	// (「デモをリセット」との違い。あちらは Welcome へ戻るので未接続のままでよい)
+	// Welcome へは戻らずその場に留まるため、seed() が未接続に戻した接続は始め直す前の状態に戻す。
+	// connectAll() で一律に繋ぐと、「スキップして開く」で未接続のまま使っていた人の画面に
+	// 連携アイコンの列が生えてしまう (「デモをリセット」は Welcome へ戻るので未接続のままでよい)
 	if (todayCount(db) === 0) {
+		const before = new Map(db.settings.connections.map((c) => [c.id, c.connected]));
 		resetDemo();
-		connectAll();
+		for (const c of db.settings.connections) {
+			if (before.get(c.id)) connect(c.id);
+		}
 	}
 	db.demo.started = true;
 	db.demo.guide.on = true;

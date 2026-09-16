@@ -98,6 +98,13 @@ describe('完了画面からの始め直し', () => {
 		db.demo.guide.on = true;
 		expect(canStartGuide(db)).toBe(false);
 	});
+	it('未接続で始め直したら未接続のまま (スキップして開いた人の画面に列を生やさない)', () => {
+		const empty = { approvals: [], threads: [], meetings: [], tasks: [] };
+		replaceDb({ ...seed(new Date(2026, 8, 15)), ...empty });
+		for (const c of db.settings.connections) c.connected = false;
+		startGuide();
+		expect(db.settings.connections.some((c) => c.connected)).toBe(false);
+	});
 	it('始め直しても 4 つの接続は残る (Welcome へは戻らないため)', () => {
 		const empty = { approvals: [], threads: [], meetings: [], tasks: [] };
 		replaceDb({ ...seed(new Date(2026, 8, 15)), ...empty });
