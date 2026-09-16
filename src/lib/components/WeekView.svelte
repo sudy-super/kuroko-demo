@@ -8,10 +8,16 @@
 
 	let { cursor, onopen }: { cursor: Date; onopen: (e: CalendarEvent) => void } = $props();
 
-	/* components 3.12 — 1 時間 48px。30 分の予定がちょうど 24px になる。
+	/* Task 11r 修正ラウンド 1 (Important 1、監査 9) — components 3.12 の既定は 1 時間 48px
+	   (30 分の予定が 24px)だったが、当たり判定が Apple HIG / WCAG 2.5.8 の下限 44px に届かない
+	   (実測 24px のまま)。疑似要素での継ぎ足しは親の overflow: hidden に切られて効かなかったため、
+	   目盛りそのものを 1 時間 88px に上げ、30 分の予定の実寸を直接 44px にした。上下・左右の
+	   隣接予定の間隔も同じ倍率で広がるので重なりは生まれない。components.md の「48px/時」からは
+	   外れるが、44px の当たり判定を確保するための意図的な変更 (app.css .week-body 側にも
+	   同じ倍率でコメント)。
 	   0:00〜24:00 の全部を持ち、見える高さ (12 時間分) は CSS の .week-body で切って縦に送る。
 	   8:00〜20:00 だけを持つと、20:00 より後に作った予定がどこにも出なくなる */
-	const PX = 48 / 60;
+	const PX = 88 / 60;
 	const HOURS = Array.from({ length: 24 }, (_, i) => i);
 	const OPEN = 8 * 60 * PX; // 開いた直後に見せる位置 (8:00)
 	const WD = ['月', '火', '水', '木', '金', '土', '日'];

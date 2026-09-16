@@ -30,6 +30,7 @@
 		<button
 			type="button"
 			class="chip"
+			title={context.label}
 			aria-label="{context.label}との結び付けを外す"
 			onclick={() => (ui.context = null)}
 		>

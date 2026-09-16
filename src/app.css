@@ -711,10 +711,15 @@ svg.i {
 
 /* Task 11r (監査 7) — .chip は既定で white-space: nowrap のみで縮む指定が無いので、狭い
    依頼バーでは入力欄だけが 4px まで潰れていた。ここで縮ませ、文言は省略記号に落とす。
-   入力欄には最低 120px を渡す (幅が足りない携帯でも 1 文字は必ず打てる) */
+   入力欄には最低 120px を渡す (幅が足りない携帯でも 1 文字は必ず打てる)。
+   修正ラウンド 1 (Important 2) — min-width が 32px しかなく、390 幅では潰れる先が入力欄から
+   文言側に移って「AB…」の 34px しか出なくなり、どのスレッドと結び付いているか読めなかった。
+   パディング (32px)・アイコンとの間隔 (8px)・X アイコン (16px) の内訳 56px に、文言が読める
+   目安の 96px を足した 152px を下限にする。390 幅ではこの下限と入力欄の 120px が同時には
+   収まらない (下の @media (max-width: 460px) で文言そのものを畳む) */
 .chatbar .chip {
 	flex-shrink: 1;
-	min-width: 32px;
+	min-width: 152px;
 }
 .chatbar .chip span {
 	overflow: hidden;
@@ -733,6 +738,22 @@ svg.i {
 }
 .chatbar input::placeholder {
 	color: var(--ink-3);
+}
+/* Task 11r 修正ラウンド 1 (Important 2) — 依頼バーの内寸から、縮まないマイク・送信ボタン
+   (40px+42px)と 3 つの隙間 (--sp-3 x 3 = 36px)、依頼バー自身の余白 (28px)を引くと、390 幅
+   では文言つきのチップ下限 152px と入力欄の下限 120px が同時には収まらない (合計 272px に対し
+   残りは約 212px、約 60px 足りない)。レビューの提案どおり、収まらない幅ではチップを文言なしの
+   アイコンに落とし、識別は aria-label と title (ホバー / 長押しの標準のツールチップ)に譲って
+   入力欄の 120px を優先する。460px は余裕を見た閾値 (計算上の境目は 450px) */
+@media (max-width: 460px) {
+	.chatbar .chip {
+		flex-shrink: 0;
+		min-width: 0;
+		padding: 0 var(--sp-3);
+	}
+	.chatbar .chip span {
+		display: none;
+	}
 }
 /* ruling (2026-09-16) — 入力欄そのものに輪郭を出すと、ガラスのピルの中に白い箱が
    もう 1 枚現れて見える。焦点はバー全体に出し、入力欄の輪郭は消す。
@@ -1260,13 +1281,17 @@ svg.i {
 	box-shadow: inset 0 0 0 1px var(--border);
 	overflow: hidden;
 }
+/* Task 11r 修正ラウンド 1 (Minor 3) — 月/週の切り替え (.seg-btn)は 40px しかなく、44px の
+   下限を割っていた (監査には未掲載だが responsive-policy.md の条件 4 に反する)。.week-ev::before
+   で踏んだとおり、親 (.seg、overflow: hidden)の中で疑似要素の inset 拡張は効かないので、実寸
+   そのものを 44px にする。.seg は高さを明示していない (中身に合わせる)ので、これだけで足りる */
 .seg-btn {
 	flex: 1 1 0;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	min-width: 64px;
-	height: 40px;
+	height: 44px;
 	padding: 0 var(--sp-4);
 	border: 0;
 	background: none;
@@ -1456,6 +1481,14 @@ svg.i {
 	to {
 		transform: translateY(100%);
 	}
+}
+/* Task 11r 修正ラウンド 1 (Important 3) — .sheet は flex-direction: column の高さ固定 (50dvh)
+   な器で、.list-row は既定で flex-shrink: 1 (block の初期値)なので、11 項目 (56px x 11 =
+   616px)が 390x844 の 422px に収まらないとき、縮んで送るのではなく縮んで詰まっていた
+   (実測 27px、当たり判定 28px)。.sheet はもともと overflow-y: auto なので、行を縮ませずに
+   はみ出した分をそちらへ渡せば済む */
+.sheet .list-row {
+	flex: none;
 }
 /* つまみ 32 x 4px (components 3.8)。上下の余白は余白の目盛りに合わせて 20px */
 .sheet-handle {
@@ -1736,12 +1769,15 @@ svg.i {
 	:root {
 		/* 上端に貼り付く不透明な帯なので、浮かせるぶんの 16px が要らない */
 		--bar-clear: calc(var(--header-h) + var(--sp-4));
-		/* 依頼バーはボトムナビの上に載る (.chatbar の bottom と同じ式)。ボトムナビの高さと
-		   浮かせる分もここでまとめて足す */
-		--content-bottom-clear: calc(
-			var(--bottomnav-h) + env(safe-area-inset-bottom) + var(--sp-2) + var(--sp-2) +
-				var(--chatbar-h) + var(--sp-8)
+		/* Task 11r 修正ラウンド 1 (Minor 1) — 「依頼バーの底」の式 (ボトムナビの高さ + セーフ
+		   エリア + 浮かせる 2 つの --sp-2)を、下の .chatbar { bottom: ... } と 2 か所に書き写して
+		   いた。1 つの変数にして両方から参照する (依頼バーの浮かせ方を変えても 1 か所で済む) */
+		--chatbar-bottom: calc(
+			var(--bottomnav-h) + env(safe-area-inset-bottom) + var(--sp-2) + var(--sp-2)
 		);
+		/* 依頼バーはボトムナビの上に載る。ボトムナビの高さと浮かせる分 (--chatbar-bottom)に、
+		   依頼バー自身の高さと読みやすい間をここでまとめて足す */
+		--content-bottom-clear: calc(var(--chatbar-bottom) + var(--chatbar-h) + var(--sp-8));
 	}
 	/* 幅が足りないので案内の札は段階だけにする。見出しは押して開く板の中に出る */
 	.pg-title {
@@ -1771,7 +1807,7 @@ svg.i {
 		max-width: none;
 		margin-inline: 0;
 		transform: none;
-		bottom: calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + var(--sp-2) + var(--sp-2));
+		bottom: var(--chatbar-bottom);
 	}
 	/* components 3.7 — モバイルのトーストは上端いっぱい */
 	.toast {
@@ -2794,38 +2830,16 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 
 /* --- 週表示 (components 3.12) ------------------------------------------- */
 
-/* Task 11r — .week-body の 12 時間ぶん (576px)は画面の高さに追従しないので、窓が低いと
-   はみ出して下端の依頼バーの裏に沈んでいた (監査 4)。本文の器 (.main)から .cal-panel まで
-   flex の縦の並びにして、.week-body に残りの高さをそのまま渡す。576px は伸びすぎを防ぐ
-   上限として残す。月表示はこの並びに触れないよう :has(.week) で週表示のときだけ効かせる */
-.main:has(.week) {
-	display: flex;
-	flex-direction: column;
-	/* min-height ではなく height。.week-body へ「残りの高さ」を実際に配るには、この器の
-	   高さを確定させる必要がある (min-height だと flex-grow の起点が本文の自然な高さに
-	   引きずられ、.week-body が上限の 576px のまま縮まない)。:has(.week) なので月表示には
-	   効かない (月表示は .cal-panel の overflow: hidden はそのまま残るので、ここを月表示にも
-	   効かせると .cal-panel の高さが自動最小 0 まで削られ、月の格子が切れる) */
-	height: 100dvh;
-}
-.cal:has(.week) {
-	display: flex;
-	flex-direction: column;
-	flex: 1;
-	min-height: 0;
-}
-.cal-panel:has(.week) {
-	display: flex;
-	flex-direction: column;
-	flex: 1;
-	min-height: 0;
-}
-.cal-panel:has(.week) .week {
-	display: flex;
-	flex-direction: column;
-	flex: 1;
-	min-height: 0;
-}
+/* Task 11r 修正ラウンド 1 (Critical) — 前回、.main を height: 100dvh で確定させ .week-body に
+   「残りの高さ」を flex-grow で配る形にしたところ、844x390 のように見出し+切り替え行だけで
+   窓の高さを使い切る画面では残りが 0 近くまで削れ、週表示ごと消えて page のスクロールも
+   出せなくなった (.main の高さそのものを固定していたため)。
+   .main の高さは固定しない。.week-body は下の既定の max-height: 576px (auto な .week の中で
+   自然にこの高さへ収まり、はみ出す分は自身の overflow-y: auto で内側スクロールする) に任せ、
+   ページ全体がそれ以上長くなったら通常どおり縦スクロールで届かせる。1280x800 で 17:30 の
+   予定が依頼バーの裏に沈んでいた元の崩れ (監査 4)も、Today/Inbox 等と同じ --content-bottom-clear
+   の余白 (.main の既定の padding-bottom、上書きしない)がそのまま効くので、スクロールで
+   依頼バーの上に出せる。月表示はもともとこの並びに触れていない */
 
 /* 狭い画面では列が潰れるので、格子ごと横に流す */
 .week {
@@ -2861,11 +2875,14 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 	font-weight: 700;
 }
 /* 0:00〜24:00 を持ち、見える高さは 12 時間分に切って縦に送る。
-   曜日の行は外に置いたままなので、送っても日付は見えたままになる */
+   曜日の行は外に置いたままなので、送っても日付は見えたままになる。
+   Task 11r 修正ラウンド 1 (Important 1、監査 9) — 1 時間の高さを 48px から 88px に上げた
+   (WeekView.svelte の PX 参照) ぶん、576px (12 時間 x 48px)も同じ倍率で 1056px (12 時間 x 88px)
+   に上げ、「見える高さは 12 時間分」の設計はそのまま保つ */
 .week-body {
 	flex: 1;
 	min-height: 0;
-	max-height: 576px;
+	max-height: 1056px;
 	overflow-y: auto;
 	scrollbar-gutter: stable;
 }
@@ -2873,7 +2890,7 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 	position: relative;
 }
 .week-hour {
-	height: 48px;
+	height: 88px;
 	padding-right: var(--sp-2);
 	text-align: right;
 	font-size: 12px;
@@ -2881,18 +2898,18 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 }
 .week-col {
 	position: relative;
-	height: 1152px; /* 0:00〜24:00 の 24 時間 x 48px */
+	height: 2112px; /* 0:00〜24:00 の 24 時間 x 88px */
 	/* 1 時間ごとに 1px。30 分の線は引かない (投影で縞に見えるため) */
 	background: repeating-linear-gradient(
 		to bottom,
 		var(--line) 0 1px,
-		transparent 1px 48px
+		transparent 1px 88px
 	);
 	border-left: 1px solid var(--line);
 }
 .week-col.on {
 	background:
-		repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px 48px),
+		repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px 88px),
 		rgba(47, 124, 246, 0.04);
 }
 /* calendar-block.md「塗りと文字」「左線の可否」— Apple カレンダー / Outlook の系統。
@@ -2918,17 +2935,12 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 	   面は最大 1080px で頭打ちになり、左の帯の分だけ狭まり、重なると列数で割られるため */
 	container: weekev / inline-size;
 }
-/* Task 11r (監査 9) — 30 分の予定は見た目 24px (WCAG 2.2 SC 2.5.8 の下限、上のコメントの
-   とおり意図的)のまま、当たり判定だけ広げる。.iconbtn::after と同じ仕掛けだが、
-   .week-ev.tentative::after が枠線に使っているので ::before を使う。
-   上下の隣接予定は 1px しか離れていない (上のコメント)ことがあるため、縦は安全に
-   確保できる範囲 (4px、24px→32px)に留める。左右は同じ時間帯に重なる予定どうしも
-   1px しか離れないので同じく 4px。既定のデータでは前後 1 時間以上空いており重ならない */
-.week-ev::before {
-	content: '';
-	position: absolute;
-	inset: -4px;
-}
+/* Task 11r 修正ラウンド 1 (Important 1、監査 9) — 前回はここに ::before (inset: -4px)を足して
+   当たり判定だけ広げようとしたが、親の .week-ev 自身が overflow: hidden なので ::before の
+   はみ出し分はそのまま切り落とされ、実測は 24px のまま 1px も広がっていなかった (死んだ
+   コード)。当たり判定を疑似要素で継ぎ足すのではなく、上の .week-col / .week-hour と同じ
+   88px/時 (旧 48px/時)にしたことで 30 分の予定の実寸そのものが 44px になったので、この
+   ブロックは削除した。上下・左右の隣接予定の間隔も同じ倍率で広がるため重なりは生まれない */
 /* 角丸の縁に沿わせる内側の影だと、30 分の予定では括弧のように曲がって見える。
    独立した 3px のバーにすれば、どの高さでも真っ直ぐ立つ */
 .week-ev-bar {
