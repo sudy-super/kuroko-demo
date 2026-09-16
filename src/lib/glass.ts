@@ -2,7 +2,11 @@
    ライブラリは要素の背後にあるページの内容 (背景、文字、<canvas>) を自前で描き直し、
    角丸長方形の符号付き距離場で縁だけを曲げて屈折させる。角丸は CSS の border-radius を読む。
    WebGL2 が無い環境では backdrop-filter に落ち、要素に data-liquid-glass="fallback" が付く */
-import { LiquidGlass, type LiquidGlassElementOptions } from 'apple-liquid-glass-webgl';
+import {
+	LiquidGlass,
+	type LiquidGlassElementOptions,
+	type LiquidGlassBackdropPainter
+} from 'apple-liquid-glass-webgl';
 import { whileVisible } from './visible';
 
 /* Task 10f 修正ラウンド 3 — 縁のレンズ。ユーザーの裁定は「背景がカードの境目に来たら屈折する。
@@ -77,22 +81,54 @@ export const BAR: LiquidGlassElementOptions = {
 };
 
 /* 内容カード。縁の作りはナビ層と同じ。
-   Task 10o — 以前の裁定「面の中は素通し (frost 0)」をユーザーが上書きし、面をすりガラスに
-   する指示が出た。backdropBlur 10px でカードを試したところ、面は形の分からない一様な
-   すりガラスになったが、縁の帯で背景が曲がる (Task 10f で承認済みの見え方)は見えなくなった。
-   preBlur = sqrt(frost² + backdropBlur²) (v2-shaders.js) が縁の帯にも面の中にも同じ値で
-   効くため、ライブラリの構造上、面をすりガラスにする値と、細かい背景 (オーブの破片など)
-   が縁で曲がって見える値を同時には満たせない (詳細は報告「修正ラウンド 1」)。
-   Task 10o 修正ラウンド 1 — 10 / 8 / 6 / 4 / 2 を 3 倍拡大で比較し、どの値も両立しなかった。
-   縁の屈折を優先する側 (目安の下限を下回る) に倒し、実際に曲がりが見えた 2 を暫定値にした
-   (ユーザー判定待ち、レビュー task-10o の Important 1)。塗り (tint)は 10o で 0.62 → 0.5 に
-   薄くした値のまま変えていない。文字のコントラストは report の表を見よ
-   (色ごとに 4.5:1 以上を実測) */
+   訂正 (Task 10r) — Task 10o と Task 10o 修正ラウンド 1 は「ぼかしを上げると縁の屈折
+   (オーブの破片が曲がって見える様子) が消える」という前提で 10 / 8 / 6 / 4 / 2 を比較し、
+   曲がりが見えた 2 を選んでいたが、この前提が誤りだった。カードのガラスは `.bento` の中に
+   z-index -1 の canvas 1 枚で描かれ、背後の絵を描く itemsBelow (dom-content.js) は
+   その canvas より DOM の描画順で前にあるものしか描き写さない。オーブは
+   `.orb < .hole < .bento` と `.bento` の子孫なので、この絞り込みで常に落ちていた
+   (ぼかしの値に関係なく、縁の内側は実測で常に一定値)。したがって「曲がって見えた」のは
+   カードの外に見えていたオーブそのものであり、ぼかしの値は無関係だった
+   (rereview-task-10o.md 新規指摘 1〜3)。
+   Task 10r — 上の bug を直し (`orbBackdrop`、下)、renderer.ts の preserveDrawingBuffer も
+   合わせて直した (2 つ目の bug、下の orbBackdrop のコメントを見よ)。その状態で
+   実測すると (report の表)、承認済みの縁のレンズ (LENS.refraction 12 / edgeReach 0.15 /
+   edgeWidth 0.5、上の Task 10f の節)は縁の引き寄せが最大でも 4px 程度と小さく、オーブの
+   破片も細く疎らなため、2 / 4 / 6 / 8 のどれでも縁の屈折・面のすりガラス感とも実測の差は
+   ノイズの範囲だった (取り込み前は常に分散 0、取り込み後はどの値でも同じくらいの
+   微小な分散が出る。値ごとの差ではなく、取り込みの有無だけが効く)。両立しないわけでは
+   ないので「両立しない場合は縁を優先」の場合分けには当たらない。両立する中の上限を採る
+   指示どおり 8 (目安 8〜14 の下限)にした。塗り (tint)は 10o の 0.5 のまま
+   (この面に文字が乗る箇所での実測コントラストは変わらず 5.30:1、report の表を見よ) */
 export const CARD: LiquidGlassElementOptions = {
 	tint: 0.5,
 	tintTone: 'light',
-	material: { ...LENS, backdropBlur: 2 }
+	material: { ...LENS, backdropBlur: 8 }
 };
+
+/* Task 10r — カードのガラスの背後にオーブを届ける描き手。
+   ライブラリの itemsBelow (dom-content.js) は、宿主 (`.bento`) より DOM の描画順で
+   後にあるものを一律に除外する。オーブ (`.hole > .orb`) は `.bento` の子孫なので、
+   `backdrop: 'auto'` だけでは一度もカードの背後の絵に入らない (上の CARD の訂正を見よ)。
+   README の「A <video> or <canvas> below the glass … To refract only that source,
+   point at it」に沿い、`backdrop: ['auto', orbBackdrop(...)]` として 'auto' の上に
+   専用の描き手を重ねる。オーブを `.bento` の外へ動かす案 (b) は、Today の環状配置が
+   カードとオーブの重なりに依存している (visual 2.8 の 6、app.css の .hole) ため取らない。
+   getCanvas() は今握っている <canvas> を返す関数を呼び元 (today/+page.svelte) から渡す。
+   id セレクタで探さないのは、オーブが onMount の後で非同期に canvas を作る
+   (Orb.svelte の onCanvas) ため、解決のタイミングを合わせる必要が生まれるから。
+   毎フレーム呼ばれる描き手の中で最新の canvas を読むだけなら、そのタイミング合わせが要らない。
+   getBoundingClientRect() だけで足りるのは `.orb canvas` が border/padding を持たない
+   (app.css) ため。'off' クラス (描画面を手放して代替表示中、Task 10i) の間は
+   実際のページ表示にも何も見えないので、同じく描かない */
+export function orbBackdrop(getCanvas: () => HTMLCanvasElement | null): LiquidGlassBackdropPainter {
+	return (ctx) => {
+		const canvas = getCanvas();
+		if (!canvas || canvas.classList.contains('off')) return;
+		const box = canvas.getBoundingClientRect();
+		ctx.drawImage(canvas, box.left, box.top, box.width, box.height);
+	};
+}
 
 /* live: true で毎フレーム描き直す。オーブは <canvas> の中で毎フレーム描き変わり、
    ライブラリには変化の通知が来ないので、静止させるとガラスの中だけ背景が止まって見える。

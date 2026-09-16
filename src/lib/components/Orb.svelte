@@ -3,7 +3,17 @@
 	import { createOrb } from '$lib/orb/renderer';
 	import { whileVisible } from '$lib/visible';
 
-	let { size = 580, sparks = true }: { size?: number; sparks?: boolean } = $props();
+	/* onCanvas — このインスタンスが握っている <canvas> を呼び元に渡す (作成時に要素、
+	   手放すときに null)。Task 10r — カードのガラス (CARD.backdrop) がこのオーブを
+	   背後の絵に取り込むために、呼び元が実際の canvas 要素への参照を握っておく必要がある
+	   (ライブラリは宿主の子孫を背後の絵から除外するので、id セレクタで後から探す経路は
+	   使わない。詳細は today/+page.svelte のコメントと glass.ts の CARD の節) */
+	let {
+		size = 580,
+		sparks = true,
+		onCanvas
+	}: { size?: number; sparks?: boolean; onCanvas?: (canvas: HTMLCanvasElement | null) => void } =
+		$props();
 	let box: HTMLDivElement | undefined = $state();
 	let live = $state(false);
 
@@ -50,6 +60,7 @@
 			}
 			orb.start();
 			live = true;
+			onCanvas?.(canvas);
 		};
 		const release = () => {
 			orb?.destroy();
@@ -57,6 +68,7 @@
 			canvas?.remove();
 			canvas = null;
 			live = false;
+			onCanvas?.(null);
 		};
 		return whileVisible(acquire, release);
 	});

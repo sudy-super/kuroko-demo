@@ -21,7 +21,7 @@
 	import ReasonIcon from '$lib/components/ReasonIcon.svelte';
 	import ApprovalIcon from '$lib/components/ApprovalIcon.svelte';
 	import DoneScreen from '$lib/components/DoneScreen.svelte';
-	import { glass, CARD } from '$lib/glass';
+	import { glass, CARD, orbBackdrop } from '$lib/glass';
 
 	const count = $derived(todayCount(db));
 	const items = $derived(todayItems(db));
@@ -39,6 +39,11 @@
 	   max-width: 80%) ので、球の外周と光彩がカードの縁に掛かる関係は変わらず、
 	   そこでカードのガラスの縁が破片を曲げる (visual 2.8 の 6) */
 	const orbSize = $derived(narrow.current ? 300 : 448);
+
+	/* Task 10r — .hole のオーブが今握っている canvas。CARD のガラスの backdrop に渡し、
+	   .bento の子孫であるために除外されていた背後の絵へ実際に足す (glass.ts の
+	   orbBackdrop、CARD の訂正コメントを見よ) */
+	let holeOrbCanvas: HTMLCanvasElement | null = $state(null);
 
 	const meetingHead = (m: NonNullable<typeof nm>) =>
 		`次の会議 ${rel(parse(m.event.date))} ${m.event.start} ${m.meeting.title}`;
@@ -68,7 +73,14 @@
 			     Task 10l — カードごとに上の余白を変えて縦位置をずらし、列に整列して見えない
 			     ようにした。重みは 2 枚目の上の余白をいちばん広く取ることで付ける
 			     (app.css の .today .bento > .card:nth-child(n)) -->
-			<div class="bento" {@attach glass({ ...CARD, targets: '.card' })}>
+			<div
+				class="bento"
+				{@attach glass({
+					...CARD,
+					targets: '.card',
+					backdrop: ['auto', orbBackdrop(() => holeOrbCanvas)]
+				})}
+			>
 				{#if ap.length}
 					<TodayCard
 						title="承認待ち {ap.length} 件"
@@ -162,7 +174,9 @@
 				     カードのガラスの縁が破片を曲げる。先頭のカードを選ぶ規則
 				     (app.css の .card:first-child) を狂わせないよう末尾に置く -->
 				{#if !narrow.current}
-					<div class="hole" aria-hidden="true"><Orb size={orbSize} /></div>
+					<div class="hole" aria-hidden="true">
+						<Orb size={orbSize} onCanvas={(c) => (holeOrbCanvas = c)} />
+					</div>
 				{/if}
 			</div>
 

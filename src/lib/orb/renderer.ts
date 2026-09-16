@@ -137,7 +137,23 @@ const RING_SEGS = 160;
 const TRAIL_DECAY = 0.9; /* 軌跡: 前のフレームをこの倍率で残す (60fps で約 10 フレーム分の尾) */
 
 export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | null {
-	const attrs = { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false };
+	/* Task 10r — preserveDrawingBuffer: true。カードのガラス (glass.ts の orbBackdrop) が
+	   このオーブの canvas を毎フレーム drawImage() で読みに来るが、この canvas 自身の rAF
+	   (このファイル下部の tick)とガラス側の rAF (frame-loop.js)は別の requestAnimationFrame
+	   購読なので、実行順は登録順に依存する。false (既定)だと、ブラウザがこのフレームを
+	   合成した直後に描画面を透明へ落とすため、ガラス側の読み取りがオーブの再描画より前に
+	   来た回では毎回、空の描画面を読むことになる (実測: 未設定のときは縁の帯にオーブの色が
+	   一度も現れなかった)。README の「A <video> or <canvas> below the glass … Create it with
+	   preserveDrawingBuffer: true, or call LiquidGlass.refreshAll() right after you render」の
+	   前者を採る。合成後も描画面を保持するので、どちらの rAF が先でも安全に読める */
+	const attrs = {
+		alpha: true,
+		premultipliedAlpha: true,
+		antialias: false,
+		depth: false,
+		stencil: false,
+		preserveDrawingBuffer: true
+	};
 	const gl = (canvas.getContext('webgl2', attrs) ?? canvas.getContext('webgl', attrs)) as GL | null;
 	if (!gl) return null;
 

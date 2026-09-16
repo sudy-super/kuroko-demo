@@ -96,14 +96,6 @@
 	   ぼかし量ではなく、下の屈折 (変位写像) と縁のレンズの帯が担う。
 	   彩度と明度で背後の色を拾う (visual 4.2) */
 	--blur-m: blur(16px) saturate(190%) brightness(1.05);
-	/* Task 10o — 元は左上から差す鏡面ハイライト (135deg の白いグラデーション)だったが、
-	   ユーザー指摘「左上の反射がひび割れにしか見える」で削除した。WebGL の経路
-	   ([data-liquid-glass="webgl"])では background を none に落とすのでこの値は
-	   端末が WebGL2 を持たないときの代替 (backdrop-filter)にしか効かないが、同じ理由で
-	   斜めの光沢は載せない。none にしても後ろの --glass-1 などの塗りは 2 枚目の
-	   背景レイヤーとして残る */
-	--sheen: none;
-
 	/* 縁の光 (visual 3.2 の 1px の白い縁、4.2) と、その内側に入れるレンズの帯。
 	   角丸に沿う内側の影なので、疑似要素なしで縁だけが明るく立ち上がり、
 	   ガラスが縁で厚みを持って背景を曲げているように見える */
@@ -410,7 +402,7 @@ svg.i {
 
 /* visual 4.2 — ガラスの基本形 */
 .glass {
-	background: var(--sheen), var(--glass-1);
+	background: var(--glass-1);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e-glass);
@@ -450,7 +442,7 @@ svg.i {
 	width: var(--side-w);
 	padding: var(--sp-2);
 	border-radius: var(--r-l);
-	background: var(--sheen), var(--glass-panel);
+	background: var(--glass-panel);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e-glass);
@@ -538,7 +530,7 @@ svg.i {
 	width: var(--rail-w);
 	padding: var(--sp-2);
 	border-radius: var(--r-pill);
-	background: var(--sheen), var(--glass-panel);
+	background: var(--glass-panel);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e-glass);
@@ -573,7 +565,7 @@ svg.i {
 	   width を遷移させるこの 1 か所に絞る) */
 	interpolate-size: allow-keywords;
 	transition: width var(--d-enter) var(--ease-out);
-	background: var(--sheen), var(--glass-panel);
+	background: var(--glass-panel);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e-glass);
@@ -684,7 +676,7 @@ svg.i {
 	height: var(--chatbar-h);
 	padding: 0 var(--sp-2) 0 var(--sp-5);
 	border-radius: var(--r-pill);
-	background: var(--sheen), var(--glass-2);
+	background: var(--glass-2);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e-glass);
