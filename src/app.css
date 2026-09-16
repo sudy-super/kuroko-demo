@@ -2028,6 +2028,9 @@ section.tc .list-row:not(label):hover {
 	background: none;
 	-webkit-backdrop-filter: none;
 	backdrop-filter: none;
+	/* 10f 再レビュー — 下の ::after の z-index: -1 は、ボタンが積み重ねの文脈を作らないと
+	   .today-actions まで抜けて canvas の裏に回り、縁の鏡面と暗線が消える。ここで閉じ込める */
+	isolation: isolate;
 	/* --rim は inset の影で縁の光を全周に描いていた。下の疑似要素が向きの付いた縁を描くので消す */
 	--rim: 0 0 rgba(0, 0, 0, 0);
 }
