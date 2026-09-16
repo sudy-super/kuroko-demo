@@ -572,20 +572,24 @@ svg.i {
 }
 
 /* visual 2.7 / 2.8 — Task 10j でモックの構図に戻した。カードは左右 2 列に分かれ、
-   その間を広く空けてオーブを見せる。格子 (grid)ではなく段組み (multi-column)を使うのは、
-   格子だと行の高さが左右の高いほうにそろい、5 枚で 3 行ぶんの高さになるため。
-   1280x800 では本文が画面に収まらなかった (実測 257px あふれ)。段組みはブラウザが
-   左右の高さが釣り合うところで折り返すので、DOM の順序 (要件定義 p.11 の重み順)を
-   保ったまま高さが 3 割縮む。列の間隔は割合で指定して、どの幅でもオーブの通り道を空ける */
-/* Task 10l — 入れ物の幅を 8 割に絞る。段の幅は入れ物の 35% なのでカードも 2 割狭くなり
-   (1440px で 386px → 309px)、モックのカードの幅 (242〜283px)に近づく。列の間も同じ比で
-   縮むので、球の外周とカードの縁の間隔はこれまでと変わらない */
+   その間を広く空けてオーブを見せる。1100px 以下で格子 (grid)ではなく段組み (multi-column)を
+   使うのは、格子だと行の高さが左右の高いほうにそろい、5 枚で 3 行ぶんの高さになるため。
+   段組みはブラウザが左右の高さが釣り合うところで折り返すので、DOM の順序
+   (要件定義 p.11 の重み順)を保ったまま高さが 3 割縮む */
+/* Task 10l 修正 — 段組み (multi-column)を使うのは 1100px 以下だけになった。1101px 以上は
+   カードを絶対配置で球の周りに置く (Today の節の「環状の配置」を見よ)。位置の基準は
+   どちらの組み方でもこの要素なので、position: relative はここに置いたままにする */
 .bento {
-	column-count: 2;
-	column-gap: 30%;
 	position: relative;
 	max-width: 80%;
 	margin-inline: auto;
+}
+@media (max-width: 1100px) {
+	.bento {
+		column-count: 2;
+		/* visual 2.7 — この幅では中央の空きを閉じ、2 列を左右いっぱいに広げる。オーブはカードの背後へ */
+		column-gap: var(--sp-4);
+	}
 }
 .bento > .card {
 	/* 段の途中でカードが割れないようにする。段組みの既定は途中で切ること */
@@ -1431,13 +1435,6 @@ svg.i {
 	}
 }
 
-/* visual 2.7 — 1100px: 中央の空きを閉じて 2 列を左右いっぱいに広げる。オーブはカードの背後へ */
-@media (max-width: 1100px) {
-	.bento {
-		column-gap: var(--sp-4);
-	}
-}
-
 /* レールがある画面だけ右をレールのぶん空け、ヘッダー・本文・依頼バー・誘導カードの右端をそろえる。
    960px 以下ではレールが消えるので、3 クラスの詳細度が下の上書きに勝たないよう幅で囲う */
 @media (min-width: 961px) {
@@ -1935,33 +1932,33 @@ section.tc .list-row:not(label):hover {
 	margin-top: var(--sp-3);
 }
 
-/* Task 10l — カードごとに上の余白を変えて縦位置をずらす。2 列に整列していると
-   「浮遊」に見えないというユーザー判定。値はトークンではなく 24〜56px の不揃いな並びで、
-   等間隔の階段にならないようにしてある。
-   段組みは段の先頭に来たカードの margin-top を切り捨てるので、右の段の先頭 (4 枚目)の
-   44px は効かない。左の段の先頭 (1 枚目)に 36px を置くことで、左右の先頭のカードの上端が
-   36px ずれる。4 枚目の値は、カードの増減で割り付けが変わって段の途中に来たときのため。
-   ずらしは余白なので流れの中で起こり、カードが重なることはない。
+/* Task 10l 修正 — 1100px 以下は段組みのまま。カードごとに上の余白を変えて縦位置をずらし、
+   左右の段の上端がそろわないようにする。値は 24〜56px の不揃いな並びで、等間隔の階段に
+   ならないようにしてある。段組みは段の先頭に来たカードの margin-top を切り捨てるので、
+   右の段の先頭 (4 枚目)の 44px は効かない。
    2 枚目 (返信)の上を 56px といちばん広く取ってあるのは、その上の承認待ちを余白で
    重く見せるため (eye.md 2.2、Task 10j から引き継ぎ) */
-.today .bento > .card:nth-child(1) {
-	margin-top: 36px;
+@media (max-width: 1100px) {
+	.today .bento > .card:nth-child(1) {
+		margin-top: 36px;
+	}
+	.today .bento > .card:nth-child(2) {
+		margin-top: 56px;
+	}
+	.today .bento > .card:nth-child(3) {
+		margin-top: 24px;
+	}
+	.today .bento > .card:nth-child(4) {
+		margin-top: 44px;
+	}
+	.today .bento > .card:nth-child(n + 5) {
+		margin-top: 48px;
+	}
 }
-.today .bento > .card:nth-child(2) {
-	margin-top: 56px;
-}
-.today .bento > .card:nth-child(3) {
-	margin-top: 24px;
-}
-.today .bento > .card:nth-child(4) {
-	margin-top: 44px;
-}
-.today .bento > .card:nth-child(n + 5) {
-	margin-top: 48px;
-}
-/* Task 10l — カードを一回り小さくする。内側の余白を 1 段下げ、押せない行の高さを 48 → 40px
-   (2 段の行は 72 → 60px)に詰める。行は減らさない。ToDo の label の行だけは中の
-   チェックボックスを押すので 48px のまま残す (的の最小 44px) */
+/* Task 10l — カードを一回り小さくする。内側の余白を 1 段下げ、押せない行の高さを 48 → 36px
+   (2 段の行は 72 → 56px)に詰める。行は減らさない。
+   Task 10l 修正 — 環状の配置は 2 列とも画面の高さいっぱいを使うので、5 枚が 1280x800 に
+   収まるところまで詰め直した (左の列 408px / 右の列 406px、使える高さ 450px) */
 .today .bento .tc {
 	gap: var(--sp-2);
 }
@@ -1969,41 +1966,105 @@ section.tc .list-row:not(label):hover {
 	margin-top: var(--sp-2);
 }
 .today .bento .list-row:not(label) {
-	height: 40px;
+	height: 36px;
 }
 .today .bento .list-row.xl {
-	height: 60px;
+	height: 56px;
 }
-/* Task 10l — ごくゆっくり上下に漂わせる。transform ではなく translate に書くのは、
-   .card:hover の transform (3px 持ち上げる)と取り合わないようにするため。
-   ガラスの canvas は毎フレーム getBoundingClientRect() で測り直されるので、
-   この動きにも追従する (node_modules/apple-liquid-glass-webgl/src/dom.js の measure、
-   frame-loop.js の tick)。prefers-reduced-motion では共通の指定で 1 回・0.01ms に潰れ、
-   fill を持たないのでカードは元の位置に戻る */
-@keyframes today-drift {
-	50% {
-		translate: 0 -6px;
-	}
+/* ToDo の行だけは label で、中のチェックボックスを押す。的の下限 (Apple HIG の 44px)まで */
+.today .bento .list-row:is(label) {
+	height: 44px;
 }
 .today .bento > .card {
 	padding: var(--sp-4) var(--sp-4) var(--sp-3);
-	animation: today-drift 11s ease-in-out infinite;
 }
-.today .bento > .card:nth-child(2) {
-	animation-duration: 9s;
-	animation-delay: -3s;
-}
-.today .bento > .card:nth-child(3) {
-	animation-duration: 13s;
-	animation-delay: -6s;
-}
-.today .bento > .card:nth-child(4) {
-	animation-duration: 10s;
-	animation-delay: -1.5s;
-}
-.today .bento > .card:nth-child(n + 5) {
-	animation-duration: 12s;
-	animation-delay: -8s;
+
+/* Task 10l 修正 — 1101px 以上はオーブを取り巻く環状の配置 (ユーザーが選んだモックの構図)。
+   カードを絶対配置にし、球の中心からの距離がほぼ一定になる位置に置く。左右の寄せは
+   球の輪郭に沿わせた値で、上下の真ん中のカードがいちばん外、上端と下端のカードは内側に寄る。
+   上端も左右もそろえない。DOM の順序 (要件定義 p.11 の重み順)は変えないので、
+   読み上げの順序は承認待ち → 返信 → 次の会議 → 今日の予定 → ToDo のまま (eye.md 3.2)。
+   入れ物の高さは flex で決まり、カードの高さは高さに加算されない。つまりカードが伸びても
+   本文が縦に伸びず、1440x900 と 1280x800 のどちらでも縦の送りが出ない。
+   min-height は「これ以上縮めるとカードが重なる」下限で、これを割る高さの窓では送りが出る */
+@media (min-width: 1101px) {
+	.today .today-items {
+		display: flex;
+		flex-direction: column;
+	}
+	.today .bento {
+		/* 伸び縮みの下限 (430px)を flex-basis にも置くのが肝。本文の高さの見積もりは
+		   flex-basis で決まるので、ここに仕上がりの高さ (470px)を書くと、その値で本文が
+		   縦に伸びて 1280x800 に 20px の送りが出る */
+		flex: 1 1 430px;
+		min-height: 430px;
+		max-height: 470px;
+		/* 1280px でレールがあるときの本文の幅 (856px)より少しだけ狭い上限。
+		   これ以上広げると左右のカードが球から離れ、破片がカードの縁に掛からなくなる */
+		width: 100%;
+		max-width: 880px;
+		/* 縦に余る画面 (1440x900)では上下の余りを等分して球を本文の中央に置く */
+		margin-block: auto;
+	}
+	.today .bento > .card {
+		position: absolute;
+		margin: 0;
+		/* 列の間 (球の通り道)を 256px 下回らせない。1101〜1240px では球が細い通り道に入るので、
+		   その帯だけカードが 280px より狭くなる */
+		width: min(280px, calc((100% - 256px) / 2));
+	}
+	.today .bento > .card:nth-child(1) {
+		top: 0;
+		left: 36px;
+	}
+	.today .bento > .card:nth-child(2) {
+		top: 44%;
+		left: 0;
+	}
+	.today .bento > .card:nth-child(3) {
+		bottom: 0;
+		/* 下端の 2 枚の寄せが浅いのは、通り道の下側を案内カードのぶん空けておくため */
+		left: 16px;
+	}
+	.today .bento > .card:nth-child(4) {
+		top: 4%;
+		right: 24px;
+	}
+	.today .bento > .card:nth-child(5) {
+		bottom: 0;
+		right: 16px;
+	}
+	/* 6 枚目 (日程調整の返信待ち)が出る場面だけ、右を 3 枚にして入れ物を縦に伸ばす。
+	   6 枚は 2 列 450px には収まらないので、この状態では縦の送りが出る (段組みのときも同じ) */
+	.today .bento:has(> .card:nth-child(6)) {
+		flex-basis: 640px;
+		min-height: 640px;
+		max-height: 640px;
+	}
+	.today .bento:has(> .card:nth-child(6)) > .card:nth-child(5) {
+		top: 34%;
+		bottom: auto;
+	}
+	.today .bento > .card:nth-child(6) {
+		bottom: 0;
+		right: 20px;
+	}
+	/* Task 10l 修正 — 案内カードの置き場所。環状の配置では左右の端までカードが並ぶので、
+	   既定の右下だと右下のカードに重なる (1280x800 で 210x103px)。Today のときだけ
+	   球の通り道 (左右の列の間、下端は主ボタンの上)に移す。ここが唯一の空きで、
+	   カードにも依頼バーにも主ボタンにも当たらない。案内カードが出ている間は主ボタンを
+	   出さない作りなので (+page.svelte の !db.demo.guide.on)、下端は既定のままでよい。
+	   通り道の中央は本文の中央で、本文はサイドナビのぶん右に寄っている */
+	.app:has(.today) .guide {
+		left: calc(50% + (var(--side-w) + 32px) / 2);
+		right: auto;
+		translate: -50% 0;
+		/* 通り道の幅は最も狭い 1101px でも 256px (カードの幅の式を見よ) */
+		width: 240px;
+	}
+	.app.has-rail:has(.today) .guide {
+		left: calc(50% + (var(--side-w) - var(--rail-w)) / 2);
+	}
 }
 /* Task 10c — オーブはガラスが屈折させる対象なので、ガラスの canvas より下に置く。
    canvas は要素の z-index: -1 の子なので、穴は -2 にする。0 のままだと canvas の上に出て、
