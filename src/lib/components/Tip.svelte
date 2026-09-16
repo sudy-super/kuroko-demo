@@ -3,19 +3,19 @@
 	import { Tooltip } from 'bits-ui';
 
 	/* indicators.md「アイコンだけで意味を伝える条件」— 行内はアイコンだけにするかわりに、
-	   文言はホバーとキーボードのフォーカスで必ず読めるようにする。
-	   中のアイコンが aria-label を持ち、この文言は説明として付く (名前は二重にしない) */
+	   文言はホバーで読めるようにする。キーボードと読み上げには中のアイコンの aria-label が届く */
 	let { text, children }: { text: string; children: Snippet } = $props();
 </script>
 
 <Tooltip.Provider delayDuration={300}>
 	<Tooltip.Root>
-		<Tooltip.Trigger>
+		<Tooltip.Trigger tabindex={-1}>
 			{#snippet child({ props })}
-				<!-- 行そのものが a や label なので、引き金は入れ子の操作要素にできない。
-				     span に tabindex を付けてキーボードでも開けるようにする。
-				     bits-ui は button 向けの type を必ず渡してくるので、span からは外す -->
-				{@const { type: _t, ...rest } = props}
+				<!-- 行そのものが a や label なので、引き金を焦点に入れるとリンクやラベルの中に
+				     タブ移動先が増え、HTML としても不正になる。tabindex={-1} で焦点から外す。
+				     bits-ui は button 向けの type を必ず渡してくるので span からは外し、
+				     aria-describedby も外す (中のアイコンが同じ文言を名前として持つため) -->
+				{@const { type: _t, 'aria-describedby': _d, ...rest } = props}
 				<span {...rest} class="tip-at">{@render children()}</span>
 			{/snippet}
 		</Tooltip.Trigger>
@@ -30,10 +30,6 @@
 		display: inline-flex;
 		flex: none;
 		border-radius: var(--r-xs);
-	}
-	.tip-at:focus-visible {
-		outline: 2px solid var(--accent);
-		outline-offset: 2px;
 	}
 	:global(.tip) {
 		z-index: 100;

@@ -41,10 +41,6 @@
 </a>
 
 <style>
-	/* 文言のタグ 1 行分が消えたので、行は 2 段に縮める */
-	.list-row.inbox {
-		height: 72px;
-	}
 	.line {
 		display: flex;
 		align-items: center;

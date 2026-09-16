@@ -32,7 +32,7 @@
 		calendar: 'ic-cal',
 		meeting: 'ic-bell',
 		people: 'ic-people',
-		tasks: 'ic-todo',
+		tasks: 'ic-plus', // 行頭のチェックボックスと紛れないよう、ToDo 画面の「追加」と同じ形にする
 		documents: 'ic-doc',
 		schedule: 'ic-clock',
 		palette: 'ic-search'

@@ -1,5 +1,4 @@
-import type { Db, MessageThread, Reason, TodayItem, Meeting, CalendarEvent, Task } from './types';
-import { REASON_ORDER } from './types';
+import type { Db, TodayItem, Meeting, CalendarEvent, Task } from './types';
 import { key, parse, addDays, minutes, toHm, hm } from './dates';
 
 export const personOf = (db: Db, id?: string) => db.people.find((p) => p.id === id);
@@ -8,8 +7,6 @@ export const projectOf = (db: Db, id?: string) => db.projects.find((p) => p.id =
 export const identityOf = (db: Db, id: string) => db.identities.find((i) => i.id === id);
 export const personOfIdentity = (db: Db, identityId: string) =>
 	personOf(db, identityOf(db, identityId)?.personId);
-export const severestReason = (t: MessageThread): Reason | undefined =>
-	REASON_ORDER.find((r) => t.reasons.includes(r));
 
 export const queue = (db: Db) =>
 	db.threads.filter((t) => t.inQueue && !t.done).sort((a, b) => b.lastAt.localeCompare(a.lastAt));

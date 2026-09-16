@@ -916,8 +916,9 @@ svg.i {
 .list-row.xl {
 	height: 72px;
 }
+/* 文言のタグ 1 行分が消えたので 2 段。高さの指定はここだけに置く */
 .list-row.inbox {
-	height: 88px;
+	height: 72px;
 	align-items: stretch;
 	flex-direction: column;
 	justify-content: center;

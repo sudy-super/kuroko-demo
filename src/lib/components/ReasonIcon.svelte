@@ -13,7 +13,8 @@
 		overdue: 'ic-alert',
 		unanswered_3d: 'ic-clock',
 		question: 'ic-question',
-		project: 'ic-briefcase',
+		// 18px で吹き出し (角丸の箱) と紛れないよう、案件は箱ではなく荷札の形にする
+		project: 'ic-tag',
 		known_contact: 'ic-user'
 	};
 </script>
