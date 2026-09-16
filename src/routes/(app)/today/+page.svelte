@@ -13,10 +13,9 @@
 		todayCount
 	} from '$lib/derived';
 	import { startGuide, toggleTask } from '$lib/actions';
-	import { ui, focusChatbar } from '$lib/ui.svelte';
+	import { ui } from '$lib/ui.svelte';
 	import { parse, rel } from '$lib/dates';
 	import Orb from '$lib/components/Orb.svelte';
-	import Icon from '$lib/components/Icon.svelte';
 	import TodayCard from '$lib/components/TodayCard.svelte';
 	import SourceIcon from '$lib/components/SourceIcon.svelte';
 	import ReasonIcon from '$lib/components/ReasonIcon.svelte';
@@ -36,44 +35,26 @@
 
 	// 700px 以下は Bento をやめて 1 枚の折りたたみカードにするので、オーブも 1 つだけ差し替える
 	const narrow = new MediaQuery('(max-width: 700px)');
-	/* Task 10f — 560 は箱の一辺。箱は穴 (4 列 = 約 340px)より広いので、光彩は左右の hero の
-	   カードにも掛かり、そこでガラスの縁が破片を曲げる。Task 10h 修正ラウンド 1 — ボタンの列は
-	   ガラスではなくなったが、球はもともと列の下端の 11px 下にあるので箱の大きさは変えていない
-	   (数え方は app.css の .today .bento .hole .orb) */
+	/* Task 10j — 箱の一辺。球の直径はその 48% (shader.ts の R0)なので 560 で 269px。
+	   左右のカードの列の間 (12 列のうち中央の 4 列)より球は小さく、光彩だけがカードに掛かる。
+	   そこでカードのガラスの縁が破片を曲げる (visual 2.8 の 6) */
 	const orbSize = $derived(narrow.current ? 300 : 560);
-
 
 	const meetingHead = (m: NonNullable<typeof nm>) =>
 		`次の会議 ${rel(parse(m.event.date))} ${m.event.start} ${m.meeting.title}`;
-
-	function askKuroko() {
-		ui.context = null;
-		focusChatbar();
-	}
 </script>
 
 <svelte:head><title>Today — KUROKO AI</title></svelte:head>
 
 <div class="today">
+	<!-- Task 10j — モックの構図: 件数は上部中央のピル、主ボタンは下端中央に 1 つだけ。
+	     「予定」「ToDo」は ⌘K パレットと各画面の追加ボタンへ、「KUROKO に頼む」は下端の
+	     依頼バーそのものなので消した。シナリオの切り替えは右上の控えめな文字リンクにする -->
 	<header class="today-head">
 		<h1 class="today-count">
 			<a href="#items">今日やること <span class="num">{count}</span> 件</a>
 		</h1>
-		<!-- Task 10h — この列はガラスにしない。オーブの破片は止まっておらず、破片が真裏に来た
-		     瞬間の文字 (--accent) は行単位で 2.87:1 まで落ちる。塗り (tint) を 0.34 まで上げても
-		     4.5:1 を割る瞬間が残るので、不透明な白い面に戻した。
-		     Today の屈折は下の Bento のカードと画面下端の依頼バーで見せる -->
-		<div class="row today-actions">
-			<a class="btn sec" href="/calendar?new=1"><Icon name="ic-plus" size={18} />予定</a>
-			<a class="btn sec" href="/tasks?new=1"><Icon name="ic-plus" size={18} />ToDo</a>
-			<button class="btn sec" onclick={askKuroko}>
-				<Icon name="ic-spark" size={18} />KUROKO に頼む
-			</button>
-			{#if !db.demo.guide.on}
-				<button class="btn pri" onclick={startGuide}>デモを開始する</button>
-			{/if}
-			<ScenarioMenu />
-		</div>
+		<ScenarioMenu />
 	</header>
 
 	<div class="today-items" id="items">
@@ -83,10 +64,12 @@
 				<DoneScreen />
 			</div>
 		{:else}
+			<!-- 並びは要件定義 p.11 の重み順。左上が最初に見られるので承認待ちを先頭に置く
+			     (eye.md 3.2 の (3)。モックは承認待ちを右下に置いていた)。
+			     先頭のカードだけ 1 列ぶん広い (visual 2.7「すべてのタイルを同じ大きさにしない」) -->
 			<div class="bento" {@attach glass({ ...CARD, targets: '.card' })}>
 				{#if ap.length}
 					<TodayCard
-						size="hero"
 						title="承認待ち {ap.length} 件"
 						icon="ic-check-c"
 						onclick={() => (ui.approvalDrawer = true)}
@@ -103,24 +86,9 @@
 						<!-- カード全体が承認ドロワーを開くので、中は入れ子のボタンにしない -->
 						<div class="row tc-foot"><span class="btn pri sm">確認する</span></div>
 					</TodayCard>
-				{:else if nm}
-					<TodayCard
-						size="hero"
-						title={meetingHead(nm)}
-						icon="ic-bell"
-						href="/meetings/{nm.meeting.id}"
-					>
-						<p>{nm.meeting.briefRead ? 'Brief 確認済み' : 'Brief が届いています'}</p>
-					</TodayCard>
-				{/if}
-
-				{#if !narrow.current}
-					<!-- visual 2.8 — 中央 4 列 x 2 行を空けてオーブを見せ、左右の hero のガラスに光彩を重ねる -->
-					<div class="hole" aria-hidden="true"><Orb size={orbSize} /></div>
 				{/if}
 
 				<TodayCard
-					size="hero"
 					title="返信が必要な連絡 {rp.length} 件"
 					icon="ic-mail"
 					href={rp[0] ? `/inbox?t=${rp[0].id}` : '/inbox'}
@@ -142,18 +110,13 @@
 					{#if !rp.length}<p class="muted">返信が必要な連絡はありません</p>{/if}
 				</TodayCard>
 
-				{#if ap.length && nm}
-					<TodayCard
-						size="wide"
-						title={meetingHead(nm)}
-						icon="ic-bell"
-						href="/meetings/{nm.meeting.id}"
-					>
+				{#if nm}
+					<TodayCard title={meetingHead(nm)} icon="ic-bell" href="/meetings/{nm.meeting.id}">
 						<p>{nm.meeting.briefRead ? 'Brief 確認済み' : 'Brief が届いています'}</p>
 					</TodayCard>
 				{/if}
 
-				<TodayCard size="wide" title="今日の予定 {events.length} 件" icon="ic-cal" href="/calendar">
+				<TodayCard title="今日の予定 {events.length} 件" icon="ic-cal" href="/calendar">
 					{#each events.slice(0, 3) as e (e.id)}
 						<div class="list-row">
 							<span class="num">{e.start}</span>
@@ -164,7 +127,7 @@
 					{#if !events.length}<p class="muted">今日の予定はありません</p>{/if}
 				</TodayCard>
 
-				<TodayCard size="wide" title="今日の ToDo {tasks.length} 件" icon="ic-todo">
+				<TodayCard title="今日の ToDo {tasks.length} 件" icon="ic-todo">
 					{#each tasks.slice(0, 3) as t (t.id)}
 						<label class="list-row">
 							<!-- todayTasks は未完了だけを返すので checked は常に false。式にしない -->
@@ -178,8 +141,8 @@
 				</TodayCard>
 
 				{#if sent.length}
-					<TodayCard size="wide" title="日程調整の返信待ち {sent.length} 件" icon="ic-clock">
-						<!-- リンクを行に並べると wide (341px) では題名が「田中 太郎…」まで縮む。
+					<TodayCard title="日程調整の返信待ち {sent.length} 件" icon="ic-clock">
+						<!-- リンクを行に並べると 1 列ぶんの幅では題名が「田中 太郎…」まで縮む。
 						     リンクは行の下に落とす -->
 						{#each sent as s (s.id)}
 							<div class="list-row">
@@ -192,6 +155,13 @@
 							</div>
 						{/each}
 					</TodayCard>
+				{/if}
+
+				<!-- オーブは左右の列の間に置く。カードより後ろの層 (z-index -2)なので、
+				     カードのガラスの縁が破片を曲げる。カードの数え方 (:nth-child) を狂わせない
+				     よう末尾に置く -->
+				{#if !narrow.current}
+					<div class="hole" aria-hidden="true"><Orb size={orbSize} /></div>
 				{/if}
 			</div>
 
@@ -223,4 +193,12 @@
 			{/if}
 		{/if}
 	</div>
+
+	<!-- 塗りのボタンは画面にこの 1 つだけ。主ボタンと副ボタンを見た目で区別しないと
+	     利用者が止まる (eye.md 2.5、Baymard) -->
+	{#if !db.demo.guide.on}
+		<div class="today-start">
+			<button class="btn pri lg today-demo" onclick={startGuide}>デモを開始する</button>
+		</div>
+	{/if}
 </div>

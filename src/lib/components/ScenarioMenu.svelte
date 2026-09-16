@@ -50,7 +50,9 @@
 <DropdownMenu.Root>
 	<DropdownMenu.Trigger>
 		{#snippet child({ props })}
-			<button {...props} class="btn sec">
+			<!-- Task 10j — 塗りのボタンは画面に「デモを開始する」1 つだけにしたので、
+			     ここは枠のない文字リンクに落として画面の右上に置く -->
+			<button {...props} class="btn text today-scenario">
 				他のシナリオを試す
 				<Icon name="ic-chev" size={18} />
 			</button>

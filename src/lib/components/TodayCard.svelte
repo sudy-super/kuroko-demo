@@ -3,14 +3,12 @@
 	import Icon from './Icon.svelte';
 
 	let {
-		size,
 		title,
 		icon,
 		href,
 		onclick,
 		children
 	}: {
-		size: 'hero' | 'wide';
 		title: string;
 		icon: string;
 		href?: string;
@@ -32,10 +30,10 @@
 
 <!-- visual 2.7 — タイルには名前を付け、DOM の順序を見た目の順序に合わせる -->
 {#if href}
-	<a class="card tc t-{size}" {href} {onclick} aria-labelledby={titleId}>{@render inner()}</a>
+	<a class="card tc" {href} {onclick} aria-labelledby={titleId}>{@render inner()}</a>
 {:else if onclick}
 	<!-- ボタンは中身から名前を作る。aria-label を足すと中の行が読み上げから落ちる -->
-	<button type="button" class="card tc t-{size}" {onclick}>{@render inner()}</button>
+	<button type="button" class="card tc" {onclick}>{@render inner()}</button>
 {:else}
-	<section class="card tc t-{size}" aria-label={title}>{@render inner()}</section>
+	<section class="card tc" aria-label={title}>{@render inner()}</section>
 {/if}

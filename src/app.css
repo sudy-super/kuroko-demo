@@ -404,6 +404,15 @@ svg.i {
 	margin-left: calc(var(--side-w) + 32px);
 	padding: calc(var(--header-h) + 32px) var(--sp-6) calc(var(--chatbar-h) + 64px);
 }
+/* Task 10j — Today だけは最後の要素 (主ボタン)を意図して画面の下端に寄せるので、
+   依頼バーの下敷きぶんに 64px も足すと本文が画面に入りきらない。バーとの間を
+   32px に詰める。1280x800 で縦のスクロールが出るかどうかがここで決まる。
+   960px 以下はボトムナビが増えて余白の作りが変わるので当てない */
+@media (min-width: 961px) {
+	.main:has(.today) {
+		padding-bottom: calc(var(--chatbar-h) + var(--sp-8));
+	}
+}
 
 /* visual 4.4 + components 3.1 — 左サイドナビ (ruling: 幅 256、項目 48、角丸 16) */
 .sidebar {
@@ -572,23 +581,21 @@ svg.i {
 	box-shadow: inset 0 0 0 2px var(--accent), 0 8px 24px rgba(30, 42, 71, 0.08);
 }
 
-/* visual 2.7 — Bento grid (ruling: hero は span 4、中央 4 列を空けてオーブを見せる) */
+/* visual 2.7 / 2.8 — Task 10j でモックの構図に戻した。カードは左右 2 列に分かれ、
+   その間を広く空けてオーブを見せる。格子 (grid)ではなく段組み (multi-column)を使うのは、
+   格子だと行の高さが左右の高いほうにそろい、5 枚で 3 行ぶんの高さになるため。
+   1280x800 では本文が画面に収まらなかった (実測 257px あふれ)。段組みはブラウザが
+   左右の高さが釣り合うところで折り返すので、DOM の順序 (要件定義 p.11 の重み順)を
+   保ったまま高さが 3 割縮む。列の間隔は割合で指定して、どの幅でもオーブの通り道を空ける */
 .bento {
-	display: grid;
-	grid-template-columns: repeat(12, 1fr);
-	gap: var(--sp-4);
-	padding: var(--sp-6);
+	column-count: 2;
+	column-gap: 30%;
+	position: relative;
 }
-.t-hero {
-	grid-column: span 4;
-	grid-row: span 2;
-}
-.t-wide {
-	grid-column: span 4;
-}
-.bento .hole {
-	grid-column: 5 / 9;
-	grid-row: 1 / 3;
+.bento > .card {
+	/* 段の途中でカードが割れないようにする。段組みの既定は途中で切ること */
+	break-inside: avoid;
+	margin-bottom: var(--sp-4);
 }
 
 /* visual 4.6 — コンテンツ層。ここではガラスを使わない */
@@ -1430,19 +1437,10 @@ svg.i {
 	}
 }
 
-/* visual 2.7 — 1100px: Bento を 6 列にし、オーブの穴を閉じる */
+/* visual 2.7 — 1100px: 中央の空きを閉じて 2 列を左右いっぱいに広げる。オーブはカードの背後へ */
 @media (max-width: 1100px) {
 	.bento {
-		grid-template-columns: repeat(6, 1fr);
-	}
-	.t-hero {
-		grid-column: span 3;
-	}
-	.t-wide {
-		grid-column: span 3;
-	}
-	.bento .hole {
-		display: none;
+		column-gap: var(--sp-4);
 	}
 }
 
@@ -1535,18 +1533,6 @@ svg.i {
 	}
 	.nav-sep {
 		margin: var(--sp-3) 0;
-	}
-}
-
-/* visual 2.7 — 700px: Bento を 1 列にする */
-@media (max-width: 700px) {
-	.bento {
-		grid-template-columns: 1fr;
-		padding: var(--sp-4);
-	}
-	.bento > * {
-		grid-column: 1 / -1;
-		grid-row: auto;
 	}
 }
 
@@ -1829,39 +1815,42 @@ svg.i {
 }
 
 /* today (Task 10) — 仕様 5.1 / visual 2.7・2.8・4.5。既存のトークンだけで組む */
-/* Task 10h — 見出しの列を Bento より上の段に置く。.bento は position: relative なので、
-   その中のオーブ (z-index -2) ごとこの列の上に描かれていた。破片がボタンの面と文字の上に
-   直接乗り、文字 (--accent) が行単位で 2.87:1 まで落ちる。段を上げると破片はボタンに
-   遮られ、ボタンとボタンの間では今までどおり見える */
+/* Task 10h — 見出しの段を Bento より上に置く。.bento は position: relative なので、
+   その中のオーブ (z-index -2) ごとこの段の上に描かれていた。破片が文字の上に直接乗ると
+   文字 (--accent) が行単位で 2.87:1 まで落ちる。段を上げると面に遮られる。
+   Task 10j — 件数はモックどおり上部中央のピルにする。右上にシナリオの文字リンクを置く */
 .today-head {
 	position: relative;
 	z-index: 1;
 	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--sp-4);
-	padding: 0 var(--sp-6) var(--sp-5);
+	justify-content: center;
+	padding: 0 var(--sp-6) var(--sp-4);
 }
-/* 見出しは h1 のまま。数字だけ 40px に上げ、語句は 24px に落とす。
-   間隔はモバイルの summary と揃える (同じ「今日やること N 件」を出すため) */
+/* 見出しは h1 のまま。オーブの破片が上端まで届くので、面は不透明にする (Task 10h と同じ理由) */
 .today-count {
-	font-size: 24px;
+	font-size: 16px;
+	font-weight: 500;
 }
 .today-count a {
 	display: inline-flex;
 	align-items: baseline;
 	gap: var(--sp-2);
+	padding: var(--sp-2) var(--sp-5);
+	border-radius: var(--r-pill);
+	background: var(--solid);
+	box-shadow: var(--e1);
 	color: inherit;
 	text-decoration: none;
 }
 .today-count .num {
-	font-size: 40px;
+	font-size: 24px;
 	font-weight: 700;
 }
-.today-actions {
-	flex-wrap: wrap;
-	gap: var(--sp-3);
+/* 右上の控えめな文字リンク。中央のピルと的が重ならないよう段の端に逃がす */
+.today-scenario {
+	position: absolute;
+	right: var(--sp-6);
+	top: 0;
 }
 /* 上部バーが固定なので、見出しから飛んだときに先頭が隠れないようにする */
 .today-items {
@@ -1946,12 +1935,10 @@ section.tc .list-row:not(label):hover {
 	margin-top: var(--sp-3);
 }
 
-/* visual 2.8 — オーブは箱の中央に描かれて周りは透明なので、穴からはみ出させてガラスに重ねる */
-.today .bento {
-	position: relative;
-}
-.today .bento > * {
-	z-index: 1;
+/* 先頭のカード (承認待ち)の下だけ余白を広く取る。段組みでは幅をそろえるほかないので、
+   大きさの差ではなく周りの余白で重みを付ける (eye.md 2.2「余白に囲まれた要素は重く見える」) */
+.today .bento > .card:first-child {
+	margin-bottom: var(--sp-8);
 }
 /* Task 10c — オーブはガラスが屈折させる対象なので、ガラスの canvas より下に置く。
    canvas は要素の z-index: -1 の子なので、穴は -2 にする。0 のままだと canvas の上に出て、
@@ -1960,8 +1947,10 @@ section.tc .list-row:not(label):hover {
    ない。.bento が積み重ねの文脈になるので、-2 は .bento の中で止まり、背景の色の塊
    (.bg、根の z-index 0) より下へは抜けない */
 .today .bento .hole {
-	position: relative;
+	position: absolute;
+	inset: 0;
 	z-index: -2;
+	pointer-events: none;
 }
 .orb-slot .orb {
 	position: absolute;
@@ -1969,20 +1958,55 @@ section.tc .list-row:not(label):hover {
 	left: 50%;
 	translate: -50% -50%;
 }
-/* 穴のオーブだけは上端を基準にする。Task 10h 修正ラウンド 1 — ボタンの列はガラスをやめたので、
-   「ボタンの縁で破片を曲げる」という Task 10f のずらす理由は消えた。代わりの条件は 1 つだけで、
-   球がボタンの列に掛からないこと。数え方はこうなる。箱は一辺 560px、球の直径はその 48%
-   (shader.ts の R0 = 0.48)なので半径 134.4px。球の中心は箱の中央 = 箱の上端から 280px 下、
-   つまり球の上端は箱の上端から 145.6px 下に来る。穴の上端はボタンの列の下端の 50px 下
-   (1440px での実測)なので、-184px だと球の上端は列の下端の 11px 下に落ち着く。呼吸の ±1.5%
-   を入れても 10〜13px で、値そのものは Task 10f から動かしていない (測って条件を満たしていた)。
-   屈折は左右の hero のカードと画面下端の依頼バーで見せる。
-   箱の上端はヘッダーの下縁にも掛かる。残りは下 (3 行目のタイルの背後)へ逃がす */
+/* Task 10j — 球は左右の列の間の中央に置く。箱は一辺 560px、球の直径はその 48%
+   (shader.ts の R0 = 0.48)なので 269px。列の間は本文の幅の 30% (1440px で 304px、
+   1280px で 256px)なので、球の外周と光彩がカードの縁に掛かる。そこでカードのガラスの縁が
+   破片を曲げる (visual 2.8 の 6) */
 .today .bento .hole .orb {
 	position: absolute;
-	top: -184px;
+	top: 50%;
 	left: 50%;
-	translate: -50% 0;
+	translate: -50% -50%;
+}
+
+/* Task 10j — 下端中央の主ボタン。この画面で塗りのボタンはこれ 1 つだけ。
+   pill なのはモックの構図をそのまま採ったため (他のボタンの角丸 12px とはここだけ違う) */
+.today {
+	position: relative;
+}
+.today-start {
+	display: flex;
+	justify-content: center;
+	padding-top: var(--sp-6);
+}
+/* 1101px 以上はカードの列の間が空くので、そこの下端にボタンを浮かせる。
+   段の下に 1 行ぶん積むと 1280x800 で本文が 34px 画面からあふれた (実測)。
+   左右の列はこの位置まで届かないので重ならない。
+   完了画面と 1100px 以下には列の間の空きがないので、そのまま本文の下に積む */
+@media (min-width: 1101px) {
+	.today:not(:has(.today-done)) {
+		/* 画面に残る高さいっぱいまで伸ばし、ボタンを本文の下端ではなく画面の下端に置く。
+		   引くのは .main の上下の余白と同じ値 (上: ヘッダー + 32、下: 依頼バー + 32) */
+		min-height: calc(100dvh - var(--header-h) - 32px - var(--chatbar-h) - var(--sp-8));
+	}
+	.today:not(:has(.today-done)) .today-start {
+		position: absolute;
+		left: 0;
+		right: 0;
+		/* 依頼バーとの間は 16px では詰まって見える。浮く部品どうしの間隔を 1 段取る */
+		bottom: var(--sp-4);
+		padding-top: 0;
+	}
+}
+.today-demo {
+	border-radius: var(--r-pill);
+}
+
+/* Today から外した「予定」「ToDo」の追加を置く段。入力欄との境は一覧と同じ 1px */
+.palette-acts {
+	margin-top: var(--sp-3);
+	border-top: 1px solid var(--line);
+	padding-top: var(--sp-2);
 }
 
 /* 完了画面。球の下側がカードに隠れてガラスのぼかす対象になるよう、画の 3 割を重ねる */
@@ -2063,24 +2087,6 @@ section.tc .list-row:not(label):hover {
 	font-weight: 700;
 }
 
-/* 1100px 以下は穴を閉じるので、オーブはタイルの背後に回す (仕様 5.1) */
-@media (max-width: 1100px) {
-	.today .bento .hole {
-		display: block;
-		/* grid-column を残すと、絶対配置の基準が 6 列の外に作られた暗黙の列になる。
-		   auto に戻して基準を .bento 全体にし、オーブをタイルの中央の背後に置く */
-		grid-area: auto;
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-	}
-	/* 穴が .bento 全体になるので、上端ぞろえをやめてタイルの中央の背後に戻す */
-	.today .bento .hole .orb {
-		top: 50%;
-		translate: -50% -50%;
-	}
-}
-
 /* 700px 以下は Bento をやめ、折りたたみカード 1 枚にする (仕様 5.1) */
 @media (max-width: 700px) {
 	.today .bento {
@@ -2131,8 +2137,15 @@ section.tc .list-row:not(label):hover {
 	.today-mobile .list-row {
 		padding: 0 var(--sp-4);
 	}
+	/* 狭い画面では中央のピルと右上のリンクが重なるので、縦に積んで両方とも中央に置く */
 	.today-head {
+		flex-direction: column;
+		align-items: center;
+		gap: var(--sp-2);
 		padding: 0 0 var(--sp-4);
+	}
+	.today-scenario {
+		position: static;
 	}
 	.today-done {
 		padding: 0;
