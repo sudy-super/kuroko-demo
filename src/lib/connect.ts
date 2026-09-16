@@ -24,11 +24,19 @@ export function isConnectionId(v: string): v is Connection['id'] {
 /**
  * 接続の流れで次に見せる画面。`after` を渡すとその次から探す。
  * 既に接続済みのサービスは飛ばし、残りが無ければ undefined (= Today へ入る)。
+ * `after` が一覧に無いときも undefined を返す。呼び出し側は導入画面へ戻すこと。
  */
 export function nextStep(
 	connections: Connection[],
 	after?: Connection['id']
 ): Connection['id'] | undefined {
-	const from = after ? connections.findIndex((c) => c.id === after) + 1 : 0;
+	let from = 0;
+	if (after) {
+		const i = connections.findIndex((c) => c.id === after);
+		/* 見つからないときに先頭から探し直すと「after の次から」という約束が黙って
+		   変わるので、ここで止める (fail-close) */
+		if (i < 0) return undefined;
+		from = i + 1;
+	}
 	return connections.slice(from).find((c) => !c.connected)?.id;
 }

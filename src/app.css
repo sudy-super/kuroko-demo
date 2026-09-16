@@ -691,6 +691,14 @@ svg.i {
 	transform: none;
 	cursor: default;
 }
+/* 上の打ち消し (0,2,0) は .btn.pri:hover (0,3,0) に負けるので、押せない間も 1px 浮いて
+   影が伸びていた。同じ詳細度で置き直す。塗りを保つ .btn.connect-cta[aria-disabled='true']
+   は詳細度が同じで後ろにあるので、接続済みのボタンの影はそちらが勝つ */
+.btn:disabled:hover,
+.btn[aria-disabled='true']:hover {
+	transform: none;
+	box-shadow: none;
+}
 /* components 3.4 — アイコンボタン 40px の円、操作領域は 44px */
 .iconbtn {
 	position: relative;
@@ -1613,11 +1621,13 @@ svg.i {
 	gap: var(--sp-2);
 	order: -1;
 }
+/* 非現在の点は --line-2 だと地 (#f4f7fc)に対して 1.27:1 で、段階の総数が目で読めない。
+   文字ではないので 3:1 が下限 (WCAG 1.4.11)。この色は同じ位置で 3.30:1 */
 .connect-steps span {
 	width: var(--sp-2);
 	height: var(--sp-2);
 	border-radius: var(--r-pill);
-	background: var(--line-2);
+	background: #7888ac;
 }
 .connect-steps span.on {
 	background: var(--accent);

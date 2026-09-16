@@ -15,17 +15,12 @@
 	import Palette from '$lib/components/Palette.svelte';
 	import GuideCard from '$lib/components/GuideCard.svelte';
 	import { glass, CLEAR } from '$lib/glass';
+	import { CONNECT_NAME } from '$lib/connect';
 
 	let { children } = $props();
 
 	const connected = $derived(db.settings.connections.filter((c) => c.connected));
 
-	const SERVICE: Record<string, string> = {
-		gmail: 'Gmail',
-		gcal: 'Google カレンダー',
-		slack: 'Slack',
-		line: 'LINE'
-	};
 
 	onMount(() => {
 		restoreStaleSending();
@@ -60,8 +55,8 @@
 				<a
 					class="iconbtn"
 					href="/settings"
-					aria-label="{SERVICE[c.id]} の連携設定"
-					title={SERVICE[c.id]}
+					aria-label="{CONNECT_NAME[c.id]} の連携設定"
+					title={CONNECT_NAME[c.id]}
 				>
 					<Icon name="b-{c.id}" size={24} />
 				</a>

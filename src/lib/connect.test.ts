@@ -22,6 +22,10 @@ describe('nextStep', () => {
 	it('after より後ろの接続済みも飛ばす', () => {
 		expect(nextStep(conns('gmail', 'gcal', 'slack'), 'gmail')).toBe('line');
 	});
+	it('after が一覧に無ければ先頭から探し直さず undefined', () => {
+		// isConnectionId を通らない id が万一渡っても、別の画面へ送らずに止める
+		expect(nextStep(conns(), 'notion' as Connection['id'])).toBeUndefined();
+	});
 	it('残りが無ければ undefined (Today へ入る合図)', () => {
 		expect(nextStep(conns('gmail', 'gcal', 'slack', 'line'))).toBeUndefined();
 		expect(nextStep(conns('line'), 'slack')).toBeUndefined();

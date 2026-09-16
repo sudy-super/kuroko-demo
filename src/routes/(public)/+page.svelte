@@ -3,6 +3,8 @@
 	import { db } from '$lib/store.svelte';
 </script>
 
+<svelte:head><title>KUROKO AI</title></svelte:head>
+
 <div class="public-main">
 	<h1 class="brand in" style="--delay: 80ms">KUROKO AI</h1>
 	<p class="muted in" style="--delay: 130ms">社長の仕事を、ひとつのインターフェースへ。</p>
