@@ -32,8 +32,12 @@
 	const tasks = $derived(todayTasks(db));
 	const sent = $derived(db.scheduling.filter((s) => s.status === 'sent'));
 
-	// 700px 以下は Bento をやめて 1 枚の折りたたみカードにするので、オーブも 1 つだけ差し替える
-	const narrow = new MediaQuery('(max-width: 700px)');
+	// 700px 以下は Bento をやめて 1 枚の折りたたみカードにするので、オーブも 1 つだけ差し替える。
+	// Task 11r (監査 1) — 携帯を横向きにした高さ (844x390 など)では、Bento の最初のカードが
+	// 縦に収まらず依頼バー / ボトムナビの裏に沈む。ボトムナビが出る幅 (960px 以下)に限り、
+	// 窓が低い (480px 以下)ときも折りたたみカードに切り替える (下は 1 行 56px の一覧なので、
+	// 最初の項目は沈まずに済む。app.css 側でオーブも合わせて畳む)
+	const narrow = new MediaQuery('(max-width: 700px), (max-width: 960px) and (max-height: 480px)');
 	/* Task 10l — 箱の一辺。球の直径はその 48% (shader.ts の R0)なので 448 で 215px。
 	   10j の 560 から 2 割小さくした。カードの列の間も同じ比で縮む (app.css の .bento の
 	   max-width: 80%) ので、球の外周と光彩がカードの縁に掛かる関係は変わらず、

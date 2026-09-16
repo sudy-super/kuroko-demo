@@ -163,6 +163,12 @@
 	--bar-clear: calc(var(--sp-4) + var(--header-h) + var(--sp-2));
 	--chatbar-h: 60px;
 	--bottomnav-h: 72px;
+	/* Task 11r — 本文の下端の余白を 1 つの仕組みに統合する。固定要素 (依頼バー、
+	   960px 以下はボトムナビも)の実際の高さ (上の 2 つの変数、.chatbar / .bottomnav の
+	   height と同じ)から、それが浮く分の隙間と読みやすい間 (--sp-8) を足して組み立てる。
+	   .main の padding-bottom と .main:has(.today) の下端は両方ここを見るので、
+	   画面ごとに別の calc を書かない (今まではここが 108〜196px の間でばらばらだった) */
+	--content-bottom-clear: calc(var(--chatbar-h) + var(--sp-4) + var(--sp-8));
 }
 
 /* components 2.1 — リセットと本文 (-webkit-font-smoothing は書かない) */
@@ -226,6 +232,18 @@ h4 {
 	margin: 0;
 	color: var(--ink-2);
 	font-size: 14px;
+}
+/* Task 11r (監査 5) — 携帯を横向きにした高さでは、見出しの説明文と見出し・タブ行の余白
+   だけで安全に使える帯 (依頼バーの上、概ね 170px前後) を使い切り、一覧の先頭行が沈んで
+   いた (/inbox /tasks /calendar /people 共通の .page-head、上のコメントを見よ)。説明文は
+   見出しと重複しない情報だが、この高さでは一覧を優先して畳む */
+@media (max-width: 960px) and (max-height: 480px) {
+	.page-desc {
+		display: none;
+	}
+	.page-head {
+		padding-bottom: var(--sp-2);
+	}
 }
 p {
 	margin: 0;
@@ -414,6 +432,15 @@ svg.i {
 	position: relative;
 	z-index: 1;
 	min-height: 100dvh;
+	/* Task 11r (監査 8) — カードのガラス (glass()、既定の bleed 63px)が窓の右端に近いカードでは
+	   画面幅より外へはみ出し、横スクロールを生んでいた (Inbox など、canvas 自体は
+	   pointer-events: none なので押し間違いにはならない)。.public と同じ手 (overflow-x: clip)
+	   をこの層にも掛ける。固定要素 (.chrome、サイドナビ、依頼バー、ボトムナビ)は
+	   position: fixed で .app の子でも視点 (viewport) 基準に描かれるので、ここでは切られない。
+	   overflow-y は visible のまま明示し、片方だけ hidden/auto と違って overflow-x: clip との
+	   組でも文書の縦スクロールを .app 自身の内部スクロールに変えない (仕様上の例外) */
+	overflow-x: clip;
+	overflow-y: visible;
 }
 /* Task 10i — 枠のガラスをまとめて描くための空の層。中身はガラスの canvas 1 枚だけ。
    本文 (段を持たない)より後、覆い (55 以上)より前に敷く。画面いっぱいに広げるので、
@@ -426,7 +453,7 @@ svg.i {
 }
 .main {
 	margin-left: calc(var(--side-w) + 32px);
-	padding: var(--bar-clear) var(--sp-6) calc(var(--chatbar-h) + 64px);
+	padding: var(--bar-clear) var(--sp-6) var(--content-bottom-clear);
 }
 /* visual 4.4 + components 3.1 — 左サイドナビ (ruling: 幅 256、項目 48、角丸 16) */
 .sidebar {
@@ -682,9 +709,22 @@ svg.i {
 	box-shadow: var(--rim), var(--e-glass);
 }
 
-.chatbar input {
-	flex: 1;
+/* Task 11r (監査 7) — .chip は既定で white-space: nowrap のみで縮む指定が無いので、狭い
+   依頼バーでは入力欄だけが 4px まで潰れていた。ここで縮ませ、文言は省略記号に落とす。
+   入力欄には最低 120px を渡す (幅が足りない携帯でも 1 文字は必ず打てる) */
+.chatbar .chip {
+	flex-shrink: 1;
+	min-width: 32px;
+}
+.chatbar .chip span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 	min-width: 0;
+}
+.chatbar input {
+	flex: 1 1 120px;
+	min-width: 120px;
 	height: 100%;
 	border: 0;
 	background: none;
@@ -1696,6 +1736,12 @@ svg.i {
 	:root {
 		/* 上端に貼り付く不透明な帯なので、浮かせるぶんの 16px が要らない */
 		--bar-clear: calc(var(--header-h) + var(--sp-4));
+		/* 依頼バーはボトムナビの上に載る (.chatbar の bottom と同じ式)。ボトムナビの高さと
+		   浮かせる分もここでまとめて足す */
+		--content-bottom-clear: calc(
+			var(--bottomnav-h) + env(safe-area-inset-bottom) + var(--sp-2) + var(--sp-2) +
+				var(--chatbar-h) + var(--sp-8)
+		);
 	}
 	/* 幅が足りないので案内の札は段階だけにする。見出しは押して開く板の中に出る */
 	.pg-title {
@@ -1715,7 +1761,7 @@ svg.i {
 	.main {
 		margin-left: 0;
 		margin-right: 0;
-		padding: var(--bar-clear) var(--sp-4) calc(var(--bottomnav-h) + var(--chatbar-h) + 64px);
+		padding: var(--bar-clear) var(--sp-4) var(--content-bottom-clear);
 	}
 	/* 依頼バーはボトムナビの上に載せる */
 	.chatbar {
@@ -2316,25 +2362,15 @@ section.tc .list-row:not(label):hover {
 	translate: -50% -50%;
 }
 
-/* Task 10m — 本文の下に空ける高さ。固定の依頼バー (携帯ではその下のボトムナビも)が
-   占める高さに 32px の間を足したもの。環状に置いたカードの下端がこの帯に入ると
-   依頼バーの裏に回るので、値は Task 10j / 10l のまま据え置く。式は 960px 以下で
-   変わるので、2 か所に同じ式を書かないよう変数にしている */
+/* Task 10m — 本文の下に空ける高さ。環状に置いたカードの下端がこの帯に入ると
+   依頼バーの裏に回る。値は :root の --content-bottom-clear (Task 11r で統合、.main の
+   既定の padding-bottom と同じ式) をそのまま使う。960px 以下の式の切り替えもそちらで
+   一括して面倒を見るので、ここに専用の変数は要らない */
 .main:has(.today) {
-	--today-bottom: calc(var(--chatbar-h) + var(--sp-4) + var(--sp-8));
 	display: flex;
 	flex-direction: column;
 	min-height: 100dvh;
-	padding-bottom: var(--today-bottom);
-}
-/* 960px 以下は依頼バーがボトムナビの上に載る (.chatbar の bottom と同じ式) */
-@media (max-width: 960px) {
-	.main:has(.today) {
-		--today-bottom: calc(
-			var(--bottomnav-h) + env(safe-area-inset-bottom) + var(--sp-4) + var(--chatbar-h) +
-				var(--sp-8)
-		);
-	}
+	padding-bottom: var(--content-bottom-clear);
 }
 /* 見出しと本文の下に残る空きをカードの側に吸わせる */
 .today {
@@ -2463,8 +2499,11 @@ section.tc .list-row:not(label):hover {
 	font-weight: 700;
 }
 
-/* 700px 以下は Bento をやめ、折りたたみカード 1 枚にする (仕様 5.1) */
-@media (max-width: 700px) {
+/* 700px 以下は Bento をやめ、折りたたみカード 1 枚にする (仕様 5.1)。
+   Task 11r (監査 1) — ボトムナビが出る 960px 以下で窓が低い (480px 以下、携帯の横)ときも
+   同じ折りたたみに切り替える (today/+page.svelte の narrow と条件をそろえる)。Bento の
+   環状/段組みは最初のカードがまるごと 170px 超あり、依頼バー・ボトムナビの下に沈んでいた */
+@media (max-width: 700px), (max-width: 960px) and (max-height: 480px) {
 	.today .bento {
 		display: none;
 	}
@@ -2518,6 +2557,14 @@ section.tc .list-row:not(label):hover {
 	}
 	.today-done {
 		padding: 0;
+	}
+}
+/* Task 11r (監査 1) — 携帯を横向きにした高さでは、オーブの覗き見せ (160px)だけで
+   依頼バーの上に残る帯 (概ね 170px 前後)を使い切ってしまい、一覧の先頭行すら収まらない。
+   飾りなので、この高さだけ畳んで一覧に譲る */
+@media (max-width: 960px) and (max-height: 480px) {
+	.today-orb {
+		display: none;
 	}
 }
 
@@ -2747,6 +2794,39 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 
 /* --- 週表示 (components 3.12) ------------------------------------------- */
 
+/* Task 11r — .week-body の 12 時間ぶん (576px)は画面の高さに追従しないので、窓が低いと
+   はみ出して下端の依頼バーの裏に沈んでいた (監査 4)。本文の器 (.main)から .cal-panel まで
+   flex の縦の並びにして、.week-body に残りの高さをそのまま渡す。576px は伸びすぎを防ぐ
+   上限として残す。月表示はこの並びに触れないよう :has(.week) で週表示のときだけ効かせる */
+.main:has(.week) {
+	display: flex;
+	flex-direction: column;
+	/* min-height ではなく height。.week-body へ「残りの高さ」を実際に配るには、この器の
+	   高さを確定させる必要がある (min-height だと flex-grow の起点が本文の自然な高さに
+	   引きずられ、.week-body が上限の 576px のまま縮まない)。:has(.week) なので月表示には
+	   効かない (月表示は .cal-panel の overflow: hidden はそのまま残るので、ここを月表示にも
+	   効かせると .cal-panel の高さが自動最小 0 まで削られ、月の格子が切れる) */
+	height: 100dvh;
+}
+.cal:has(.week) {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+}
+.cal-panel:has(.week) {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+}
+.cal-panel:has(.week) .week {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+}
+
 /* 狭い画面では列が潰れるので、格子ごと横に流す */
 .week {
 	overflow-x: auto;
@@ -2783,6 +2863,8 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 /* 0:00〜24:00 を持ち、見える高さは 12 時間分に切って縦に送る。
    曜日の行は外に置いたままなので、送っても日付は見えたままになる */
 .week-body {
+	flex: 1;
+	min-height: 0;
 	max-height: 576px;
 	overflow-y: auto;
 	scrollbar-gutter: stable;
@@ -2835,6 +2917,17 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 	/* 中身を落とす境目はブロック自身の幅で決める (下の @container weekev)。画面の幅では決まらない。
 	   面は最大 1080px で頭打ちになり、左の帯の分だけ狭まり、重なると列数で割られるため */
 	container: weekev / inline-size;
+}
+/* Task 11r (監査 9) — 30 分の予定は見た目 24px (WCAG 2.2 SC 2.5.8 の下限、上のコメントの
+   とおり意図的)のまま、当たり判定だけ広げる。.iconbtn::after と同じ仕掛けだが、
+   .week-ev.tentative::after が枠線に使っているので ::before を使う。
+   上下の隣接予定は 1px しか離れていない (上のコメント)ことがあるため、縦は安全に
+   確保できる範囲 (4px、24px→32px)に留める。左右は同じ時間帯に重なる予定どうしも
+   1px しか離れないので同じく 4px。既定のデータでは前後 1 時間以上空いており重ならない */
+.week-ev::before {
+	content: '';
+	position: absolute;
+	inset: -4px;
 }
 /* 角丸の縁に沿わせる内側の影だと、30 分の予定では括弧のように曲がって見える。
    独立した 3px のバーにすれば、どの高さでも真っ直ぐ立つ */
@@ -3113,6 +3206,19 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 	gap: var(--sp-3);
 	padding: 0 var(--sp-5) var(--sp-5);
 }
+@media (max-width: 960px) and (max-height: 480px) {
+	/* .people-head は .page-head と同じプロパティを後ろで書き直しているので、その下端の
+	   詰め (上の .page-head 向けの同名メディアクエリ)はここで .people-head 自身に効かせる */
+	.people-head {
+		padding-bottom: var(--sp-2);
+	}
+	.people-tabs {
+		padding-bottom: var(--sp-2);
+	}
+	.list-head {
+		height: 24px;
+	}
+}
 /* ガラスの canvas は bleed の分だけ外へ出るので、位置の基準になる親を置く */
 .people-cards {
 	position: relative;
@@ -3174,6 +3280,17 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 .kv dd {
 	margin: 0;
 	line-height: 1.7;
+}
+/* Task 11r (監査 11) — 会社名のリンクは地の文の高さ (23px)のまま。.iconbtn::after / .btn.sm::after
+   と同じ仕掛けで、見た目を変えずに当たり判定だけ 44px にする */
+.kv dd a {
+	position: relative;
+	display: inline-block;
+}
+.kv dd a::after {
+	content: '';
+	position: absolute;
+	inset: -11px -8px;
 }
 
 /* 一覧の行。名前を伸ばして、右端のバッジを行の末尾に寄せる */
