@@ -36,8 +36,8 @@
 	// 700px 以下は Bento をやめて 1 枚の折りたたみカードにするので、オーブも 1 つだけ差し替える
 	const narrow = new MediaQuery('(max-width: 700px)');
 	/* Task 10j — 箱の一辺。球の直径はその 48% (shader.ts の R0)なので 560 で 269px。
-	   左右のカードの列の間 (12 列のうち中央の 4 列)より球は小さく、光彩だけがカードに掛かる。
-	   そこでカードのガラスの縁が破片を曲げる (visual 2.8 の 6) */
+	   左右のカードの列の間は本文の幅の 30% (1440px で 304px)。球の外周と光彩がカードの縁に
+	   掛かるので、そこでカードのガラスの縁が破片を曲げる (visual 2.8 の 6) */
 	const orbSize = $derived(narrow.current ? 300 : 560);
 
 	const meetingHead = (m: NonNullable<typeof nm>) =>
@@ -54,7 +54,7 @@
 		<h1 class="today-count">
 			<a href="#items">今日やること <span class="num">{count}</span> 件</a>
 		</h1>
-		<ScenarioMenu />
+		<ScenarioMenu class="today-scenario" />
 	</header>
 
 	<div class="today-items" id="items">
@@ -66,7 +66,8 @@
 		{:else}
 			<!-- 並びは要件定義 p.11 の重み順。左上が最初に見られるので承認待ちを先頭に置く
 			     (eye.md 3.2 の (3)。モックは承認待ちを右下に置いていた)。
-			     先頭のカードだけ 1 列ぶん広い (visual 2.7「すべてのタイルを同じ大きさにしない」) -->
+			     段組みは 5 枚とも同じ幅になるので、重みは先頭のカードの下の余白で付ける
+			     (app.css の .card:first-child) -->
 			<div class="bento" {@attach glass({ ...CARD, targets: '.card' })}>
 				{#if ap.length}
 					<TodayCard
@@ -158,8 +159,8 @@
 				{/if}
 
 				<!-- オーブは左右の列の間に置く。カードより後ろの層 (z-index -2)なので、
-				     カードのガラスの縁が破片を曲げる。カードの数え方 (:nth-child) を狂わせない
-				     よう末尾に置く -->
+				     カードのガラスの縁が破片を曲げる。先頭のカードを選ぶ規則
+				     (app.css の .card:first-child) を狂わせないよう末尾に置く -->
 				{#if !narrow.current}
 					<div class="hole" aria-hidden="true"><Orb size={orbSize} /></div>
 				{/if}
@@ -195,8 +196,11 @@
 	</div>
 
 	<!-- 塗りのボタンは画面にこの 1 つだけ。主ボタンと副ボタンを見た目で区別しないと
-	     利用者が止まる (eye.md 2.5、Baymard) -->
-	{#if !db.demo.guide.on}
+	     利用者が止まる (eye.md 2.5、Baymard)。
+	     完了画面では出さない。あちらは縦に長くて画面からあふれるので、下端に留めた主ボタンが
+	     「作業履歴を見る」「次の商談の Brief を見る」の 2 つの導線に重なる。次のシナリオへは
+	     右上の「他のシナリオを試す」で入る -->
+	{#if !db.demo.guide.on && count > 0}
 		<div class="today-start">
 			<button class="btn pri lg today-demo" onclick={startGuide}>デモを開始する</button>
 		</div>

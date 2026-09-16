@@ -404,16 +404,6 @@ svg.i {
 	margin-left: calc(var(--side-w) + 32px);
 	padding: calc(var(--header-h) + 32px) var(--sp-6) calc(var(--chatbar-h) + 64px);
 }
-/* Task 10j — Today だけは最後の要素 (主ボタン)を意図して画面の下端に寄せるので、
-   依頼バーの下敷きぶんに 64px も足すと本文が画面に入りきらない。バーとの間を
-   32px に詰める。1280x800 で縦のスクロールが出るかどうかがここで決まる。
-   960px 以下はボトムナビが増えて余白の作りが変わるので当てない */
-@media (min-width: 961px) {
-	.main:has(.today) {
-		padding-bottom: calc(var(--chatbar-h) + var(--sp-8));
-	}
-}
-
 /* visual 4.4 + components 3.1 — 左サイドナビ (ruling: 幅 256、項目 48、角丸 16) */
 .sidebar {
 	position: fixed;
@@ -1852,8 +1842,10 @@ svg.i {
 	right: var(--sp-6);
 	top: 0;
 }
-/* 上部バーが固定なので、見出しから飛んだときに先頭が隠れないようにする */
+/* 上部バーが固定なので、見出しから飛んだときに先頭が隠れないようにする。
+   flex: 1 は下端の主ボタンを画面の下端まで押し下げるため (.today の節を見よ) */
 .today-items {
+	flex: 1;
 	scroll-margin-top: calc(var(--header-h) + var(--sp-4));
 }
 
@@ -1969,37 +1961,52 @@ section.tc .list-row:not(label):hover {
 	translate: -50% -50%;
 }
 
-/* Task 10j — 下端中央の主ボタン。この画面で塗りのボタンはこれ 1 つだけ。
-   pill なのはモックの構図をそのまま採ったため (他のボタンの角丸 12px とはここだけ違う) */
+/* Task 10j — 下端中央の主ボタンの置き方。この画面で塗りのボタンはこれ 1 つだけ */
+.main:has(.today) {
+	/* 画面の下端から主ボタンの下端までの高さ。固定の依頼バーが占める高さ (携帯では
+	   その下のボトムナビも)に 32px の間を足したもの。本文の下余白と、主ボタンが
+	   留まる位置をこの 1 つの値で決める。2 か所に同じ式を書くと片方だけ直して狂う */
+	--today-bottom: calc(var(--chatbar-h) + var(--sp-4) + var(--sp-8));
+	display: flex;
+	flex-direction: column;
+	min-height: 100dvh;
+	padding-bottom: var(--today-bottom);
+}
+/* 960px 以下は依頼バーがボトムナビの上に載る (.chatbar の bottom と同じ式) */
+@media (max-width: 960px) {
+	.main:has(.today) {
+		--today-bottom: calc(
+			var(--bottomnav-h) + env(safe-area-inset-bottom) + var(--sp-4) + var(--chatbar-h) +
+				var(--sp-8)
+		);
+	}
+}
+/* 見出しと本文の下に残る空きをカードの側に吸わせ、主ボタンを画面の下端に置く */
 .today {
 	position: relative;
+	display: flex;
+	flex: 1;
+	flex-direction: column;
 }
+/* Task 10j 修正 — 主ボタンは本文の最後の要素なので、本文が画面に収まらないと
+   (完了画面、携帯幅) スクロール位置 0 で固定の依頼バーの裏に入る。sticky にすると
+   どのスクロール位置でもボタンの下端が --today-bottom より下に行かない。
+   本文が収まるときは流れの位置がちょうど --today-bottom なので、ボタンは動かない */
 .today-start {
+	position: sticky;
+	bottom: var(--today-bottom);
+	/* 送っている間カードの上を通るので、上に出す (携帯の畳みカードの見出しが 2) */
+	z-index: 3;
 	display: flex;
 	justify-content: center;
 	padding-top: var(--sp-6);
+	/* 入れ物は幅いっぱいの透明な帯なので、そのままだと左右のカードへの押下を横取りする */
+	pointer-events: none;
 }
-/* 1101px 以上はカードの列の間が空くので、そこの下端にボタンを浮かせる。
-   段の下に 1 行ぶん積むと 1280x800 で本文が 34px 画面からあふれた (実測)。
-   左右の列はこの位置まで届かないので重ならない。
-   完了画面と 1100px 以下には列の間の空きがないので、そのまま本文の下に積む */
-@media (min-width: 1101px) {
-	.today:not(:has(.today-done)) {
-		/* 画面に残る高さいっぱいまで伸ばし、ボタンを本文の下端ではなく画面の下端に置く。
-		   引くのは .main の上下の余白と同じ値 (上: ヘッダー + 32、下: 依頼バー + 32) */
-		min-height: calc(100dvh - var(--header-h) - 32px - var(--chatbar-h) - var(--sp-8));
-	}
-	.today:not(:has(.today-done)) .today-start {
-		position: absolute;
-		left: 0;
-		right: 0;
-		/* 依頼バーとの間は 16px では詰まって見える。浮く部品どうしの間隔を 1 段取る */
-		bottom: var(--sp-4);
-		padding-top: 0;
-	}
-}
+/* pill なのはモックの構図をそのまま採ったため (他のボタンの角丸 12px とはここだけ違う) */
 .today-demo {
 	border-radius: var(--r-pill);
+	pointer-events: auto;
 }
 
 /* Today から外した「予定」「ToDo」の追加を置く段。入力欄との境は一覧と同じ 1px */

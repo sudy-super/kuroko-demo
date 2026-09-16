@@ -4,6 +4,9 @@
 	import { startScenario } from '$lib/actions';
 	import Icon from './Icon.svelte';
 
+	// 置き場所は使う側が決める。共有部品に画面固有の絶対配置を持たせない
+	let { class: klass = '' }: { class?: string } = $props();
+
 	// 仕様 11.4 — 8 シナリオ。文言は仕様のまま、番号順に並べる
 	const SCENARIOS: { label: string; href: string }[] = [
 		{
@@ -51,8 +54,8 @@
 	<DropdownMenu.Trigger>
 		{#snippet child({ props })}
 			<!-- Task 10j — 塗りのボタンは画面に「デモを開始する」1 つだけにしたので、
-			     ここは枠のない文字リンクに落として画面の右上に置く -->
-			<button {...props} class="btn text today-scenario">
+			     ここは枠のない文字リンクに落とす -->
+			<button {...props} class="btn text {klass}">
 				他のシナリオを試す
 				<Icon name="ic-chev" size={18} />
 			</button>
