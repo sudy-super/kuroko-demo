@@ -14,6 +14,8 @@ export const ui = $state({
 	activityDrawer: false,
 	palette: false,
 	mobileMenu: false,
+	/** デモをリセットの確かめ。上部バーのメニューと ⌘K の両方から立てる (Task 10m) */
+	demoReset: false,
 	context: null as ContextChip | null,
 	voice: false
 });

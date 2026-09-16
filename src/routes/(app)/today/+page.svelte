@@ -12,7 +12,7 @@
 		todayItems,
 		todayCount
 	} from '$lib/derived';
-	import { startGuide, toggleTask } from '$lib/actions';
+	import { toggleTask } from '$lib/actions';
 	import { ui } from '$lib/ui.svelte';
 	import { parse, rel } from '$lib/dates';
 	import Orb from '$lib/components/Orb.svelte';
@@ -21,7 +21,6 @@
 	import ReasonIcon from '$lib/components/ReasonIcon.svelte';
 	import ApprovalIcon from '$lib/components/ApprovalIcon.svelte';
 	import DoneScreen from '$lib/components/DoneScreen.svelte';
-	import ScenarioMenu from '$lib/components/ScenarioMenu.svelte';
 	import { glass, CARD } from '$lib/glass';
 
 	const count = $derived(todayCount(db));
@@ -48,14 +47,13 @@
 <svelte:head><title>Today — KUROKO AI</title></svelte:head>
 
 <div class="today">
-	<!-- Task 10j — モックの構図: 件数は上部中央のピル、主ボタンは下端中央に 1 つだけ。
-	     「予定」「ToDo」は ⌘K パレットと各画面の追加ボタンへ、「KUROKO に頼む」は下端の
-	     依頼バーそのものなので消した。シナリオの切り替えは右上の控えめな文字リンクにする -->
+	<!-- Task 10m — この画面にボタンは 1 つも置かない。「予定」「ToDo」の追加は ⌘K パレットと
+	     各画面の追加ボタンへ、「KUROKO に頼む」は下端の依頼バーそのもの、デモの操作
+	     (開始 / 他のシナリオ / リセット) は上部バー右端のメニューと ⌘K へ移した (仕様 5.1 の裁定) -->
 	<header class="today-head">
 		<h1 class="today-count">
 			<a href="#items">今日やること <span class="num">{count}</span> 件</a>
 		</h1>
-		<ScenarioMenu class="today-scenario" />
 	</header>
 
 	<div class="today-items" id="items">
@@ -196,15 +194,4 @@
 			{/if}
 		{/if}
 	</div>
-
-	<!-- 塗りのボタンは画面にこの 1 つだけ。主ボタンと副ボタンを見た目で区別しないと
-	     利用者が止まる (eye.md 2.5、Baymard)。
-	     完了画面では出さない。あちらは縦に長くて画面からあふれるので、下端に留めた主ボタンが
-	     「作業履歴を見る」「次の商談の Brief を見る」の 2 つの導線に重なる。次のシナリオへは
-	     右上の「他のシナリオを試す」で入る -->
-	{#if !db.demo.guide.on && count > 0}
-		<div class="today-start">
-			<button class="btn pri lg today-demo" onclick={startGuide}>デモを開始する</button>
-		</div>
-	{/if}
 </div>

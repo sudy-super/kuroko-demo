@@ -1809,7 +1809,7 @@ svg.i {
 /* Task 10h — 見出しの段を Bento より上に置く。.bento は position: relative なので、
    その中のオーブ (z-index -2) ごとこの段の上に描かれていた。破片が文字の上に直接乗ると
    文字 (--accent) が行単位で 2.87:1 まで落ちる。段を上げると面に遮られる。
-   Task 10j — 件数はモックどおり上部中央のピルにする。右上にシナリオの文字リンクを置く */
+   Task 10m — この段に置くのは件数のピルだけ。デモの操作は上部バー右端のメニューへ移した */
 .today-head {
 	position: relative;
 	z-index: 1;
@@ -1841,14 +1841,8 @@ svg.i {
 	font-size: 24px;
 	font-weight: 700;
 }
-/* 右上の控えめな文字リンク。中央のピルと的が重ならないよう段の端に逃がす */
-.today-scenario {
-	position: absolute;
-	right: var(--sp-6);
-	top: 0;
-}
 /* 上部バーが固定なので、見出しから飛んだときに先頭が隠れないようにする。
-   flex: 1 は下端の主ボタンを画面の下端まで押し下げるため (.today の節を見よ) */
+   flex: 1 は残った空きをカードの側に吸わせ、環状の配置を本文の中央に置くため (.today の節) */
 .today-items {
 	flex: 1;
 	scroll-margin-top: calc(var(--header-h) + var(--sp-4));
@@ -2051,9 +2045,7 @@ section.tc .list-row:not(label):hover {
 	}
 	/* Task 10l 修正 — 案内カードの置き場所。環状の配置では左右の端までカードが並ぶので、
 	   既定の右下だと右下のカードに重なる (1280x800 で 210x103px)。Today のときだけ
-	   球の通り道 (左右の列の間、下端は主ボタンの上)に移す。ここが唯一の空きで、
-	   カードにも依頼バーにも主ボタンにも当たらない。案内カードが出ている間は主ボタンを
-	   出さない作りなので (+page.svelte の !db.demo.guide.on)、下端は既定のままでよい。
+	   球の通り道 (左右の列の間)に移す。ここが唯一の空きで、カードにも依頼バーにも当たらない。
 	   通り道の中央は本文の中央で、本文はサイドナビのぶん右に寄っている */
 	.app:has(.today) .guide {
 		left: calc(50% + (var(--side-w) + 32px) / 2);
@@ -2095,11 +2087,11 @@ section.tc .list-row:not(label):hover {
 	translate: -50% -50%;
 }
 
-/* Task 10j — 下端中央の主ボタンの置き方。この画面で塗りのボタンはこれ 1 つだけ */
+/* Task 10m — 本文の下に空ける高さ。固定の依頼バー (携帯ではその下のボトムナビも)が
+   占める高さに 32px の間を足したもの。環状に置いたカードの下端がこの帯に入ると
+   依頼バーの裏に回るので、値は Task 10j / 10l のまま据え置く。式は 960px 以下で
+   変わるので、2 か所に同じ式を書かないよう変数にしている */
 .main:has(.today) {
-	/* 画面の下端から主ボタンの下端までの高さ。固定の依頼バーが占める高さ (携帯では
-	   その下のボトムナビも)に 32px の間を足したもの。本文の下余白と、主ボタンが
-	   留まる位置をこの 1 つの値で決める。2 か所に同じ式を書くと片方だけ直して狂う */
 	--today-bottom: calc(var(--chatbar-h) + var(--sp-4) + var(--sp-8));
 	display: flex;
 	flex-direction: column;
@@ -2115,39 +2107,41 @@ section.tc .list-row:not(label):hover {
 		);
 	}
 }
-/* 見出しと本文の下に残る空きをカードの側に吸わせ、主ボタンを画面の下端に置く */
+/* 見出しと本文の下に残る空きをカードの側に吸わせる */
 .today {
 	position: relative;
 	display: flex;
 	flex: 1;
 	flex-direction: column;
 }
-/* Task 10j 修正 — 主ボタンは本文の最後の要素なので、本文が画面に収まらないと
-   (完了画面、携帯幅) スクロール位置 0 で固定の依頼バーの裏に入る。sticky にすると
-   どのスクロール位置でもボタンの下端が --today-bottom より下に行かない。
-   本文が収まるときは流れの位置がちょうど --today-bottom なので、ボタンは動かない */
-.today-start {
-	position: sticky;
-	bottom: var(--today-bottom);
-	/* 送っている間カードの上を通るので、上に出す (携帯の畳みカードの見出しが 2) */
-	z-index: 3;
-	display: flex;
-	justify-content: center;
-	padding-top: var(--sp-6);
-	/* 入れ物は幅いっぱいの透明な帯なので、そのままだと左右のカードへの押下を横取りする */
-	pointer-events: none;
-}
-/* pill なのはモックの構図をそのまま採ったため (他のボタンの角丸 12px とはここだけ違う) */
-.today-demo {
-	border-radius: var(--r-pill);
-	pointer-events: auto;
-}
-
-/* Today から外した「予定」「ToDo」の追加を置く段。入力欄との境は一覧と同じ 1px */
+/* Today から外した「予定」「ToDo」の追加とデモの操作を置く段。入力欄との境は一覧と同じ 1px */
 .palette-acts {
 	margin-top: var(--sp-3);
 	border-top: 1px solid var(--line);
 	padding-top: var(--sp-2);
+}
+/* 出所ラベル (仕様 5.14)。行の右端に寄せる */
+.palette-src {
+	margin-left: auto;
+	color: var(--ink-3);
+	font-size: 12px;
+}
+/* 8 シナリオは畳んでおく。文言が長いので、開いた中の行だけ高さを行数に任せる */
+.palette-scenarios summary {
+	list-style: none;
+}
+.palette-scenarios summary::-webkit-details-marker {
+	display: none;
+}
+.palette-scenarios[open] summary .i {
+	rotate: 90deg;
+}
+.palette-scenarios .list-row.scenario {
+	align-items: flex-start;
+	height: auto;
+	min-height: 44px;
+	padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-8);
+	font-size: 14px;
 }
 
 /* 完了画面。球の下側がカードに隠れてガラスのぼかす対象になるよう、画の 3 割を重ねる */
@@ -2194,23 +2188,27 @@ section.tc .list-row:not(label):hover {
 	margin-top: var(--sp-5);
 }
 
-/* 仕様 11.4 — シナリオのメニュー。文言が長いので折り返させ、高さは行数に任せる */
-.scenario-menu {
+/* Task 10m — 上部バー右端の「デモの操作」から開くメニュー。中の「他のシナリオを試す」は
+   入れ子のメニューで、仕様 11.4 の 8 件を出す。文言が長いので折り返させ、高さは行数に任せる */
+.demo-menu {
 	z-index: 70;
-	width: 420px;
+	width: 220px;
 	max-width: calc(100vw - var(--sp-8));
 	padding: var(--sp-2);
 	border-radius: var(--r-m);
 	background: var(--solid);
 	box-shadow: var(--e3);
 }
+.demo-menu.wide {
+	width: 420px;
+}
 /* 開いた直後は入れ物に焦点が当たる。枠は項目側の [data-highlighted] で示すので入れ物には出さない */
-.scenario-menu:focus-visible {
+.demo-menu:focus-visible {
 	outline: none;
 }
-.scenario-item {
+.demo-item {
 	display: flex;
-	align-items: flex-start;
+	align-items: center;
 	gap: var(--sp-3);
 	min-height: 44px;
 	padding: var(--sp-3) var(--sp-4);
@@ -2220,10 +2218,18 @@ section.tc .list-row:not(label):hover {
 	cursor: pointer;
 	transition: background var(--d-fast) var(--ease-out);
 }
-.scenario-item[data-highlighted] {
+/* 入れ子のメニューを開く行だけ、右端に開く向きの山を出す */
+.demo-item[data-state] .i {
+	margin-left: auto;
+	color: var(--ink-3);
+}
+.demo-item.scenario {
+	align-items: flex-start;
+}
+.demo-item[data-highlighted] {
 	background: var(--sel-soft);
 }
-.scenario-n {
+.demo-n {
 	color: var(--accent);
 	font-weight: 700;
 }
@@ -2278,15 +2284,8 @@ section.tc .list-row:not(label):hover {
 	.today-mobile .list-row {
 		padding: 0 var(--sp-4);
 	}
-	/* 狭い画面では中央のピルと右上のリンクが重なるので、縦に積んで両方とも中央に置く */
 	.today-head {
-		flex-direction: column;
-		align-items: center;
-		gap: var(--sp-2);
 		padding: 0 0 var(--sp-4);
-	}
-	.today-scenario {
-		position: static;
 	}
 	.today-done {
 		padding: 0;

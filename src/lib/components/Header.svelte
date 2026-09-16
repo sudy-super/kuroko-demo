@@ -1,16 +1,13 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { db } from '$lib/store.svelte';
 	import { pendingApprovals } from '$lib/derived';
 	import { fmtYMDW, fmtMDW, hm } from '$lib/dates';
-	import { resetDemo } from '$lib/actions';
 	import { ui } from '$lib/ui.svelte';
 	import { media } from '$lib/media.svelte';
 	import Icon from './Icon.svelte';
-	import Modal from './Modal.svelte';
+	import DemoMenu from './DemoMenu.svelte';
 
 	let now = $state(new Date());
-	let confirming = $state(false);
 
 	const pending = $derived(pendingApprovals(db).length);
 
@@ -19,12 +16,6 @@
 		const t = setInterval(() => (now = new Date()), 60_000);
 		return () => clearInterval(t);
 	});
-
-	function reset() {
-		confirming = false;
-		resetDemo();
-		goto('/');
-	}
 </script>
 
 {#snippet tools()}
@@ -43,9 +34,7 @@
 			<span class="badge count num" style="position: absolute; top: -2px; right: -2px">{pending}</span>
 		{/if}
 	</button>
-	<button class="iconbtn" title="デモをリセット" aria-label="デモをリセット" onclick={() => (confirming = true)}>
-		<Icon name="ic-undo" size={20} />
-	</button>
+	<DemoMenu />
 {/snippet}
 
 {#if media.mobile}
@@ -67,16 +56,3 @@
 		</div>
 	</header>
 {/if}
-
-<Modal
-	open={confirming}
-	title="デモをリセット"
-	description="初期状態に戻しますか? 承認や返信など、ここまでの操作はすべて消えます。"
-	size="sm"
-	onclose={() => (confirming = false)}
->
-	{#snippet actions()}
-		<button class="btn pri" onclick={reset}>初期状態に戻す</button>
-		<button class="btn text" onclick={() => (confirming = false)}>やめる</button>
-	{/snippet}
-</Modal>
