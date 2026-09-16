@@ -18,6 +18,14 @@ describe('seed', () => {
 			key(bizDay(1, new Date(2026, 8, 15)))
 		);
 	});
+	it('過去の商談があり、People の最終商談に値が出る', () => {
+		const db = seed(new Date(2026, 8, 15));
+		const past = db.meetings.filter(
+			(m) => db.events.find((e) => e.id === m.eventId)!.date < db.seededOn
+		);
+		expect(past.map((m) => m.id)).toEqual(['m-abc-demo', 'm-abc-quote']);
+		expect(past.every((m) => !!m.minutes)).toBe(true);
+	});
 	it('件名のみのスレッドの元になる件名は 39 件', () => {
 		expect(FILLER_SUBJECTS.length).toBe(39);
 	});

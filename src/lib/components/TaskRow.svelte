@@ -32,7 +32,7 @@
 		calendar: 'ic-cal',
 		meeting: 'ic-bell',
 		people: 'ic-people',
-		tasks: 'ic-plus', // 行頭のチェックボックスと紛れないよう、ToDo 画面の「追加」と同じ形にする
+		tasks: 'ic-list', // 一覧の記号。'ic-plus' は画面上の「追加」ボタンと同じ形で意味が二重になる
 		documents: 'ic-doc',
 		schedule: 'ic-clock',
 		palette: 'ic-search'
@@ -78,11 +78,9 @@
 	.task-row {
 		gap: var(--sp-3);
 	}
+	/* 寸法と色は app.css の .list-row input[type='checkbox'] に持たせた。ここは並びだけ */
 	.task-row input[type='checkbox'] {
 		flex: none;
-		width: 20px;
-		height: 20px;
-		accent-color: var(--accent);
 	}
 	.task-title {
 		flex: 1;

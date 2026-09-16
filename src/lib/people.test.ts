@@ -20,9 +20,15 @@ describe('personHistory', () => {
 	it('スレッドと会議を新しい順に並べる', () => {
 		const d = seed(BASE);
 		const h = personHistory(d, 'p-tanaka');
-		expect(h.map((x) => x.title)).toEqual(['次回お打ち合わせについて', '先ほどの件、了解しました']);
-		expect(h.map((x) => x.kind)).toEqual(['mail', 'line']);
-		expect(h.map((x) => x.label)).toEqual(['メール', 'LINE']);
+		// シードの過去の商談 2 件 (8/25 見積提示、8/5 デモ実施) が後ろに続く
+		expect(h.map((x) => x.title)).toEqual([
+			'次回お打ち合わせについて',
+			'先ほどの件、了解しました',
+			'ABC 株式会社 見積提示',
+			'ABC 株式会社 デモ実施'
+		]);
+		expect(h.map((x) => x.kind)).toEqual(['mail', 'line', 'meeting', 'meeting']);
+		expect(h.map((x) => x.label)).toEqual(['メール', 'LINE', '会議', '会議']);
 		expect(h[0].href).toBe('/inbox?t=th-tanaka-next');
 		expect(h[0].at > h[1].at).toBe(true);
 	});
@@ -34,8 +40,10 @@ describe('personHistory', () => {
 
 	it('これから先の会議は「最近のやりとり」に混ぜない', () => {
 		const d = seed(BASE);
-		// m-abc の予定 (ev-abc-meeting) は翌営業日なので出さない
-		expect(personHistory(d, 'p-tanaka').some((x) => x.kind === 'meeting')).toBe(false);
+		// m-abc の予定 (ev-abc-meeting) は翌営業日なので出さない (過去の商談 2 件は出る)
+		const h = personHistory(d, 'p-tanaka');
+		expect(h.some((x) => x.href === '/meetings/m-abc')).toBe(false);
+		expect(h.filter((x) => x.kind === 'meeting').length).toBe(2);
 	});
 
 	it('過去の会議は会議として出し、時刻は 0 埋めして比べる', () => {
@@ -69,7 +77,9 @@ describe('personHistory', () => {
 		expect(h.map((x) => x.title)).toEqual([
 			'次回お打ち合わせについて',
 			'先ほどの件、了解しました',
-			'ABC 株式会社 初回商談'
+			'ABC 株式会社 初回商談',
+			'ABC 株式会社 見積提示',
+			'ABC 株式会社 デモ実施'
 		]);
 	});
 });
@@ -78,8 +88,8 @@ describe('personStats', () => {
 	it('メールの通数、会議の件数、最終商談を返す', () => {
 		const d = seed(BASE);
 		// th-tanaka-next の 2 通。LINE のスレッドは数えない。
-		// ev-abc-meeting は翌営業日の予定なので会議には数えない
-		expect(personStats(d, 'p-tanaka')).toEqual({ mails: 2, meetings: 0, lastMeeting: undefined });
+		// ev-abc-meeting は翌営業日の予定なので数えず、過去の商談 2 件だけを数える
+		expect(personStats(d, 'p-tanaka')).toEqual({ mails: 2, meetings: 2, lastMeeting: '2026-08-25' });
 		expect(personStats(d, 'p-sato')).toEqual({ mails: 2, meetings: 0, lastMeeting: undefined });
 	});
 
@@ -109,9 +119,9 @@ describe('personStats', () => {
 			agendaShared: false,
 			transcriptIds: []
 		});
-		// 過去の会議を足しても両者はずれない
+		// 過去の会議を足しても両者はずれない (シードの 2 件 + 足した 1 件)
 		expect(personStats(d, 'p-tanaka').meetings).toBe(count('p-tanaka'));
-		expect(count('p-tanaka')).toBe(1);
+		expect(count('p-tanaka')).toBe(3);
 	});
 
 	it('最終商談は基準日までで最も新しい会議の日付', () => {
@@ -137,7 +147,8 @@ describe('personStats', () => {
 			agendaShared: false,
 			transcriptIds: []
 		});
-		expect(personStats(d, 'p-tanaka')).toEqual({ mails: 2, meetings: 1, lastMeeting: '2026-09-01' });
+		// 足した 9/1 はシードの 8/25 より新しいので最終商談になる
+		expect(personStats(d, 'p-tanaka')).toEqual({ mails: 2, meetings: 3, lastMeeting: '2026-09-01' });
 	});
 });
 

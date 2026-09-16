@@ -61,7 +61,7 @@ describe('scheduling', () => {
 		confirmSlot('tok', s.slots[0].id);
 		const r = confirmSlot('tok', s.slots[1].id)!;
 		expect(db.events.filter((e) => e.source === 'kuroko').length).toBe(1);
-		expect(db.meetings.length).toBe(2); // シードの m-abc と選び直した 1 件
+		expect(db.meetings.length).toBe(4); // シードの 3 件 (m-abc と過去の商談 2 件) と選び直した 1 件
 		expect(db.demo.stats.confirmed).toBe(1);
 		expect(s.eventId).toBe(r.event.id);
 		expect(r.event.start).toBe(s.slots[1].start);

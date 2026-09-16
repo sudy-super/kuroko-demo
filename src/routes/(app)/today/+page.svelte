@@ -179,9 +179,13 @@
 
 				{#if sent.length}
 					<TodayCard size="wide" title="日程調整の返信待ち {sent.length} 件" icon="ic-clock">
+						<!-- リンクを行に並べると wide (341px) では題名が「田中 太郎…」まで縮む。
+						     リンクは行の下に落とす -->
 						{#each sent as s (s.id)}
 							<div class="list-row">
 								<span class="tc-text">{personOf(db, s.personId)?.name} 様 候補 3 件を送信済み</span>
+							</div>
+							<div class="row tc-foot">
 								<a class="btn text sm" target="_blank" rel="noreferrer" href="/schedule/{s.token}">
 									相手の画面を開く (デモ用)
 								</a>

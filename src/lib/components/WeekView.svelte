@@ -46,7 +46,11 @@
 			</div>
 		{/each}
 	</div>
-	<div class="week-cols week-body" bind:this={body}>
+	<!-- 縦に送る領域。予定が 1 つもない週では中に押せるものが無く、キーボードだけでは
+	     ここへ来られないので、領域そのものを焦点に入れる (WCAG 2.1.1)。
+	     規則は「押せない要素に tabindex を置くな」だが、縦に送れる領域はその例外に当たる -->
+	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+	<div class="week-cols week-body" bind:this={body} tabindex="0" role="group" aria-label="週の時間割">
 		<div class="week-axis">
 			{#each HOURS as h (h)}<div class="week-hour"><span>{h}:00</span></div>{/each}
 		</div>

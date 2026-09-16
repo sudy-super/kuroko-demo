@@ -83,7 +83,16 @@ export function glass(options: LiquidGlassElementOptions, repaintMs?: number) {
 			respectReducedTransparency: false,
 			...options
 		});
-		const timer = repaintMs ? setInterval(() => instance.refresh(), repaintMs) : undefined;
+		/* 引数なしの refresh() は targets の解決と観測子 (ResizeObserver / MutationObserver) の
+		   付け直しまでやり直す。ここで要るのは背後の描き直しだけなので backdrop: false を渡す。
+		   ライブラリの .d.ts はこの引数を宣言していないが、実装 (src/dom.js の refresh) は受け取る。
+		   隠れているタブでは描いても見えないので飛ばす */
+		const repaint = instance.refresh as (o?: { backdrop?: boolean }) => void;
+		const timer = repaintMs
+			? setInterval(() => {
+					if (!document.hidden) repaint.call(instance, { backdrop: false });
+				}, repaintMs)
+			: undefined;
 		return () => {
 			clearInterval(timer);
 			instance.destroy();

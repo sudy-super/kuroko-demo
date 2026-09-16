@@ -50,10 +50,9 @@
 
 	function remove() {
 		if (!detail) return;
-		deleteEvent(detail.id);
-		// deleteEvent が今積んだログを取り消す (登録のときと同じ作法)
-		const l = db.logs[0];
-		toast(`予定「${detail.title}」を削除しました`, { undo: () => undo(l.id) });
+		// 空振り (すでに消えている予定) ではログが積まれないので、返り値で判定する
+		const l = deleteEvent(detail.id);
+		if (l) toast(`予定「${detail.title}」を削除しました`, { undo: () => undo(l.id) });
 		detail = null;
 	}
 </script>

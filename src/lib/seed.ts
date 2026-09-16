@@ -436,6 +436,35 @@ export function seed(base: Date = new Date()): Db {
 				source: 'gcal',
 				purpose: '価格条件を詰めて契約時期を決める'
 			},
+			/* 過去の商談 2 件。m-abc の Brief の履歴 (デモ実施 / 見積提示) と日付をそろえる。
+			   People の「最終商談」と「会議 N 件」はここから値が出る */
+			{
+				id: 'ev-abc-demo',
+				date: key(addDays(-41, b)),
+				start: '14:00',
+				end: '15:00',
+				title: 'ABC 株式会社 デモ実施',
+				place: 'オンライン',
+				online: 'meet',
+				personIds: ['p-tanaka'],
+				companyId: 'c-abc',
+				projectId: 'pj-abc-dx',
+				meetingId: 'm-abc-demo',
+				source: 'gcal'
+			},
+			{
+				id: 'ev-abc-quote',
+				date: key(addDays(-21, b)),
+				start: '15:00',
+				end: '16:30',
+				title: 'ABC 株式会社 見積提示',
+				place: '渋谷',
+				personIds: ['p-tanaka'],
+				companyId: 'c-abc',
+				projectId: 'pj-abc-dx',
+				meetingId: 'm-abc-quote',
+				source: 'gcal'
+			},
 			{ id: 'ev-standup-2', date: B4, start: '10:00', end: '11:00', title: '社内定例', place: '渋谷', personIds: ['p-yamada'], source: 'gcal' },
 			{ id: 'ev-shinagawa', date: B5, start: '14:00', end: '15:30', title: '外出 (取引先訪問)', place: '品川', personIds: [], source: 'gcal' },
 			{ id: 'ev-wed', date: WED, start: '13:00', end: '15:00', title: '打ち合わせ', place: '品川', personIds: [], source: 'gcal' }
@@ -460,6 +489,50 @@ export function seed(base: Date = new Date()): Db {
 					homework: ['未提出: 導入スケジュールの提出'],
 					recentContacts: [`社内稟議中との連絡あり (${md(-14)} LINE)`],
 					documentIds: ['doc-abc-proposal', 'doc-abc-quote']
+				}
+			},
+			{
+				id: 'm-abc-demo',
+				eventId: 'ev-abc-demo',
+				title: 'ABC 株式会社 デモ実施',
+				personIds: ['p-tanaka'],
+				companyId: 'c-abc',
+				projectId: 'pj-abc-dx',
+				purpose: '製品デモで適用範囲の当たりを付ける',
+				briefRead: true,
+				agenda: [],
+				agendaShared: true,
+				transcriptIds: [],
+				minutes: {
+					summary: '基幹システムとの連携範囲をデモで確認し、次は見積の提示に進むことで合意しました。',
+					decisions: ['対象部署は営業部から始める', '見積は 2 週間以内に提示する'],
+					followUpMail: {
+						to: '田中 太郎 <tanaka@abc.co.jp>',
+						subject: '本日のデモのお礼',
+						body: '田中様\n\n本日はデモのお時間をいただきありがとうございました。\n見積は 2 週間以内にお送りいたします。'
+					}
+				}
+			},
+			{
+				id: 'm-abc-quote',
+				eventId: 'ev-abc-quote',
+				title: 'ABC 株式会社 見積提示',
+				personIds: ['p-tanaka'],
+				companyId: 'c-abc',
+				projectId: 'pj-abc-dx',
+				purpose: '見積を提示して価格条件をすり合わせる',
+				briefRead: true,
+				agenda: [],
+				agendaShared: true,
+				transcriptIds: [],
+				minutes: {
+					summary: '初期費用と月額の内訳を説明し、価格について社内稟議を進めていただくことになりました。',
+					decisions: ['稟議の結果は次回商談までに共有', '導入スケジュールは別途提出'],
+					followUpMail: {
+						to: '田中 太郎 <tanaka@abc.co.jp>',
+						subject: '御見積の送付',
+						body: '田中様\n\n本日はお時間をいただきありがとうございました。\n御見積をお送りしますので、ご確認のほどよろしくお願いいたします。'
+					}
 				}
 			}
 		],

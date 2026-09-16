@@ -455,8 +455,10 @@ export function deleteEvent(id: string, origin: Origin = 'calendar') {
 	integrations.calendar.deleteEvent(db, id);
 	// 予定と一緒に作った会議も残さない
 	db.meetings = db.meetings.filter((m) => m.eventId !== id);
-	log(`予定「${e.title}」を削除しました`, 'other', { actor: 'user', origin, undo: undoPayload });
+	const l = log(`予定「${e.title}」を削除しました`, 'other', { actor: 'user', origin, undo: undoPayload });
 	save();
+	// 呼び出し側が取り消しを組み立てるので、積んだログを返す (db.logs[0] を読ませない)
+	return l;
 }
 
 // 時刻は '9:00' のように 1 桁時もあるので、文字列ではなく分に直して足す

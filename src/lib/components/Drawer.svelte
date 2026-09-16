@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { Dialog } from 'bits-ui';
 	import { page } from '$app/state';
-	import { pushState, replaceState } from '$app/navigation';
+	import { pushState } from '$app/navigation';
 	import { media } from '$lib/media.svelte';
 	import { markOverlay } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
@@ -38,7 +38,9 @@
 		if (open) {
 			render = true;
 			leaving = false;
-			pushState('', { drawer: true });
+			// 閉じたときに印を消さないので、開き直しでは先頭が既にこの状態になっている。
+			// そのまま積むと同じ URL の履歴が開閉の回数だけ溜まる
+			if (!page.state.drawer) pushState('', { drawer: true });
 			pushed = true;
 			return;
 		}
@@ -47,16 +49,15 @@
 			render = false;
 			leaving = false;
 		}, EXIT_MS);
-		// 自分が積んだ印を消すだけにする。history.back() はドロワー内リンクの遷移と順序を争うので使わない。
-		// 戻るで閉じたときは popstate 側で pushed を下ろし、画面遷移したときは page.state が空になる
-		if (pushed) {
-			pushed = false;
-			if (page.state.drawer) replaceState('', {});
-		}
+		/* 印はそのまま残す。history.back() はドロワー内リンクの遷移と順序を争うので使わない。
+		   残した印は次に開くときに再利用され、戻るで閉じたときは popstate 側で pushed を下ろす。
+		   画面遷移したときは page.state が空になるので、その後の開くで積み直しになる */
 	});
 
+	// 退場の 200 ミリ秒が終わるまでカードの塗りを戻さない。open で切ると覆いが消える前に
+	// ガラスが 2 枚重なった状態が見える
 	$effect(() => {
-		if (!open) return;
+		if (!render) return;
 		markOverlay(true);
 		return () => markOverlay(false);
 	});
