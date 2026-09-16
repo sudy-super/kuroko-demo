@@ -16,7 +16,18 @@
 
 	const dateOf = (eventId: string) => db.events.find((e) => e.id === eventId)?.date;
 	import { glass, CARD } from '$lib/glass';
+
+	/* 仕様 5 — カードの中の一覧は上位 3 件まで。「残り N 件」を押すとその場で全部出す */
+	const LIMIT = 3;
+	let open = $state<Record<string, boolean>>({});
+	const shown = <T,>(a: T[], k: string) => (open[k] ? a : a.slice(0, LIMIT));
 </script>
+
+{#snippet more(k: string, n: number)}
+	{#if !open[k] && n > LIMIT}
+		<button class="btn text sm" onclick={() => (open[k] = true)}>残り {n - LIMIT} 件</button>
+	{/if}
+{/snippet}
 
 <svelte:head><title>{company?.name ?? '会社'} — KUROKO AI</title></svelte:head>
 
@@ -49,18 +60,19 @@
 
 			<section class="card people-sec">
 				<h2>担当者</h2>
-				{#each people as p (p.id)}
+				{#each shown(people, 'people') as p (p.id)}
 					<a class="list-row" href="/people/{p.id}">
 						<span class="people-ident">{p.name}</span>
 						<span class="muted">{p.title}</span>
 					</a>
 				{/each}
 				{#if !people.length}<p class="muted">登録された担当者はいません</p>{/if}
+				{@render more('people', people.length)}
 			</section>
 
 			<section class="card people-sec">
 				<h2>案件</h2>
-				{#each projects as pj (pj.id)}
+				{#each shown(projects, 'projects') as pj (pj.id)}
 					<a class="list-row" href="/projects/{pj.id}">
 						<span class="people-ident">{pj.name}</span>
 						<span class="badge">{pj.status}</span>
@@ -68,11 +80,12 @@
 					</a>
 				{/each}
 				{#if !projects.length}<p class="muted">案件はありません</p>{/if}
+				{@render more('projects', projects.length)}
 			</section>
 
 			<section class="card people-sec">
 				<h2>関連メール</h2>
-				{#each threads.slice(0, 5) as t (t.id)}
+				{#each shown(threads, 'threads') as t (t.id)}
 					<a class="list-row" href="/inbox?t={t.id}">
 						<SourceIcon source={t.source} />
 						<span class="people-ident">{t.subject}</span>
@@ -80,12 +93,12 @@
 					</a>
 				{/each}
 				{#if !threads.length}<p class="muted">関連するメールはありません</p>{/if}
-				{#if threads.length > 5}<p class="muted">残り {threads.length - 5} 件</p>{/if}
+				{@render more('threads', threads.length)}
 			</section>
 
 			<section class="card people-sec">
 				<h2>関連会議</h2>
-				{#each meetings as m (m.id)}
+				{#each shown(meetings, 'meetings') as m (m.id)}
 					{@const d = dateOf(m.eventId)}
 					<a class="list-row" href="/meetings/{m.id}">
 						<span class="people-ident">{m.title}</span>
@@ -93,6 +106,7 @@
 					</a>
 				{/each}
 				{#if !meetings.length}<p class="muted">関連する会議はありません</p>{/if}
+				{@render more('meetings', meetings.length)}
 			</section>
 		</div>
 	{/if}

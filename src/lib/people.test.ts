@@ -77,9 +77,41 @@ describe('personHistory', () => {
 describe('personStats', () => {
 	it('メールの通数、会議の件数、最終商談を返す', () => {
 		const d = seed(BASE);
-		// th-tanaka-next の 2 通。LINE のスレッドは数えない
-		expect(personStats(d, 'p-tanaka')).toEqual({ mails: 2, meetings: 1, lastMeeting: undefined });
+		// th-tanaka-next の 2 通。LINE のスレッドは数えない。
+		// ev-abc-meeting は翌営業日の予定なので会議には数えない
+		expect(personStats(d, 'p-tanaka')).toEqual({ mails: 2, meetings: 0, lastMeeting: undefined });
 		expect(personStats(d, 'p-sato')).toEqual({ mails: 2, meetings: 0, lastMeeting: undefined });
+	});
+
+	it('会議の件数は personHistory に出る会議の数と一致する', () => {
+		const d = seed(BASE);
+		const count = (id: string) => personHistory(d, id).filter((x) => x.kind === 'meeting').length;
+		// 先の予定しか無い状態
+		expect(personStats(d, 'p-tanaka').meetings).toBe(count('p-tanaka'));
+		d.events.push({
+			id: 'ev-past',
+			date: '2026-09-01',
+			start: '15:00',
+			end: '16:00',
+			title: '見積提示',
+			personIds: ['p-tanaka'],
+			source: 'gcal',
+			meetingId: 'm-past'
+		});
+		d.meetings.push({
+			id: 'm-past',
+			eventId: 'ev-past',
+			title: '見積提示',
+			personIds: ['p-tanaka'],
+			purpose: '',
+			briefRead: false,
+			agenda: [],
+			agendaShared: false,
+			transcriptIds: []
+		});
+		// 過去の会議を足しても両者はずれない
+		expect(personStats(d, 'p-tanaka').meetings).toBe(count('p-tanaka'));
+		expect(count('p-tanaka')).toBe(1);
 	});
 
 	it('最終商談は基準日までで最も新しい会議の日付', () => {
@@ -105,7 +137,7 @@ describe('personStats', () => {
 			agendaShared: false,
 			transcriptIds: []
 		});
-		expect(personStats(d, 'p-tanaka')).toEqual({ mails: 2, meetings: 2, lastMeeting: '2026-09-01' });
+		expect(personStats(d, 'p-tanaka')).toEqual({ mails: 2, meetings: 1, lastMeeting: '2026-09-01' });
 	});
 });
 

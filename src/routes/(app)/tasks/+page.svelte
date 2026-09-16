@@ -110,11 +110,6 @@
 		gap: var(--sp-3);
 		padding: 0 var(--sp-5) var(--sp-5);
 	}
-	/* 選択中のチップは下地が accent なので、件数は白地に反転させる */
-	.tasks-filters .chip.on .badge.count {
-		background: #fff;
-		color: var(--accent);
-	}
 	.tasks-list {
 		padding-inline: 0;
 		padding-block: var(--sp-2);

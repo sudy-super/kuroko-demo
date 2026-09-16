@@ -25,7 +25,7 @@
 
 <article class="card thread" aria-label="メールの本文">
 	<header class="thread-head">
-		<h1>{thread.subject}</h1>
+		<h2>{thread.subject}</h2>
 		<p class="sender"><SourceIcon source={thread.source} />{thread.sender}</p>
 		{#if reasons.length}<p class="why">要対応の理由: {reasons.join(' / ')}</p>{/if}
 	</header>
@@ -54,7 +54,7 @@
 		flex-direction: column;
 		gap: var(--sp-4);
 	}
-	.thread-head h1 {
+	.thread-head h2 {
 		margin: 0;
 		font-size: 24px;
 	}
@@ -71,8 +71,10 @@
 		color: var(--ink-3);
 		font-size: 14px;
 	}
+	/* 中央ペインは 1440px でも 370px ほどしかない。割合を混ぜないと塊が親いっぱいに広がり、
+	   下の margin-left: auto が効かなくなる */
 	.msg {
-		max-width: 640px;
+		max-width: min(640px, 85%);
 	}
 	/* 自分が出した分は右に寄せる (仕様 5.3)。文章の行頭はそろえたいので、寄せるのは塊だけ */
 	.msg.mine {

@@ -35,7 +35,7 @@
 		<span class="num when">{when}</span>
 	</span>
 	<span class="line">
-		<span class="subject" class:need={thread.needsReply}>{thread.subject}</span>
+		<span class="subject">{thread.subject}</span>
 		{#each reasons as r (r)}<ReasonIcon reason={r} />{/each}
 	</span>
 </a>
@@ -64,16 +64,10 @@
 		color: var(--ink-3);
 		font-size: 12px;
 	}
+	/* この一覧に出るのは要対応キューの行だけなので、件名は常に太字 (仕様 5.3) */
 	.subject {
 		flex: 1;
 		font-size: 16px;
-	}
-	/* 選択中の行は塗りだけでなく件名の太さでも伝える (縦バーを廃止した分の代わり) */
-	.list-row.on .subject {
-		font-weight: 700;
-	}
-	/* 返信が要る行だけ件名を太くする (仕様 5.3 の「選択中の行は常時強調」とは別の合図) */
-	.subject.need {
 		font-weight: 700;
 	}
 </style>

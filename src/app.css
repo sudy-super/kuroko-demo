@@ -835,6 +835,11 @@ svg.i {
 	color: #fff;
 	box-shadow: none;
 }
+/* 選択中のチップは下地が accent なので、件数は白地に反転させる */
+.chip.on .badge.count {
+	background: #fff;
+	color: var(--accent);
+}
 .chip:disabled {
 	background: var(--disabled-soft);
 	color: var(--disabled-ink);
@@ -2524,12 +2529,6 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 	gap: var(--sp-3);
 	padding: 0 var(--sp-5) var(--sp-5);
 }
-/* 選択中のチップは下地が accent なので、件数は白地に反転させる */
-.people-tabs .chip.on .badge.count {
-	background: #fff;
-	color: var(--accent);
-}
-
 /* ガラスの canvas は bleed の分だけ外へ出るので、位置の基準になる親を置く */
 .people-cards {
 	position: relative;

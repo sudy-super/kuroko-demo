@@ -22,8 +22,9 @@
 	let allOpen = $state(false);
 	let showRight = $state(false);
 	let sheet = $state(false);
-	// 960px 以下は一覧 → 本文の 2 段階にする (仕様 5.3)
-	let showThread = $state(false);
+	// 960px 以下は一覧 → 本文の 2 段階にする (仕様 5.3)。
+	// ?t= を持って入ってきたときは本文から始める (Today や人物ページからの入口)
+	let showThread = $state(page.url.searchParams.has('t'));
 
 	/** 依頼バーにこのスレッドの文脈を載せる。画面を離れたら外す (仕様 5.5) */
 	$effect(() => {
@@ -49,6 +50,8 @@
 		const next = q[i + 1] ?? q.find((t) => t.id !== thread.id);
 		markDone(thread.id);
 		toast('対応済みにしました');
+		// キューが空になったら一覧 (空の状態) に戻す。960px 以下では本文側に戻る手段が無くなるため
+		if (!next) showThread = false;
 		goto(next ? `/inbox?t=${next.id}` : '/inbox', {
 			replaceState: true,
 			noScroll: true,
@@ -108,7 +111,9 @@
 						<Icon name="ic-left" size={18} />一覧に戻る
 					</button>
 					<button class="btn sec sm person" onclick={togglePerson}>
-						<Icon name="ic-user" size={18} />{showRight ? 'メール一覧に戻る' : '人物を見る'}
+						<Icon name={showRight ? 'ic-left' : 'ic-user'} size={18} />{showRight
+							? 'メール一覧に戻る'
+							: '人物を見る'}
 					</button>
 				</div>
 				{#key thread.id}

@@ -13,7 +13,7 @@
 		todayCount
 	} from '$lib/derived';
 	import { startGuide, toggleTask } from '$lib/actions';
-	import { ui } from '$lib/ui.svelte';
+	import { ui, focusChatbar } from '$lib/ui.svelte';
 	import { parse, rel } from '$lib/dates';
 	import Orb from '$lib/components/Orb.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -47,7 +47,7 @@
 
 	function askKuroko() {
 		ui.context = null;
-		document.querySelector<HTMLInputElement>('.chatbar input')?.focus();
+		focusChatbar();
 	}
 </script>
 

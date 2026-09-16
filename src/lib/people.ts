@@ -58,19 +58,19 @@ export function personHistory(db: Db, personId: string): HistoryItem[] {
 	return out.filter((x) => x.at <= limit).sort((a, b) => b.at.localeCompare(a.at));
 }
 
-/** メールは通数 (スレッドではなく Message の数)、最終商談は基準日までで最も新しい会議の日付 */
+/** メールは通数 (スレッドではなく Message の数)。会議は personHistory と同じく基準日までの分だけ数える */
 export function personStats(db: Db, personId: string) {
 	const mailThreads = new Set(
 		db.threads.filter((t) => t.personId === personId && t.source === 'gmail').map((t) => t.id)
 	);
-	const meetings = db.meetings.filter((m) => m.personIds.includes(personId));
-	const past = meetings
+	const past = db.meetings
+		.filter((m) => m.personIds.includes(personId))
 		.map((m) => db.events.find((e) => e.id === m.eventId)?.date)
 		.filter((d): d is string => !!d && d <= db.seededOn)
 		.sort();
 	return {
 		mails: db.messages.filter((m) => mailThreads.has(m.threadId)).length,
-		meetings: meetings.length,
+		meetings: past.length,
 		lastMeeting: past[past.length - 1]
 	};
 }

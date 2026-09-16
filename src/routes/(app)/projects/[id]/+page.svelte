@@ -9,19 +9,34 @@
 	const id = $derived(page.params.id!);
 	const project = $derived(db.projects.find((p) => p.id === id));
 	const company = $derived(companyOf(db, project?.companyId));
-	const people = $derived(project ? project.personIds.map((x) => personOf(db, x)) : []);
+	const people = $derived(
+		project ? project.personIds.map((x) => personOf(db, x)).filter((x) => !!x) : []
+	);
 	const threads = $derived(
 		db.threads.filter((t) => t.projectId === id).sort((a, b) => b.lastAt.localeCompare(a.lastAt))
 	);
 	const meetings = $derived(db.meetings.filter((m) => m.projectId === id));
 	const documents = $derived(
-		project ? project.documentIds.map((d) => db.documents.find((x) => x.id === d)) : []
+		project
+			? project.documentIds.map((d) => db.documents.find((x) => x.id === d)).filter((x) => !!x)
+			: []
 	);
 
 	const statusClass = (s: string) => (s === '受注' ? 'ok' : s === '失注' ? 'warn' : '');
 	const dateOf = (eventId: string) => db.events.find((e) => e.id === eventId)?.date;
 	import { glass, CARD } from '$lib/glass';
+
+	/* 仕様 5 — カードの中の一覧は上位 3 件まで。「残り N 件」を押すとその場で全部出す */
+	const LIMIT = 3;
+	let open = $state<Record<string, boolean>>({});
+	const shown = <T,>(a: T[], k: string) => (open[k] ? a : a.slice(0, LIMIT));
 </script>
+
+{#snippet more(k: string, n: number)}
+	{#if !open[k] && n > LIMIT}
+		<button class="btn text sm" onclick={() => (open[k] = true)}>残り {n - LIMIT} 件</button>
+	{/if}
+{/snippet}
 
 <svelte:head><title>{project?.name ?? '案件'} — KUROKO AI</title></svelte:head>
 
@@ -58,20 +73,19 @@
 
 			<section class="card people-sec">
 				<h2>関連人物</h2>
-				{#each people as p (p?.id)}
-					{#if p}
-						<a class="list-row" href="/people/{p.id}">
-							<span class="people-ident">{p.name}</span>
-							<span class="muted">{p.title}</span>
-						</a>
-					{/if}
+				{#each shown(people, 'people') as p (p.id)}
+					<a class="list-row" href="/people/{p.id}">
+						<span class="people-ident">{p.name}</span>
+						<span class="muted">{p.title}</span>
+					</a>
 				{/each}
 				{#if !people.length}<p class="muted">紐づく人物はいません</p>{/if}
+				{@render more('people', people.length)}
 			</section>
 
 			<section class="card people-sec">
 				<h2>関連メール</h2>
-				{#each threads.slice(0, 5) as t (t.id)}
+				{#each shown(threads, 'threads') as t (t.id)}
 					<a class="list-row" href="/inbox?t={t.id}">
 						<SourceIcon source={t.source} />
 						<span class="people-ident">{t.subject}</span>
@@ -79,12 +93,12 @@
 					</a>
 				{/each}
 				{#if !threads.length}<p class="muted">関連するメールはありません</p>{/if}
-				{#if threads.length > 5}<p class="muted">残り {threads.length - 5} 件</p>{/if}
+				{@render more('threads', threads.length)}
 			</section>
 
 			<section class="card people-sec">
 				<h2>関連会議</h2>
-				{#each meetings as m (m.id)}
+				{#each shown(meetings, 'meetings') as m (m.id)}
 					{@const d = dateOf(m.eventId)}
 					<a class="list-row" href="/meetings/{m.id}">
 						<span class="people-ident">{m.title}</span>
@@ -92,19 +106,19 @@
 					</a>
 				{/each}
 				{#if !meetings.length}<p class="muted">関連する会議はありません</p>{/if}
+				{@render more('meetings', meetings.length)}
 			</section>
 
 			<section class="card people-sec">
 				<h2>資料</h2>
-				{#each documents as d (d?.id)}
-					{#if d}
-						<a class="list-row" href="/documents/{d.id}">
-							<span class="badge src">{d.kind}</span>
-							<span class="people-ident">{d.title}</span>
-						</a>
-					{/if}
+				{#each shown(documents, 'documents') as d (d.id)}
+					<a class="list-row" href="/documents?d={d.id}">
+						<span class="badge src">{d.kind}</span>
+						<span class="people-ident">{d.title}</span>
+					</a>
 				{/each}
 				{#if !documents.length}<p class="muted">資料はありません</p>{/if}
+				{@render more('documents', documents.length)}
 			</section>
 		</div>
 	{/if}

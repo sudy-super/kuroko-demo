@@ -18,6 +18,11 @@ export const ui = $state({
 	voice: false
 });
 
+/** 依頼バーの入力欄へ焦点を移す。'.chatbar input' の知識をここ 1 か所に閉じる */
+export function focusChatbar() {
+	document.querySelector<HTMLInputElement>('.chatbar input')?.focus();
+}
+
 let overlays = 0;
 
 /** app.css の body[data-overlay='on'] を生かす。ドロワーとモーダルが 1 枚でも出ている間だけ立てる */

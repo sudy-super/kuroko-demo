@@ -317,14 +317,13 @@ export function sendReply(threadId: string, body: string, origin: Origin = 'inbo
 	});
 }
 
-export function markDone(threadId: string, origin: Origin = 'inbox') {
+export function markDone(threadId: string) {
 	const th = db.threads.find((t) => t.id === threadId);
 	if (!th) return;
 	th.done = true;
 	th.needsReply = false;
-	log(`「${th.subject}」を対応済みにしました`, 'other', { actor: 'user', origin });
+	log(`「${th.subject}」を対応済みにしました`, 'other', { actor: 'user', origin: 'inbox' });
 	save();
-	return th;
 }
 
 export function confirmSlot(token: string, slotId: string) {

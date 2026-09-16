@@ -19,7 +19,9 @@
 			? (identitiesOf(db, person.id).find((i) => i.kind === 'email')?.value ?? identity?.value)
 			: identity?.value
 	);
-	const projects = $derived(person ? person.projectIds.map((x) => projectOf(db, x)) : []);
+	const projects = $derived(
+		person ? person.projectIds.map((x) => projectOf(db, x)).filter((x) => !!x) : []
+	);
 	const stats = $derived(person ? personStats(db, person.id) : undefined);
 </script>
 
@@ -29,14 +31,12 @@
 		<p class="muted">{company?.name ?? '会社の登録なし'} {person.title}</p>
 		<p class="pp-mail">{mail}</p>
 
-		{#each projects as pj (pj?.id)}
-			{#if pj}
-				<a class="list-row" href="/projects/{pj.id}">
-					<span class="people-ident">{pj.name}</span>
-					<span class="badge">{pj.status}</span>
-					<span class="num muted">{pj.amount}</span>
-				</a>
-			{/if}
+		{#each projects as pj (pj.id)}
+			<a class="list-row" href="/projects/{pj.id}">
+				<span class="people-ident">{pj.name}</span>
+				<span class="badge">{pj.status}</span>
+				<span class="num muted">{pj.amount}</span>
+			</a>
 		{/each}
 
 		{#if !compact}
