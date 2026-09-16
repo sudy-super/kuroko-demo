@@ -1,7 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { seed } from './seed';
-import { todayCount, todayItems, freeSlots, guideSection, todayEvents, nextMeeting } from './derived';
+import {
+	todayCount,
+	todayItems,
+	freeSlots,
+	guideSection,
+	todayEvents,
+	nextMeeting,
+	canStartGuide
+} from './derived';
 import { addDays } from './dates';
+import { replaceDb, db } from './store.svelte';
+import { startGuide } from './actions';
 
 describe('todayItems', () => {
 	it('どの曜日を今日にしても 7 件', () => {
@@ -69,5 +79,23 @@ describe('予定の並べ替え', () => {
 		db.meetings.push({ ...db.meetings[0], id: 'm-am', eventId: 'ev-am' });
 		db.meetings.push({ ...db.meetings[0], id: 'm-ten', eventId: 'ev-ten' });
 		expect(nextMeeting(db)?.meeting.id).toBe('m-am');
+	});
+});
+
+describe('完了画面からの始め直し', () => {
+	it('やることが 0 件でも「デモを開始する」は出て、押すと初期状態から始まる', () => {
+		const empty = { approvals: [], threads: [], meetings: [], tasks: [] };
+		replaceDb({ ...seed(new Date(2026, 8, 15)), ...empty });
+		expect(todayCount(db)).toBe(0);
+		expect(canStartGuide(db)).toBe(true);
+		startGuide();
+		expect(todayCount(db)).toBeGreaterThan(0);
+		expect(db.demo.guide.on).toBe(true);
+	});
+	it('案内の最中は伏せる', () => {
+		replaceDb(seed(new Date(2026, 8, 15)));
+		expect(canStartGuide(db)).toBe(true);
+		db.demo.guide.on = true;
+		expect(canStartGuide(db)).toBe(false);
 	});
 });

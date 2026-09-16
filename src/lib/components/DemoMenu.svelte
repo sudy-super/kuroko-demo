@@ -2,7 +2,7 @@
 	import { DropdownMenu } from 'bits-ui';
 	import { goto } from '$app/navigation';
 	import { db } from '$lib/store.svelte';
-	import { todayCount } from '$lib/derived';
+	import { canStartGuide } from '$lib/derived';
 	import { resetDemo, startGuide } from '$lib/actions';
 	import { SCENARIOS, pickScenario } from '$lib/scenarios';
 	import { ui } from '$lib/ui.svelte';
@@ -10,9 +10,8 @@
 	import Modal from './Modal.svelte';
 
 	// Task 10m — デモの操作は本番の画面に出さず、上部バー右端のこのアイコンと ⌘K だけに置く
-	// (ユーザー裁定 2026-09-16、仕様 5.1)。案内の最中と、やることが 0 件で案内する対象が
-	// 無いときは「デモを開始する」を伏せる (Task 10j までの Today の条件をそのまま移した)
-	const canStart = $derived(!db.demo.guide.on && todayCount(db) > 0);
+	// (ユーザー裁定 2026-09-16、仕様 5.1)。出し分けの条件は derived.ts に 1 つだけ置く
+	const canStart = $derived(canStartGuide(db));
 
 	function reset() {
 		ui.demoReset = false;
@@ -25,12 +24,12 @@
 	<DropdownMenu.Trigger>
 		{#snippet child({ props })}
 			<button {...props} class="iconbtn" title="デモの操作" aria-label="デモの操作">
-				<Icon name="ic-play" size={20} />
+				<Icon name="ic-demo" size={20} />
 			</button>
 		{/snippet}
 	</DropdownMenu.Trigger>
 	<DropdownMenu.Portal>
-		<DropdownMenu.Content class="demo-menu" align="end" sideOffset={8}>
+		<DropdownMenu.Content class="demo-menu" align="end" sideOffset={14}>
 			{#if canStart}
 				<DropdownMenu.Item class="demo-item" onSelect={startGuide}>デモを開始する</DropdownMenu.Item>
 			{/if}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { db } from '$lib/store.svelte';
-	import { todayCount } from '$lib/derived';
+	import { canStartGuide } from '$lib/derived';
 	import { startGuide } from '$lib/actions';
 	import { SCENARIOS, pickScenario } from '$lib/scenarios';
 	import { ui } from '$lib/ui.svelte';
@@ -11,16 +11,33 @@
 	let text = $state('');
 	let input: HTMLInputElement | null = $state(null);
 
-	// 上部バーのメニューと同じ出し分け (DemoMenu.svelte を見よ)
-	const canStart = $derived(!db.demo.guide.on && todayCount(db) > 0);
+	// 上部バーのメニューと同じ出し分け。条件は derived.ts に 1 つだけ置く
+	const canStart = $derived(canStartGuide(db));
 
 	function close() {
 		ui.palette = false;
 	}
 
-	$effect(() => {
-		if (ui.palette) input?.focus();
-	});
+	/* 仕様 5.14 — ↑↓ で移動、Enter で実行、Esc で閉じる。入力欄と行を 1 つの並びとして扱う。
+	   畳んだ details の中の行は描画されないが大きさは残る (Chrome は content-visibility で
+	   隠す)ので、offsetHeight ではなく checkVisibility で並びから外す。
+	   Enter はボタンと link の既定の動き、Esc は Dialog に任せる */
+	function arrows(node: HTMLElement) {
+		// 閉じるボタンや下段のボタンに焦点があるときも効くよう、箱全体で受ける
+		const box = node.closest<HTMLElement>('.modal')!;
+		const onkey = (e: KeyboardEvent) => {
+			const d = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
+			if (!d) return;
+			e.preventDefault();
+			const rows = [...box.querySelectorAll<HTMLElement>('.input, .list-row')].filter((r) =>
+				r.checkVisibility()
+			);
+			const i = rows.indexOf(document.activeElement as HTMLElement);
+			rows[(i + d + rows.length) % rows.length]?.focus();
+		};
+		box.addEventListener('keydown', onkey);
+		return () => box.removeEventListener('keydown', onkey);
+	}
 
 	function send() {
 		const q = text.trim();
@@ -31,8 +48,15 @@
 	}
 </script>
 
-<Modal open={ui.palette} title="検索と依頼" size="sm" onclose={() => (ui.palette = false)}>
+<Modal
+	open={ui.palette}
+	title="検索と依頼"
+	size="sm"
+	openFocus={() => input}
+	onclose={() => (ui.palette = false)}
+>
 	<form
+		{@attach arrows}
 		onsubmit={(e) => {
 			e.preventDefault();
 			send();

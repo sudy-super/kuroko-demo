@@ -16,7 +16,7 @@ import type {
 import { db, save, resetDb } from './store.svelte';
 import { toast } from './ui.svelte';
 import { nowIso, parse, fmtMDW, minutes, toHm } from './dates';
-import { personOf, doneLogOf } from './derived';
+import { personOf, doneLogOf, todayCount } from './derived';
 import { slotsFor, slotsText, uid } from './kuroko/generate';
 import { integrations } from './integrations';
 
@@ -509,12 +509,14 @@ export function resetDemo() {
 	timers.clear();
 	resetDb();
 }
-// 接続直後は案内を出さない。案内は Today の「デモを開始する」から始める
+// 接続直後は案内を出さない。案内は上部バーの「デモの操作」のメニューか ⌘K から始める
 export function markStarted() {
 	db.demo.started = true;
 	save();
 }
 export function startGuide() {
+	// 完了画面 (やること 0 件)からの始め直し。案内する対象が無いので、まず初期状態に戻す
+	if (todayCount(db) === 0) resetDemo();
 	db.demo.started = true;
 	db.demo.guide.on = true;
 	save();

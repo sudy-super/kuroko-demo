@@ -139,6 +139,10 @@ export function todayItems(db: Db): TodayItem[] {
 
 export const todayCount = (db: Db) => todayItems(db).reduce((n, i) => n + i.n, 0);
 
+/** 「デモを開始する」を出す条件。ヘッダーのメニューと ⌘K の 2 か所で使う。伏せるのは案内の
+    最中だけ。やることが 0 件の完了画面では startGuide が初期状態に戻してから始める */
+export const canStartGuide = (db: Db) => !db.demo.guide.on;
+
 export function freeSlots(db: Db, dateKey: string, from = '9:00', to = '18:00') {
 	const busy = db.events
 		.filter((e) => e.date === dateKey)

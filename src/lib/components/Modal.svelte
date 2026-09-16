@@ -10,6 +10,7 @@
 		description,
 		size = 'md',
 		onclose,
+		openFocus,
 		children,
 		actions
 	}: {
@@ -18,6 +19,8 @@
 		description?: string;
 		size?: 'md' | 'sm';
 		onclose: () => void;
+		/** 開いた直後に焦点を置く先。渡さないと bits-ui は最初の tabbable (閉じるボタン)に置く */
+		openFocus?: () => HTMLElement | null;
 		children?: Snippet;
 		actions: Snippet;
 	} = $props();
@@ -69,7 +72,15 @@
 				{#if render}<div {...props} class="scrim" class:leave={leaving}></div>{/if}
 			{/snippet}
 		</Dialog.Overlay>
-		<Dialog.Content forceMount>
+		<Dialog.Content
+			forceMount
+			onOpenAutoFocus={(e) => {
+				const el = openFocus?.();
+				if (!el) return;
+				e.preventDefault();
+				el.focus();
+			}}
+		>
 			{#snippet child({ props })}
 				{#if render}
 					<div {...props} class="modal" class:sm={size === 'sm'} class:leave={leaving}>
@@ -88,7 +99,9 @@
 								{/snippet}
 							</Dialog.Description>
 						{/if}
-						{#if children}{@render children()}{/if}
+						<!-- 中身だけスクロールさせる。題と操作の行は箱に留めるので、行数が増えても
+						     主ボタンが画面外へ出ない (仕様 5.14) -->
+						{#if children}<div class="modal-body">{@render children()}</div>{/if}
 						<!-- 仕様 5 / components 5.1 — 主ボタンは左。呼び出し側は主 → 副の順に置く -->
 						<div class="row modal-actions">
 							{@render actions()}
@@ -99,3 +112,14 @@
 		</Dialog.Content>
 	</Dialog.Portal>
 </Dialog.Root>
+
+<!-- app.css を Task 10n が触っている間はここに置く。app.css の .modal の節へ戻すこと -->
+<style>
+	.modal {
+		overflow: hidden;
+	}
+	.modal-body {
+		min-height: 0;
+		overflow-y: auto;
+	}
+</style>
