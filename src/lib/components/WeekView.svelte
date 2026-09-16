@@ -3,6 +3,8 @@
 	import { db } from '$lib/store.svelte';
 	import { key, minutes, hm } from '$lib/dates';
 	import { layoutColumns, eventsOn, weekOf } from '$lib/calendar';
+	import Icon from './Icon.svelte';
+	import Tip from './Tip.svelte';
 
 	let { cursor, onopen }: { cursor: Date; onopen: (e: CalendarEvent) => void } = $props();
 
@@ -31,9 +33,35 @@
 	});
 
 	const top = (m: number) => m * PX;
-	// 最小の高さは 24px (WCAG 2.2 SC 2.5.8)
+	/* 最小の高さは 24px (WCAG 2.2 SC 2.5.8)。
+	   calendar-block.md「左線の可否」— 上下に隣り合う予定の塗りが触れないよう 1px 引く */
 	const height = (e: CalendarEvent) =>
-		Math.max(24, (minutes(e.end) - minutes(e.start)) * PX);
+		Math.max(24, (minutes(e.end) - minutes(e.start)) * PX - 1);
+
+	/* calendar-block.md「時刻の位置」— 1 行目に題名、2 行目に時刻。2 行の高さは
+	   上下の余白 4px x 2 + 題名 14px x 1.25 + 時刻 12px x 1.25 = 40.5px なので、
+	   42px に届かない予定 (45 分以下) は題名だけに落とす */
+	const TWO_LINES = 42;
+
+	/* calendar-block.md「仮・バッファ・オンライン・準備の示し方」— 属性は塗りやバーの色を
+	   変えず、題名の前のアイコンで示す。狭い列で題名が消えないよう 2 個までに切る */
+	const attrs = (e: CalendarEvent) =>
+		[
+			e.online ? { name: 'ic-video', label: 'オンライン会議' } : null,
+			e.meetingId && db.meetings.some((m) => m.id === e.meetingId && m.brief)
+				? { name: 'ic-doc', label: '会議準備あり' }
+				: null,
+			e.bufferBefore || e.bufferAfter ? { name: 'ic-car', label: '移動時間あり' } : null
+		]
+			.filter((x) => x !== null)
+			.slice(0, 2);
+
+	/* アイコンと点線は読み上げに届かないので、名前を文言で組み立てて button に付ける
+	   (WCAG 1.4.1: 色や形だけに頼らない) */
+	const label = (e: CalendarEvent, a: { label: string }[]) =>
+		[`${e.title} ${e.start}〜${e.end}`, ...a.map((x) => x.label), e.tentative ? '仮押さえ' : '']
+			.filter(Boolean)
+			.join(' ');
 </script>
 
 <div class="week">
@@ -57,16 +85,35 @@
 		{#each days as d, i (i)}
 			{@const k = key(d)}
 			<div class="week-col" class:on={k === todayKey}>
-				{#each layoutColumns(eventsOn(db, k)) as { event, offset } (event.id)}
+				{#each layoutColumns(eventsOn(db, k)) as { event, col, cols } (event.id)}
+					{@const h = height(event)}
+					{@const a = attrs(event)}
+					<!-- 重なりは塊の幅を列数で均等に割り、右端に 1px 残して隣と塗りを離す -->
 					<button
 						class="week-ev"
 						class:tentative={event.tentative}
 						class:kuroko={event.source === 'kuroko'}
-						style="top: {top(minutes(event.start))}px; height: {height(event)}px; left: calc(4px + {offset} * 24px)"
+						class:split={cols > 1}
+						style="top: {top(minutes(event.start))}px; height: {h}px; left: calc(4px + (100% - 8px) * {col /
+							cols}); width: calc((100% - 8px) * {1 / cols} - 1px)"
+						aria-label={label(event, a)}
 						onclick={() => onopen(event)}
 					>
-						<span class="num">{event.start}</span>
-						{event.title}
+						<span class="week-ev-bar"></span>
+						<span class="week-ev-t">
+							{#each a as x (x.name)}
+								<Tip text={x.label}>
+									<Icon name={x.name} size={16} label={x.label} />
+								</Tip>
+							{/each}
+							<span class="week-ev-n">{event.title}</span>
+						</span>
+						{#if h >= TWO_LINES}
+							<!-- 列が狭いと終わりの時刻まで入らないので、CSS で終わりだけを落とす -->
+							<span class="week-ev-time num"
+								>{event.start}<span class="week-ev-end">〜{event.end}</span></span
+							>
+						{/if}
 					</button>
 				{/each}
 				{#if k === todayKey}

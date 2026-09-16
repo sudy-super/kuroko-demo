@@ -30,11 +30,32 @@ export function travelWarning(db: Db, i: Slot): { prev: CalendarEvent; gapMin: n
 	return gapMin <= 30 ? { prev, gapMin } : null;
 }
 
-/** 週表示の重なり。等幅に割らず、先に始まった予定の上へ 1 段ずつ右にずらして重ねる */
-export function layoutColumns(events: CalendarEvent[]): { event: CalendarEvent; offset: number }[] {
+/** 週表示の重なり (calendar-block.md「重なり」)。時間が途切れない予定の塊ごとに列を割り、
+    その塊の幅を列数で均等に分ける。col は 0 から数えた列、cols は塊全体の列数 */
+export type Placed = { event: CalendarEvent; col: number; cols: number };
+export function layoutColumns(events: CalendarEvent[]): Placed[] {
 	const sorted = [...events].sort((a, b) => minutes(a.start) - minutes(b.start));
-	const out: { event: CalendarEvent; offset: number }[] = [];
-	for (const e of sorted) out.push({ event: e, offset: out.filter((x) => overlaps(x.event, e)).length });
+	const out: Placed[] = [];
+	let group: Placed[] = [];
+	let groupEnd = -1;
+	const close = () => {
+		const cols = Math.max(...group.map((x) => x.col)) + 1;
+		for (const x of group) x.cols = cols;
+		group = [];
+		groupEnd = -1;
+	};
+	for (const e of sorted) {
+		if (group.length && minutes(e.start) >= groupEnd) close();
+		// 同じ塊の中でも、すでに終わった予定の列は空いているので使い直す
+		const used = new Set(group.filter((x) => overlaps(x.event, e)).map((x) => x.col));
+		let col = 0;
+		while (used.has(col)) col++;
+		const placed: Placed = { event: e, col, cols: 1 };
+		group.push(placed);
+		out.push(placed);
+		groupEnd = Math.max(groupEnd, minutes(e.end));
+	}
+	if (group.length) close();
 	return out;
 }
 

@@ -65,21 +65,48 @@ describe('overlaps', () => {
 describe('layoutColumns', () => {
 	const ev = (id: string, start: string, end: string) =>
 		({ id, date: 'd', start, end, title: id, personIds: [], source: 'gcal' }) as CalendarEvent;
-	it('重ならない予定はすべて左端', () => {
+	it('重ならない予定はそれぞれ幅いっぱい', () => {
 		const out = layoutColumns([ev('a', '9:00', '10:00'), ev('b', '10:00', '11:00')]);
-		expect(out.map((x) => x.offset)).toEqual([0, 0]);
+		expect(out.map((x) => [x.event.id, x.col, x.cols])).toEqual([
+			['a', 0, 1],
+			['b', 0, 1]
+		]);
 	});
-	it('重なるたびに 1 段ずつ右へずらす', () => {
+	it('重なる塊は列に割り、塊の全員が同じ分割数を持つ', () => {
 		const out = layoutColumns([
 			ev('c', '9:00', '12:00'),
 			ev('a', '9:00', '10:00'),
 			ev('b', '9:30', '10:30')
 		]);
-		// 開始の早い順に並べ直してから段を決める
-		expect(out.map((x) => [x.event.id, x.offset])).toEqual([
-			['c', 0],
-			['a', 1],
-			['b', 2]
+		// 開始の早い順に並べ直してから列を決める
+		expect(out.map((x) => [x.event.id, x.col, x.cols])).toEqual([
+			['c', 0, 3],
+			['a', 1, 3],
+			['b', 2, 3]
+		]);
+	});
+	it('先に終わった予定の列は後ろの予定が使い直す', () => {
+		const out = layoutColumns([
+			ev('a', '9:00', '10:00'),
+			ev('c', '9:30', '12:00'),
+			ev('b', '10:00', '11:00')
+		]);
+		expect(out.map((x) => [x.event.id, x.col, x.cols])).toEqual([
+			['a', 0, 2],
+			['c', 1, 2],
+			['b', 0, 2]
+		]);
+	});
+	it('間が空けば別の塊になり、分割数は持ち越さない', () => {
+		const out = layoutColumns([
+			ev('a', '9:00', '10:00'),
+			ev('b', '9:00', '10:00'),
+			ev('c', '11:00', '12:00')
+		]);
+		expect(out.map((x) => [x.event.id, x.col, x.cols])).toEqual([
+			['a', 0, 2],
+			['b', 1, 2],
+			['c', 0, 1]
 		]);
 	});
 });

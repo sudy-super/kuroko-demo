@@ -52,14 +52,17 @@
 					<button class="month-day num" onclick={() => onpick(d)}>
 						{d.getDate()}<span class="sr-only">日の週を開く</span>
 					</button>
+					<!-- calendar-block.md「月表示」— 週の面のブロックを縮めるのではなく、
+					     細いバー 1 本と題名 1 行まで情報量を落とす。時刻は読み上げにだけ残す -->
 					{#each evs.slice(0, SHOWN) as e (e.id)}
 						<button
 							class="month-ev"
 							class:tentative={e.tentative}
 							class:kuroko={e.source === 'kuroko'}
+							aria-label="{e.start} {e.title}{e.tentative ? ' 仮押さえ' : ''}"
 							onclick={() => onopen(e)}
 						>
-							<span class="num">{e.start}</span><span class="month-ev-t">{e.title}</span>
+							<span class="month-ev-bar"></span><span class="month-ev-t">{e.title}</span>
 						</button>
 					{/each}
 					{#if evs.length > SHOWN}
