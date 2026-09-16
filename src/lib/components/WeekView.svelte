@@ -33,10 +33,18 @@
 	});
 
 	const top = (m: number) => m * PX;
-	/* 最小の高さは 24px (WCAG 2.2 SC 2.5.8)。
-	   calendar-block.md「左線の可否」— 上下に隣り合う予定の塗りが触れないよう 1px 引く */
-	const height = (e: CalendarEvent) =>
-		Math.max(24, (minutes(e.end) - minutes(e.start)) * PX - 1);
+	/* 最小の高さは 24px (WCAG 2.2 SC 2.5.8)。30 分の予定はちょうど 24px なので、
+	   ここで 1px 引くと下限を割る。上下に隣り合う予定の塗りを離すのは CSS 側の
+	   透明な下線 (.week-ev の border-bottom + background-clip) に任せ、
+	   どの長さでも同じ 1px の隙間にする */
+	const height = (e: CalendarEvent) => Math.max(24, (minutes(e.end) - minutes(e.start)) * PX);
+
+	/* 重なりの横位置。左右の余白を 4px でそろえたいので、幅から 1px 引いて右にずらす手は
+	   使わず、先に列の間の隙間 (cols - 1)px を引いてから均等に割る */
+	const place = (col: number, cols: number) => {
+		const w = `(100% - ${8 + cols - 1}px) / ${cols}`;
+		return `left: calc(4px + ${col} * (${w} + 1px)); width: calc(${w});`;
+	};
 
 	/* calendar-block.md「時刻の位置」— 1 行目に題名、2 行目に時刻。2 行の高さは
 	   上下の余白 4px x 2 + 題名 14px x 1.25 + 時刻 12px x 1.25 = 40.5px なので、
@@ -44,7 +52,9 @@
 	const TWO_LINES = 42;
 
 	/* calendar-block.md「仮・バッファ・オンライン・準備の示し方」— 属性は塗りやバーの色を
-	   変えず、題名の前のアイコンで示す。狭い列で題名が消えないよう 2 個までに切る */
+	   変えず、題名の前のアイコンで示す。2 個までに切り、幅 120px 未満のブロックでは
+	   CSS 側 (@container weekev) でアイコンごと落として題名に幅を譲る。
+	   文言は下の title と aria-label に残る */
 	const attrs = (e: CalendarEvent) =>
 		[
 			e.online ? { name: 'ic-video', label: 'オンライン会議' } : null,
@@ -88,14 +98,11 @@
 				{#each layoutColumns(eventsOn(db, k)) as { event, col, cols } (event.id)}
 					{@const h = height(event)}
 					{@const a = attrs(event)}
-					<!-- 重なりは塊の幅を列数で均等に割り、右端に 1px 残して隣と塗りを離す -->
+					<!-- 重なりは塊の幅から列の間の隙間を引いて均等に割る -->
 					<button
 						class="week-ev"
 						class:tentative={event.tentative}
-						class:kuroko={event.source === 'kuroko'}
-						class:split={cols > 1}
-						style="top: {top(minutes(event.start))}px; height: {h}px; left: calc(4px + (100% - 8px) * {col /
-							cols}); width: calc((100% - 8px) * {1 / cols} - 1px)"
+						style="top: {top(minutes(event.start))}px; height: {h}px; {place(col, cols)}"
 						aria-label={label(event, a)}
 						onclick={() => onopen(event)}
 					>
@@ -106,10 +113,12 @@
 									<Icon name={x.name} size={16} label={x.label} />
 								</Tip>
 							{/each}
-							<span class="week-ev-n">{event.title}</span>
+							<!-- 題名は列の幅で切れるので、全文と属性をホバーでも読めるようにする。
+							     アイコンのツールチップと重ならないよう、button ではなく題名に付ける -->
+							<span class="week-ev-n" title={label(event, a)}>{event.title}</span>
 						</span>
 						{#if h >= TWO_LINES}
-							<!-- 列が狭いと終わりの時刻まで入らないので、CSS で終わりだけを落とす -->
+							<!-- ブロックが狭いと入らないので、終わりの時刻から順に CSS で落とす -->
 							<span class="week-ev-time num"
 								>{event.start}<span class="week-ev-end">〜{event.end}</span></span
 							>

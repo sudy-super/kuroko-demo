@@ -2317,10 +2317,18 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 	overflow: hidden;
 	padding: 4px 8px 4px var(--sp-3);
 	border: 0;
+	/* 上下に隣り合う予定の塗りを離す 1px。高さから引くと 30 分の予定が下限の 24px
+	   (WCAG 2.2 SC 2.5.8) を割るので、押せる大きさは残したまま塗りだけを 1px 縮める。
+	   これでどの長さの予定も同じ隙間になる */
+	border-bottom: 1px solid transparent;
 	border-radius: var(--r-xs);
 	background: var(--sel-soft);
+	background-clip: padding-box;
 	text-align: left;
 	cursor: pointer;
+	/* 中身を落とす境目はブロック自身の幅で決める (下の @container weekev)。画面の幅では決まらない。
+	   面は最大 1080px で頭打ちになり、左の帯の分だけ狭まり、重なると列数で割られるため */
+	container: weekev / inline-size;
 }
 /* 角丸の縁に沿わせる内側の影だと、30 分の予定では括弧のように曲がって見える。
    独立した 3px のバーにすれば、どの高さでも真っ直ぐ立つ */
@@ -2360,14 +2368,18 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 	text-overflow: ellipsis;
 	color: var(--ink-2);
 }
-.week-ev.kuroko .week-ev-bar {
-	background: var(--accent-top);
-}
 /* 仮押さえは色を変えず枠線を点線にする (calendar-block.md「属性の示し方」)。
-   outline なら塗りの大きさを動かさないので、確定の予定と幅がそろう */
-.week-ev.tentative {
-	outline: 1px dashed var(--accent);
-	outline-offset: -1px;
+   outline で描くと詳細度 (0,2,0) が共通の :focus-visible (0,1,0) を上書きし、Tab で焦点が
+   移っても輪郭が変わらなくなる (WCAG 2.4.7)。枠は疑似要素に持たせて outline を空けておく。
+   inset: 0 は padding box の縁なので、塗り (background-clip: padding-box) にちょうど重なる */
+.week-ev.tentative::after,
+.month-ev.tentative::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border: 1px dashed var(--accent);
+	border-radius: var(--r-xs);
+	pointer-events: none;
 }
 .week-ev:hover {
 	background: var(--sel-strong);
@@ -2454,6 +2466,7 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 /* calendar-block.md「月表示」— 週表示の面のブロックをそのまま縮めず、細いバー 1 本 +
    題名 1 行に落とす。塗りは指したときだけ出す */
 .month-ev {
+	position: relative; /* 仮押さえの点線 (.month-ev.tentative::after) の基準 */
 	display: flex;
 	align-items: center;
 	gap: var(--sp-2);
@@ -2482,13 +2495,6 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 .month-ev-t {
 	overflow: hidden;
 	text-overflow: ellipsis;
-}
-.month-ev.kuroko .month-ev-bar {
-	background: var(--accent-top);
-}
-.month-ev.tentative {
-	outline: 1px dashed var(--accent);
-	outline-offset: -1px;
 }
 .month-ev:hover {
 	background: var(--sel-soft);
@@ -2532,19 +2538,29 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 	border-radius: 50%;
 	background: var(--accent);
 }
-.month-dot.kuroko {
-	background: var(--accent-top);
-}
 
-/* 「10:00〜11:00」の実測は 74.9px で、収めるには 1 列 96px が要る。重なりで列を割った
-   予定は幅が半分以下になるので、その場ですぐ入らなくなる */
-.week-ev.split .week-ev-end {
-	display: none;
+/* ブロックが狭くなるほど中身を落とす。@container が見るのは左右の余白 20px を除いた
+   内側の幅なので、境目はどれも中身の実測値で書く。落とした分は題名の title 属性と
+   button の aria-label に残るので、情報は消えない。
+   アイコンは内側 100px (ブロックの幅で 120px) 未満で落とす。2 個で 16px x 2 + 間隔 4px を
+   占め、狭い列では題名の幅を食い尽くして 1440px の重なりで題名が 1 文字になっていた */
+@container weekev (max-width: 100px) {
+	/* Svelte の部品側の .tip-at は class 2 つ分の詳細度を持ち、app.css より後に入るので、
+	   ここは class 3 つ分にしないと負ける */
+	.week-ev .week-ev-t .tip-at {
+		display: none;
+	}
 }
-/* 1 列は (面の幅 - 目盛り 64px) / 7 なので、画面が 1280px を切ると入らなくなる。
-   そこから下は終わりの時刻を落として始まりだけにする (全文は押して出る詳細と読み上げに残る) */
-@media (max-width: 1280px) {
+/* 終わりの時刻は内側 86px 未満で落とす。「10:00〜11:00」の実測が 84.2px */
+@container weekev (max-width: 86px) {
 	.week-ev-end {
+		display: none;
+	}
+}
+/* 時刻の行そのものは内側 38px 未満で落とす。始まりだけの「10:00」でも実測 36.0px が
+   入らなくなり、「13:0…」と切れて意味を成さなくなる */
+@container weekev (max-width: 38px) {
+	.week-ev-time {
 		display: none;
 	}
 }

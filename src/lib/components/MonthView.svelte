@@ -42,7 +42,7 @@
 					<span class="month-day num">{d.getDate()}</span>
 					<span class="month-dots">
 						{#each evs.slice(0, SHOWN) as e (e.id)}
-							<span class="month-dot" class:kuroko={e.source === 'kuroko'}></span>
+							<span class="month-dot"></span>
 						{/each}
 					</span>
 					<span class="sr-only">{d.getMonth() + 1}月{d.getDate()}日 予定 {evs.length} 件</span>
@@ -58,7 +58,6 @@
 						<button
 							class="month-ev"
 							class:tentative={e.tentative}
-							class:kuroko={e.source === 'kuroko'}
 							aria-label="{e.start} {e.title}{e.tentative ? ' 仮押さえ' : ''}"
 							onclick={() => onopen(e)}
 						>
