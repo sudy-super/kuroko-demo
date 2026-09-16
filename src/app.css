@@ -638,6 +638,16 @@ svg.i {
 .chatbar input::placeholder {
 	color: var(--ink-3);
 }
+/* ruling (2026-09-16) — 入力欄そのものに輪郭を出すと、ガラスのピルの中に白い箱が
+   もう 1 枚現れて見える。焦点はバー全体に出し、入力欄の輪郭は消す。
+   マウスで押したときは :focus-visible が立たないので輪郭は出ない */
+.chatbar input:focus-visible {
+	outline: none;
+}
+.chatbar:has(input:focus-visible) {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
 .chatbar .send {
 	display: grid;
 	place-items: center;
