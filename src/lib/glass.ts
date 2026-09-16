@@ -20,8 +20,9 @@ import { whileVisible } from './visible';
    dispersion は縁の色ずれ。5.5 まで上げていたときは、上部バーの下をくぐる本文に赤と青の
    縞が出て、バー自身の文字と重なって読みにくかった (ユーザー判定)。1.5 にすると
    文字の上では見えず、オーブの破片のような大きい形の縁にだけ薄く残る。
-   frost と backdropBlur はこの共通材質では触らない。面ごとのぼかし量は CLEAR / BAR / CARD
-   側で個別に持つ (Task 10o、下を見よ)。
+   backdropBlur はこの共通材質では持たない。面ごとのぼかし量は BAR / CARD 側で個別に持つ
+   (Task 10o、下を見よ)。frost はライブラリの既定 (0) と同じ値なので書かない
+   (書いても書かなくても preBlur は変わらない)。
 
    Task 10o — ユーザー指摘「左上の反射がひび割れにしか見えない」。3 倍拡大で確認すると、
    角の丸みに沿って白い筋が斜めに走っていた。原因は reflection と highlight の 2 つ。
@@ -43,7 +44,6 @@ const LENS = {
 	edgeReach: 0.15,
 	edgeWidth: 0.5,
 	dispersion: 1.5,
-	frost: 0,
 	rim: 0.3,
 	reflection: 0,
 	highlight: 0,
@@ -53,38 +53,45 @@ const LENS = {
 } as const;
 
 /* ナビ層のうち、下を通るのが色や形だけのもの (サイドナビ、連携アイコンの列、接続一覧)。
-   Task 10o — 面の中もすりガラスにする指示なので backdropBlur を持たせるが、この 3 面は
-   chromeGlass 経由で 1 枚の canvas にまとめて描かれ、ぼかしは描画面ごとの値なので実際には
-   BAR の 18 が当たる (glass.ts 下の CHROME_TIERS の注記どおり、Task 10i の仕組みは
-   変えない)。ここの 10 は CLEAR を単独で使ったときのための値で、目安の 8〜14px に収まる。
+   塗り (tint)だけが面ごとに違うので、ここは CHROME_TIERS に渡す tint の置き場でしかない。
+   この 3 面は chromeGlass 経由で 1 枚の canvas にまとめて描かれ (Task 10i)、ぼかしは
+   描画面ごとの値なので BAR の backdropBlur が当たる (下の CHROME_TIERS の注記を見よ)。
+   Task 10o 修正ラウンド 1 — 以前ここに material.backdropBlur を持たせていたが、
+   CHROME_TIERS も他のどの呼び出しも CLEAR.material を読まない死んだ値だったので消した
+   (使われない経路を足さない、レビュー task-10o の Important 2)。
    tint はライブラリの 0〜1.5 の目盛りで、CSS の不透明度とは一致しない */
-export const CLEAR: LiquidGlassElementOptions = {
-	tint: 0.14,
-	tintTone: 'light',
-	material: { ...LENS, backdropBlur: 10 }
-};
+export const CLEAR = { tint: 0.14 } as const;
 
-/* 上部バーと依頼バーだけの段。この 2 つの下は本文の文字が通るので、素通しにすると
-   下の文字とバー自身の文字が重なって読めない。iOS のバーと同じく下をぼかして溶かす。
-   ぼかすのはこの 2 つだけで、カードやボタンには当てない */
+/* 上部バーと依頼バーの段、およびナビ層 (サイドナビ・連携アイコンの列・接続一覧)。
+   上部バーと依頼バーの下は本文の文字が通るので、素通しにすると下の文字とバー自身の文字が
+   重なって読めない。iOS のバーと同じく下をぼかして溶かす。
+   Task 10o 修正ラウンド 1 — この backdropBlur は chromeGlass の共有 canvas 経由でナビ層にも
+   当たる (下の CHROME_TIERS の注記を見よ)。目安 8〜14px の上限である 14 に下げた。18 のまま
+   だとナビ層 (サイドナビ・連携アイコンの列)が目安の外だったため (レビュー task-10o の
+   Important 2)。14 でも上部バー・依頼バーの下をくぐる本文の文字は重ならずに読める
+   (3 倍拡大、scratchpad/10o-fix 以下で確認済み、Task 10f の役割は変わらない) */
 export const BAR: LiquidGlassElementOptions = {
 	tint: 0.8,
 	tintTone: 'light',
-	material: { ...LENS, backdropBlur: 18 }
+	material: { ...LENS, backdropBlur: 14 }
 };
 
 /* 内容カード。縁の作りはナビ層と同じ。
    Task 10o — 以前の裁定「面の中は素通し (frost 0)」をユーザーが上書きし、面をすりガラスに
-   する指示が出た。backdropBlur 10px はカードの下に来たオーブの破片や背景の階調を、
-   形は分かるが文字は読めない程度までぼかす (目安 8〜14px の中央値)。カード自身に文字は
-   乗らない下ぼかしなので、カード内の文字の可読性には関わらない。塗り (tint)はぼかしを
-   足したぶん 0.62 → 0.5 に薄くした。背後の色がこれまでより残る。文字のコントラストは
-   report の表を見よ (色ごとに 4.5:1 以上を実測)。CSS の rgba(255,255,255,.70) 相当だった
-   旧 tint の見た目合わせは、ぼかしが増えた今は基準にしていない */
+   する指示が出た。backdropBlur 10px でカードを試したところ、面は形の分からない一様な
+   すりガラスになったが、縁の帯で背景が曲がる (Task 10f で承認済みの見え方)は見えなくなった。
+   preBlur = sqrt(frost² + backdropBlur²) (v2-shaders.js) が縁の帯にも面の中にも同じ値で
+   効くため、ライブラリの構造上、面をすりガラスにする値と、細かい背景 (オーブの破片など)
+   が縁で曲がって見える値を同時には満たせない (詳細は報告「修正ラウンド 1」)。
+   Task 10o 修正ラウンド 1 — 10 / 8 / 6 / 4 / 2 を 3 倍拡大で比較し、どの値も両立しなかった。
+   縁の屈折を優先する側 (目安の下限を下回る) に倒し、実際に曲がりが見えた 2 を暫定値にした
+   (ユーザー判定待ち、レビュー task-10o の Important 1)。塗り (tint)は 10o で 0.62 → 0.5 に
+   薄くした値のまま変えていない。文字のコントラストは report の表を見よ
+   (色ごとに 4.5:1 以上を実測) */
 export const CARD: LiquidGlassElementOptions = {
 	tint: 0.5,
 	tintTone: 'light',
-	material: { ...LENS, backdropBlur: 10 }
+	material: { ...LENS, backdropBlur: 2 }
 };
 
 /* live: true で毎フレーム描き直す。オーブは <canvas> の中で毎フレーム描き変わり、
@@ -112,9 +119,11 @@ export function glass(options: LiquidGlassElementOptions, repaintMs?: number) {
    ので (同じ z-index 50 で DOM の順が後)、面自身の文字や塗りは背後の絵に入らない。
 
    面ごとに違うのは塗り (tint)だけで、塗りは面ごとに渡せる。ぼかし (backdropBlur)は
-   描画面ごとの値なので 4 面すべてに BAR の 18 が当たるが、サイドナビと連携の列の背後を
-   通るのは地の階調だけ (本文は左右の margin で避けてあり、オーブも届かない)なので、
-   階調をぼかしても見た目は変わらない (3 倍拡大で確認済み、報告 task-10i-report.md)。
+   描画面ごとの値なので 4 面すべてに BAR の 14 が当たる (Task 10o 修正ラウンド 1 で
+   18 から下げた。目安 8〜14px に収める指示、レビュー task-10o の Important 2)。
+   サイドナビと連携の列の背後を通るのは地の階調だけ (本文は左右の margin で避けてあり、
+   オーブも届かない)なので、ぼかしの強さが変わっても見た目への影響は小さい
+   (3 倍拡大で確認済み、scratchpad/10o-fix 以下)。
    bleed: 0 — 入れ物が画面いっぱいなので、外へはみ出す分はそもそも画面の外にある。
    既定の 63px を足すと縦横 126px ぶん無駄に広い canvas を毎フレーム塗り直すことになる */
 const CHROME_TIERS = {
