@@ -19,23 +19,24 @@
 	   画素だけを取り出し、その背後の輝度の下位 5% 分位で比を出す。
 	   最悪値は task-10f-report.md に載せた。--ink → --ink-2 → --ink-3 の順に薄くなる約束は保つ */
 	--ink: #1e2a47;
-	--ink-2: #5a6785;
-	/* Task 10c 以前の #646f8a は、この地とこの面の実測で 4.43:1 と 4.5:1 をわずかに割った。
-	   一段だけ濃くして 4.69:1 に戻す (--ink-2 より薄いという順序は保つ) */
-	--ink-3: #616b85;
+	--ink-2: #545d76;
+	/* Task 10f 修正ラウンド 2 — サイドナビの下に置いた青い光彩の上でこの色が 4.10:1 まで
+	   落ちたので濃くした。光彩を薄める方向ではなく文字を濃くする (裁定)。
+	   --ink-2 より薄いという順序は保つ */
+	--ink-3: #5a6379;
 	--line: rgba(140, 160, 200, 0.18);
 	--line-2: rgba(140, 160, 200, 0.3);
 
 	/* アクセント */
-	/* Task 10f — 地が無彩色に戻り、この色が載るのは白いカードかナビ層のガラス
-	   (背後もほぼ白) だけになったので、Task 10c 以前の値に戻した */
-	--accent: #1b62d6;
+	/* Task 10f 修正ラウンド 2 — サイドナビの下に置いた青い光彩の上で 4.30:1 まで落ちたので、
+	   Task 10c 以前の #1b62d6 から一段濃くした */
+	--accent: #1a5ecb;
 	--accent-top: #2a6fe0;
-	--accent-soft: rgba(27, 98, 214, 0.1);
-	--accent-soft-2: rgba(27, 98, 214, 0.16);
-	--accent-glow: rgba(27, 98, 214, 0.28);
+	--accent-soft: rgba(26, 94, 203, 0.1);
+	--accent-soft-2: rgba(26, 94, 203, 0.16);
+	--accent-glow: rgba(26, 94, 203, 0.28);
 	/* 主ボタンと送信ボタンの落ち影。--accent と同じ RGB にそろえる */
-	--accent-shadow: rgba(27, 98, 214, 0.36);
+	--accent-shadow: rgba(26, 94, 203, 0.36);
 
 	/* ruling — 合否の色と入力欄の枠、選択中の塗り */
 	--ok: #107a48;
@@ -47,7 +48,7 @@
 	   その上に載る --accent の文字が 4.24:1 と 4.5:1 を割った。0.08 でも 4.51:1 と余裕が
 	   0.01 しかないので 0.06 まで下げた (実測 4.72:1)。
 	   現在地は塗りだけでなく左端の縦バーと太字でも伝わるので、薄くしても分かる */
-	--sel: rgba(27, 98, 214, 0.06);
+	--sel: rgba(26, 94, 203, 0.06);
 	/* components 3.2 / 3.11 — 一覧行、ボトムナビ、コマンドパレットの選択中の塗り */
 	--sel-soft: rgba(214, 228, 252, 0.75);
 
@@ -55,8 +56,8 @@
 	--hover: rgba(30, 42, 71, 0.08);
 	--press: rgba(30, 42, 71, 0.1);
 	--hover-light: rgba(255, 255, 255, 0.45);
-	--hover-accent: rgba(27, 98, 214, 0.08);
-	--press-accent: rgba(27, 98, 214, 0.1);
+	--hover-accent: rgba(26, 94, 203, 0.08);
+	--press-accent: rgba(26, 94, 203, 0.1);
 	--disabled-bg: rgba(30, 42, 71, 0.12);
 	--disabled-ink: rgba(30, 42, 71, 0.38);
 	--disabled-soft: rgba(30, 42, 71, 0.04);
@@ -246,6 +247,37 @@ svg.i {
 	pointer-events: none;
 	background: linear-gradient(180deg, #f4f6fa 0%, #eef1f7 100%);
 }
+/* Task 10f 修正ラウンド 2 — サイドナビ (画面の左端に固定)と連携アイコンの列 (右端に固定)の
+   下にだけ置く光彩。この 2 つは下を通る内容を持てないので、縁の帯が曲げる対象がこれしかない。
+   Task 10d の 5 色の塊とは別物で、色はオーブと同じ青 1 色、漂うアニメーションも付けない。
+   ライブラリはガラスの背後を自分で描き直すが、そこに CSS の filter と疑似要素は
+   再現されない (README の Limits)。だから実要素にし、輪郭の柔らかさは放射状の階調で作る。
+   消える側は transparent と書かない。計算値が rgba(0,0,0,0) なのでガラスの中だけ黒く濁る */
+.bg-glow {
+	position: absolute;
+	border-radius: 50%;
+	background: radial-gradient(
+		circle,
+		rgb(var(--glow) / 0.18) 0%,
+		rgb(var(--glow) / 0.105) 40%,
+		rgb(var(--glow) / 0) 72%
+	);
+}
+.bg-glow.left {
+	--glow: 79 123 255;
+	left: -24vmin;
+	top: -12vmin;
+	width: 78vmin;
+	height: 78vmin;
+}
+.bg-glow.right {
+	--glow: 96 150 255;
+	right: -26vmin;
+	top: 20vmin;
+	width: 66vmin;
+	height: 66vmin;
+}
+
 /* visual 2.8 / 4.3 — オーブ本体と光彩 */
 .orb {
 	position: relative;
@@ -1268,7 +1300,7 @@ svg.i {
 		box-shadow: 0 0 0 0 var(--accent-glow);
 	}
 	50% {
-		box-shadow: 0 0 0 8px rgba(27, 98, 214, 0);
+		box-shadow: 0 0 0 8px rgba(26, 94, 203, 0);
 	}
 }
 
