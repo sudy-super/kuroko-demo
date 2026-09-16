@@ -24,9 +24,9 @@
 					<span class="row" style="gap: var(--sp-2)">
 						<ApprovalIcon kind={a.kind} size={20} />
 						<!-- 仕様 5.11 の種別バッジ。区分は判断に直結する属性なので Lozenge の文言で出す
-						     (indicators.md「承認センターの区分」)。外部送信だけ accent、社内と低リスクは
-						     灰色に落として、目を引く先を 1 つにする -->
-						<span class="badge" class:src={a.risk !== 'external_send'}>{RISK_LABEL[a.risk]}</span>
+						     (indicators.md「承認センターの区分」。文言の出所は types.ts の RISK_LABEL)。
+						     外部送信だけ accent、社内と低リスクは灰色に落として、目を引く先を 1 つにする -->
+						<span class="badge" class:neutral={a.risk !== 'external_send'}>{RISK_LABEL[a.risk]}</span>
 					</span>
 					<span class="row" style="gap: var(--sp-6)">
 						<button class="btn pri sm" onclick={() => approve(a.id, 'approval')}>承認して送信</button>

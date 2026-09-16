@@ -1,4 +1,4 @@
-import type { Db, TodayItem, Meeting, CalendarEvent, Task } from './types';
+import type { Db, TodayItem, Meeting, CalendarEvent, Task, ProjectStatus } from './types';
 import { key, parse, addDays, minutes, toHm, hm } from './dates';
 
 export const personOf = (db: Db, id?: string) => db.people.find((p) => p.id === id);
@@ -15,7 +15,7 @@ export const pendingApprovals = (db: Db) => db.approvals.filter((a) => a.status 
 
 /* 案件の状態は Atlassian の Lozenge (ワークフローの状態) にあたるので、一覧・人物詳細・会社・
    案件のどこでも同じ色で出す。終わった 2 つだけ色を分け、途中の状態は accent のままにする */
-export const projectStatusClass = (s: string) => (s === '受注' ? 'ok' : s === '失注' ? 'warn' : '');
+export const projectStatusClass = (s: ProjectStatus) => (s === '受注' ? 'ok' : s === '失注' ? 'warn' : '');
 
 const T = (db: Db) => db.seededOn; // 「今日」の基準。実時刻ではなくシードの基準日を使う
 

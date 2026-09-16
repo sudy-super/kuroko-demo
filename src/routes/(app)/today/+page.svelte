@@ -36,9 +36,10 @@
 
 	// 700px 以下は Bento をやめて 1 枚の折りたたみカードにするので、オーブも 1 つだけ差し替える
 	const narrow = new MediaQuery('(max-width: 700px)');
-	/* Task 10f — 560 にすると箱の上端が見出しのボタン列を越えて掛かる。ボタンをガラスにした
-	   今はそれが狙いで、ボタンの縁がオーブの破片を曲げる。箱は穴 (4 列 = 約 340px)より広いので
-	   光彩は左右の hero のカードにも掛かる */
+	/* Task 10f — 560 は箱の一辺。箱は穴 (4 列 = 約 340px)より広いので、光彩は左右の hero の
+	   カードにも掛かり、そこでガラスの縁が破片を曲げる。Task 10h 修正ラウンド 1 — ボタンの列は
+	   ガラスではなくなったが、球はもともと列の下端の 11px 下にあるので箱の大きさは変えていない
+	   (数え方は app.css の .today .bento .hole .orb) */
 	const orbSize = $derived(narrow.current ? 300 : 560);
 
 
@@ -94,8 +95,8 @@
 							<div class="list-row">
 								<ApprovalIcon kind={a.kind} />
 								<span class="tc-text">{a.title}</span>
-								<!-- ドロワーと同じ区分の Lozenge (仕様 5.11、indicators.md) -->
-								<span class="badge" class:src={a.risk !== 'external_send'}>{RISK_LABEL[a.risk]}</span>
+								<!-- ドロワーと同じ区分の Lozenge。文言の出所は types.ts の RISK_LABEL -->
+								<span class="badge" class:neutral={a.risk !== 'external_send'}>{RISK_LABEL[a.risk]}</span>
 							</div>
 						{/each}
 						{#if ap.length > 3}<p class="muted">残り {ap.length - 3} 件</p>{/if}
