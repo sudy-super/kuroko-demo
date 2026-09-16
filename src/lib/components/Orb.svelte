@@ -21,11 +21,19 @@
 		let orb: ReturnType<typeof createOrb> = null;
 		let canvas: HTMLCanvasElement | null = null;
 		/* シェーダーのコンパイル・リンク失敗や framebuffer の不完全は、初期化時もコンテキスト復帰時も
-		   マウントを壊さず CSS の代替に落とす */
+		   マウントを壊さず CSS の代替に落とす。resize() や onRestored() からの復帰失敗
+		   (renderer.ts の fail()) はマウント後に非同期で呼ばれるため、release() と同じく
+		   canvas ごと手放して onCanvas?.(null) で呼び元 (今日画面の holeOrbCanvas) の参照も
+		   外す。ここを release() と非対称にすると (Task 10r レビュー Important 2)、
+		   呼び元は死んだ canvas を握ったままになり、preserveDrawingBuffer で保持された
+		   最後のフレームがカードの背後に焼き付いたまま動かなくなる */
 		const toFallback = (e: unknown) => {
 			console.warn('orb: WebGL の描画に失敗したので CSS の代替を出します', e);
 			orb = null;
+			canvas?.remove();
+			canvas = null;
 			live = false;
+			onCanvas?.(null);
 		};
 		/* Task 10i — 描画面 (WebGL context)は見えている間だけ握る。隠れたタブが握ったままだと、
 		   手前のタブがガラスとオーブの分を作れずに代替表示へ落ちる。
@@ -52,13 +60,18 @@
 				toFallback(e);
 			}
 			if (!orb) {
-				/* WebGL が無い、描画面を使い切っている、初期化に失敗した */
-				canvas.remove();
+				/* WebGL が無い、描画面を使い切っている、初期化に失敗した。toFallback がすでに
+				   canvas を片付けている場合があるので ?. で二重の remove を避ける */
+				canvas?.remove();
 				canvas = null;
 				live = false;
 				return;
 			}
 			orb.start();
+			/* start() の中の resize() が同期的に失敗すると toFallback が先に呼ばれ、
+			   orb と canvas をすでに null に戻している。ここで live = true; onCanvas?.(canvas)
+			   を続けると toFallback の後始末を上書きしてしまうので、その場合は何もしない */
+			if (!orb) return;
 			live = true;
 			onCanvas?.(canvas);
 		};
