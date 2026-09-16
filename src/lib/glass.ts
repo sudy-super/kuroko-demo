@@ -42,10 +42,42 @@ import { whileVisible } from './visible';
    rim (縁の光)と hairline (輪郭線)は残す。全周に同じ強さで回る分には筋にならない
    (ユーザー判定)。上縁の白い鏡面と下縁の薄い暗線は今までどおり CSS の疑似要素が担う
    (app.css の Liquid Glass の節)。lightAngle は hairline の明るい側の向きにまだ使われて
-   いるので残すが、highlight を 0 にしたため筋には効かない */
+   いるので残すが、highlight を 0 にしたため筋には効かない
+
+   Task 10s — 訂正 (下の CARD の節、Task 10r 修正ラウンド1)が「refraction 12 / edgeReach 0.15
+   は backdropBlur 8 の前ぼかしの下では 1 画素も動いておらず、縁の屈折は見た目に存在しない」
+   と確定させた後を受け、ユーザーの 2 つの生きた指示 (「面はすりガラス」「境目に来たら屈折する」)
+   を両方満たす値を選び直した。手順: refraction / edgeReach / CARD.backdropBlur の組を 6 通り
+   (現状 12/0.15/8 を含む) 用意し、同じ静止フレーム (Orb.svelte の reducedMotion、
+   REDUCED_TIME=11.3) で 1440x900 の Today を撮り、各組について「屈折を切った版
+   (refraction 0 / edgeReach 0、backdropBlur は同じ) との画素差」を測った
+   (task-10s-report.md の表、手法は Task 10r 修正ラウンド1 の対照実験を踏襲)。
+
+   | 候補 | refraction | edgeReach | blur | 差の画素数 | 最大差 | 帯の中の割合 |
+   | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+   | F (現状) | 12 | 0.15 | 8 | 3313 | 34 | 100% |
+   | A | 40 | 0.25 | 8 | 5417 | 40 | 100% |
+   | B | 70 | 0.35 | 6 | 6057 | 54 | 100% |
+   | C | 110 | 0.5 | 4 | 6402 | 77 | 100% |
+   | D (採用) | 110 | 0.5 | 2 | 7631 | 156 | 100% |
+   | E | 70 | 0.35 | 0 | 6899 | 219 | 100% |
+
+   5 通りとも差は edgeWidth 由来の帯の中に 100% 収まり (Task 10r 修正ラウンド1 の対照実験と
+   同じ形)、配線どおり縁だけが動いている。E は backdropBlur 0 で「面はすりガラス」の指示に
+   反する (10r report 3 節の標準偏差の比較どおり、ぼかし 0 は前ぼかしが無いという意味で
+   すりガラス感が無い)ので候補から外した。残る A〜D のうち D が最大差・画素数とも最も大きく、
+   backdropBlur 2 でも 10r report 3 節の対照 (2 でも 8 でも「一様な板」にはならない) の
+   とおりすりガラス感は保たれる。コントラスト (--ink 系 4 色、カードに実際に乗る本文の
+   文字ボックス内の最暗背景で測定、text-06 節の手法) は A〜F のどれでも変わらず 5.30:1
+   (本文の文字は edgeWidth の帯の外、面の奥に収まるため refraction/edgeReach/blur の影響を
+   受けない)。以上より D を採用した (task-10s-report.md)。
+   なお、この材質は BAR にも共有される (下の BAR を見よ)。BAR は backdropBlur を自前で
+   持つため、屈折の帯の見え方は BAR 自身の縁でも同じ値で強まるが、BAR の縁を通るのは
+   ナビ層の地の階調だけで、対照実験・コントラストとも今回は CARD 側でのみ測った
+   (CARD の縁だけがオーブという動く高コントラストな絵を持つため、判断材料として十分) */
 const LENS = {
-	refraction: 12,
-	edgeReach: 0.15,
+	refraction: 110,
+	edgeReach: 0.5,
 	edgeWidth: 0.5,
 	dispersion: 1.5,
 	rim: 0.3,
@@ -121,11 +153,18 @@ export const BAR: LiquidGlassElementOptions = {
    (縁の色ずれ) や edgeWidth (引き寄せが帯の幅を超えると白い筋になる、比 0.74 の縛り) と
    組で承認された値であり、見た目を変える再調整は今回のバグ修正 (取り込みを直す・
    焼き付きを止める) の範囲を超えると判断し、値は変えていない。再調整するならユーザーの
-   新しい裁定を挟んで別タスクにするのが筋 (詳細は task-10r-report.md 修正ラウンド 1 を見よ) */
+   新しい裁定を挟んで別タスクにするのが筋 (詳細は task-10r-report.md 修正ラウンド 1 を見よ)
+
+   Task 10s — 上の「新しい裁定を挟んで別タスクにする」を受けた再調整。backdropBlur を
+   8 から 2 に下げた (上の LENS の Task 10s の節にある表・判断根拠を見よ。2 でも
+   Task 10r report 3 節の標準偏差の対照どおりすりガラス感は保たれ、refraction/edgeReach を
+   110/0.5 に上げた分と合わせて画素差 7631・最大差 156 まで増える)。tint は 10o の 0.5 の
+   ままで変えていない (本文の文字は帯の外にあるため refraction/edgeReach/blur を上げても
+   実測コントラストは変わらず 5.30:1、task-10s-report.md の表を見よ) */
 export const CARD: LiquidGlassElementOptions = {
 	tint: 0.5,
 	tintTone: 'light',
-	material: { ...LENS, backdropBlur: 8 }
+	material: { ...LENS, backdropBlur: 2 }
 };
 
 /* Task 10r — カードのガラスの背後にオーブを届ける描き手。
