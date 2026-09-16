@@ -716,7 +716,7 @@ svg.i {
    文言側に移って「AB…」の 34px しか出なくなり、どのスレッドと結び付いているか読めなかった。
    パディング (32px)・アイコンとの間隔 (8px)・X アイコン (16px) の内訳 56px に、文言が読める
    目安の 96px を足した 152px を下限にする。390 幅ではこの下限と入力欄の 120px が同時には
-   収まらない (下の @media (max-width: 460px) で文言そのものを畳む) */
+   収まらない (下の @media (max-width: 460px) でチップを入力欄の上の行に折り返す) */
 .chatbar .chip {
 	flex-shrink: 1;
 	min-width: 152px;
@@ -742,23 +742,32 @@ svg.i {
 /* Task 11r 修正ラウンド 1 (Important 2) — 依頼バーの内寸から、縮まないマイク・送信ボタン
    (40px+42px)と 3 つの隙間 (--sp-3 x 3 = 36px)、依頼バー自身の余白 (28px)を引くと、390 幅
    では文言つきのチップ下限 152px と入力欄の下限 120px が同時には収まらない (合計 272px に対し
-   残りは約 212px、約 60px 足りない)。レビューの提案どおり、収まらない幅ではチップを文言なしの
-   アイコンに落とし、識別は aria-label と title (ホバー / 長押しの標準のツールチップ)に譲って
-   入力欄の 120px を優先する。460px は余裕を見た閾値 (計算上の境目は 450px) */
+   残りは約 212px、約 60px 足りない)。460px は余裕を見た閾値 (計算上の境目は 450px)。
+   修正ラウンド 2 (再レビュー 新規 5) — ここから先はチップを文言なしのアイコンに落としていたが、
+   残る絵が「結び付けを外す」の ✕ だけになり、何に結び付いているかを示す絵が画面上に 1 つも
+   残らなかった。title はホバーでしか出ずタッチ端末では出ない (NN/g Icon Usability、
+   indicators.md 3 節「アイコンだけで意味を伝える条件」)。文言を消さず、チップを入力欄の
+   1 行上に折り返す (ブリーフが認めるもう 1 つの選択肢)。
+   チップは丸ごと 1 個の「結び付けを外す」ボタン (KurokoBar.svelte の onclick 参照)なので、
+   全幅の行になっても機能は変わらない。--chatbar-h をこの行の高さ (8 + チップ 40 + 隙間 12 +
+   入力欄の行 44 + 8 = 112px)に差し替えるだけで、.chatbar の height と --content-bottom-clear
+   (960px 以下では --chatbar-bottom 経由)の両方が計算し直される。Task 11r が --content-bottom-clear
+   を「1 つの仕組みに統合する」(:root の --chatbar-h 直後のコメント参照)と決めた狙いどおり、
+   ここでも新しい変数を増やさずに済む */
 @media (max-width: 460px) {
+	:root:has(.chatbar .chip) {
+		--chatbar-h: 112px;
+	}
+	.chatbar:has(.chip) {
+		flex-wrap: wrap;
+		padding-top: var(--sp-2);
+		padding-bottom: var(--sp-2);
+	}
 	.chatbar .chip {
-		flex-shrink: 0;
-		min-width: 0;
-		padding: 0 var(--sp-3);
+		flex-basis: 100%;
 	}
-	.chatbar .chip span {
-		display: none;
-	}
-	/* 文言を畳むと実寸 42x40 まで縮む。既定の .chip::after (inset: -2px 0、縦だけ広げる)は
-	   文言があって元々横に十分な幅がある前提の値なので、ここでは 4 辺とも広げて 46x44 にする
-	   (.chatbar は overflow を切っていないので .iconbtn::after と同じ手が素直に効く) */
-	.chatbar .chip::after {
-		inset: -2px;
+	.chatbar:has(.chip) input {
+		height: 44px;
 	}
 }
 /* ruling (2026-09-16) — 入力欄そのものに輪郭を出すと、ガラスのピルの中に白い箱が
