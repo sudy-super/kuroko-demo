@@ -89,7 +89,14 @@
 			.join(' ');
 </script>
 
-<div class="week">
+<!-- Task 11r 修正ラウンド 3 (再レビュー 2 所見 6) — 横 (格子の最小幅) と縦 (24 時間分) の
+     送りをこの箱 1 つに一本化した (app.css .week 参照)。曜日の行 (.week-head) はこの箱の
+     中で position: sticky にできるので、送っても見えたままになる。
+     予定が 1 つもない週では中に押せるものが無く、キーボードだけではここへ来られないので、
+     領域そのものを焦点に入れる (WCAG 2.1.1)。規則は「押せない要素に tabindex を置くな」だが、
+     送れる領域はその例外に当たる -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+<div class="week" bind:this={body} tabindex="0" role="group" aria-label="週の時間割">
 	<div class="week-cols week-head">
 		<div></div>
 		{#each days as d, i (i)}
@@ -99,11 +106,7 @@
 			</div>
 		{/each}
 	</div>
-	<!-- 縦に送る領域。予定が 1 つもない週では中に押せるものが無く、キーボードだけでは
-	     ここへ来られないので、領域そのものを焦点に入れる (WCAG 2.1.1)。
-	     規則は「押せない要素に tabindex を置くな」だが、縦に送れる領域はその例外に当たる -->
-	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-	<div class="week-cols week-body" bind:this={body} tabindex="0" role="group" aria-label="週の時間割">
+	<div class="week-cols week-body">
 		<div class="week-axis">
 			{#each HOURS as h (h)}<div class="week-hour"><span>{h}:00</span></div>{/each}
 		</div>

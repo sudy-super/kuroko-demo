@@ -169,5 +169,22 @@
 	.cal-panel {
 		padding: var(--sp-4);
 		overflow: hidden;
+		/* Task 11r 修正ラウンド 3 (再レビュー 2 所見 6) — .week (app.css) の上端までの高さ。
+		   --bar-clear (ヘッダーピルの分)に、この画面固有の見出し (.cal-head) + 切り替え行
+		   (.cal-bar) + このカードの上の余白 (padding-top、上の --sp-4 と同じ)を足す。
+		   960px 以下は .page-desc が畳まれる幅・高さの組み合わせで見出しの高さが変わるので、
+		   下の @media で幅ごとに実測して差し替える (実測値は chrome-devtools の
+		   getBoundingClientRect、safety のため小数点以下を切り上げ) */
+		--week-top-clear: calc(var(--bar-clear) + 178px);
+	}
+	@media (max-width: 960px) {
+		.cal-panel {
+			--week-top-clear: calc(var(--bar-clear) + 282px);
+		}
+	}
+	@media (max-width: 960px) and (max-height: 480px) {
+		.cal-panel {
+			--week-top-clear: calc(var(--bar-clear) + 136px);
+		}
 	}
 </style>
