@@ -2230,9 +2230,10 @@ section.card:active {
 		0 8px 24px rgba(30, 42, 71, 0.08);
 	cursor: default;
 }
-/* 4 — 押せないタイルの中の行も押せない。ToDo の label だけは中のチェックボックスが押せる */
-section.tc .list-row:not(label),
-section.tc .list-row:not(label):hover {
+/* 4 — 押せないタイルの中の行も押せない。ToDo の label は中のチェックボックスが、
+   送信済みの a (Task 10t 修正ラウンド 4、相手の画面を開くリンク)は行そのものが押せる */
+section.tc .list-row:not(label):not(a),
+section.tc .list-row:not(label):not(a):hover {
 	background: none;
 	cursor: default;
 }
@@ -2336,11 +2337,6 @@ section.tc .list-row:not(label):hover {
 }
 .today .bento > .card {
 	padding: var(--sp-4) var(--sp-4) var(--sp-3);
-}
-/* Task 10t 修正ラウンド 3 — 送信済みカードの行の中のアイコンボタン (相手の画面を開く)。
-   .tc-text は内容が短いと flex-grow しないので、margin-left: auto で行の右端へ押し出す */
-.today .bento > .card[data-card='sent'] .iconbtn {
-	margin-left: auto;
 }
 
 /* Task 10l 修正 — 1101px 以上はオーブを取り巻く環状の配置 (ユーザーが選んだモックの構図)。
@@ -2579,6 +2575,31 @@ section.tc .list-row:not(label):hover {
 	}
 	.today-done .card {
 		flex-shrink: 0;
+	}
+}
+/* Task 10t 修正ラウンド 4 (review task-10t-fix3 I2) — 上の下限 (550px / 392px)は画面の高さが
+   低い窓 (1440x700、1280x680)では使える高さ (実測 450px / 430px、.today-items の外で
+   ヘッダー・見出し・--content-bottom-clear を引いた残り)を上回り、縮みきれず .done-links が
+   依頼バーの裏に入っていた (responsive-policy 6)。
+   min-height: 0 だけでは直らない。.main:has(.today) は min-height: 100dvh (下限のみ、上限なし)
+   なので、中身が窓の高さを超える窓では .main の高さが中身に合わせて伸び (auto)、.today-items /
+   .today-done の flex-shrink は「縮めるべき量」を計算する基準 (確定した高さ)を持てず、
+   flex-basis (550px)のまま描かれてページ全体が送られていた (実測、min-height だけ外しても
+   550px のまま変わらなかった)。.week (このファイルの週表示の節)と同じ形で、.today-done 自身に
+   確定した max-height (100dvh からヘッダー・見出し・--content-bottom-clear を引いた残り)を
+   直接持たせる。66px は見出し (.today-head、実測 50px)と下の余白 (margin-bottom: var(--sp-4)、
+   16px)の合計。これで .today-done の高さが確定し、flex-shrink が正しく効くようになる (実測で
+   確認)。card は flex-shrink: 0 のままなので .done-links を含むカード自体は縮まず、縮む分は
+   すべて orb-slot (球がさらに隠れる、1440x700 で約 45%、1280x680 で約 49%。画像で確認し、
+   構図は崩れないと判断した)が受ける。
+   1440x900 / 1280x800 はこの窓より高い (max-height: 760px の外)なので、上の 550px の下限のまま */
+@media (min-width: 1101px) and (max-height: 760px) {
+	.today-done {
+		min-height: 0;
+		max-height: calc(100dvh - var(--bar-clear) - 66px - var(--content-bottom-clear));
+	}
+	.today-done .orb-slot {
+		min-height: 0;
 	}
 }
 .done h2 {

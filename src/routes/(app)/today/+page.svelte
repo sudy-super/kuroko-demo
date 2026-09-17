@@ -21,7 +21,6 @@
 	import ReasonIcon from '$lib/components/ReasonIcon.svelte';
 	import ApprovalIcon from '$lib/components/ApprovalIcon.svelte';
 	import DoneScreen from '$lib/components/DoneScreen.svelte';
-	import Icon from '$lib/components/Icon.svelte';
 	import { glass, CARD, orbBackdrop } from '$lib/glass';
 
 	const count = $derived(todayCount(db));
@@ -163,24 +162,26 @@
 
 				{#if sent.length}
 					<TodayCard card="sent" title="日程調整の返信待ち {sent.length} 件" icon="ic-clock">
-						<!-- Task 10t 修正ラウンド 3 — リンクを行の下の別行 (フッター)から、行の中の
-						     アイコンボタンに変えた。1 件ぶん (約 44px)高さを削り、6 枚 (送信済みあり)の
-						     入れ物を縮める余地を作る (review task-10t-fix2 I1) -->
-						{#each sent as s (s.id)}
-							<div class="list-row">
+						<!-- Task 10t 修正ラウンド 4 (review task-10t-fix3 I1) — アイコンだけのボタンは
+						     文言を「送信済み」の手前で切り、ic-share は承認待ちカードの「外部への共有」
+						     (ApprovalIcon)と同じ図柄で意味が重複していた。行そのものをリンクにして
+						     文言のまま押せるようにする (today-mobile の <a class="list-row"> と同じ形。
+						     .list-row の色/下線リセットが効くので文言のリンクにも見えない)。高さは
+						     1 行のまま (round 3 の削減を保つ)。2 件目以降は入れ物の高さの想定 (1 件分)
+						     を超え ToDo の行と重なるので (M1)、1 件だけ見せて残りは件数表示にする -->
+						{#each sent.slice(0, 1) as s (s.id)}
+							<a
+								class="list-row"
+								target="_blank"
+								rel="noreferrer"
+								href="/schedule/{s.token}"
+								aria-label="{personOf(db, s.personId)
+									?.name}様 候補 3 件を送信済み。相手の画面を開く (デモ用)"
+							>
 								<span class="tc-text">{personOf(db, s.personId)?.name}様 候補 3 件を送信済み</span>
-								<a
-									class="iconbtn"
-									target="_blank"
-									rel="noreferrer"
-									href="/schedule/{s.token}"
-									aria-label="{personOf(db, s.personId)?.name}様の画面を開く (デモ用)"
-									title="相手の画面を開く (デモ用)"
-								>
-									<Icon name="ic-share" size={18} />
-								</a>
-							</div>
+							</a>
 						{/each}
+						{#if sent.length > 1}<p class="muted">残り {sent.length - 1} 件</p>{/if}
 					</TodayCard>
 				{/if}
 
