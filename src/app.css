@@ -2280,19 +2280,25 @@ section.tc .list-row:not(label):hover {
    2 枚目 (返信)の上を 56px といちばん広く取ってあるのは、その上の承認待ちを余白で
    重く見せるため (eye.md 2.2、Task 10j から引き継ぎ) */
 @media (max-width: 1100px) {
-	.today .bento > .card:nth-child(1) {
+	/* Task 10t 修正ラウンド 3 (review task-10t-fix2 M2) — :nth-child(n) から data-card
+	   (カードの種類)に変えた。承認待ち・次の会議・送信済みは出入りするので、位置 (段の何番目か)
+	   で余白を決めると、承認待ちが消えたときに返信が 1 番目の余白 (36px)を受け取ってしまい、
+	   「承認待ちの下をいちばん広く空ける」という重みの意図 (eye.md 2.2、Task 10j)がずれていた。
+	   種類に結び付けるとカードの有無に関わらず自分の余白のまま留まる */
+	.today .bento > .card[data-card='approvals'] {
 		margin-top: 36px;
 	}
-	.today .bento > .card:nth-child(2) {
+	.today .bento > .card[data-card='reply'] {
 		margin-top: 56px;
 	}
-	.today .bento > .card:nth-child(3) {
+	.today .bento > .card[data-card='meeting'] {
 		margin-top: 24px;
 	}
-	.today .bento > .card:nth-child(4) {
+	.today .bento > .card[data-card='events'] {
 		margin-top: 44px;
 	}
-	.today .bento > .card:nth-child(n + 5) {
+	.today .bento > .card[data-card='tasks'],
+	.today .bento > .card[data-card='sent'] {
 		margin-top: 48px;
 	}
 }
@@ -2318,6 +2324,11 @@ section.tc .list-row:not(label):hover {
 }
 .today .bento > .card {
 	padding: var(--sp-4) var(--sp-4) var(--sp-3);
+}
+/* Task 10t 修正ラウンド 3 — 送信済みカードの行の中のアイコンボタン (相手の画面を開く)。
+   .tc-text は内容が短いと flex-grow しないので、margin-left: auto で行の右端へ押し出す */
+.today .bento > .card[data-card='sent'] .iconbtn {
+	margin-left: auto;
 }
 
 /* Task 10l 修正 — 1101px 以上はオーブを取り巻く環状の配置 (ユーザーが選んだモックの構図)。
@@ -2403,16 +2414,27 @@ section.tc .list-row:not(label):hover {
 		right: clamp(0px, calc(50% - 395px), 45px);
 	}
 	/* 送信済み (日程調整の返信待ち)が出る場面だけ、右を 3 枚にして入れ物を縦に伸ばす。
-	   6 枚は 2 列 450px には収まらないので、この状態では縦の送りが出る (段組みのときも同じ)。
 	   :has() の的を data-card にしたので、承認待ちなどが欠けて送信済みが 6 枚目にならない
-	   (例: 5 枚中の 1 枚)状態でも同じ規則が効く */
+	   (例: 5 枚中の 1 枚)状態でも同じ規則が効く。
+	   Task 10t 修正ラウンド 3 (review task-10t-fix2 I1) — 640px 固定だと 1280x800 (使える高さ
+	   実測 551px)で 89px の縦の送りが出ていた。5 枚の bento (上の flex: 1 1 430px)と同じ
+	   「下限を flex-basis に置く」形にし、640 は上限 (1440x900 で伸びる、使える高さ実測 650px)
+	   に格下げした。下限 550px は 1280x800 の実測 (551px)から 1px の余裕を取った値。
+	   送信済みカードの行を 1 行に詰めた (+page.svelte、約 44px 減)ので、550px でも
+	   予定・ToDo・送信済みの 3 枚を重ねずに収められる */
 	.today .bento:has(> .card[data-card='sent']) {
-		flex-basis: 640px;
-		min-height: 640px;
+		flex-basis: 550px;
+		min-height: 550px;
 		max-height: 640px;
 	}
+	/* 34% (640px 基準の固定割合)だと、入れ物が 550px まで縮んだときに今日の予定の下端と
+	   4.8px 重なる (予定の高さは入れ物の高さに依存しない実測 169.2px の固定値なので、
+	   割合で置くと入れ物が縮むほど間が詰まる)。4% (今日の予定の top と同じ割合)からの
+	   固定 px 上乗せに変えると、入れ物の高さによらず今日の予定との間が一定 (実測 11.8px)になる。
+	   181px は 550px のときに今日の予定・送信済みの両方との間がほぼ均等 (12〜13px)になるよう
+	   逆算した値 (scratchpad/10t-fix3/measure.mjs) */
 	.today .bento:has(> .card[data-card='sent']) > .card[data-card='tasks'] {
-		top: 34%;
+		top: calc(4% + 181px);
 		bottom: auto;
 	}
 	.today .bento > .card[data-card='sent'] {
@@ -2516,6 +2538,37 @@ section.tc .list-row:not(label):hover {
 	max-width: 560px;
 	margin-top: calc(var(--orb) * -0.3);
 }
+/* Task 10t 修正ラウンド 3 (review task-10t-fix2 I2) — 完了画面は orb-slot (448px) + card
+   (実測 292.6px) − 重なり (134.4px、margin-top の絶対値)で高さが 606.2px に固定されていた。
+   1280x800 の使える高さ (実測 550.2px)を下回り、56px の縦の送りが出ていた。環状の bento
+   (上の .today .bento、flex: 1 1 430px)と同じ「下限を flex-basis に置く」形にし、606.2px は
+   上限 (オーブが満寸のときの自然な高さ、1440x900 はここで収まる)に回した。縮むのは .orb-slot
+   だけ (.card は flex-shrink: 0 で固定)。550px まで縮んだときにオーブの隠れる割合は 3 割
+   (元の設計)から 4 割弱に増えるが、画像で確認して崩れではないと判断した。
+   ここを @media (min-width: 1101px) で分けて上の基本ルール (display: grid)より後ろに置くのは、
+   同じ詳細度なので後ろに書いたほうが勝つ (カスケードの順序)ため。700px 以下の折りたたみは
+   基本ルールのまま (display: grid、高さは内容任せ) で変えない */
+@media (min-width: 1101px) {
+	.today-done {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		flex: 1 1 550px;
+		min-height: 550px;
+		max-height: 607px;
+	}
+	.today-done .orb-slot {
+		height: auto;
+		flex: 0 1 var(--orb);
+		/* 550px (下限)まで縮んだときに要る高さ (550 − 292.6 + 134.4 ≈ 392px)。flex-shrink が
+		   自動でこの値まで縮めるので、これは安全側の明示的な床 (これより低い窓では
+		   .today-done 自身の min-height が縮みを止め、その分は縦の送りに任せる) */
+		min-height: 392px;
+	}
+	.today-done .card {
+		flex-shrink: 0;
+	}
+}
 .done h2 {
 	font-size: 24px;
 }
@@ -2538,6 +2591,10 @@ section.tc .list-row:not(label):hover {
 	font-weight: 700;
 }
 .done-links {
+	/* Task 10t 修正ラウンド 3 (review task-10t-fix2 I3) — .row の既定 (nowrap)のままだと、
+	   2 つのボタンの最小幅の合計が .today-done (display: grid)の暗黙の列を 375px まで押し広げ、
+	   360x740 でカードの右端が切れていた。折り返せば列の最小幅は 1 つぶんまで縮む */
+	flex-wrap: wrap;
 	gap: var(--sp-4);
 	margin-top: var(--sp-5);
 }
