@@ -126,6 +126,16 @@ describe('layoutColumns', () => {
 			['b', 0, 1]
 		]);
 	});
+	it('minDurationMin がちょうど 30 なら、ちょうど 30 分の予定どうしは列を分けない', () => {
+		// WeekView.svelte の MIN_DURATION_MIN は (44 * 60) / 88 で、これは浮動小数点の誤差なく
+		// 30 になる。44 / (88 / 60) だと 30.000000000000004 になり、0:00〜0:30 の終わりが
+		// わずかに 0:30 を超えて 0:30〜1:00 と重なったと誤判定される (この境目を確認する)
+		const out = layoutColumns([ev('a', '0:00', '0:30'), ev('b', '0:30', '1:00')], (44 * 60) / 88);
+		expect(out.map((x) => [x.event.id, x.col, x.cols])).toEqual([
+			['a', 0, 1],
+			['b', 0, 1]
+		]);
+	});
 });
 
 describe('weekOf / monthGrid', () => {

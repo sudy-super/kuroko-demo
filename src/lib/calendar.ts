@@ -34,8 +34,8 @@ export function travelWarning(db: Db, i: Slot): { prev: CalendarEvent; gapMin: n
     その塊の幅を列数で均等に分ける。col は 0 から数えた列、cols は塊全体の列数。
     minDurationMin は描画上の最小の長さ (分)。WeekView.svelte が予定の高さに 44px の下限を
     敷いているため (WCAG 2.5.8)、実時間が短くても描画はそこまで伸びる。実時間の終了で重なりを
-    判定すると、伸びた分だけ次の予定と描画が重なり、文字も当たり判定も潰れる (Task 11r
-    再レビュー 2 Important 1)。既定値 0 (実時間どおり) は既存の呼び出し・テストと同じ結果 */
+    判定すると、伸びた分だけ次の予定と描画が重なり、文字も当たり判定も潰れる。
+    既定値 0 (実時間どおり) は既存の呼び出し・テストと同じ結果 */
 export type Placed = { event: CalendarEvent; col: number; cols: number };
 export function layoutColumns(events: CalendarEvent[], minDurationMin = 0): Placed[] {
 	const sorted = [...events].sort((a, b) => minutes(a.start) - minutes(b.start));
