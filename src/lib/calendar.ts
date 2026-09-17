@@ -31,10 +31,17 @@ export function travelWarning(db: Db, i: Slot): { prev: CalendarEvent; gapMin: n
 }
 
 /** 週表示の重なり (calendar-block.md「重なり」)。時間が途切れない予定の塊ごとに列を割り、
-    その塊の幅を列数で均等に分ける。col は 0 から数えた列、cols は塊全体の列数 */
+    その塊の幅を列数で均等に分ける。col は 0 から数えた列、cols は塊全体の列数。
+    minDurationMin は描画上の最小の長さ (分)。WeekView.svelte が予定の高さに 44px の下限を
+    敷いているため (WCAG 2.5.8)、実時間が短くても描画はそこまで伸びる。実時間の終了で重なりを
+    判定すると、伸びた分だけ次の予定と描画が重なり、文字も当たり判定も潰れる (Task 11r
+    再レビュー 2 Important 1)。既定値 0 (実時間どおり) は既存の呼び出し・テストと同じ結果 */
 export type Placed = { event: CalendarEvent; col: number; cols: number };
-export function layoutColumns(events: CalendarEvent[]): Placed[] {
+export function layoutColumns(events: CalendarEvent[], minDurationMin = 0): Placed[] {
 	const sorted = [...events].sort((a, b) => minutes(a.start) - minutes(b.start));
+	const end = (e: CalendarEvent) => Math.max(minutes(e.end), minutes(e.start) + minDurationMin);
+	const overlapsRendered = (a: CalendarEvent, b: CalendarEvent) =>
+		minutes(a.start) < end(b) && minutes(b.start) < end(a);
 	const out: Placed[] = [];
 	let group: Placed[] = [];
 	let groupEnd = -1;
@@ -46,14 +53,14 @@ export function layoutColumns(events: CalendarEvent[]): Placed[] {
 	};
 	for (const e of sorted) {
 		if (group.length && minutes(e.start) >= groupEnd) close();
-		// 同じ塊の中でも、すでに終わった予定の列は空いているので使い直す
-		const used = new Set(group.filter((x) => overlaps(x.event, e)).map((x) => x.col));
+		// 同じ塊の中でも、描画上すでに終わった予定の列は空いているので使い直す
+		const used = new Set(group.filter((x) => overlapsRendered(x.event, e)).map((x) => x.col));
 		let col = 0;
 		while (used.has(col)) col++;
 		const placed: Placed = { event: e, col, cols: 1 };
 		group.push(placed);
 		out.push(placed);
-		groupEnd = Math.max(groupEnd, minutes(e.end));
+		groupEnd = Math.max(groupEnd, end(e));
 	}
 	if (group.length) close();
 	return out;

@@ -46,7 +46,13 @@
 	   強化基準)に合わせ、下限も 44px にする。上下に隣り合う予定の塗りを離すのは CSS 側の
 	   透明な下線 (.week-ev の border-bottom + background-clip) に任せ、どの長さでも同じ
 	   1px の隙間にする */
-	const height = (e: CalendarEvent) => Math.max(44, (minutes(e.end) - minutes(e.start)) * PX);
+	const MIN_HEIGHT = 44;
+	const height = (e: CalendarEvent) => Math.max(MIN_HEIGHT, (minutes(e.end) - minutes(e.start)) * PX);
+	/* Task 11r 修正ラウンド 3 (再レビュー 2 Important 1) — 上の下限で描画が実時間より下へ
+	   伸びるぶん、layoutColumns の重なり判定にも同じ分だけ描画上の終了位置を渡す。
+	   分単位に戻すため PX で割る (MIN_HEIGHT / PX = 30 分)。実時間ではなく描画で重ねないと、
+	   続けて入った予定 (例: 11:00〜11:15 と 11:15〜12:00) の文字と当たり判定が潰れる */
+	const MIN_DURATION_MIN = MIN_HEIGHT / PX;
 
 	/* 重なりの横位置。左右の余白を 4px でそろえたいので、幅から 1px 引いて右にずらす手は
 	   使わず、先に列の間の隙間 (cols - 1)px を引いてから均等に割る */
@@ -104,7 +110,7 @@
 		{#each days as d, i (i)}
 			{@const k = key(d)}
 			<div class="week-col" class:on={k === todayKey}>
-				{#each layoutColumns(eventsOn(db, k)) as { event, col, cols } (event.id)}
+				{#each layoutColumns(eventsOn(db, k), MIN_DURATION_MIN) as { event, col, cols } (event.id)}
 					{@const h = height(event)}
 					{@const a = attrs(event)}
 					<!-- 重なりは塊の幅から列の間の隙間を引いて均等に割る -->

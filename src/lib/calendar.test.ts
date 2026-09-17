@@ -109,6 +109,23 @@ describe('layoutColumns', () => {
 			['c', 0, 1]
 		]);
 	});
+	it('minDurationMin を渡すと、実時間では重ならない予定も描画上の終了で重ねる (Task 11r 再レビュー 2 Important 1)', () => {
+		// 11:00〜11:15 は実時間どおりなら 11:15 に終わるが、WeekView の 44px 下限で描画は
+		// 11:30 まで伸びる (30 分 = MIN_HEIGHT / PX)。その分を渡すと直後の 11:15〜12:00 と
+		// 重なったとみなされ、列が分かれる
+		const out = layoutColumns([ev('a', '11:00', '11:15'), ev('b', '11:15', '12:00')], 30);
+		expect(out.map((x) => [x.event.id, x.col, x.cols])).toEqual([
+			['a', 0, 2],
+			['b', 1, 2]
+		]);
+	});
+	it('minDurationMin を渡さなければ実時間どおりで、続けて入った予定は重ならない (回帰なし)', () => {
+		const out = layoutColumns([ev('a', '11:00', '11:15'), ev('b', '11:15', '12:00')]);
+		expect(out.map((x) => [x.event.id, x.col, x.cols])).toEqual([
+			['a', 0, 1],
+			['b', 0, 1]
+		]);
+	});
 });
 
 describe('weekOf / monthGrid', () => {
