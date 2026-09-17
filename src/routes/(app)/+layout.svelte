@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
+	import { Portal } from 'bits-ui';
 	import { page } from '$app/state';
 	import { db, installStorageSync } from '$lib/store.svelte';
 	import { restoreStaleSending, noteRecent } from '$lib/actions';
@@ -13,7 +14,7 @@
 	import ApprovalDrawer from '$lib/components/ApprovalDrawer.svelte';
 	import ActivityDrawer from '$lib/components/ActivityDrawer.svelte';
 	import Palette from '$lib/components/Palette.svelte';
-	import { chromeGlass } from '$lib/glass';
+	import { chromeGlass, overlayGlass } from '$lib/glass';
 	import { CONNECT_NAME } from '$lib/connect';
 
 	let { children } = $props();
@@ -50,6 +51,18 @@
 	     開いただけでブラウザの上限に届き、全面が代替表示に落ちる。層は本文より後・覆いより前に
 	     敷くので、本文はガラスの背後の絵に入り、4 面自身は入らない。src/lib/glass.ts の chromeGlass -->
 	<div class="chrome" {@attach chromeGlass}></div>
+	<!-- Task 10w (glass-scope.md 1〜3 節) — ドロワー・モーダル・ポップオーバー・メニュー・
+	     トーストは bits-ui の Portal で <body> 直下に出る。この層も Portal で <body> の
+	     直接の子として足すことで、どの覆いの面も同じ深さから見つけられる (src/lib/glass.ts の
+	     overlayGlass)。.chrome と違い、覆いは開閉のたびに DOM へ出入りするので、
+	     この層自身は開閉に関わらず常駐する (中身は空、canvas は overlayGlass が足す) -->
+	<Portal>
+		<div class="overlay-chrome" {@attach overlayGlass}>
+			<!-- src/lib/glass.ts の OVERLAY_TIERS 冒頭のコメントを見よ。覆いが 1 つも開いていない
+			     ときに targets が空配列にならないための、常駐する幅 0 の印 -->
+			<div class="overlay-chrome-anchor" aria-hidden="true"></div>
+		</div>
+	</Portal>
 	<Sidebar />
 	<Header />
 	<main class="main">{@render children()}</main>

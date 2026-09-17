@@ -458,6 +458,24 @@ svg.i {
 	z-index: 50;
 	pointer-events: none;
 }
+/* Task 10w (glass-scope.md 1〜3 節) — ドロワー・モーダル・ポップオーバー・メニュー・
+   トーストをまとめて描く空の層。.chrome と同じ作り (中身は canvas 1 枚、pointer-events なし)
+   だが、bits-ui の Portal で <body> の直接の子として足す ((app)/+layout.svelte) ので、
+   ここでは通常の入れ物としての見た目だけを持たせる。
+   z-index 71 — scrim (70) より上、覆いの面 (75〜90) より下。.pill-panel/.demo-menu も
+   同じ 71 に上げてあり (下を見よ)、この層は Portal で常駐する分、DOM 順で必ず面より先に
+   入るので、tie でも面が上に乗る (.chrome と .sidebar の関係と同じ) */
+.overlay-chrome {
+	position: fixed;
+	inset: 0;
+	z-index: 71;
+	pointer-events: none;
+}
+/* src/lib/glass.ts の OVERLAY_TIERS 冒頭のコメントを見よ。display: none で
+   getBoundingClientRect() が幅・高さ 0 になり、ライブラリの描画対象からも外れる */
+.overlay-chrome-anchor {
+	display: none;
+}
 .main {
 	margin-left: calc(var(--side-w) + 32px);
 	padding: var(--bar-clear) var(--sp-6) var(--content-bottom-clear);
