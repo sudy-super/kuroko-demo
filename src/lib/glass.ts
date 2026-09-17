@@ -10,57 +10,55 @@ import {
 } from 'apple-liquid-glass-webgl';
 import { whileVisible } from './visible';
 
-/* Task 10u — ユーザーが示した参考画像 (iOS のタブバー、写真の上に浮く) に合わせて作り直した。
-   裁定: 縁の屈折 (境目の像が曲がる見え方)はやめる。等倍で見えず、屈折があってもなくても
-   画素が変わらないことは Task 10r 修正ラウンド1・10s の 2 回の対照実験で確定済み
-   (見えない効果は値を上げ続けず画像で裁定を仰ぐ、というやり方を踏襲)。
-   refraction / edgeReach / dispersion を 0 にし、面の中も縁も像を曲げない。
-   rim / reflection / highlight / echo / hairline も 0 にした。これらは背景を反射で薄く
-   映し込む効果で、参考画像の「太く明るい縁」はそういう反射ではなく不透明に近い白い縁取りな
-   ので (下の CSS 疑似要素の帯で描く)、ライブラリ側で足しても混ざって効きが読めなくなるだけ。
-   lightAngle は上のどれも 0 のときは一切使われない (uRim/uHighlight の係数がすべて 0 になる
-   ため) ので、死んだ値として消した。
+/* Task 10v — ユーザー裁定「求めてたのはすりガラスではなくて反射を無くした liquid glass」を
+   受け、Task 10u (iOS のタブバー、写真の上に浮く) 以前の Liquid Glass の材質 (Task 10s まで
+   承認されていた値) に戻し、そこから反射だけを外した。
+   refraction / edgeReach / edgeWidth / dispersion は Task 10s の値のまま — 面の中はほぼ素通し、
+   縁の帯だけ像を曲げ、色ずれはごく薄く残す (境目に来たら屈折する、というユーザーの生きた
+   指示)。hairline も Task 10f 以来の値のまま — 縁の輪郭を保つための背景コントラスト適応の線で、
+   光を映し込むものではない (v2-shaders.js の interfaceColor、背景の明暗で白 or 黒を選ぶだけ)。
+   rim / reflection / highlight / echo は 0 — rim は縁に背景を薄く映し返す反射
+   (v2-shaders.js の rimMix)、highlight/echo も面の上に光が乗る効果で、今回の裁定でまとめて消す。
+   lightAngle は rim・highlight が両方 0 のとき一切使われない (uRim/uHighlight の係数が
+   すべて 0 になるため、eea7a85 の検証どおり) ので置かない。
    backdropBlur と tint は BAR / CARD 側で個別に持つ (下を見よ) */
 const LENS = {
-	refraction: 0,
-	edgeReach: 0,
-	edgeWidth: 0,
-	dispersion: 0,
+	refraction: 110,
+	edgeReach: 0.5,
+	edgeWidth: 0.5,
+	dispersion: 1.5,
 	rim: 0,
 	reflection: 0,
 	highlight: 0,
 	echo: 0,
-	hairline: 0
+	hairline: 0.45
 } as const;
 
 /* ナビ層のうち、下を通るのが色や形だけのもの (サイドナビ、連携アイコンの列、接続一覧)。
    塗り (tint)だけが面ごとに違うので、ここは CHROME_TIERS に渡す tint の置き場でしかない
    (ぼかしは描画面ごとの値なので BAR の backdropBlur が当たる。下の CHROME_TIERS の注記を見よ)。
-   Task 10u — 参考画像は面が白っぽい (白の塗りがかなり乗る)。visual 3.1「大きい要素ほど
-   不透明にする」とも向きが合うので、他のナビ層と同じ重さの白まで上げた。
-   tint はライブラリの 0〜1.5 の目盛りで、CSS の不透明度とは一致しない */
-export const CLEAR = { tint: 1.0 } as const;
+   Task 10v — Task 10u 以前の Liquid Glass の値に戻す。tint はライブラリの 0〜1.5 の目盛りで、
+   CSS の不透明度とは一致しない */
+export const CLEAR = { tint: 0.14 } as const;
 
 /* 上部バーと依頼バーの段、およびナビ層 (サイドナビ・連携アイコンの列・接続一覧)。
-   Task 10u — 参考画像 (iOS のタブバー) に合わせ、backdropBlur を大きく上げた。下を通る
-   文字や形が読めず色だけ透けるのが目標で、ライブラリの目盛り上限 (64)の半分ほどの 32 で
-   3 倍拡大でも文字の骨格が残らないことを確認した (compare-ref.png)。この backdropBlur は
-   chromeGlass の共有 canvas 経由でナビ層 (サイドナビ・連携アイコンの列)にも当たる
-   (下の CHROME_TIERS の注記を見よ)。tint も参考画像の白さに合わせて上げた */
+   上部バーと依頼バーの下は本文の文字が通るので、素通しにすると下の文字とバー自身の文字が
+   重なって読めない。iOS のバーと同じく下をぼかして溶かす。
+   Task 10v — Task 10u 以前の値 (目安 8〜14px の上限) に戻す */
 export const BAR: LiquidGlassElementOptions = {
-	tint: 1.3,
+	tint: 0.8,
 	tintTone: 'light',
-	material: { ...LENS, backdropBlur: 32 }
+	material: { ...LENS, backdropBlur: 14 }
 };
 
-/* 内容カード (Today のカード、Inbox/People/Projects/Companies の一覧カード)。
-   Task 10u — BAR と同じ考え方で作り直した。背後に来るオーブは動く絵なので、静止画の
-   バーより下 24px に抑えた (fps 実測は task-10u-report.md)。tint は 1.1 で、色は完全には
-   消さず「色だけ透ける」参考画像の見え方を保つ (1.5 の上限まで寄せると色がほぼ消える) */
+/* 内容カード (Today のカード、Inbox/People/Projects/Companies の一覧カード)。縁の作りは
+   ナビ層と同じ。Task 10v — Task 10s で承認されていた値 (tint 0.5、backdropBlur 2、
+   両立する中の上限として選んだ組。判断根拠は task-10s-report.md) に戻す。背後に来るオーブが
+   面越しに屈折しつつ透けて見えるのが狙いで、Task 10u の「色だけ透ける」濃い白塗りとは逆方向 */
 export const CARD: LiquidGlassElementOptions = {
-	tint: 1.1,
+	tint: 0.5,
 	tintTone: 'light',
-	material: { ...LENS, backdropBlur: 24 }
+	material: { ...LENS, backdropBlur: 2 }
 };
 
 /* Task 10r — カードのガラスの背後にオーブを届ける描き手。
