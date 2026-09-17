@@ -48,6 +48,10 @@
 	   .bento の子孫であるために除外されていた背後の絵へ実際に足す (glass.ts の
 	   orbBackdrop、CARD の訂正コメントを見よ) */
 	let holeOrbCanvas: HTMLCanvasElement | null = $state(null);
+	/* Task 10w — 完了画面 (.today-done) は .bento と別の glass() の host なので、
+	   orbBackdrop に渡す canvas も別に持つ (.orb-slot のオーブは .today-done の子孫であるために
+	   同じ理由で 'auto' backdrop から除外される) */
+	let doneOrbCanvas: HTMLCanvasElement | null = $state(null);
 
 	const meetingHead = (m: NonNullable<typeof nm>) =>
 		`次の会議 ${rel(parse(m.event.date))} ${m.event.start} ${m.meeting.title}`;
@@ -67,8 +71,21 @@
 
 	<div class="today-items" id="items">
 		{#if count === 0}
-			<div class="today-done" style="--orb: {orbSize}px">
-				<div class="orb-slot" aria-hidden="true"><Orb size={orbSize} /></div>
+			<!-- Task 10w (glass-scope.md 5 節) — 完了画面のカードは Today のカードと同じガラス
+			     (承認済みの例外、上の .today-done の CSS 注記を見よ)。.hole と同じ理由で
+			     orbBackdrop に自前の canvas を渡す (下の onCanvas) -->
+			<div
+				class="today-done"
+				style="--orb: {orbSize}px"
+				{@attach glass({
+					...CARD,
+					targets: '.card',
+					backdrop: ['auto', orbBackdrop(() => doneOrbCanvas)]
+				})}
+			>
+				<div class="orb-slot" aria-hidden="true">
+					<Orb size={orbSize} onCanvas={(c) => (doneOrbCanvas = c)} />
+				</div>
 				<DoneScreen />
 			</div>
 		{:else}

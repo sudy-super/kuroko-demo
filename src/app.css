@@ -91,6 +91,10 @@
 	--glass-1: rgba(255, 255, 255, 0.48);
 	--glass-2: rgba(255, 255, 255, 0.6);
 	--glass-panel: rgba(255, 255, 255, 0.58);
+	/* Task 10w (glass-scope.md 5 節) — シート・モーダル・ポップオーバー・メニューの regular 変種。
+	   ナビ層 (--glass-panel) より文字が多いので、フォールバック (backdrop-filter) 経路でも
+	   ナビ層より濃くする。WebGL 経路の実際の塗りは src/lib/glass.ts の SHEET (tint 1.05) */
+	--glass-sheet: rgba(255, 255, 255, 0.82);
 	--solid: rgba(255, 255, 255, 0.92);
 	/* 覆いが出ている間のカードの塗り。ガラスを 2 枚重ねないために面を不透明へ戻す。
 	   代替の経路 (backdrop-filter)と WebGL の経路の 2 か所で使うので、値はここ 1 つにまとめる */
@@ -102,6 +106,9 @@
 	   すりガラス (28px) から Task 10s 以前の値に戻す。
 	   彩度と明度で背後の色を拾う (visual 4.2) */
 	--blur-m: blur(16px) saturate(190%) brightness(1.05);
+	/* Task 10w — regular 変種 (上の --glass-sheet と対) のフォールバックぼかし。文字が多い面
+	   なので少し強くする。WebGL 経路の実際のぼかしは SHEET.material.backdropBlur (22) */
+	--blur-sheet: blur(22px) saturate(190%) brightness(1.05);
 	/* 縁の光 (visual 3.2 の 1px の白い縁、4.2)。WebGL2 が無い環境の代替経路
 	   (backdrop-filter)だけで使う。WebGL 経路ではこの変数はゼロになり、::after が
 	   反射を抜いた縁を描き直す (下の Liquid Glass の節)。Task 10v —
@@ -630,7 +637,8 @@ svg.i {
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
-/* ruling: モバイルのヘッダーは不透明、ぼかしなし */
+/* Task 10w (glass-scope.md 1 節) — 携帯の上部バーは HIG Toolbars がガラスを持つと明記する
+   部品。src/lib/glass.ts の CHROME_TIERS に加えたので、下は .header.glass と同じ扱いにする */
 .header.solid {
 	display: none;
 	position: fixed;
@@ -638,8 +646,10 @@ svg.i {
 	left: 0;
 	right: 0;
 	padding: 0 var(--sp-4);
-	background: var(--solid);
-	box-shadow: var(--e1);
+	background: var(--glass-panel);
+	-webkit-backdrop-filter: var(--blur-m);
+	backdrop-filter: var(--blur-m);
+	box-shadow: var(--rim), var(--e-glass);
 }
 
 /* visual 4.5 — 浮くカード (Task 10f: ガラスをやめた)。
@@ -1371,7 +1381,11 @@ svg.i {
 	outline-offset: -2px;
 }
 
-/* components 3.7 — トースト (画面上端の中央。下端は依頼バーが占有している) */
+/* components 3.7 — トースト (画面上端の中央。下端は依頼バーが占有している)。
+   Task 10w (glass-scope.md 5 節) — HIG に素材の明記はない (未確認) が、HIG に反する理由もない
+   ので regular 変種としてガラスを採る。濃い地に白文字なので、ナビ層/シートの白いガラスとは
+   逆に tintTone: dark (src/lib/glass.ts の OVERLAY_TIERS)。白い反射の縁 (--rim) は濃い地に
+   合わないので付けない。背景の色はそのまま濃い塗りとして残し、ぼかしだけ足す */
 .toast {
 	position: fixed;
 	top: var(--sp-6);
@@ -1387,6 +1401,8 @@ svg.i {
 	padding: 0 var(--sp-2) 0 var(--sp-4);
 	border-radius: var(--r-s);
 	background: rgba(30, 42, 71, 0.92);
+	-webkit-backdrop-filter: var(--blur-sheet);
+	backdrop-filter: var(--blur-sheet);
 	color: #fff;
 	font-size: 14px;
 	line-height: 1.4;
@@ -1460,7 +1476,11 @@ svg.i {
 	}
 }
 
-/* visual 4.11 + components 3.8〜3.9 — 覆い、ドロワー、ボトムシート、モーダル */
+/* visual 4.11 + components 3.8〜3.9 — 覆い、ドロワー、ボトムシート、モーダル。
+   Task 10w (glass-scope.md 2 節) — ドロワー・シート・モーダルは Adopting Liquid Glass が
+   ガラスを持つと明記するので、下の 3 つ (.drawer/.sheet/.modal) は --glass-sheet /
+   --blur-sheet (regular 変種、src/lib/glass.ts の SHEET) をまとう。scrim (覆いの暗さ) は
+   コンテンツ層の一部なので変えない */
 .scrim {
 	position: fixed;
 	inset: 0;
@@ -1482,8 +1502,10 @@ svg.i {
 	width: min(400px, 100vw);
 	padding: var(--sp-6);
 	border-radius: var(--r-m) 0 0 var(--r-m);
-	background: var(--solid);
-	box-shadow: var(--e3);
+	background: var(--glass-sheet);
+	-webkit-backdrop-filter: var(--blur-sheet);
+	backdrop-filter: var(--blur-sheet);
+	box-shadow: var(--rim), var(--e3);
 	overflow-y: auto;
 	animation: drawer-in var(--d-enter) var(--ease-enter) both;
 }
@@ -1515,8 +1537,10 @@ svg.i {
 	max-height: calc(100dvh - 72px);
 	padding: 0 var(--sp-4) calc(var(--sp-6) + env(safe-area-inset-bottom));
 	border-radius: var(--r-xl) var(--r-xl) 0 0;
-	background: var(--solid);
-	box-shadow: var(--e3);
+	background: var(--glass-sheet);
+	-webkit-backdrop-filter: var(--blur-sheet);
+	backdrop-filter: var(--blur-sheet);
+	box-shadow: var(--rim), var(--e3);
 	overflow-y: auto;
 	animation: sheet-in var(--d-enter) var(--ease-enter) both;
 }
@@ -1562,8 +1586,10 @@ svg.i {
 	max-height: calc(100dvh - 96px);
 	padding: var(--sp-6);
 	border-radius: var(--r-l);
-	background: var(--solid);
-	box-shadow: var(--e3);
+	background: var(--glass-sheet);
+	-webkit-backdrop-filter: var(--blur-sheet);
+	backdrop-filter: var(--blur-sheet);
+	box-shadow: var(--rim), var(--e3);
 	overflow: hidden;
 	animation: modal-in var(--d-enter) var(--ease-enter) both;
 }
@@ -1608,7 +1634,9 @@ svg.i {
 	}
 }
 
-/* components 3.2 — ボトムナビ。ruling: 不透明、ぼかしなし */
+/* components 3.2 — ボトムナビ。Task 10w (glass-scope.md 1 節) — HIG Tab bars がガラスを
+   持つと明記する部品。src/lib/glass.ts の CHROME_TIERS に加えたので、下は .header.glass /
+   .chatbar と同じ扱いにする */
 .bottomnav {
 	display: none;
 	position: fixed;
@@ -1618,8 +1646,10 @@ svg.i {
 	z-index: 60;
 	height: var(--bottomnav-h);
 	border-radius: var(--r-l);
-	background: var(--solid);
-	box-shadow: var(--e2);
+	background: var(--glass-panel);
+	-webkit-backdrop-filter: var(--blur-m);
+	backdrop-filter: var(--blur-m);
+	box-shadow: var(--rim), var(--e-glass);
 }
 .bottomnav-item {
 	position: relative;
@@ -1677,10 +1707,13 @@ svg.i {
 }
 
 /* Task 10n — ピルの中のボタンを押したときだけ開く板 (PillPanel.svelte)。
-   ガラスは 5 か所だけなので不透明。出す中身は直近の数件と全件への導線だけ
-   (island.md「広がったときの中身」) */
+   出す中身は直近の数件と全件への導線だけ (island.md「広がったときの中身」)。
+   Task 10w (glass-scope.md 5 節) — ポップオーバーは Adopting Liquid Glass がガラスを持つと
+   明記するので regular 変種を採る。z-index — scrim (70) と同じだった値を 71 に上げ、上の
+   overlay-chrome (src/lib/glass.ts の overlayGlass、同じく 71 で DOM 順が先) より確実に上、
+   覆いの面 (drawer/sheet/modal 75) より確実に下にする */
 .pill-panel {
-	z-index: 70;
+	z-index: 71;
 	display: flex;
 	flex-direction: column;
 	gap: var(--sp-2);
@@ -1688,8 +1721,10 @@ svg.i {
 	max-width: calc(100vw - var(--sp-8));
 	padding: var(--sp-4);
 	border-radius: var(--r-m);
-	background: var(--solid);
-	box-shadow: var(--e3);
+	background: var(--glass-sheet);
+	-webkit-backdrop-filter: var(--blur-sheet);
+	backdrop-filter: var(--blur-sheet);
+	box-shadow: var(--rim), var(--e3);
 	/* 開いた直後は板自身に焦点が当たる。枠は中のボタン側で示す */
 	outline: none;
 }
@@ -1778,14 +1813,23 @@ svg.i {
 	}
 }
 
-/* visual 4.2 — ぼかしが使えない環境では不透明に倒す */
+/* visual 4.2 — ぼかしが使えない環境では不透明に倒す。トーストは濃い地の塗りをそのまま
+   使う (rgba(30, 42, 71, 0.92)、上の .toast 参照) ので対象外 */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 	.glass,
 	.card,
 	.sidebar,
 	.rail,
 	.header.glass,
-	.chatbar {
+	.chatbar,
+	.header.solid,
+	.bottomnav,
+	.drawer,
+	.sheet,
+	.modal,
+	.pill-panel,
+	.demo-menu,
+	.select-menu {
 		background: rgba(255, 255, 255, 0.94);
 	}
 }
@@ -2546,8 +2590,13 @@ section.tc .list-row:not(label):not(a):hover {
 	font-size: 14px;
 }
 
-/* 完了画面。球の下側がカードに隠れてガラスのぼかす対象になるよう、画の 3 割を重ねる */
+/* 完了画面。球の下側がカードに隠れてガラスのぼかす対象になるよう、画の 3 割を重ねる。
+   Task 10w (glass-scope.md 5 節) — 完了画面のカードは Today のカードと同じ承認済みの例外
+   (visual 3.1 の「一時的な操作要素」ではなく、Today で既に維持している構図上の逸脱)。
+   .bento と同じ理由 (Task 10e) で isolation: isolate も持つ */
 .today-done {
+	position: relative;
+	isolation: isolate;
 	display: grid;
 	justify-items: center;
 	padding: 0 var(--sp-6);
@@ -2651,15 +2700,19 @@ section.tc .list-row:not(label):not(a):hover {
 }
 
 /* Task 10m — 上部バー右端の「デモの操作」から開くメニュー。中の「他のシナリオを試す」は
-   入れ子のメニューで、仕様 11.4 の 8 件を出す。文言が長いので折り返させ、高さは行数に任せる */
+   入れ子のメニューで、仕様 11.4 の 8 件を出す。文言が長いので折り返させ、高さは行数に任せる。
+   Task 10w (glass-scope.md 5 節) — メニューは Adopting Liquid Glass がガラスを持つと明記する
+   ので regular 変種を採る。z-index は .pill-panel と同じ理由で 71 に上げた */
 .demo-menu {
-	z-index: 70;
+	z-index: 71;
 	width: 220px;
 	max-width: calc(100vw - var(--sp-8));
 	padding: var(--sp-2);
 	border-radius: var(--r-m);
-	background: var(--solid);
-	box-shadow: var(--e3);
+	background: var(--glass-sheet);
+	-webkit-backdrop-filter: var(--blur-sheet);
+	backdrop-filter: var(--blur-sheet);
+	box-shadow: var(--rim), var(--e3);
 }
 .demo-menu.wide {
 	width: 420px;
@@ -2775,14 +2828,34 @@ section.tc .list-row:not(label):not(a):hover {
    WebGL2 が無い環境では data-liquid-glass="fallback" が付いてこの指定は当たらず、
    これまでどおり backdrop-filter のすりガラスになる。
    ========================================================================== */
-/* Task 10i — 枠の 4 面は .chrome の canvas にまとめて描かれるので、属性は入れ物の .chrome に
-   付く。4 面はその層の子ではなくきょうだいなので、塗りを下ろす指定も ~ で書く */
+/* Task 10i — 枠の 6 面 (Task 10w でボトムナビ・携帯の上部バーを追加) は .chrome の canvas に
+   まとめて描かれるので、属性は入れ物の .chrome に付く。面はその層の子ではなくきょうだいなので、
+   塗りを下ろす指定も ~ で書く。
+
+   Task 10w (glass-scope.md 2〜3 節) — シート・モーダル・ポップオーバー・メニュー・トーストは
+   overlay-chrome の canvas にまとめて描かれる。この 5 面は <body> の直接の子 (drawer/sheet/
+   modal/toast) か、floating-ui の位置決め用の入れ物 div を 1 枚挟んだ孫 (pill-panel/demo-menu)
+   のどちらかで、深さが揃わないので ~ の兄弟結合子が使えない。:has() で overlay-chrome が
+   <body> の直接の子にいることを確かめたうえで、子孫として塗りを下ろす。
+
+   .select-menu はここに含めない (src/lib/glass.ts の OVERLAY_TIERS の注記を見よ)。
+   SelectField は常にモーダルの中で使うため、一覧は「このガラス化で透明にしたモーダル」の
+   上に開き、canvas は一覧のさらに後ろ (モーダルの向こう側) に隠れて画面に出ない。
+   .select-menu だけは自分の CSS の backdrop-filter を持ち続ける (下の .select-menu を見よ) */
 :root [data-liquid-glass='webgl'],
 :root [data-liquid-glass='webgl'] .card,
 .chrome[data-liquid-glass='webgl'] ~ .sidebar,
 .chrome[data-liquid-glass='webgl'] ~ .header.glass,
 .chrome[data-liquid-glass='webgl'] ~ .rail,
-.chrome[data-liquid-glass='webgl'] ~ .chatbar {
+.chrome[data-liquid-glass='webgl'] ~ .chatbar,
+.chrome[data-liquid-glass='webgl'] ~ .header.solid,
+.chrome[data-liquid-glass='webgl'] ~ .bottomnav,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .sheet,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .modal,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .pill-panel,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .toast {
 	background: none;
 	-webkit-backdrop-filter: none;
 	backdrop-filter: none;
@@ -2801,13 +2874,23 @@ section.tc .list-row:not(label):not(a):hover {
    輪郭線 (hairline)は残す (背景の明暗に応じて白 or 黒を選ぶだけの適応線で、光を映し込む
    ものではない)。
    ガラスの canvas は要素の z-index: -1 の子なので、z-index を持たないこの疑似要素は
-   canvas より上に描かれる。inset の影を要素自身に付けると canvas の下に隠れて見えない */
+   canvas より上に描かれる。inset の影を要素自身に付けると canvas の下に隠れて見えない。
+
+   Task 10w — シート・モーダル・ポップオーバー・メニューにも同じ縁を足す。トースト (濃い地)
+   は縁がほぼ見えず効果がないので対象外にした */
 .sidebar::after,
 .rail::after,
 .header.glass::after,
 .chatbar::after,
-:root [data-liquid-glass='webgl'] .card::after,
-:root [data-liquid-glass='webgl'].card::after {
+.header.solid::after,
+.bottomnav::after,
+.drawer::after,
+.sheet::after,
+.modal::after,
+.pill-panel::after,
+.demo-menu::after,
+.select-menu::after,
+:root [data-liquid-glass='webgl'] .card::after {
 	content: '';
 	position: absolute;
 	inset: 0;
@@ -2826,7 +2909,14 @@ section.tc .list-row:not(label):not(a):hover {
 .chrome[data-liquid-glass='webgl'] ~ .sidebar::after,
 .chrome[data-liquid-glass='webgl'] ~ .header.glass::after,
 .chrome[data-liquid-glass='webgl'] ~ .rail::after,
-.chrome[data-liquid-glass='webgl'] ~ .chatbar::after {
+.chrome[data-liquid-glass='webgl'] ~ .chatbar::after,
+.chrome[data-liquid-glass='webgl'] ~ .header.solid::after,
+.chrome[data-liquid-glass='webgl'] ~ .bottomnav::after,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer::after,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .sheet::after,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .modal::after,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .pill-panel::after,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu::after {
 	z-index: -1;
 }
 
@@ -2901,7 +2991,21 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 	transform: rotate(90deg);
 	flex: none;
 }
-/* 覆いの上に出すので、モーダル (z-index 75) より上に置く */
+/* 覆いの上に出すので、モーダル (z-index 75) より上に置く。
+   Task 10w (glass-scope.md 5 節) — メニューは Adopting Liquid Glass がガラスを持つと明記する
+   ので regular 変種を採る。メニューがモーダルの上に出るのはシステムの標準の重なりなので、
+   ガラスの上にガラスを重ねない規則には反しない (glass-scope.md 3 節)。
+   他の覆い (drawer/sheet/modal/pill-panel/demo-menu/toast) と違い、この面だけは
+   overlay-chrome の canvas を使わず、この CSS の backdrop-filter をそのまま常に使う
+   (WebGL2 が使える環境でも下ろさない、src/lib/glass.ts の OVERLAY_TIERS の注記を見よ)。
+   SelectField は常にモーダルの中のフォームで使うので、一覧はモーダルの上に開く。
+   canvas 方式だと、モーダルの背景も透明にしてあるため一覧の「すぐ後ろ」がモーダル自身の
+   実体 (文字など)になってしまい、canvas の塗りが画面に出ない。backdrop-filter は自分の
+   真後ろを直接ぼかすので、この重なりでも正しく効く。
+   box-shadow は --e3 のみ (--rim は使わない)。他の面の --rim は WebGL 経路で 0 に
+   下ろされて縁の白い反射が消えるが (下の Liquid Glass の節)、この面はその仕組みを
+   使わないので、--rim を書くと常に反射が出てしまう。縁の輪郭は ::after の暗線
+   (上の .select-menu::after) だけで足りる */
 .select-menu {
 	z-index: 80;
 	width: var(--bits-select-anchor-width);
@@ -2909,7 +3013,9 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 	overflow-y: auto;
 	padding: var(--sp-2);
 	border-radius: var(--r-m);
-	background: var(--solid);
+	background: var(--glass-sheet);
+	-webkit-backdrop-filter: var(--blur-sheet);
+	backdrop-filter: var(--blur-sheet);
 	box-shadow: var(--e3);
 }
 .select-menu:focus-visible {
