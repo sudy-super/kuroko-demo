@@ -768,15 +768,17 @@ svg.i {
 	/* Task 11r 修正ラウンド 3 (再レビュー 2 Important 2) — border-radius: var(--r-pill) の
 	   ままだと、112px の高さでは角の半径が 56px になり、この折り返し行の中身 (チップの右上、
 	   送信ボタンの右下)が丸い輪郭からはみ出す (実測: チップ 3.6px、送信ボタン 2.5px)。
-	   visual.md 3.7「内側の角丸 = 外側の角丸 − 間隔」の式を使う。中身はどれも角丸 0 の
-	   直角の縁 (チップ・送信ボタンとも .chatbar の padding の縁に接している)とみなせるので、
-	   内側の角丸 0 = 外側の角丸 − 間隔 → 外側の角丸 = 間隔。間隔はこの行で最も狭い
-	   padding (top/right/bottom = --sp-2 = 8px、left だけ --sp-5 = 20px)を採る */
+	   修正ラウンド 4 (再レビュー 3 Important 1) — 上の式の当てはめが誤りだった。中身は角丸 0
+	   の直角ではなく、チップは capsule (高さ 40px、半径 20px)、送信ボタンは円 (直径 42px、
+	   半径 21px)。visual.md 3.7「内側の角丸 = 外側の角丸 − 間隔」を正しく解くと
+	   外側の角丸 = 内側の角丸 + 間隔。間隔はこの行で最も狭い padding (top/right/bottom
+	   = --sp-2 = 8px、left だけ --sp-5 = 20px) を採り、チップの半径 (40px の半分) + 8px = 28px
+	   にする。実測でチップ・送信ボタンとも輪郭の内側に約 8px の余裕を保ち、はみ出しは 0 */
 	.chatbar:has(.chip) {
 		flex-wrap: wrap;
 		padding-top: var(--sp-2);
 		padding-bottom: var(--sp-2);
-		border-radius: var(--sp-2);
+		border-radius: calc(40px / 2 + var(--sp-2));
 	}
 	.chatbar .chip {
 		flex-basis: 100%;
