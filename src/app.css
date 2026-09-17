@@ -2954,35 +2954,17 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 
 /* --- 週表示 (components 3.12) ------------------------------------------- */
 
-/* Task 11r 修正ラウンド 1 (Critical) — 前回、.main を height: 100dvh で確定させ .week-body に
-   「残りの高さ」を flex-grow で配る形にしたところ、844x390 のように見出し+切り替え行だけで
-   窓の高さを使い切る画面では残りが 0 近くまで削れ、週表示ごと消えて page のスクロールも
-   出せなくなった (.main の高さそのものを固定していたため)。.main の高さは固定しない。
-   下の .week の max-height に下限を持たせることで、Critical と同じ崩れ (残りが 0 近くまで
-   削れる)を再発させずに済む (修正ラウンド 3 で再構成、詳細は下) */
-
-/* Task 11r 修正ラウンド 3 (再レビュー 2 所見 6) — 横 (狭い携帯幅で格子 64+7x72=568px が
-   潰れないための送り) と縦 (24 時間分の送り) を .week 1 つに一本化した。ラウンド 2 まで
-   縦の送りを .week-body の内側 overflow-y に持たせていたが、それだと sticky の基準が
-   祖先の .week (overflow-x: auto を持つ、送れない箱)になってしまい、曜日の行の
-   position: sticky が効かなかった (検証結果は rereview2-task-11r.md 案 B)。
-   縦横とも .week 自身が送れる箱になったので、.week-head をこの箱の中で sticky にすれば
-   基準がずれず、JS で scrollLeft を書き写す同期も要らない。
-   .week の高さは 100dvh から画面の他の要素の分を引いて求める。--week-top-clear (この
-   ページの見出し・切り替え行・カードの余白、calendar/+page.svelte の .cal-panel で幅ごとに
-   定義)と --content-bottom-clear (依頼バー等の下端の余白、:root で定義済み)を引いた残りが
-   .week の使える高さ。
-   下限は 176px。.week-head の position: sticky は .week 自身の枠を基準にするので、.week の
-   箱がページの表示領域からはみ出すと (ページを一番下まで送ったとき).week ごと表示領域の外へ
-   出て曜日の行も見えなくなる。844x390 (この画面固有のヘッダー・切り替え行だけで窓を
-   ほぼ使い切る、responsive-policy.md の最も低い携帯横)で .week の上端 (実測 約 201px)から
-   .week 自身がそのままページの表示領域 (390px)に収まる上限が 189px なので、それより
-   小さい 176px を選び、ページを送らなくても .week 全体 (曜日の行を含む)が画面に収まるように
-   した。240px 相当まで下限を上げたい場合、844x390 で .week の下端が表示領域からはみ出し、
-   ページを一番下まで送ると曜日の行ごと画面外へ出る (実測して確認済み) */
+/* .week は横 (狭い携帯幅で格子 64+7x72=568px が潰れないための送り)と縦 (24 時間分の送り)を
+   1 つの箱にまとめて持つ。この箱自身が送れるので、.week-head をこの箱の中で
+   position: sticky にでき、曜日の行は送っても見えたまま留まる (sticky は送れない祖先を
+   基準にはできない)。
+   高さは、画面の中でヘッダーの下端から依頼バーの上端までに使える分 (100dvh から
+   --bar-clear と --content-bottom-clear を引いた残り)を渡す。見出し・切り替え行の高さは
+   引かない (幅や高さごとに実測して差し引く定数を持たない)。その分だけページを送れば、
+   .week の上端がヘッダーの下端にちょうど揃い、曜日の行と格子を同時に使える状態になる */
 .week {
 	overflow: auto;
-	max-height: max(176px, calc(100dvh - var(--week-top-clear) - var(--content-bottom-clear)));
+	max-height: calc(100dvh - var(--bar-clear) - var(--content-bottom-clear));
 }
 .week-cols {
 	display: grid;
@@ -2996,7 +2978,10 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 	z-index: 2;
 	height: 48px;
 	border-bottom: 1px solid var(--line-2);
-	background: var(--solid);
+	/* 送っても下の予定が透けないよう不透明にする。--solid (白 0.92) だとガラスのカードの地
+	   (実測 rgb(237,241,245) 前後、--bg に近い)より白く浮いて帯に見えるので、--bg (不透明) を
+	   使い地の色に合わせる */
+	background: var(--bg);
 }
 .week-day {
 	display: flex;
@@ -3014,12 +2999,9 @@ body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-la
 	color: var(--accent);
 	font-weight: 700;
 }
-/* 0:00〜24:00 を持つ。高さ・送りは上の .week に一本化したので、ここでは何も切らない。
-   Task 11r 修正ラウンド 3 (再レビュー 2 所見 6) — ラウンド 1・2 は「見える高さは 12 時間分」
-   (576px→1056px) をここの max-height で切っていたが、それだと縦の送りが .week-body の
-   内側に閉じてしまい、曜日の行 (.week-head) の sticky が祖先の .week (overflow-x: auto)を
-   基準にできなかった。.week 側で送るようになったので、ここは overflow も max-height も
-   持たない (scrollbar-gutter の手当ても、同じ箱で送るので不要)。*/
+/* .week-body (.week-cols と合わせて格子の実体)は 0:00〜24:00 の全部を持つ。高さ・送りは
+   上の .week に一本化したので、このクラス自身は overflow も max-height も持たない
+   (ここに持たせると曜日の行の sticky が送れない箱を基準にしてしまい効かなくなる) */
 .week-axis {
 	position: relative;
 }
