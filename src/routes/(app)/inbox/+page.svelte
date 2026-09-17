@@ -78,7 +78,6 @@
 		if (media.mobile) sheet = true;
 		else showRight = !showRight;
 	}
-	import { glass, CARD } from '$lib/glass';
 </script>
 
 <svelte:head><title>Inbox — KUROKO AI</title></svelte:head>
@@ -94,7 +93,9 @@
 		</button>
 	</header>
 
-	<div class="panes" {@attach glass({ ...CARD, targets: '.card' })}>
+	<!-- Task 10w — HIG 上ガラスを持たないコンテンツ層なので、Task 10c のガラス (glass()) を外して
+	     普通のカードの面 (.card) に戻した (glass-scope.md 6 節) -->
+	<div class="panes">
 		<section class="card pane pane-list" aria-labelledby="inbox-queue-head">
 			<h2 class="list-head" id="inbox-queue-head">
 				<Icon name="ic-alert" size={16} />要対応<span class="num">{q.length}</span>

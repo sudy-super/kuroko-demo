@@ -2039,9 +2039,6 @@ svg.i {
 		display: none !important;
 	}
 	:root body [data-liquid-glass='webgl'] .card,
-	/* カレンダーの枠だけはガラスを要素自身に当てているので、属性も枠自身に付く。
-	   子孫を狙う上の形では当たらない (Task 10f 修正ラウンド 4) */
-	:root body [data-liquid-glass='webgl'].card,
 	:root body [data-liquid-glass='webgl'] .btn.sec {
 		background: #fff !important;
 	}
@@ -2942,19 +2939,15 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu::after {
    カードが完全に透明になり、文字が背景の上に直接浮く。
    !important が要る理由: ライブラリは canvas を作るときに display: block をインラインの
    style として書き込む (dom.js の mountCanvas)。インラインの style はスタイルシートの
-   宣言より強いので、これを下ろす手段が !important しかない */
+   宣言より強いので、これを下ろす手段が !important しかない。
+   Task 10w — Inbox の .panes と People/Companies/Projects の .people-cards、カレンダーの
+   .cal-panel はガラスを外してコンテンツ層の普通の面に戻したので、この一覧から削った
+   (glass-scope.md 6 節)。.today-done (完了画面) は Today の .bento と同じ扱いを追加した */
 body[data-overlay='on'] .bento > [data-liquid-glass-layer],
-body[data-overlay='on'] .panes > [data-liquid-glass-layer],
-body[data-overlay='on'] .people-cards > [data-liquid-glass-layer] {
+body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
 	display: none !important;
 }
-/* カレンダーの枠はガラスを要素自身に当てているので、canvas はその枠の直下の子になり、
-   属性も枠自身に付く。上の「入れ物の子」を狙う形では当たらない (Task 10f 修正ラウンド 4) */
-body[data-overlay='on'] [data-liquid-glass='webgl'].card > [data-liquid-glass-layer] {
-	display: none !important;
-}
-:root body[data-overlay='on'] [data-liquid-glass='webgl'] .card,
-:root body[data-overlay='on'] [data-liquid-glass='webgl'].card {
+:root body[data-overlay='on'] [data-liquid-glass='webgl'] .card {
 	background: var(--overlay-card);
 }
 

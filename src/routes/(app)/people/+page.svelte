@@ -22,7 +22,6 @@
 	});
 
 	const staff = (companyId: string) => db.people.filter((p) => p.companyId === companyId).length;
-	import { glass, CARD } from '$lib/glass';
 </script>
 
 <svelte:head><title>会社・人物・案件 — KUROKO AI</title></svelte:head>
@@ -55,7 +54,9 @@
 		{/each}
 	</div>
 
-	<div class="people-cards" {@attach glass({ ...CARD, targets: '.card' })}>
+	<!-- Task 10w — HIG 上ガラスを持たないコンテンツ層なので、Task 10c のガラス (glass()) を外して
+	     普通のカードの面 (.card) に戻した (glass-scope.md 6 節) -->
+	<div class="people-cards">
 		<!-- Task 10p 修正ラウンド 1 (Important 2) — /inbox・/tasks と同じ形の小見出しを一覧の先頭に置く。
 		     直上のタブと文言・件数が重なるが、絞り込みの現在値ではなく一覧そのものの見出しなので付ける -->
 		<section class="card people-list" aria-labelledby="people-list-head">

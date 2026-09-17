@@ -22,8 +22,6 @@
 			: []
 	);
 
-	import { glass, CARD } from '$lib/glass';
-
 	/* 仕様 5 — カードの中の一覧は上位 3 件まで。「残り N 件」を押すとその場で全部出す */
 	const LIMIT = 3;
 	let open = $state<Record<string, boolean>>({});
@@ -52,7 +50,9 @@
 	{#if !project}
 		<p class="people-missing">この案件は登録されていません。</p>
 	{:else}
-		<div class="people-cards" {@attach glass({ ...CARD, targets: '.card' })}>
+		<!-- Task 10w — HIG 上ガラスを持たないコンテンツ層なので、Task 10c のガラス (glass()) を外して
+		     普通のカードの面 (.card) に戻した (glass-scope.md 6 節) -->
+		<div class="people-cards">
 			<section class="card people-sec">
 				<h2>基本情報</h2>
 				<dl class="kv">
