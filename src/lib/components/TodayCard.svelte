@@ -7,6 +7,8 @@
 		title,
 		icon,
 		href,
+		target,
+		rel,
 		onclick,
 		children
 	}: {
@@ -16,6 +18,10 @@
 		title: string;
 		icon: string;
 		href?: string;
+		/* Task 10t 修正ラウンド 5 (review task-10t-fix4 I1) — 送信済みカードを外部の
+		   相手の画面 (別タブ)へ飛ばすために要る */
+		target?: string;
+		rel?: string;
 		onclick?: () => void;
 		children: Snippet;
 	} = $props();
@@ -34,7 +40,7 @@
 
 <!-- visual 2.7 — タイルには名前を付け、DOM の順序を見た目の順序に合わせる -->
 {#if href}
-	<a class="card tc" data-card={card} {href} {onclick} aria-labelledby={titleId}
+	<a class="card tc" data-card={card} {href} {target} {rel} {onclick} aria-labelledby={titleId}
 		>{@render inner()}</a
 	>
 {:else if onclick}

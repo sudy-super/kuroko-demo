@@ -178,27 +178,31 @@
 				</TodayCard>
 
 				{#if sent.length}
-					<TodayCard card="sent" title="日程調整の返信待ち {sent.length} 件" icon="ic-clock">
-						<!-- Task 10t 修正ラウンド 4 (review task-10t-fix3 I1) — アイコンだけのボタンは
-						     文言を「送信済み」の手前で切り、ic-share は承認待ちカードの「外部への共有」
-						     (ApprovalIcon)と同じ図柄で意味が重複していた。行そのものをリンクにして
-						     文言のまま押せるようにする (today-mobile の <a class="list-row"> と同じ形。
-						     .list-row の色/下線リセットが効くので文言のリンクにも見えない)。高さは
-						     1 行のまま (round 3 の削減を保つ)。2 件目以降は入れ物の高さの想定 (1 件分)
-						     を超え ToDo の行と重なるので (M1)、1 件だけ見せて残りは件数表示にする -->
+					<!-- Task 10t 修正ラウンド 5 (review task-10t-fix4 I1) — 行をリンクにすると、
+					     案内の手順 3 が指す「相手の画面を開く」という文字が画面から消え、行も
+					     押せる見た目にならなかった (高さ 36px、他のタイルと同じ色・下線なし)。
+					     カード全体を相手の画面へのリンクにする (承認待ち・次の会議と同じ「押せる
+					     カード」の見た目。ホバー・押下沈みが付き、的も 97px 全体になる)。
+					     案内の文言 (Header.svelte SECTIONS[3])もカードの題名を押す形に合わせた。
+					     I2 (review task-10t-fix4) — 「残り N 件」の行は ToDo カードと 14px 重なる
+					     ので削る。題名にすでに件数があるので情報は減らない -->
+					<TodayCard
+						card="sent"
+						title="日程調整の返信待ち {sent.length} 件"
+						icon="ic-clock"
+						href="/schedule/{sent[0].token}"
+						target="_blank"
+						rel="noreferrer"
+					>
 						{#each sent.slice(0, 1) as s (s.id)}
-							<a
-								class="list-row"
-								target="_blank"
-								rel="noreferrer"
-								href="/schedule/{s.token}"
-								aria-label="{personOf(db, s.personId)
-									?.name}様 候補 3 件を送信済み。相手の画面を開く (デモ用)"
-							>
-								<span class="tc-text">{personOf(db, s.personId)?.name}様 候補 3 件を送信済み</span>
-							</a>
+							<div class="list-row">
+								<!-- 1101px で「田中 太郎様に候補を送信済み」が切れる (review task-10t-fix4 M3)。
+								     名前と文言を別の span に分け、名前の側だけ省略する (app.css の
+								     .today .bento .list-row .sent-suffix) -->
+								<span class="tc-text sent-name">{personOf(db, s.personId)?.name}様</span>
+								<span class="tc-text sent-suffix">に候補を送信済み</span>
+							</div>
 						{/each}
-						{#if sent.length > 1}<p class="muted">残り {sent.length - 1} 件</p>{/if}
 					</TodayCard>
 				{/if}
 

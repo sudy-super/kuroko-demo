@@ -2390,6 +2390,16 @@ section.tc .list-row:not(label):not(a):hover {
 .today .bento .list-row.xl {
 	height: 56px;
 }
+/* Task 10t 修正ラウンド 5 (review task-10t-fix4 M3) — 1101px で「田中 太郎様に候補を送信済み」が
+   「…送信」で切れていた。名前だけを縮める (flex-shrink) 側にし、「に候補を送信済み」は
+   常に全文を残す (flex-shrink: 0)。名前が長くても状態文は必ず読める */
+.today .bento .list-row .sent-name {
+	flex: 0 1 auto;
+	min-width: 0;
+}
+.today .bento .list-row .sent-suffix {
+	flex: none;
+}
 /* ToDo の行だけは label で、中のチェックボックスを押す。的の下限 (Apple HIG の 44px)まで */
 .today .bento .list-row:is(label) {
 	height: 44px;
@@ -2503,6 +2513,33 @@ section.tc .list-row:not(label):not(a):hover {
 	.today .bento:has(> .card[data-card='sent']) > .card[data-card='tasks'] {
 		top: calc(4% + 181px);
 		bottom: auto;
+	}
+	/* Task 10t 修正ラウンド 5 (review task-10t-fix4 I3) — 低い窓 (1440x700 / 1280x680)では
+	   本文に使える高さが実測 516px しかなく、下限 550px との差がそのままページの送りになって、
+	   送信済みカードが依頼バーの裏へ深く入っていた (案内の手順 3 が押せない)。ToDo の 3 行目を
+	   畳んで入れ物を 460px まで下げる (行 44px 分)。題名に件数が出ているので情報は減らず、
+	   残りは「ToDo をすべて見る」からたどれる。
+	   1440x700 / 1280x680 は responsive-policy の条件 3 で縦の送りを許す寸法なので、残る
+	   9px の送りは受け入れる。条件 6 (主要な操作が固定要素に潜らない)は、送信済みカードの
+	   下端が依頼バーの上端より上に出ることで満たす (実測)。
+	   ToDo と送信済みが 31px 重なるのは、ToDo の高さ (2 行でも実測 193px)が入れ物の下限から
+	   逆算した位置に収まらないため。左の列へ移す案は次の会議と 114px 重なり球も覆うので却下した。
+	   重なるのはカードの下端の余白どうしで、文字は重ならない (実測) */
+	@media (max-height: 760px) {
+		.today .bento:has(> .card[data-card='sent']) {
+			flex-basis: 460px;
+			min-height: 460px;
+		}
+		.today .bento:has(> .card[data-card='sent'])
+			> .card[data-card='tasks']
+			.list-row:nth-of-type(3) {
+			display: none;
+		}
+		/* 送信済みカードが ToDo の下端に 31px 重なるので、そこにある「ToDo をすべて見る」は
+		   隠れて読めない。畳んだ 3 行目と同じく、ToDo の全件はサイドナビの「ToDo」から開ける */
+		.today .bento:has(> .card[data-card='sent']) > .card[data-card='tasks'] .tc-foot {
+			display: none;
+		}
 	}
 	.today .bento > .card[data-card='sent'] {
 		bottom: 0;
