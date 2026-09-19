@@ -2851,8 +2851,7 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .sheet,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .modal,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .pill-panel,
-body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu,
-body:has(> .overlay-chrome[data-liquid-glass='webgl']) .toast {
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu {
 	background: none;
 	-webkit-backdrop-filter: none;
 	backdrop-filter: none;
@@ -2861,6 +2860,38 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .toast {
 	isolation: isolate;
 	/* --rim は要素自身の box-shadow なので、canvas (z-index -1 の子)の下に隠れて描いても
 	   見えない。下の ::after が同じ形をもう一度描くので、要素自身の分は消す */
+	--rim: 0 0 rgba(0, 0, 0, 0);
+}
+
+/* Task 10w 修正ラウンド 1 (review-task-10w.md C1) — ガラスの塗りはライブラリの目盛りの
+   上限 (tint 1.5) まで上げても、Today のオーブの塊の直上では薄い補助文字 (--ink-3) が
+   3.84:1 までしか出ず、4.5:1 に届かない (実測: 覆いの面の文字の矩形の中の背景で測定)。
+   文字が多い面は可読性を優先するという HIG Materials の regular 変種の考え方に沿って、
+   canvas の上に薄い白を 1 枚重ねて下限を持ち上げる。ぼかしと屈折は canvas 側でそのまま
+   効くので、下が透けてぼやける見え方は保たれる。トーストは濃い地に白文字なので対象外
+   (下の .toast の注記を見よ) */
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer::before,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .sheet::before,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .modal::before,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .pill-panel::before,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	border-radius: inherit;
+	pointer-events: none;
+	background: rgba(255, 255, 255, 0.42);
+}
+
+/* Task 10w 修正ラウンド 1 (review-task-10w.md C2) — トーストだけは背景を下ろさない。
+   濃紺の地に白文字という配色を canvas の塗りでは出せない (src/lib/glass.ts の OVERLAY_TIERS
+   の注記を見よ)。canvas は塗り 0 でぼかしと屈折だけを描き、色は下の .toast の background が
+   そのまま担う。--rim (白い縁の反射)は濃い地に合わないので、他の面と同じく下ろす */
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .toast {
+	-webkit-backdrop-filter: none;
+	backdrop-filter: none;
+	isolation: isolate;
 	--rim: 0 0 rgba(0, 0, 0, 0);
 }
 

@@ -55,9 +55,13 @@ export const BAR: LiquidGlassElementOptions = {
    HIG Materials の regular 変種「部品が相当量の文字を含む場合は regular を使う」に沿い、
    ナビ層 (BAR、tint 0.8) より塗りを一段濃く・ぼかしを強くして、可読性をナビ層より優先する。
    反射 (rim/reflection/highlight) は付けない、縁の屈折 (LENS) はナビ層と同じ。
-   SelectField の一覧 (.select-menu) だけはこの host を使わない (下の CSS 側の注記を見よ) */
+   SelectField の一覧 (.select-menu) だけはこの host を使わない (下の CSS 側の注記を見よ)。
+   Task 10w 修正ラウンド 1 (review-task-10w.md C1) — tint 1.1 では、Today のオーブ (濃い青) の
+   上に開いた ⌘K のモーダルで `--ink-3` (薄い補助文字) やリンクの青が実測 3.2〜3.9:1 まで
+   落ちる。ライブラリの目盛りの上限 1.5 まで塗りを上げても、最も濃い背景 (オーブの塊の直上)
+   では届かない場合がある (下の CSS 側 `.palette-src` / `.btn.text` の注記を見よ) */
 export const SHEET: LiquidGlassElementOptions = {
-	tint: 1.1,
+	tint: 1.5,
 	tintTone: 'light',
 	material: { ...LENS, backdropBlur: 22 }
 };
@@ -182,7 +186,11 @@ export const chromeGlass = (node: Element) =>
    (buildElements 側の `width > 0 && height > 0` の絞り込みで) 除かれる */
 const OVERLAY_TIERS = {
 	'.drawer, .sheet, .modal, .pill-panel, .demo-menu': SHEET.tint as number,
-	'.toast': { tint: 1.1, tintTone: 'dark' as const },
+	/* Task 10w 修正ラウンド 1 (review-task-10w.md C2) — トーストは濃紺の地に白文字。
+	   ライブラリの tintTone は明るさの端 (light/dark)しか選べず色を持てないので、canvas に
+	   任せると紺が無彩色の灰になる。塗り 0 で canvas にはぼかしと屈折だけを描かせ、紺は
+	   CSS の背景として残す (app.css の .toast、WebGL 経路でも background を下ろさない) */
+	'.toast': { tint: 0, tintTone: 'dark' as const },
 	'.overlay-chrome-anchor': 0
 };
 
