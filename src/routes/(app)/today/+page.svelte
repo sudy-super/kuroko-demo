@@ -38,6 +38,16 @@
 	// 窓が低い (480px 以下)ときも折りたたみカードに切り替える (下は 1 行 56px の一覧なので、
 	// 最初の項目は沈まずに済む。app.css 側でオーブも合わせて畳む)
 	const narrow = new MediaQuery('(max-width: 700px), (max-width: 960px) and (max-height: 480px)');
+	/* Task 10t 修正ラウンド 6 (review task-10t-fix5 I1) — 低い窓で送信済みカードが出ると、
+	   右の列は 3 枚になって ToDo の 3 行目と「ToDo をすべて見る」が入らない。CSS で伏せると
+	   題名の件数と行数が食い違ったまま説明が消えるので、出す行数そのものをここで減らし、
+	   差は「残り N 件」で説明する (app.css の @media (max-height: 760px) と対) */
+	const shortWindow = new MediaQuery('(max-height: 760px)');
+	/* 2 行 + 「残り N 件」で 3 行分の高さに収まる。送信済みが無いときは右が 2 枚なので 3 行のまま */
+	const squeeze = $derived(shortWindow.current && sent.length > 0);
+	const taskRows = $derived(squeeze ? 2 : 3);
+	/* 「ToDo をすべて見る」は送信済みカードと重なる位置に来る。全件はサイドナビの ToDo から開ける */
+	const hideTaskFoot = $derived(squeeze);
 	/* Task 10l — 箱の一辺。球の直径はその 48% (shader.ts の R0)なので 448 で 215px。
 	   10j の 560 から 2 割小さくした。カードの列の間も同じ比で縮む (app.css の .bento の
 	   max-width: 80%) ので、球の外周と光彩がカードの縁に掛かる関係は変わらず、
@@ -165,7 +175,7 @@
 				</TodayCard>
 
 				<TodayCard card="tasks" title="今日の ToDo {tasks.length} 件" icon="ic-todo">
-					{#each tasks.slice(0, 3) as t (t.id)}
+					{#each tasks.slice(0, taskRows) as t (t.id)}
 						<label class="list-row">
 							<!-- todayTasks は未完了だけを返すので checked は常に false。式にしない -->
 							<input type="checkbox" onchange={() => toggleTask(t.id, 'today')} />
@@ -173,8 +183,10 @@
 							{#if t.time}<span class="num muted">{t.time}</span>{/if}
 						</label>
 					{/each}
-					{#if tasks.length > 3}<p class="muted">残り {tasks.length - 3} 件</p>{/if}
-					<div class="row tc-foot"><a class="btn text sm" href="/tasks">ToDo をすべて見る</a></div>
+					{#if tasks.length > taskRows}<p class="muted">残り {tasks.length - taskRows} 件</p>{/if}
+					{#if !hideTaskFoot}
+						<div class="row tc-foot"><a class="btn text sm" href="/tasks">ToDo をすべて見る</a></div>
+					{/if}
 				</TodayCard>
 
 				{#if sent.length}

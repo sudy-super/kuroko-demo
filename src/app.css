@@ -2443,19 +2443,15 @@ section.tc .list-row:not(label):not(a):hover {
 	   重なるのはカードの下端の余白どうしで、文字は重ならない (実測) */
 	@media (max-height: 760px) {
 		.today .bento:has(> .card[data-card='sent']) {
-			flex-basis: 460px;
-			min-height: 460px;
+			flex-basis: 484px;
+			min-height: 484px;
 		}
-		.today .bento:has(> .card[data-card='sent'])
-			> .card[data-card='tasks']
-			.list-row:nth-of-type(3) {
-			display: none;
-		}
-		/* 送信済みカードが ToDo の下端に 31px 重なるので、そこにある「ToDo をすべて見る」は
-		   隠れて読めない。畳んだ 3 行目と同じく、ToDo の全件はサイドナビの「ToDo」から開ける */
-		.today .bento:has(> .card[data-card='sent']) > .card[data-card='tasks'] .tc-foot {
-			display: none;
-		}
+		/* Task 10t 修正ラウンド 6 (review task-10t-fix5 I1) — 行を CSS で伏せると題名の件数と
+		   行数が食い違ったまま説明が消えるので、出す行数は today/+page.svelte 側 (taskRows)で
+		   減らし、差は「残り N 件」で説明する (2 行 + 残りの 1 行 = 実測 176px)。
+		   入れ物は 484px。予定の下端 (4% + 169px)と送信済みの上端 (下端から 97px)の間に
+		   ToDo (176px)を 12px ずつ空けて置くと、必要な高さは 19 + 169 + 12 + 176 + 12 + 97 = 485px。
+		   top は予定の下端から 12px 下なので calc(4% + 181px) (上の既定と同じ値で足りる) */
 	}
 	.today .bento > .card[data-card='sent'] {
 		bottom: 0;
