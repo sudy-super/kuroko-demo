@@ -1091,18 +1091,18 @@ svg.i {
 }
 /* Task 10h 修正ラウンド 1 — 承認の区分のうち中立の 2 つ (社内 / 低リスク)。出所のバッジと
    同じ灰色だが役割は別なので、修飾子を分ける。塗りを不透明にする理由は .badge.src と同じで、
-   このロゼンジもガラスのカード (Today の hero と承認ドロワー)の上に載る */
+   このロゼンジが載るのは Today の承認待ちカード (ガラス)と承認ドロワー (ガラス)の面 */
 .badge.neutral {
 	background: #eef1f6;
 	color: var(--ink-2);
 }
 /* audit 4 — 人物のタグは Atlassian の Tag (分類のための控えめなラベル)。状態を示す Lozenge
    (.badge の色付き) と役割が違うので、塗りを外して枠線だけにし、主張を一段落とす。
-   Task 10h 修正ラウンド 1 — 3.09:1 は純白での値で、このタグが実際に載るのは人物のカード
-   (ガラス)の面である。その面は実測 rgb(239,242,246) で、--border (#8593b0)の枠は 2.75:1 と
-   3:1 を割っていた (文字は 5.84:1 で足りている)。枠だけ --border と同じ色相のまま 1 割暗い
-   #78849e にして 3.34:1 にする。Tag は控えめな分類ラベルなので、必要な 3:1 を少し超える
-   ところで止めた。--border 自体は入力欄の枠でも使うので触らない */
+   Task 10h 修正ラウンド 1 — 枠が --border (#8593b0)のままだと、このタグが載る人物カードの面で
+   3:1 を割っていた。--border と同じ色相のまま 1 割暗い #78849e にする。--border 自体は
+   入力欄の枠でも使うので触らない。
+   Task 10w で人物カードからガラスを外したあと実測し直すと、面は rgb(251,252,253)、
+   枠は 6.38:1 で余裕がある (文字も同じ色なので同値) */
 .badge.tag {
 	background: none;
 	color: var(--ink-2);
@@ -3119,9 +3119,8 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
 	z-index: 2;
 	height: 48px;
 	border-bottom: 1px solid var(--line-2);
-	/* 送っても下の予定が透けないよう不透明にする。--solid (白 0.92) だとガラスのカードの地
-	   (実測 rgb(237,241,245) 前後、--bg に近い)より白く浮いて帯に見えるので、--bg (不透明) を
-	   使い地の色に合わせる */
+	/* 送っても下の予定が透けないよう不透明にする。--solid (白 0.92) だとカレンダーの面より
+	   白く浮いて帯に見えるので、--bg (不透明) を使い地の色に合わせる */
 	background: var(--bg);
 }
 .week-day {
@@ -3488,7 +3487,8 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
 		height: 24px;
 	}
 }
-/* ガラスの canvas は bleed の分だけ外へ出るので、位置の基準になる親を置く */
+/* カードを並べる段の基準。Task 10w で内容の層からガラスを外したので
+   (HIG Materials「コンテンツ層に Liquid Glass を使わない」)、ここに canvas は無い */
 .people-cards {
 	position: relative;
 	isolation: isolate;
