@@ -15,28 +15,27 @@
 	}: { size?: number; sparks?: boolean; onCanvas?: (canvas: HTMLCanvasElement | null) => void } =
 		$props();
 	let box: HTMLDivElement | undefined = $state();
-	let live = $state(false);
 
 	onMount(() => {
 		let orb: ReturnType<typeof createOrb> = null;
 		let canvas: HTMLCanvasElement | null = null;
 		/* シェーダーのコンパイル・リンク失敗や framebuffer の不完全は、初期化時もコンテキスト復帰時も
-		   マウントを壊さず CSS の代替に落とす。resize() や onRestored() からの復帰失敗
+		   マウントを壊さず canvas を手放すだけにする (Task 10x で CSS の代替は廃止、下のマークアップの
+		   コメントを見よ)。resize() や onRestored() からの復帰失敗
 		   (renderer.ts の fail()) はマウント後に非同期で呼ばれるため、release() と同じく
 		   canvas ごと手放して onCanvas?.(null) で呼び元 (今日画面の holeOrbCanvas) の参照も
 		   外す。ここを release() と非対称にすると (Task 10r レビュー Important 2)、
 		   呼び元は死んだ canvas を握ったままになり、preserveDrawingBuffer で保持された
 		   最後のフレームがカードの背後に焼き付いたまま動かなくなる */
 		const toFallback = (e: unknown) => {
-			console.warn('orb: WebGL の描画に失敗したので CSS の代替を出します', e);
+			console.warn('orb: WebGL の描画に失敗したのでオーブを出しません', e);
 			orb = null;
 			canvas?.remove();
 			canvas = null;
-			live = false;
 			onCanvas?.(null);
 		};
 		/* Task 10i — 描画面 (WebGL context)は見えている間だけ握る。隠れたタブが握ったままだと、
-		   手前のタブがガラスとオーブの分を作れずに代替表示へ落ちる。
+		   手前のタブがガラスとオーブの分を作れずに描けなくなる。
 		   手放すときは canvas ごと捨てる。一度 loseContext した canvas に getContext を呼んでも、
 		   失ったままの同じ context が返るだけで新しい描画面は取れない (実測: 手放して戻ると
 		   isContextLost() が true のまま何も描かれない)。作り直すたびに canvas も作り直す */
@@ -50,11 +49,8 @@
 					mobile: matchMedia('(max-width: 960px)').matches && navigator.hardwareConcurrency <= 4,
 					particles: sparks,
 					onFail: toFallback,
-					/* 描画面を失っている間は代替を出す。canvas は復帰に備えて残す */
-					onLive: (v) => {
-						live = v;
-						canvas?.classList.toggle('off', !v);
-					}
+					/* 描画面を失っている間は canvas を隠す。canvas は復帰に備えて残す */
+					onLive: (v) => canvas?.classList.toggle('off', !v)
 				});
 			} catch (e) {
 				toFallback(e);
@@ -64,15 +60,13 @@
 				   canvas を片付けている場合があるので ?. で二重の remove を避ける */
 				canvas?.remove();
 				canvas = null;
-				live = false;
 				return;
 			}
 			orb.start();
 			/* start() の中の resize() が同期的に失敗すると toFallback が先に呼ばれ、
-			   orb と canvas をすでに null に戻している。ここで live = true; onCanvas?.(canvas)
-			   を続けると toFallback の後始末を上書きしてしまうので、その場合は何もしない */
+			   orb と canvas をすでに null に戻している。ここで onCanvas?.(canvas) を続けると
+			   toFallback の後始末を上書きしてしまうので、その場合は何もしない */
 			if (!orb) return;
-			live = true;
 			onCanvas?.(canvas);
 		};
 		const release = () => {
@@ -80,13 +74,15 @@
 			orb = null;
 			canvas?.remove();
 			canvas = null;
-			live = false;
 			onCanvas?.(null);
 		};
 		return whileVisible(acquire, release);
 	});
 </script>
 
-<div class="orb" bind:this={box} style="width:{size}px;height:{size}px" aria-hidden="true">
-	{#if !live}<div class="orb-fallback"></div>{/if}
-</div>
+<!-- Task 10x (ユーザー裁定 2026-09-20) — WebGL が使えないときの CSS の代替表示は廃止した。
+     オーブは「青い塊・白い核・外へ散る破片」が承認済みの見た目で、階調と小さな点の
+     散らばりでは似せられず (review-task-10i の Important 1)、似ていない絵を出すくらいなら
+     何も出さないほうがよいという判断。描画面を手放している間は canvas を隠すだけで、
+     オーブの場所は空く (背景の階調がそのまま見える) -->
+<div class="orb" bind:this={box} style="width:{size}px;height:{size}px" aria-hidden="true"></div>

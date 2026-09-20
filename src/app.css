@@ -341,93 +341,9 @@ svg.i {
 	/* 球とハローはシェーダーが透明の上に描く。箱の形を出す背景や影は付けない */
 	background: transparent;
 }
-/* WebGL が使えない、または描画面 (context)を使い切っているときの代替 (Task 10i)。
-   承認済みのオーブは「青い塊・白い核・外へ散る破片」で、球面の陰影、縁の光、
-   半径に沿う色の帯は悪化と判定されている。ここも硬い縁を作らず、中心から外へ薄くなる
-   青 1 色の階調と、大きさのまちまちな小さい点の散らばりだけで組む。画像は使わない */
-.orb-fallback {
-	grid-area: 1 / 1;
-	position: relative;
-	width: 100%;
-	height: 100%;
-	background:
-		/* 白い核 */
-		radial-gradient(
-			circle at 50% 50%,
-			rgba(255, 255, 255, 0.98) 0%,
-			rgba(255, 255, 255, 0.7) 3%,
-			rgba(255, 255, 255, 0) 10%
-		),
-		/* 塊の濃淡。中心をわずかにずらした 2 枚を重ね、真円に見えないようにする */
-		radial-gradient(circle at 44% 46%, rgba(120, 175, 255, 0.34) 0%, rgba(120, 175, 255, 0) 17%),
-		radial-gradient(circle at 57% 55%, rgba(47, 124, 246, 0.3) 0%, rgba(47, 124, 246, 0) 16%),
-		/* 塊の本体。色相は動かさず濃さだけ落として、輪に見える境目を作らない */
-		radial-gradient(
-			circle at 50% 50%,
-			rgba(47, 124, 246, 0.55) 0%,
-			rgba(47, 124, 246, 0.38) 12%,
-			rgba(47, 124, 246, 0.16) 22%,
-			rgba(79, 149, 255, 0.05) 32%,
-			rgba(79, 149, 255, 0) 44%
-		);
-	animation: orb-breathe 9s ease-in-out infinite;
-}
-/* 外へ散る破片。縦横の比を変えた小さい楕円で、丸い粒の並びに見えないようにする。
-   2 枚を逆向きにゆっくり回して、止まった絵にしない */
-.orb-fallback::before,
-.orb-fallback::after {
-	content: '';
-	position: absolute;
-	inset: 0;
-	background-repeat: no-repeat;
-}
-.orb-fallback::before {
-	background-image:
-		radial-gradient(ellipse 3px 2px at 58% 34%, rgba(214, 231, 255, 0.95) 0 60%, transparent 62%),
-		radial-gradient(ellipse 2px 3px at 39% 36%, rgba(173, 208, 255, 0.9) 0 60%, transparent 62%),
-		radial-gradient(ellipse 4px 2px at 64% 58%, rgba(120, 175, 255, 0.85) 0 60%, transparent 62%),
-		radial-gradient(ellipse 2px 2px at 36% 60%, rgba(173, 208, 255, 0.85) 0 60%, transparent 62%),
-		radial-gradient(ellipse 3px 4px at 70% 45%, rgba(47, 124, 246, 0.7) 0 60%, transparent 62%),
-		radial-gradient(ellipse 2px 3px at 47% 68%, rgba(120, 175, 255, 0.75) 0 60%, transparent 62%),
-		radial-gradient(ellipse 5px 2px at 27% 47%, rgba(47, 124, 246, 0.55) 0 60%, transparent 62%),
-		radial-gradient(ellipse 2px 2px at 78% 27%, rgba(173, 208, 255, 0.5) 0 60%, transparent 62%),
-		radial-gradient(ellipse 3px 2px at 55% 80%, rgba(47, 124, 246, 0.4) 0 60%, transparent 62%),
-		radial-gradient(ellipse 2px 2px at 86% 66%, rgba(120, 175, 255, 0.35) 0 60%, transparent 62%),
-		radial-gradient(ellipse 2px 2px at 17% 71%, rgba(120, 175, 255, 0.3) 0 60%, transparent 62%);
-	animation: orb-drift 64s linear infinite;
-}
-.orb-fallback::after {
-	background-image:
-		radial-gradient(ellipse 2px 3px at 52% 29%, rgba(255, 255, 255, 0.9) 0 60%, transparent 62%),
-		radial-gradient(ellipse 3px 2px at 62% 49%, rgba(214, 231, 255, 0.9) 0 60%, transparent 62%),
-		radial-gradient(ellipse 2px 2px at 43% 53%, rgba(255, 255, 255, 0.8) 0 60%, transparent 62%),
-		radial-gradient(ellipse 4px 3px at 33% 44%, rgba(47, 124, 246, 0.65) 0 60%, transparent 62%),
-		radial-gradient(ellipse 2px 4px at 67% 66%, rgba(120, 175, 255, 0.6) 0 60%, transparent 62%),
-		radial-gradient(ellipse 3px 2px at 49% 19%, rgba(173, 208, 255, 0.45) 0 60%, transparent 62%),
-		radial-gradient(ellipse 2px 2px at 24% 33%, rgba(47, 124, 246, 0.4) 0 60%, transparent 62%),
-		radial-gradient(ellipse 3px 3px at 74% 76%, rgba(120, 175, 255, 0.35) 0 60%, transparent 62%),
-		radial-gradient(ellipse 2px 2px at 12% 55%, rgba(173, 208, 255, 0.3) 0 60%, transparent 62%),
-		radial-gradient(ellipse 2px 2px at 90% 44%, rgba(120, 175, 255, 0.25) 0 60%, transparent 62%);
-	animation: orb-drift 88s linear infinite reverse;
-}
-@keyframes orb-breathe {
-	50% {
-		scale: 1.03;
-	}
-}
-@keyframes orb-drift {
-	to {
-		rotate: 1turn;
-	}
-}
-@media (prefers-reduced-motion: reduce) {
-	.orb-fallback,
-	.orb-fallback::before,
-	.orb-fallback::after {
-		animation: none;
-	}
-}
-/* 描画面を手放している間 (隠れたタブ)と失った直後は、代替を出して canvas を隠す */
+/* 描画面を手放している間 (隠れたタブ)と失った直後は canvas を隠す。
+   Task 10x — CSS の代替表示は廃止したので、この間はオーブの場所が空く
+   (Orb.svelte のコメントを見よ) */
 .orb canvas.off {
 	visibility: hidden;
 }
