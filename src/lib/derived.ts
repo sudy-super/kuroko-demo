@@ -185,3 +185,8 @@ export function todaySummary(db: Db) {
 	const c = (kind: string) => L.filter((l) => l.kind === kind).length;
 	return { drafts: c('draft'), holds: c('hold'), sends: c('send'), registers: c('register') };
 }
+
+/* Task 18 修正ラウンド 1 (review-task-18.md I2) — 会議の URL は表示用に scheme を持たない
+   (`meet.google.com/abc-defg-hij`、integrations/mock/conference.ts)。そのまま href に入れると
+   相対パスとして解決され、同じサイトの中へ飛んでしまう。表示は短いまま、リンク先だけ補う */
+export const linkUrl = (url: string) => (/^https?:\/\//.test(url) ? url : `https://${url}`);

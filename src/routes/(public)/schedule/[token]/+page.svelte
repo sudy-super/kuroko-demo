@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import { RadioGroup } from 'bits-ui';
 	import { db, installStorageSync } from '$lib/store.svelte';
-	import { personOf } from '$lib/derived';
+	import { personOf, linkUrl } from '$lib/derived';
 	import { confirmSlot, changeSlot, cancelScheduling } from '$lib/actions';
 	import { parse, fmtMDW } from '$lib/dates';
 	import { icsFor } from '$lib/ics';
@@ -28,7 +28,22 @@
 	});
 
 	let cancelOpen = $state(false);
+	/* Task 18 修正ラウンド 1 (review-task-18.md C2) — 日時を変更して選び直すと event が
+	   作り直される。作った URL を持ち続けると古い日時の .ics が落ちるので、event.id が
+	   変わったら作り直す。使い終わった URL は必ず解放する */
 	let icsUrl = $state('');
+	let icsFor_ = $state('');
+	$effect(() => {
+		const id = event?.id ?? '';
+		if (id === icsFor_) return;
+		if (icsUrl) URL.revokeObjectURL(icsUrl);
+		icsUrl = '';
+		icsFor_ = id;
+		if (!event || !person) return;
+		icsUrl = URL.createObjectURL(
+			new Blob([icsFor(event, `${person.name}様との打ち合わせ`)], { type: 'text/calendar' })
+		);
+	});
 
 	function confirm() {
 		if (!s || !value) return;
@@ -39,13 +54,6 @@
 		if (!s) return;
 		cancelScheduling(s.token);
 		cancelOpen = false;
-	}
-
-	function addToCalendar() {
-		if (!event || !person) return;
-		URL.revokeObjectURL(icsUrl);
-		const ics = icsFor(event, `${person.name}様との打ち合わせ`);
-		icsUrl = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
 	}
 
 	onMount(() => {
@@ -81,12 +89,12 @@
 		</div>
 		{#if event.url}
 			<div class="list-row lg">
-				<a class="tc-text" href={event.url} target="_blank" rel="noreferrer">{event.url}</a>
+				<a class="tc-text" href={linkUrl(event.url)} target="_blank" rel="noreferrer">{event.url}</a>
 			</div>
 		{/if}
 	</div>
 	<div class="public-foot">
-		<a class="btn pri public-cta in" style="--delay: 160ms" href={icsUrl || undefined} download="meeting.ics" onclick={icsUrl ? undefined : (e) => { e.preventDefault(); addToCalendar(); }}>
+		<a class="btn pri public-cta in" style="--delay: 160ms" href={icsUrl} download="meeting.ics">
 			<Icon name="ic-download" size={18} />カレンダーに追加
 		</a>
 		<button class="btn sec public-cta in" style="--delay: 200ms" onclick={() => changeSlot(s.token)}>

@@ -2145,6 +2145,11 @@ svg.i {
 .sched-summary {
 	display: flex;
 	flex-direction: column;
+	/* Task 18 修正ラウンド 1 (review-task-18.md C1) — 親 (.public-col)が縦の flex なので、
+	   既定の flex-shrink: 1 のままだと低い窓 (844x390)で縮み、候補の行が 33px (44px 未満)に、
+	   確定のまとめは高さ 0 + overflow: hidden で中身が消える (Task 11r の .sheet .list-row と
+	   同じ症状)。縮ませず、入らないぶんは .public 側がスクロールする */
+	flex: none;
 	width: 100%;
 	border-radius: var(--r-m);
 	background: rgba(255, 255, 255, 0.7);

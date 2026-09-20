@@ -7,6 +7,7 @@
 	import { toast } from '$lib/ui.svelte';
 	import { parse, key, addDays, fmtMD, fmtYMDW } from '$lib/dates';
 	import { weekOf } from '$lib/calendar';
+	import { linkUrl } from '$lib/derived';
 	import { personOf, projectOf } from '$lib/derived';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -132,7 +133,7 @@
 		{#if detail.url}
 			<div class="list-row">
 				<span class="badge src">{detail.online === 'zoom' ? 'Zoom' : 'Meet'}</span>
-				<a class="tc-text" href={detail.url} target="_blank" rel="noreferrer">{detail.url}</a>
+				<a class="tc-text" href={linkUrl(detail.url)} target="_blank" rel="noreferrer">{detail.url}</a>
 			</div>
 		{/if}
 		{#if detail.meetingId}
