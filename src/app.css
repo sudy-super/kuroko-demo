@@ -381,8 +381,9 @@ svg.i {
 	z-index: 50;
 	pointer-events: none;
 }
-/* Task 10w (glass-scope.md 1〜3 節) — ドロワー・モーダル・ポップオーバー・メニュー・
-   トーストをまとめて描く空の層。.chrome と同じ作り (中身は canvas 1 枚、pointer-events なし)
+/* Task 10w (glass-scope.md 1〜3 節) — ドロワー・モーダル・ポップオーバー・メニューを
+   まとめて描く空の層 (トーストは修正ラウンド 2 で外した。下の .toast を見よ)。
+   .chrome と同じ作り (中身は canvas 1 枚、pointer-events なし)
    だが、bits-ui の Portal で <body> の直接の子として足す ((app)/+layout.svelte) ので、
    ここでは通常の入れ物としての見た目だけを持たせる。
    z-index 71 — scrim (70) より上、覆いの面 (75〜90) より下。.pill-panel/.demo-menu も
@@ -1299,9 +1300,12 @@ svg.i {
 
 /* components 3.7 — トースト (画面上端の中央。下端は依頼バーが占有している)。
    Task 10w (glass-scope.md 5 節) — HIG に素材の明記はない (未確認) が、HIG に反する理由もない
-   ので regular 変種としてガラスを採る。濃い地に白文字なので、ナビ層/シートの白いガラスとは
-   逆に tintTone: dark (src/lib/glass.ts の OVERLAY_TIERS)。白い反射の縁 (--rim) は濃い地に
-   合わないので付けない。背景の色はそのまま濃い塗りとして残し、ぼかしだけ足す */
+   ので regular 変種としてガラスを採る。
+   Task 10w 修正ラウンド 2 (review-glass-batch.md I1) — ただし描く層 (.overlay-chrome) は使わず、
+   この面自身の backdrop-filter でぼかす。トースト (z-index 90)は層 (71)の子孫ではなく <body> の
+   別の枝にあるので、層の canvas はトーストより後ろに来る。トーストは濃紺の塗りを持つため、
+   後ろの canvas は塗りに隠れて一度も画面に出ない (実測: 下に縞を敷いてもまったくぼけない)。
+   白い反射の縁 (--rim) は濃い地に合わないので付けない */
 .toast {
 	position: fixed;
 	top: var(--sp-6);
@@ -2782,13 +2786,13 @@ section.tc .list-row:not(label):not(a):hover {
    まとめて描かれるので、属性は入れ物の .chrome に付く。面はその層の子ではなくきょうだいなので、
    塗りを下ろす指定も ~ で書く。
 
-   Task 10w (glass-scope.md 2〜3 節) — シート・モーダル・ポップオーバー・メニュー・トーストは
+   Task 10w (glass-scope.md 2〜3 節) — シート・モーダル・ポップオーバー・メニューは
    overlay-chrome の canvas にまとめて描かれる。この 5 面は <body> の直接の子 (drawer/sheet/
-   modal/toast) か、floating-ui の位置決め用の入れ物 div を 1 枚挟んだ孫 (pill-panel/demo-menu)
+   modal) か、floating-ui の位置決め用の入れ物 div を 1 枚挟んだ孫 (pill-panel/demo-menu)
    のどちらかで、深さが揃わないので ~ の兄弟結合子が使えない。:has() で overlay-chrome が
    <body> の直接の子にいることを確かめたうえで、子孫として塗りを下ろす。
 
-   .select-menu はここに含めない (src/lib/glass.ts の OVERLAY_TIERS の注記を見よ)。
+   .select-menu と .toast はここに含めない (src/lib/glass.ts の OVERLAY_TIERS の注記を見よ)。
    SelectField は常にモーダルの中で使うため、一覧は「このガラス化で透明にしたモーダル」の
    上に開き、canvas は一覧のさらに後ろ (モーダルの向こう側) に隠れて画面に出ない。
    .select-menu だけは自分の CSS の backdrop-filter を持ち続ける (下の .select-menu を見よ) */

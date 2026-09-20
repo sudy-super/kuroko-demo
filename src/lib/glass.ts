@@ -148,26 +148,20 @@ export const chromeGlass = (node: Element) =>
 	mount(node as HTMLElement, { ...BAR, bleed: 0 }, 50, CHROME_TIERS);
 
 /* Task 10w (glass-scope.md 1〜3 節) — Portal で <body> 直下に出るシート・モーダル・
-   ポップオーバー・メニュー・トーストをまとめて描く層。chromeGlass (.chrome) と同じ
+   ポップオーバー・メニューをまとめて描く層。chromeGlass (.chrome) と同じ
    「空の層 1 枚 + tiers」の仕組みを再利用する。この層自身も bits-ui の Portal で <body> の
    直接の子として足す ((app)/+layout.svelte)。Dialog/Popover/DropdownMenu/Select の Portal は
    既定で <body> 直下に出るので、host の scope (= node.parentElement = <body>) の
    querySelectorAll でどの面も (入れ物の div が 1 枚挟まる面も含め) 深さに関係なく見つかる。
 
-   トーストだけは Dialog 系の Portal を使わない素の条件表示で、ルートの +layout.svelte
-   (`(app)` の外、公開ページとも共有)の直下に置かれている。そのため <body> の childList だけを
-   見ていてもトーストの出入りは拾えない (`.app` のさらに親の子として増減するため)。
-   .app の親要素も合わせて見張ることで、公開ページの購読を増やさずに拾う (下の extraScope)。
-
-   scrim (70) より上、覆いの面 (drawer/sheet/modal 75、toast 90) より下に描画面を敷く必要が
+   scrim (70) より上、覆いの面 (drawer/sheet/modal 75)より下に描画面を敷く必要が
    あるが、pill-panel と demo-menu だけは scrim と同じ 70 だったので、両方を 71 に上げて
    隙間を作った (app.css)。この層も 71 にして、tiers の面より必ず先に DOM へ入る ((app) の
    骨組みが乗った時に一度だけ Portal で足すため、ユーザーが覆いを開くのは必ずそれより後) ので、
    同じ 71 でも面自身が上に乗る (chromeGlass と .sidebar の関係と同じ、同じ z-index は DOM 順が
    勝つ)。
 
-   トーストだけ濃い塗り (--ink 相当の地に白文字) なので、tintTone を dark にする
-   (SHEET は light 前提)。他の面は SHEET の塗り・ぼかしをそのまま使う。
+   どの面も SHEET の塗り・ぼかしをそのまま使う。
 
    .select-menu (z-index 80) はここに含めない。SelectField は常に Modal の中のフォームで
    使うので、一覧は「すでにこのガラス化で透明にしたモーダル (z-index 75)」の上に開く。
@@ -195,33 +189,26 @@ const OVERLAY_TIERS = {
 };
 
 export const overlayGlass = (node: Element) =>
-	mount(node as HTMLElement, { ...SHEET, bleed: 0 }, 50, OVERLAY_TIERS, () =>
-		document.querySelector('.app')?.parentElement ?? null
-	);
+	mount(node as HTMLElement, { ...SHEET, bleed: 0 }, 50, OVERLAY_TIERS);
 
 /* 面は出入りする (連携の列は連携が 0 件だと消え、上部バーは画面幅で solid と入れ替わる)。
    targets を文字列の selector で渡せばライブラリが自分で見張ってくれるが、それだと面ごとに
    塗りを変えられないので、要素の配列を自分で組み立て、host の直下の子の増減だけ見張る
    (subtree まで見ると上部バーの時計が進むたびに解決し直しになる)。
-   tiers の値は数値 (tint だけ) か { tint, tintTone } のどちらでもよい。overlayGlass の
-   トーストのように塗りの向き (light/dark) も面ごとに変えたい場合だけ後者を使う。
-   extraScope — scope (host の親)とは別に、もう 1 か所だけ childList を見張りたいとき
-   (overlayGlass のトースト、上のコメント参照) に使う。深さの違う 2 か所を subtree でまとめて
-   見ると本文の無関係な更新まで拾ってしまうので、2 つの浅い監視に分ける */
-type Tier = number | { tint: number; tintTone?: 'light' | 'dark' };
+   tiers の値は面ごとの塗り (tint)。塗りの向き (light/dark)を面ごとに変える仕組みも持っていたが、
+   使っていたのはトーストだけで、そのトーストが層から外れたので消した
+   (Task 10w 修正ラウンド 2、上の OVERLAY_TIERS の注記を見よ) */
 function mount(
 	node: HTMLElement,
 	options: LiquidGlassElementOptions,
 	repaintMs?: number,
-	tiers?: Record<string, Tier>,
-	extraScope?: () => Element | null
+	tiers?: Record<string, number>
 ) {
 	const scope = tiers ? node.parentElement! : node;
 	const targets = () =>
-		Object.entries(tiers ?? {}).flatMap(([selector, tier]) => {
-			const spec = typeof tier === 'number' ? { tint: tier } : tier;
-			return [...scope.querySelectorAll(selector)].map((element) => ({ element, ...spec }));
-		});
+		Object.entries(tiers ?? {}).flatMap(([selector, tint]) =>
+			[...scope.querySelectorAll(selector)].map((element) => ({ element, tint }))
+		);
 	let instance: LiquidGlass | null = null;
 	let timer: ReturnType<typeof setInterval> | undefined;
 	const watcher = tiers
@@ -242,8 +229,6 @@ function mount(
 			onContextRestored: () => node.setAttribute('data-liquid-glass', 'webgl')
 		});
 		watcher?.observe(scope, { childList: true });
-		const extra = extraScope?.();
-		if (extra && extra !== scope) watcher?.observe(extra, { childList: true });
 		/* 引数なしの refresh() は targets の解決と観測子 (ResizeObserver / MutationObserver) の
 		   付け直しまでやり直す。ここで要るのは背後の描き直しだけなので backdrop: false を渡す。
 		   ライブラリの .d.ts はこの引数を宣言していないが、実装 (src/dom.js の refresh) は受け取る。
