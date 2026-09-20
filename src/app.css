@@ -94,7 +94,7 @@
 	/* Task 10w (glass-scope.md 5 節) — ドロワー・シート・モーダル・ポップオーバー・メニューの
 	   regular 変種。
 	   ナビ層 (--glass-panel) より文字が多いので、フォールバック (backdrop-filter) 経路でも
-	   ナビ層より濃くする。WebGL 経路の実際の塗りは src/lib/glass.ts の SHEET (tint 1.05) */
+	   ナビ層より濃くする。WebGL 経路の実際の塗りは src/lib/glass.ts の SHEET (tint 1.5) */
 	--glass-sheet: rgba(255, 255, 255, 0.82);
 	--solid: rgba(255, 255, 255, 0.92);
 	/* 覆いが出ている間のカードの塗り。ガラスを 2 枚重ねないために面を不透明へ戻す。
@@ -2980,8 +2980,8 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
    ガラスの上にガラスを重ねない規則には反しない (glass-scope.md 3 節)。
    描く層が受け持つ 5 面 (drawer/sheet/modal/pill-panel/demo-menu)と違い、この面は
    overlay-chrome の canvas を使わず、この CSS の backdrop-filter をそのまま常に使う
-   (同じ理由で層から外したトーストについては下の .toast の注記を見よ)
-   (WebGL2 が使える環境でも下ろさない、src/lib/glass.ts の OVERLAY_TIERS の注記を見よ)。
+   (同じ理由で層から外したトーストについては上の .toast の注記を見よ)。
+   WebGL2 が使える環境でも下ろさない (src/lib/glass.ts の OVERLAY_TIERS の注記を見よ)。
    SelectField は常にモーダルの中のフォームで使うので、一覧はモーダルの上に開く。
    canvas 方式だと、モーダルの背景も透明にしてあるため一覧の「すぐ後ろ」がモーダル自身の
    実体 (文字など)になってしまい、canvas の塗りが画面に出ない。backdrop-filter は自分の
