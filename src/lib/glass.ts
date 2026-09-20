@@ -34,14 +34,14 @@ const LENS = {
 	hairline: 0.45
 } as const;
 
-/* ナビ層のうち、下を通るのが色や形だけのもの (サイドナビ、連携アイコンの列、接続一覧)。
+/* ナビ層のうち、下を通るのが色や形だけのもの (サイドナビ `.sidebar`、連携アイコンの列 `.rail`)。
    塗り (tint)だけが面ごとに違うので、ここは CHROME_TIERS に渡す tint の置き場でしかない
    (ぼかしは描画面ごとの値なので BAR の backdropBlur が当たる。下の CHROME_TIERS の注記を見よ)。
    Task 10v — Task 10u 以前の Liquid Glass の値に戻す。tint はライブラリの 0〜1.5 の目盛りで、
    CSS の不透明度とは一致しない */
 export const CLEAR = { tint: 0.14 } as const;
 
-/* 上部バーと依頼バーの段、およびナビ層 (サイドナビ・連携アイコンの列・接続一覧)。
+/* 上部バーと依頼バーの段、およびナビ層 (サイドナビ・連携アイコンの列)。
    上部バーと依頼バーの下は本文の文字が通るので、素通しにすると下の文字とバー自身の文字が
    重なって読めない。iOS のバーと同じく下をぼかして溶かす。
    Task 10v — Task 10u 以前の値 (目安 8〜14px の上限) に戻す */
@@ -59,7 +59,8 @@ export const BAR: LiquidGlassElementOptions = {
    Task 10w 修正ラウンド 1 (review-task-10w.md C1) — tint 1.1 では、Today のオーブ (濃い青) の
    上に開いた ⌘K のモーダルで `--ink-3` (薄い補助文字) やリンクの青が実測 3.2〜3.9:1 まで
    落ちる。ライブラリの目盛りの上限 1.5 まで塗りを上げても、最も濃い背景 (オーブの塊の直上)
-   では届かない場合がある (下の CSS 側 `.palette-src` / `.btn.text` の注記を見よ) */
+   では届かない場合がある (app.css の `.palette-src` の注記を見よ。文字色を一段濃くして
+   余裕を作った) */
 export const SHEET: LiquidGlassElementOptions = {
 	tint: 1.5,
 	tintTone: 'light',
@@ -79,7 +80,7 @@ export const CARD: LiquidGlassElementOptions = {
 /* Task 10r — カードのガラスの背後にオーブを届ける描き手。
    ライブラリの itemsBelow (dom-content.js) は、宿主 (`.bento`) より DOM の描画順で
    後にあるものを一律に除外する。オーブ (`.hole > .orb`) は `.bento` の子孫なので、
-   `backdrop: 'auto'` だけでは一度もカードの背後の絵に入らない (上の CARD の訂正を見よ)。
+   `backdrop: 'auto'` だけでは一度もカードの背後の絵に入らない。
    README の「A <video> or <canvas> below the glass … To refract only that source,
    point at it」に沿い、`backdrop: ['auto', orbBackdrop(...)]` として 'auto' の上に
    専用の描き手を重ねる。オーブを `.bento` の外へ動かす案 (b) は、Today の環状配置が
@@ -105,14 +106,12 @@ export function orbBackdrop(getCanvas: () => HTMLCanvasElement | null): LiquidGl
    maxDpr は指定しない (ライブラリの既定 2)。一度 1 に落としていたが、画素の密度が高い
    ディスプレイでガラスの中だけ解像度が半分になる。
    respectReducedTransparency: false — OS 設定には応答しない (裁定済み) */
-/* repaintMs — 背後を描き直す間隔 (ミリ秒)。省くと毎フレーム (live: true)。
-   使うのはカレンダーの面 1 か所だけ。幅いっぱい x 約 660px と広く、毎フレーム描き直すと
-   本番ビルドでも 30 フレーム/秒台に落ちる。この面の下に来るのは壁紙の階調だけなので、
-   一定の間隔で描き直しても見た目は変わらない。
-   refresh() は「次のフレームで背後を描き直す」印を立てるだけで、その間ガラスの rAF の輪は
-   止まる。scroll と resize ではライブラリ側が別に起こすので、送っても追従する */
-export function glass(options: LiquidGlassElementOptions, repaintMs?: number) {
-	return (node: Element) => mount(node as HTMLElement, options, repaintMs);
+/* Task 10w 修正ラウンド 5 (rereview5-glass-batch.md I1) — 以前は描き直す間隔 (repaintMs)を
+   受け取れたが、使っていたカレンダーの面のガラスが 1fc776a で外れて呼び元が無くなったので
+   引数ごと消した。まとめて描く 2 つの層 (chromeGlass / overlayGlass)は mount を直に呼び、
+   今も 50ms の間隔を渡している */
+export function glass(options: LiquidGlassElementOptions) {
+	return (node: Element) => mount(node as HTMLElement, options);
 }
 
 /* Task 10i — 画面の枠のガラス (Task 10w でボトムナビと携帯の上部バーを足して 6 面:
@@ -131,7 +130,8 @@ export function glass(options: LiquidGlassElementOptions, repaintMs?: number) {
    背後を通るのは地の階調だけ (本文は左右の margin で避けてあり、オーブも届かない)なので、
    ぼかしの強さが変わっても見た目への影響は小さい。
    bleed: 0 — 入れ物が画面いっぱいなので、外へはみ出す分はそもそも画面の外にある。
-   既定の 63px を足すと縦横 126px ぶん無駄に広い canvas を毎フレーム塗り直すことになる。
+   既定の bleed (材質から決まる。今の値では 71px)を足すと、その 2 倍ぶん無駄に広い canvas を
+   毎フレーム塗り直すことになる。
 
    Task 10w (glass-scope.md 1 節) — 携帯のボトムナビ (タブバー) と携帯の上部バーは
    HIG Tab bars / Toolbars がガラスを持つと明記する部品なので、描画面を増やさずこの層の

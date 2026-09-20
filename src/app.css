@@ -363,7 +363,8 @@ svg.i {
 	position: relative;
 	z-index: 1;
 	min-height: 100dvh;
-	/* Task 11r (監査 8) — カードのガラス (glass()、既定の bleed 63px)が窓の右端に近いカードでは
+	/* Task 11r (監査 8) — カードのガラス (glass()。bleed は材質から決まり、今の値では 47px)が
+	   窓の右端に近いカードでは
 	   画面幅より外へはみ出し、横スクロールを生んでいた (Inbox など、canvas 自体は
 	   pointer-events: none なので押し間違いにはならない)。.public と同じ手 (overflow-x: clip)
 	   をこの層にも掛ける。固定要素 (.chrome、サイドナビ、依頼バー、ボトムナビ)は
@@ -2917,7 +2918,7 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu::after {
 }
 
 /* 描画面を失うと canvas には何も描かれない。属性が fallback に変わったら canvas を下ろし、
-   要素自身のすりガラスに戻す (Task 10i)。display はライブラリがインラインの style で
+   要素自身の backdrop-filter に戻す (Task 10i)。display はライブラリがインラインの style で
    書き込むので !important でしか下ろせない */
 [data-liquid-glass='fallback'] > [data-liquid-glass-layer] {
 	display: none !important;
@@ -2926,7 +2927,7 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu::after {
 /* ガラスの canvas は bleed の分だけ要素の外へ出る。位置の基準になる親が要る。
    Task 10e — isolation: isolate も CSS で持つ。ライブラリは mountCanvas でこれをインラインに
    書き込むが (dom.js:189)、WebGL2 が使えない環境では mountCanvas 自体が呼ばれない
-   (dom.js:144-146)。そのとき .bento が積み重ねの文脈にならないと、下の .hole の z-index: -2 が
+   (dom.js:144-146)。そのとき .bento が積み重ねの文脈にならないと、上の .hole の z-index: -2 が
    .bento の外へ抜けて、塗りを持つ祖先の裏に回った瞬間にオーブが消える */
 .bento {
 	position: relative;
@@ -2996,7 +2997,7 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
    実体 (文字など)になってしまい、canvas の塗りが画面に出ない。backdrop-filter は自分の
    真後ろを直接ぼかすので、この重なりでも正しく効く。
    box-shadow は --e3 のみ (--rim は使わない)。他の面の --rim は WebGL 経路で 0 に
-   下ろされて縁の白い反射が消えるが (下の Liquid Glass の節)、この面はその仕組みを
+   下ろされて縁の白い反射が消えるが (上の Liquid Glass の節)、この面はその仕組みを
    使わないので、--rim を書くと常に反射が出てしまう。縁の輪郭は ::after の暗線
    (上の .select-menu::after) だけで足りる */
 .select-menu {

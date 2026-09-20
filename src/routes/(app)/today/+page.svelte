@@ -55,8 +55,8 @@
 	const orbSize = $derived(narrow.current ? 300 : 448);
 
 	/* Task 10r — .hole のオーブが今握っている canvas。CARD のガラスの backdrop に渡し、
-	   .bento の子孫であるために除外されていた背後の絵へ実際に足す (glass.ts の
-	   orbBackdrop、CARD の訂正コメントを見よ) */
+	   .bento の子孫であるために除外されていた背後の絵へ実際に足す
+	   (glass.ts の orbBackdrop を見よ) */
 	let holeOrbCanvas: HTMLCanvasElement | null = $state(null);
 	/* Task 10w — 完了画面 (.today-done) は .bento と別の glass() の host なので、
 	   orbBackdrop に渡す canvas も別に持つ (.orb-slot のオーブは .today-done の子孫であるために
