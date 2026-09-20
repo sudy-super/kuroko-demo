@@ -219,8 +219,7 @@
 				{/if}
 
 				<!-- オーブは左右の列の間に置く。カードより後ろの層 (z-index -2)なので、
-				     カードのガラスの縁が破片を曲げる。先頭のカードを選ぶ規則
-				     (app.css の .card:first-child) を狂わせないよう末尾に置く -->
+				     カードのガラスの縁が破片を曲げる -->
 				{#if !narrow.current}
 					<div class="hole" aria-hidden="true">
 						<Orb size={orbSize} onCanvas={(c) => (holeOrbCanvas = c)} />

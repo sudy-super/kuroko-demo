@@ -171,7 +171,8 @@
 </Drawer>
 
 <style>
-	/* ガラスの canvas は bleed の分だけ外へ出るので、位置の基準になる親を置く */
+	/* 3 つのペインを横に並べる段の基準。Task 10w で内容の層からガラスを外したので
+	   (HIG Materials「コンテンツ層に Liquid Glass を使わない」)、ここに canvas は無い */
 	.panes {
 		position: relative;
 		isolation: isolate;
