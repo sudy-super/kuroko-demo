@@ -186,11 +186,11 @@ export const chromeGlass = (node: Element) =>
    (buildElements 側の `width > 0 && height > 0` の絞り込みで) 除かれる */
 const OVERLAY_TIERS = {
 	'.drawer, .sheet, .modal, .pill-panel, .demo-menu': SHEET.tint as number,
-	/* Task 10w 修正ラウンド 1 (review-task-10w.md C2) — トーストは濃紺の地に白文字。
-	   ライブラリの tintTone は明るさの端 (light/dark)しか選べず色を持てないので、canvas に
-	   任せると紺が無彩色の灰になる。塗り 0 で canvas にはぼかしと屈折だけを描かせ、紺は
-	   CSS の背景として残す (app.css の .toast、WebGL 経路でも background を下ろさない) */
-	'.toast': { tint: 0, tintTone: 'dark' as const },
+	/* Task 10w 修正ラウンド 2 (review-glass-batch.md I1) — トーストはここに入れない。
+	   .select-menu と同じ理由で、この層の canvas はトースト (z-index 90)より後ろに来るうえ、
+	   トースト自身が濃紺の塗りを持つので、canvas が描いた絵は一度も画面に出ない
+	   (実測: トーストの下に縞を敷いてもまったくぼけない)。見えない絵を毎フレーム描くだけ
+	   無駄なので層から外し、app.css の .toast の backdrop-filter でぼかす */
 	'.overlay-chrome-anchor': 0
 };
 

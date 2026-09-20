@@ -2516,10 +2516,14 @@ section.tc .list-row:not(label):not(a):hover {
 	border-top: 1px solid var(--line);
 	padding-top: var(--sp-2);
 }
-/* 出所ラベル (仕様 5.14)。行の右端に寄せる */
+/* 出所ラベル (仕様 5.14)。行の右端に寄せる。
+   Task 10w 修正ラウンド 2 (review-glass-batch.md I2) — ⌘K は Today のオーブの上に開くので、
+   --ink-3 のままだと実測 4.59:1 と下限の余裕が 0.09 しかない (札の位置が少し変わると割る)。
+   背景側の白をこれ以上濃くすると下が透ける見え方を削るので、文字色を --ink-2 へ一段濃くする
+   (同じ条件で 6.2:1)。出所の札は本文より弱く見せたいだけなので、12px と右寄せで十分区別が付く */
 .palette-src {
 	margin-left: auto;
-	color: var(--ink-3);
+	color: var(--ink-2);
 	font-size: 12px;
 }
 /* 8 シナリオは畳んでおく。文言が長いので、開いた中の行だけ高さを行数に任せる */
@@ -2837,16 +2841,12 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu::before {
 	background: rgba(255, 255, 255, 0.42);
 }
 
-/* Task 10w 修正ラウンド 1 (review-task-10w.md C2) — トーストだけは背景を下ろさない。
-   濃紺の地に白文字という配色を canvas の塗りでは出せない (src/lib/glass.ts の OVERLAY_TIERS
-   の注記を見よ)。canvas は塗り 0 でぼかしと屈折だけを描き、色は下の .toast の background が
-   そのまま担う。--rim (白い縁の反射)は濃い地に合わないので、他の面と同じく下ろす */
-body:has(> .overlay-chrome[data-liquid-glass='webgl']) .toast {
-	-webkit-backdrop-filter: none;
-	backdrop-filter: none;
-	isolation: isolate;
-	--rim: 0 0 rgba(0, 0, 0, 0);
-}
+/* Task 10w 修正ラウンド 2 (review-glass-batch.md I1) — トーストは .select-menu と同じ理由で
+   canvas の層を使わない。トースト (z-index 90)は描く層 (.overlay-chrome、71)の子孫ではなく
+   <body> の別の枝にあるので、トーストの位置から見て canvas は自分より後ろに来る。トーストは
+   濃紺の塗りを持つため、後ろの canvas はその塗りに隠れて一度も画面に出ない (実測: 下に縞を
+   敷いてもまったくぼけない)。自分の backdrop-filter なら真後ろを直接ぼかせる。
+   --rim (白い縁の反射)は濃い地に合わないので付けない */
 
 /* Task 10v — ユーザー裁定「反射を無くした liquid glass」を受け、上縁の白い鏡面の線と
    左縁の白い線 (斜め上から光が当たって見える、向きの付いた面取り) を外した。残すのは
