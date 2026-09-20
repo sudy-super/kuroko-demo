@@ -42,7 +42,7 @@
 	   右の列は 3 枚になって ToDo の 3 行目と「ToDo をすべて見る」が入らない。CSS で伏せると
 	   題名の件数と行数が食い違ったまま説明が消えるので、出す行数そのものをここで減らし、
 	   差は「残り N 件」で説明する (app.css の @media (max-height: 760px) と対) */
-	const shortWindow = new MediaQuery('(max-height: 760px)');
+	const shortWindow = new MediaQuery('(min-width: 1101px) and (max-height: 760px)');
 	/* 2 行 + 「残り N 件」で 3 行分の高さに収まる。送信済みが無いときは右が 2 枚なので 3 行のまま */
 	const squeeze = $derived(shortWindow.current && sent.length > 0);
 	const taskRows = $derived(squeeze ? 2 : 3);
