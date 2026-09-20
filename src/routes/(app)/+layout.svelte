@@ -55,7 +55,8 @@
 	     メニューは bits-ui の Portal で <body> 直下に出る。この層も Portal で <body> の
 	     直接の子として足すことで、どの覆いの面も同じ深さから見つけられる (src/lib/glass.ts の
 	     overlayGlass)。トーストはこの層の受け持ちではない (Portal を使わずルートの
-	     +layout.svelte 直下に出るうえ、濃い塗りで canvas が隠れる。app.css の .toast を見よ)。.chrome と違い、覆いは開閉のたびに DOM へ出入りするので、
+	     +layout.svelte 直下に出るうえ、濃い塗りで canvas が隠れる。
+	     app.css の .toast を見よ)。.chrome と違い、覆いは開閉のたびに DOM へ出入りするので、
 	     この層自身は開閉に関わらず常駐する (中身は空、canvas は overlayGlass が足す) -->
 	<Portal>
 		<div class="overlay-chrome" {@attach overlayGlass}>

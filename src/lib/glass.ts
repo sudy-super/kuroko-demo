@@ -51,7 +51,7 @@ export const BAR: LiquidGlassElementOptions = {
 	material: { ...LENS, backdropBlur: 14 }
 };
 
-/* Task 10w (glass-scope.md 5 節) — シート・モーダル・ポップオーバー・メニュー。
+/* Task 10w (glass-scope.md 5 節) — ドロワー・シート・モーダル・ポップオーバー・メニュー。
    HIG Materials の regular 変種「部品が相当量の文字を含む場合は regular を使う」に沿い、
    ナビ層 (BAR、tint 0.8) より塗りを一段濃く・ぼかしを強くして、可読性をナビ層より優先する。
    反射 (rim/reflection/highlight) は付けない、縁の屈折 (LENS) はナビ層と同じ。
@@ -221,7 +221,8 @@ function mount(
 			respectReducedTransparency: false,
 			...options,
 			...(tiers ? { targets: targets() } : null),
-			/* 描画面を失ったら CSS の代替へ倒す。ライブラリは属性を動かさないので、
+			/* 描画面を失ったらガラスを CSS の backdrop-filter へ倒す (オーブの代替表示とは別で、
+			   こちらは Task 10x の後も残る)。ライブラリは属性を動かさないので、
 			   放っておくと data-liquid-glass="webgl" のまま塗りが消えた透明な板が残る
 			   (2026-09-16 にユーザーが見た壊れ方)。GPU のプロセスごと落ちて
 			   webglcontextrestored が来ない場合は、この代替のまま保つ */
@@ -240,7 +241,8 @@ function mount(
 			}, repaintMs);
 	};
 
-	/* destroy() は属性を外して要素の style を戻すので、これだけで CSS の代替表示に戻る。
+	/* destroy() は属性を外して要素の style を戻すので、これだけでガラスは CSS の
+	   backdrop-filter の経路に戻る。
 	   同期に済むため、手放す瞬間に何も描かれていない一瞬は生まれない */
 	const release = () => {
 		watcher?.disconnect();

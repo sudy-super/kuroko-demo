@@ -91,7 +91,8 @@
 	--glass-1: rgba(255, 255, 255, 0.48);
 	--glass-2: rgba(255, 255, 255, 0.6);
 	--glass-panel: rgba(255, 255, 255, 0.58);
-	/* Task 10w (glass-scope.md 5 節) — シート・モーダル・ポップオーバー・メニューの regular 変種。
+	/* Task 10w (glass-scope.md 5 節) — ドロワー・シート・モーダル・ポップオーバー・メニューの
+	   regular 変種。
 	   ナビ層 (--glass-panel) より文字が多いので、フォールバック (backdrop-filter) 経路でも
 	   ナビ層より濃くする。WebGL 経路の実際の塗りは src/lib/glass.ts の SHEET (tint 1.05) */
 	--glass-sheet: rgba(255, 255, 255, 0.82);
@@ -381,8 +382,8 @@ svg.i {
 	z-index: 50;
 	pointer-events: none;
 }
-/* Task 10w (glass-scope.md 1〜3 節) — ドロワー・シート・モーダル・ポップオーバー・
-   メニューをまとめて描く空の層 (トーストは修正ラウンド 2 で外した。下の .toast を見よ)。
+/* Task 10w (glass-scope.md 1〜3 節) — ドロワー・シート・モーダル・ポップオーバー・メニューを
+   まとめて描く空の層 (トーストは修正ラウンド 2 で外した。下の .toast を見よ)。
    .chrome と同じ作り (中身は canvas 1 枚、pointer-events なし)
    だが、bits-ui の Portal で <body> の直接の子として足す ((app)/+layout.svelte) ので、
    ここでは通常の入れ物としての見た目だけを持たせる。
@@ -2861,7 +2862,8 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu::before {
    ガラスの canvas は要素の z-index: -1 の子なので、z-index を持たないこの疑似要素は
    canvas より上に描かれる。inset の影を要素自身に付けると canvas の下に隠れて見えない。
 
-   Task 10w — シート・モーダル・ポップオーバー・メニューにも同じ縁を足す。トースト (濃い地)
+   Task 10w — ドロワー・シート・モーダル・ポップオーバー・メニューにも同じ縁を足す。
+   トースト (濃い地)
    は縁がほぼ見えず効果がないので対象外にした */
 .sidebar::after,
 .rail::after,

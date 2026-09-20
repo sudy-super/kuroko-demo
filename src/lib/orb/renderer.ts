@@ -20,9 +20,10 @@ export type OrbOptions = {
 	reducedMotion: boolean;
 	mobile: boolean;
 	particles?: boolean;
-	/** 初期化後 (コンテキスト復帰やリサイズ時) に WebGL が失敗したときに呼ぶ。呼び出し側は CSS の代替に落とす */
+	/** 初期化後 (コンテキスト復帰やリサイズ時) に WebGL が失敗したときに呼ぶ。
+	    呼び出し側は canvas を手放す (Task 10x で CSS の代替表示は廃止した) */
 	onFail?: (e: unknown) => void;
-	/** 描画面を失ったら false、戻ったら true。呼び出し側は失っている間 CSS の代替を出す (Task 10i) */
+	/** 描画面を失ったら false、戻ったら true。呼び出し側は失っている間 canvas を隠す (Task 10i) */
 	onLive?: (live: boolean) => void;
 };
 export type Orb = { start(): void; stop(): void; destroy(): void; resize(): void };
@@ -468,7 +469,8 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 	try {
 		initGl();
 	} catch (e) {
-		/* 初期化に失敗したらコンテキストを手放してから呼び出し側に投げる (代替へ落とす) */
+		/* 初期化に失敗したらコンテキストを手放してから呼び出し側に投げる
+		   (呼び出し側は canvas を捨てる) */
 		gl.getExtension('WEBGL_lose_context')?.loseContext();
 		throw e;
 	}
