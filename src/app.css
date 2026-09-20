@@ -2227,6 +2227,16 @@ section.tc .list-row:not(label):not(a):hover {
 	font-size: 18px;
 	color: var(--ink);
 }
+/* Task 10t 修正ラウンド 8 (rereview-task-10t-fix7.md) — 送信済みカードの題名は
+   「日程調整の返信待ち N 件」と長く、幅 1101〜1117px で 2 行に折れてカードが 25px 伸び、
+   ToDo の「残り N 件」に重なって押せなくなる。この題名だけ折り返さず、入り切らない分は
+   省略記号にする (件数は末尾なので、切れるのは「返信待ち」の途中から。題名の頭で
+   何のカードかは分かる) */
+.today .bento > .card[data-card='sent'] .tc-head h2 {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
 .tc-body {
 	display: flex;
 	flex-direction: column;
@@ -2448,19 +2458,18 @@ section.tc .list-row:not(label):not(a):hover {
 	   重なるのはカードの下端の余白どうしで、文字は重ならない (実測) */
 	@media (max-height: 760px) {
 		.today .bento:has(> .card[data-card='sent']) {
-			flex-basis: 460px;
-			min-height: 460px;
+			flex-basis: 475px;
+			min-height: 475px;
 		}
 		/* Task 10t 修正ラウンド 6 (review task-10t-fix5 I1) — 行を CSS で伏せると題名の件数と
 		   行数が食い違ったまま説明が消えるので、出す行数は today/+page.svelte 側 (taskRows)で
 		   減らし、差は「残り N 件」で説明する (2 行 + 残りの 1 行 = 実測 176px)。
-		   入れ物は 460px。3 枚 (予定 169px・ToDo 176px・送信済み 97px)を 12px ずつ空けて
-		   並べるには 485px 要るので 25px 足りず、ToDo の下端が送信済みに 13px 食い込む。
-		   入れ物を 484px に広げると重なりは消えるが、1280x680 で次の会議カードの
-		   「Brief が届いています」が依頼バーの下に 10px 入って読めなくなる
-		   (rereview-task-10t-fix6.md I1、476px から掛かり始める)。文字が読めないほうが重いので
-		   460px を採る。重なるのはカードの下端の余白どうしで、「残り N 件」の輪郭と送信済みの
-		   上端の間は 1.2px 空き、ToDo の中身はすべて押せる (実測) */
+		   入れ物は 475px。3 枚 (予定 169px・ToDo 176px・送信済み 97px)を 12px ずつ空けて
+		   並べるには 485px 要るので 10px 足りないが、重なるのはカードの下端の余白どうしで
+		   文字は重ならない (実測)。
+		   上限が 475px なのは、478px を超えると 1280x680 で次の会議カードの
+		   「Brief が届いています」が依頼バーの下に入って読めなくなるため
+		   (rereview-task-10t-fix7.md、実測の境目は 478px) */
 	}
 	.today .bento > .card[data-card='sent'] {
 		bottom: 0;
