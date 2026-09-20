@@ -12,6 +12,9 @@
 	const narrow = new MediaQuery('(max-width: 640px)');
 	const step = $derived(page.url.pathname.startsWith('/connect/'));
 	const intro = $derived(page.url.pathname === '/connect');
+	/* Task 18 — 相手側の日程選択 (/schedule/<token>) は取引先が開く画面で、KUROKO の
+	   世界観を見せる場ではない。オーブは出さず、日時を選ぶことだけに集中させる */
+	const schedule = $derived(page.url.pathname.startsWith('/schedule/'));
 	const size = $derived(
 		step ? (narrow.current ? 170 : 220) : intro ? (narrow.current ? 260 : 380) : narrow.current ? 300 : 480
 	);
@@ -30,7 +33,7 @@
 
 <div class="public">
 	<div class="public-col">
-		<Orb {size} />
+		{#if !schedule}<Orb {size} />{/if}
 		{@render children()}
 	</div>
 </div>

@@ -2016,6 +2016,9 @@ svg.i {
 .public-main {
 	display: flex;
 	flex-direction: column;
+	/* Task 18 — 文字は text-align で中央に来るが、アイコンのような幅を持つ要素は
+	   align-items が無いと左端に寄る (確定のチェック印で発覚) */
+	align-items: center;
 	gap: var(--sp-3);
 	width: 100%;
 }
@@ -2112,6 +2115,61 @@ svg.i {
 	color: var(--ink-3);
 	font-size: 12px;
 	line-height: 1.6;
+}
+
+/* Task 18 (/schedule/[token]) — 相手が開く画面はオーブを出さない ((public)/+layout.svelte)。
+   オーブが縦の余りを吸っていた (上の .public-col > .orb の margin-top: auto)ので、
+   その役を本文の塊に移して上下の中央にそろえる。操作群は今までどおり下端 (.public-foot) */
+.public-col:not(:has(> .orb)) > .public-main {
+	margin-top: auto;
+}
+/* 下に操作群 (.public-foot)が無い状態 (無効なリンク・キャンセル済み)では、上の margin-top: auto
+   だけだと本文が下端に貼り付く。下側にも余りを分けて上下の中央に置く */
+.public-col:not(:has(> .orb)):not(:has(> .public-foot)) > .public-main {
+	margin-bottom: auto;
+}
+/* Task 18 (/schedule/[token]) — 相手が開く画面。「日時を変更する」「キャンセルする」は
+   主ボタンと同じ 1 画面 1 個の並びに置くので、.public-cta の幅・高さだけ揃えて塗りは
+   .btn.sec / .btn.danger のまま (裁定どおり主ボタンは 1 個、副操作は塗りを弱める) */
+.btn.sec.public-cta,
+.btn.danger.public-cta {
+	width: 100%;
+	max-width: 360px;
+	height: 52px;
+	border-radius: var(--r-pill);
+	font-size: 16px;
+}
+/* 候補一覧・確定内容のまとめ。ガラスは使わない (docs/research/glass-scope.md、
+   Welcome・接続画面と同じく下に曲げる内容がない)。.card の白い面だけ流用する */
+.sched-slots,
+.sched-summary {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	border-radius: var(--r-m);
+	background: rgba(255, 255, 255, 0.7);
+	box-shadow: inset 0 0 0 1px rgba(30, 42, 71, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+	overflow: hidden;
+}
+.sched-slot {
+	width: 100%;
+	font-weight: 500;
+}
+.sched-slot:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: -2px;
+}
+/* 素の radio と同じ見た目にする (bits-ui の RadioGroup.Item はボタンなので input が無い)。
+   焦点の輪郭は行そのものが持つ (components 3.6 の chip と同じ考え方) */
+.sched-radio {
+	flex: none;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	box-shadow: inset 0 0 0 1.5px var(--border);
+}
+.sched-radio.on {
+	box-shadow: inset 0 0 0 6px var(--accent);
 }
 
 /* onboarding.md 3.1 — 時間差のフェードイン。遅れは要素側の --delay で渡す。
