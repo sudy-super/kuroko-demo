@@ -2447,15 +2447,19 @@ section.tc .list-row:not(label):not(a):hover {
 	   重なるのはカードの下端の余白どうしで、文字は重ならない (実測) */
 	@media (max-height: 760px) {
 		.today .bento:has(> .card[data-card='sent']) {
-			flex-basis: 484px;
-			min-height: 484px;
+			flex-basis: 460px;
+			min-height: 460px;
 		}
 		/* Task 10t 修正ラウンド 6 (review task-10t-fix5 I1) — 行を CSS で伏せると題名の件数と
 		   行数が食い違ったまま説明が消えるので、出す行数は today/+page.svelte 側 (taskRows)で
 		   減らし、差は「残り N 件」で説明する (2 行 + 残りの 1 行 = 実測 176px)。
-		   入れ物は 484px。予定の下端 (4% + 169px)と送信済みの上端 (下端から 97px)の間に
-		   ToDo (176px)を 12px ずつ空けて置くと、必要な高さは 19 + 169 + 12 + 176 + 12 + 97 = 485px。
-		   top は予定の下端から 12px 下なので calc(4% + 181px) (上の既定と同じ値で足りる) */
+		   入れ物は 460px。3 枚 (予定 169px・ToDo 176px・送信済み 97px)を 12px ずつ空けて
+		   並べるには 485px 要るので 25px 足りず、ToDo の下端が送信済みに 13px 食い込む。
+		   入れ物を 484px に広げると重なりは消えるが、1280x680 で次の会議カードの
+		   「Brief が届いています」が依頼バーの下に 10px 入って読めなくなる
+		   (rereview-task-10t-fix6.md I1、476px から掛かり始める)。文字が読めないほうが重いので
+		   460px を採る。重なるのはカードの下端の余白どうしで、「残り N 件」の輪郭と送信済みの
+		   上端の間は 1.2px 空き、ToDo の中身はすべて押せる (実測) */
 	}
 	.today .bento > .card[data-card='sent'] {
 		bottom: 0;
