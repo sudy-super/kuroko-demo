@@ -89,7 +89,7 @@ export const CARD: LiquidGlassElementOptions = {
    (Orb.svelte の onCanvas) ため、解決のタイミングを合わせる必要が生まれるから。
    毎フレーム呼ばれる描き手の中で最新の canvas を読むだけなら、そのタイミング合わせが要らない。
    getBoundingClientRect() だけで足りるのは `.orb canvas` が border/padding を持たない
-   (app.css) ため。'off' クラス (描画面を手放して代替表示中、Task 10i) の間は
+   (app.css) ため。'off' クラス (描画面を手放して canvas を隠している間、Task 10i) は
    実際のページ表示にも何も見えないので、同じく描かない */
 export function orbBackdrop(getCanvas: () => HTMLCanvasElement | null): LiquidGlassBackdropPainter {
 	return (ctx) => {
@@ -147,8 +147,8 @@ const CHROME_TIERS = {
 export const chromeGlass = (node: Element) =>
 	mount(node as HTMLElement, { ...BAR, bleed: 0 }, 50, CHROME_TIERS);
 
-/* Task 10w (glass-scope.md 1〜3 節) — Portal で <body> 直下に出るシート・モーダル・
-   ポップオーバー・メニューをまとめて描く層。chromeGlass (.chrome) と同じ
+/* Task 10w (glass-scope.md 1〜3 節) — Portal で <body> 直下に出るドロワー・シート・
+   モーダル・ポップオーバー・メニューをまとめて描く層。chromeGlass (.chrome) と同じ
    「空の層 1 枚 + tiers」の仕組みを再利用する。この層自身も bits-ui の Portal で <body> の
    直接の子として足す ((app)/+layout.svelte)。Dialog/Popover/DropdownMenu/Select の Portal は
    既定で <body> 直下に出るので、host の scope (= node.parentElement = <body>) の
