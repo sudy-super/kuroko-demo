@@ -80,9 +80,9 @@
 		<ApprovalIcon kind={a.kind} size={20} />
 		<!-- indicators.md「承認センターの区分」— 判断に直結する属性なので、Lozenge のまま
 		     文言で出す (アイコン化は却下)。文言の出所は types.ts の RISK_LABEL。
-		     外部送信だけ橙 (app.css の .badge.caution)、残る 2 つは既定の灰。Today の
+		     外部送信だけ橙 (app.css の .badge.warn)、残る 2 つは既定の灰。Today の
 		     承認待ちカードも同じ組み方 -->
-		<span class="badge" class:caution={a.risk === 'external_send'}>{RISK_LABEL[a.risk]}</span>
+		<span class="badge" class:warn={a.risk === 'external_send'}>{RISK_LABEL[a.risk]}</span>
 	</div>
 	<h3 class="ap-title">{a.title}</h3>
 	<p class="ap-to">宛先 {a.to}</p>

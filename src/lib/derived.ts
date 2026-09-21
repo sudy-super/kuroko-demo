@@ -38,9 +38,10 @@ export const pendingApprovals = (db: Db) => db.approvals.filter((a) => a.status 
 /* 案件の状態は Atlassian の Lozenge (ワークフローの状態) にあたるので、一覧・人物詳細・会社・
    案件のどこでも同じ色で出す。終わった 2 つだけ色を分け、途中の状態は青 (進行中) にする。
    Task 10k — 途中の状態は .badge の既定 (中立の灰) に任せず info を明示する。既定の灰は
-   分類の札 (「場所」「提案書」など) が使う色で、状態とは役割が違う (app.css の .badge を見よ) */
+   分類の札 (「場所」「提案書」など) と、承認の区分のうち注意の要らない 2 つが使う色で、
+   「特に言うことが無い」を意味する。案件の途中の状態はそれとは違う (app.css の .badge を見よ) */
 export const projectStatusClass = (s: ProjectStatus) =>
-	s === '受注' ? 'ok' : s === '失注' ? 'warn' : 'info';
+	s === '受注' ? 'ok' : s === '失注' ? 'danger' : 'info';
 
 /* M3 の large badge は "+" も含めて最大 4 文字 (docs/research/buttons.md 観点 B 原則 4)。
    このアプリで 4 桁に届く件数は無いが、規定どおり上限を持たせておく */

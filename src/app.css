@@ -1082,7 +1082,9 @@ svg.i {
 /* components 3.6 — バッジ (押せない表示専用。ruling: 文字は 12px まで)。
    Task 10k — 寸法は IBM Carbon の Tag の medium に合わせた (高さ 24px、文字 12px、左右 8px)。
    角丸の 16px も Carbon の規定値で、Tag: Style の Structure の表が lg / md / sm の 3 段すべてに
-   16px を指定している (高さの半分ではない。md の半分は 12px)。トークンに 16px は無いので直値。
+   16px を指定している (高さの半分ではない)。トークンに 16px は無いので直値。なお高さ 24px では
+   CSS の角丸の縮み規則が働き、16px は 12px に縮むので、999px / 16px / 12px のどれを書いても
+   描画は同一になる。ここで 16px と書くのは出所を Carbon の表に合わせるためで、形の違いではない。
    構造 (薄い塗り + 同系色の 1px の枠) は Atlassian の Lozenge の形を採る。Carbon の Tag の枠は
    selectable / operational だけの「押せる」印なので、枠の出所は Atlassian だけで、Carbon ではない。
    枠を置く理由は、色を外しても輪郭が残ること (docs/research/buttons.md 観点 B 原則 2 の
@@ -1118,13 +1120,13 @@ svg.i {
    述べているだけのこの札は当たらない。同パターンの Status color palette が「orange represents a
    serious warning」とする橙を採る。色は同じ表の Orange 60 (#ba4e00、outline 用)と Orange 10
    (#fff2e8)で、Carbon がこの 2 つを「added contrast accessibility」のために用意している組。
-   名前は Carbon が橙の状態に付けている "Caution major" から採る。同パターンで attention は
-   赤・橙・黄をまたぐ強さの軸の呼び名 (high / medium / low attention)で、橙はその medium に当たる。
-   修飾子名を attention にすると、退けたはずの赤 (high attention)を指して読めるので使わない。
-   下の .badge.warn (赤、失注)とは語感が近いが、色の役割は Carbon の表で別物 (赤 = danger or
-   error、橙 = serious warning)。文字は 4.58:1、枠は面 (白)に対して 5.03:1 (資料 14 の下限は
+   修飾子名は Carbon の色の役割そのままに warn とする (橙 = warning、赤 = danger or error)。
+   Carbon の表で橙の状態に付いている名前は "Caution major" だが、下の .badge.danger (赤、失注)や
+   既にある .btn.danger と語彙を揃えるため採らない。attention も使わない。同パターンで attention は
+   赤・橙・黄をまたぐ強さの軸の呼び名 (high / medium / low attention)で、退けたはずの赤
+   (high attention)を指して読めるため。文字は 4.58:1、枠は面 (白)に対して 5.03:1 (資料 14 の下限は
    4.5:1 と 3:1) */
-.badge.caution {
+.badge.warn {
 	background: #fff2e8;
 	color: #ba4e00;
 	box-shadow: inset 0 0 0 1px #ba4e00;
@@ -1150,7 +1152,7 @@ svg.i {
 	box-shadow: inset 0 0 0 1px var(--accent);
 }
 /* 終わった案件のうち失注。Atlassian の Lozenge の "removed" に当たる */
-.badge.warn {
+.badge.danger {
 	background: var(--warn-soft);
 	color: var(--warn);
 	box-shadow: inset 0 0 0 1px var(--warn);
@@ -1174,7 +1176,7 @@ svg.i {
 	color: #fff;
 	box-shadow: none;
 }
-.badge.count.warn {
+.badge.count.danger {
 	background: var(--warn);
 	color: #fff;
 }
