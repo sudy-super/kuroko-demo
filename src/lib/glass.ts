@@ -34,7 +34,8 @@ const LENS = {
 	hairline: 0.45
 } as const;
 
-/* ナビ層のうち、下を通るのが色や形だけのもの (サイドナビ `.sidebar`、連携アイコンの列 `.rail`)。
+/* ナビ層のうち、下を通るのが色や形だけのもの。渡し先は下の CHROME_TIERS の
+   `.sidebar, .rail` (サイドナビと連携アイコンの列) の 2 つだけ。
    塗り (tint)だけが面ごとに違うので、ここは CHROME_TIERS に渡す tint の置き場でしかない
    (ぼかしは描画面ごとの値なので BAR の backdropBlur が当たる。下の CHROME_TIERS の注記を見よ)。
    Task 10v — Task 10u 以前の Liquid Glass の値に戻す。tint はライブラリの 0〜1.5 の目盛りで、

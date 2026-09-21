@@ -49,11 +49,13 @@
 			</span>
 		</label>
 	{/each}
+	<!-- 塗りの主ボタンは画面に 1 つ (buttons.md 観点 A 原則 3)。/tasks のそれは見出しの
+	     「新しい ToDo を追加」なので、この札の中は 3 つとも塗りなしで枠と文字だけで段を付ける -->
 	<div class="row tc-foot sg-foot">
-		<button class="btn pri" disabled={chosen.length === 0} onclick={() => onaccept(chosen)}>
+		<button class="btn sec" disabled={chosen.length === 0} onclick={() => onaccept(chosen)}>
 			選択した {chosen.length} 件を登録
 		</button>
-		<button class="btn sec" onclick={() => onaccept(suggestions.map((s) => s.id))}>
+		<button class="btn text" onclick={() => onaccept(suggestions.map((s) => s.id))}>
 			すべて登録
 		</button>
 		<button class="btn text" onclick={onreject}>破棄</button>

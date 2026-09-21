@@ -64,7 +64,9 @@
 			>{identity?.value ?? '不明な差出人'}</svelte:element
 		>
 		<p class="muted">この方はまだ登録されていません</p>
-		<button class="btn pri sm" onclick={() => (addOpen = true)}>
+		<!-- 同じ画面に出る ReplyBox の「採用」が塗りの主ボタンなので、こちらは副ボタン
+		     (buttons.md 観点 A 原則 3) -->
+		<button class="btn sec sm" onclick={() => (addOpen = true)}>
 			<Icon name="ic-plus" size={18} />People に追加
 		</button>
 	{/if}

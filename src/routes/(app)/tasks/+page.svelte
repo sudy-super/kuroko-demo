@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { db } from '$lib/store.svelte';
 	import type { TaskFilter } from '$lib/derived';
-	import { filterTasks, openTaskCount } from '$lib/derived';
+	import { badgeCount, filterTasks, openTaskCount } from '$lib/derived';
 	import { acceptTaskSuggestions, rejectSuggestions } from '$lib/actions';
 	import { toast } from '$lib/ui.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -67,7 +67,7 @@
 			>
 				<Icon name="ic-check" size={18} class="chip-check" />
 				{f.label}
-				<span class="badge count" class:warn={f.key === 'overdue' && n > 0}>{n}</span>
+				<span class="badge count" class:warn={f.key === 'overdue' && n > 0}>{badgeCount(n)}</span>
 			</button>
 		{/each}
 	</div>

@@ -170,7 +170,8 @@
 					oninput={(e) => (draft = { id: person.id, text: e.currentTarget.value })}
 				></textarea>
 				<div class="row people-memo-foot">
-					<button class="btn pri sm" disabled={!dirty} onclick={saveMemo}>保存する</button>
+					<!-- この画面の塗りの主ボタンは見出しの「KUROKO に頼む」なので、メモの保存は副ボタン -->
+					<button class="btn sec sm" disabled={!dirty} onclick={saveMemo}>保存する</button>
 					<button
 						class="btn text sm"
 						disabled={!dirty}

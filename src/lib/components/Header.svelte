@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { db } from '$lib/store.svelte';
-	import { pendingApprovals, guideSection } from '$lib/derived';
+	import { badgeCount, pendingApprovals, guideSection } from '$lib/derived';
 	import { fmtYMDW, fmtMDW, hm } from '$lib/dates';
 	import { stopGuide } from '$lib/actions';
 	import { ui } from '$lib/ui.svelte';
@@ -101,7 +101,7 @@
 				<Icon name="ic-check-c" size={20} />
 				{#if pending.length > 0}
 					<span class="badge count num" style="position: absolute; top: -2px; right: -2px">
-						{pending.length}
+						{badgeCount(pending.length)}
 					</span>
 				{/if}
 			</button>

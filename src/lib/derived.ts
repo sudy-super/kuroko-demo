@@ -36,8 +36,15 @@ export const nextInQueue = (db: Db, threadId: string): MessageThread | undefined
 export const pendingApprovals = (db: Db) => db.approvals.filter((a) => a.status === 'pending');
 
 /* 案件の状態は Atlassian の Lozenge (ワークフローの状態) にあたるので、一覧・人物詳細・会社・
-   案件のどこでも同じ色で出す。終わった 2 つだけ色を分け、途中の状態は accent のままにする */
-export const projectStatusClass = (s: ProjectStatus) => (s === '受注' ? 'ok' : s === '失注' ? 'warn' : '');
+   案件のどこでも同じ色で出す。終わった 2 つだけ色を分け、途中の状態は青 (進行中) にする。
+   Task 10k — 以前は途中の状態に修飾子を付けず .badge の既定に任せていたが、既定は
+   「外部送信」の危険 (赤) になったので、進行中は info を明示する (app.css の .badge を見よ) */
+export const projectStatusClass = (s: ProjectStatus) =>
+	s === '受注' ? 'ok' : s === '失注' ? 'warn' : 'info';
+
+/* M3 の large badge は "+" も含めて最大 4 文字 (docs/research/buttons.md 観点 B 原則 4)。
+   このアプリで 4 桁に届く件数は無いが、規定どおり上限を持たせておく */
+export const badgeCount = (n: number) => (n > 999 ? '999+' : String(n));
 
 const T = (db: Db) => db.seededOn; // 「今日」の基準。実時刻ではなくシードの基準日を使う
 

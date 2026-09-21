@@ -3,6 +3,7 @@
 	import { db } from '$lib/store.svelte';
 	import { REASON_ORDER, RISK_LABEL } from '$lib/types';
 	import {
+		badgeCount,
 		personOf,
 		pendingApprovals,
 		replyNeeded,
@@ -129,8 +130,10 @@
 							</div>
 						{/each}
 						{#if ap.length > 3}<p class="muted">残り {ap.length - 3} 件</p>{/if}
-						<!-- カード全体が承認ドロワーを開くので、中は入れ子のボタンにしない -->
-						<div class="row tc-foot"><span class="btn pri sm">確認する</span></div>
+						<!-- カード全体が承認ドロワーを開くので、中は入れ子のボタンにしない。
+						     塗りの主ボタンは画面に 1 つ (buttons.md 観点 A 原則 3)。Today でそれに当たるのは
+						     下端の依頼バーの送信ボタンなので、ここは副ボタンにする -->
+						<div class="row tc-foot"><span class="btn sec sm">確認する</span></div>
 					</TodayCard>
 				{/if}
 
@@ -235,7 +238,7 @@
 					{#each items as it (it.kind)}
 						{#if it.kind === 'approval'}
 							<button class="list-row lg" type="button" onclick={() => (ui.approvalDrawer = true)}>
-								<span class="badge count">{it.n}</span>
+								<span class="badge count">{badgeCount(it.n)}</span>
 								<span class="tc-col">
 									<span class="tc-text">{it.label}</span>
 									<span class="tc-text sub">{it.detail}</span>
@@ -243,7 +246,7 @@
 							</button>
 						{:else}
 							<a class="list-row lg" href={it.href}>
-								<span class="badge count">{it.n}</span>
+								<span class="badge count">{badgeCount(it.n)}</span>
 								<span class="tc-col">
 									<span class="tc-text">{it.label}</span>
 									<span class="tc-text sub">{it.detail}</span>

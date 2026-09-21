@@ -38,20 +38,18 @@
 	   第 2 段階の修正波 — 色ごとに測り直したところ、/today の副ボタンの列 (ガラス、下はオーブ)で
 	   #1a5ecb の実測が 4.11:1 と 4.5:1 を割った。明度だけ 44.9% → 40.9% に落とし、同じ場所で
 	   4.86:1 になった。この場所の背後はオーブの破片で、どの瞬間を測るかで値が動くので
-	   余裕を多めに取ってある。塗り (--accent-soft / --accent-top など)は触っていない。
+	   余裕を多めに取ってある。塗り (--accent-soft など)は触っていない。
 	   Task 10h — その後この列はガラスをやめて不透明な白い面に戻したので、背後に破片は来ない。
 	   実測は 6.61:1 で、この色を選んだ理由はもう /today の列には無い (残る根拠は他の画面) */
 	--accent: #1856b9;
-	--accent-top: #2a6fe0;
 	/* Task 10f 修正ラウンド 3 — バッジと差出人の印もこの塗りを使う。カードがガラスになり、
 	   塗りが下の面ごと沈むようになったので、0.16 の別枠 (--accent-soft-2) をやめて 0.10 の
 	   これ 1 つにまとめた。0.16 だと上に載る --accent の実測が 4.24:1 と 4.5:1 を割る */
 	--accent-soft: rgba(26, 94, 203, 0.1);
+	/* Task 10k — 主ボタンと送信ボタンの落ち影 (--accent-top / --accent-shadow と合わせて) は
+	   docs/research/buttons.md 観点 A により廃止した。残るのはナビの案内の脈動 (.pulse) だけ。
+	   26,94,203 は --accent を濃くする前の値で、--accent の 24,86,185 とは一致しない */
 	--accent-glow: rgba(26, 94, 203, 0.28);
-	/* 主ボタンと送信ボタンの落ち影。塗りは触らないという裁定どおり、--accent を濃くする前の
-	   26,94,203 のままにしてある (--accent-soft / --accent-glow / --hover-accent / --press-accent と同じ)。
-	   --accent の 24,86,185 とは一致しない */
-	--accent-shadow: rgba(26, 94, 203, 0.36);
 
 	/* ruling — 合否の色と入力欄の枠、選択中の塗り */
 	--ok: #107a48;
@@ -737,7 +735,8 @@ svg.i {
 }
 /* ruling (2026-09-16) — 入力欄そのものに輪郭を出すと、ガラスのピルの中に白い箱が
    もう 1 枚現れて見える。焦点はバー全体に出し、入力欄の輪郭は消す。
-   マウスで押したときは :focus-visible が立たないので輪郭は出ない */
+   文字入力の欄はマウスで押したときも :focus-visible が立つ (Chrome 152 で確認) ので、
+   この輪郭はキーボードでもマウスでも出る */
 .chatbar input:focus-visible {
 	outline: none;
 }
@@ -753,28 +752,31 @@ svg.i {
 	height: 42px;
 	border: 0;
 	border-radius: 50%;
-	background: linear-gradient(180deg, var(--accent-top) 0%, var(--accent) 100%);
+	/* Task 10k — 主ボタンと同じ扱い (buttons.md 観点 A 原則 1)。階調と落ち影をやめ、
+	   状態は塗りの明度だけで示す */
+	background: var(--accent);
 	color: #fff;
 	cursor: pointer;
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 16px var(--accent-glow);
-	transition:
-		transform var(--d-fast) var(--ease-out),
-		box-shadow var(--d-fast) var(--ease-out);
+	transition: background var(--d-fast) var(--ease-out);
 }
 .chatbar .send:hover {
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 8px 22px var(--accent-shadow);
+	background: color-mix(in srgb, var(--accent) 88%, #000);
 }
 .chatbar .send:active {
-	transform: scale(0.96);
+	background: color-mix(in srgb, var(--accent) 78%, #000);
 }
 .chatbar .send:disabled {
 	background: var(--disabled-bg);
 	color: var(--disabled-ink);
-	box-shadow: none;
 	cursor: default;
 }
 
-/* visual 4.8 + components 3.4 — ボタン (ruling: 文字 14 / 700、階調は --accent-top → --accent) */
+/* visual 4.8 + components 3.4 — ボタン。
+   Task 10k — 意匠の根拠は docs/research/buttons.md 観点 A。階調・落ち影・内側の白い線を
+   裏付ける一次資料が 5 体系のいずれにも無かったので全部外し、--accent の単色塗りにした。
+   角丸は同節の結論 (8px 前後が中庸) に最も近い既存トークン --r-xs。
+   高さ 44px は Baymard / Apple HIG の強化基準 (44x44) をそのまま満たすので触らない。
+   主と副の差は色と形で付け、大きさでは付けない (同節 原則 4) ので、寸法は 3 種で共通 */
 .btn {
 	position: relative;
 	display: inline-flex;
@@ -784,7 +786,7 @@ svg.i {
 	height: 44px;
 	padding: 0 var(--sp-6);
 	border: 0;
-	border-radius: var(--r-s);
+	border-radius: var(--r-xs);
 	background: none;
 	color: var(--ink);
 	font-size: 14px;
@@ -793,36 +795,34 @@ svg.i {
 	white-space: nowrap;
 	text-decoration: none;
 	cursor: pointer;
-	transition:
-		transform var(--d-fast) var(--ease-out),
-		box-shadow var(--d-fast) var(--ease-out),
-		background var(--d-fast) var(--ease-out);
+	transition: background var(--d-fast) var(--ease-out);
 }
 .btn .i {
 	width: 18px;
 	height: 18px;
 }
+/* buttons.md 観点 A 原則 1 — 状態は浮きや影ではなく塗りの明度で示す。混ぜる割合は
+   白い文字との比が hover 8.09:1 / pressed 9.40:1 になるところ (基準は 4.5:1) */
 .btn.pri {
-	background: linear-gradient(180deg, var(--accent-top) 0%, var(--accent) 100%);
+	background: var(--accent);
 	color: #fff;
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 16px var(--accent-glow);
 }
 .btn.pri:hover {
-	transform: translateY(-1px);
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 10px 24px var(--accent-shadow);
+	background: color-mix(in srgb, var(--accent) 88%, #000);
 }
 .btn.pri:active {
-	transform: translateY(0);
-	box-shadow: inset 0 2px 4px rgba(12, 48, 110, 0.28);
+	background: color-mix(in srgb, var(--accent) 78%, #000);
 }
-/* components 3.4: 副ボタンの枠は 1px 実線の --accent (白地に 9.78:1)。
+/* components 3.4: 副ボタンの枠は 1px 実線の --accent (白地に 6.84:1)。
    Task 10h — Today の見出しの列もここと同じ不透明な白にした。ガラスにしていた頃は
    オーブの破片が動いて文字 (--accent) が最悪 2.87:1 まで落ち、塗り (tint) を上げても
-   直らなかった。Today の屈折は Bento のカードと依頼バーで見せる */
+   直らなかった。Today の屈折は Bento のカードと依頼バーで見せる。
+   Task 10k — 落ち影 (--e1) は buttons.md 観点 A 原則 1 により外した (M3 outlined /
+   Carbon tertiary のどちらも影を持たない) */
 .btn.sec {
 	background: #fff;
 	color: var(--accent);
-	box-shadow: inset 0 0 0 1px var(--accent), var(--e1);
+	box-shadow: inset 0 0 0 1px var(--accent);
 }
 .btn.sec:hover {
 	background: var(--hover-accent);
@@ -830,6 +830,7 @@ svg.i {
 .btn.sec:active {
 	background: var(--press-accent);
 }
+/* M3 の text / Carbon の ghost に当たる最下位の重要度 (buttons.md 観点 A の結論) */
 .btn.text {
 	padding: 0 var(--sp-3);
 	color: var(--accent);
@@ -841,13 +842,19 @@ svg.i {
 .btn.text:active {
 	background: var(--press-accent);
 }
+/* 破壊的な操作。Carbon の danger は primary / tertiary / ghost の 3 種があり、これは
+   tertiary (枠だけ) に当たる。主ボタンと同じ塗りにしないのが要点 (buttons.md 観点 A 原則 6)。
+   文言は「削除」「キャンセルする」のような具体的な動詞にする (同原則、資料 16) */
 .btn.danger {
 	background: #fff;
 	color: var(--warn);
-	box-shadow: inset 0 0 0 1px var(--warn), var(--e1);
+	box-shadow: inset 0 0 0 1px var(--warn);
 }
 .btn.danger:hover {
 	background: var(--warn-soft);
+}
+.btn.danger:active {
+	background: color-mix(in srgb, var(--warn-soft) 88%, var(--warn));
 }
 /* 小ボタンは実寸 36px。透明領域で操作領域を 44px にする (components 3.4) */
 .btn.sm {
@@ -878,15 +885,16 @@ svg.i {
 	background: var(--disabled-bg);
 	color: var(--disabled-ink);
 	box-shadow: none;
-	transform: none;
 	cursor: default;
 }
-/* 上の打ち消し (0,2,0) は .btn.pri:hover (0,3,0) に負けるので、押せない間も 1px 浮いて
-   影が伸びていた。同じ詳細度で置き直す。塗りを保つ .btn.connect-cta[aria-disabled='true']
-   は詳細度が同じで後ろにあるので、接続済みのボタンの影はそちらが勝つ */
+/* 上の打ち消し (0,2,0) は .btn.pri:hover / :active (0,3,0) に負けるので、押せない間も
+   指を載せると塗りが変わっていた。同じ詳細度で置き直す。塗りを --accent のまま保つ
+   .btn.connect-cta[aria-disabled='true'] は詳細度が同じで後ろにあるのでそちらが勝つ */
 .btn:disabled:hover,
-.btn[aria-disabled='true']:hover {
-	transform: none;
+.btn[aria-disabled='true']:hover,
+.btn:disabled:active,
+.btn[aria-disabled='true']:active {
+	background: var(--disabled-bg);
 	box-shadow: none;
 }
 /* components 3.4 — アイコンボタン 40px の円、操作領域は 44px */
@@ -1068,16 +1076,25 @@ svg.i {
 	background: var(--disabled-soft);
 }
 
-/* components 3.6 — バッジ (押せない表示専用。ruling: 文字は 12px まで) */
+/* components 3.6 — バッジ (押せない表示専用。ruling: 文字は 12px まで)。
+   Task 10k — 寸法は IBM Carbon の Tag の medium を実測した値に合わせた (高さ 24px、
+   文字 12px、左右 8px、角丸は高さの半分の pill)。構造は Atlassian の Lozenge を実測した
+   形 (薄い塗り + 同系色の 1px の枠)を採る。枠を置くのは、色を外しても輪郭が残るため
+   (docs/research/buttons.md 観点 B 原則 2 の「記号・形・色・文字のうち 3 要素」のうち、
+   文字と色に形を足して 3 つにする)。枠の色は薄い色ではなく役割の色そのもので、
+   面との比が 3:1 を下回らないようにしてある (同 資料 14)。
+   既定の色は承認の区分のうち「外部送信」= 危険 (Carbon の Status indicator は赤を危険に
+   割り当てる、資料 10)。案件の状態は derived.ts の projectStatusClass が別の修飾子を返す */
 .badge {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--sp-1);
-	height: 22px;
+	height: 24px;
 	padding: 0 var(--sp-2);
-	border-radius: 6px;
-	background: var(--accent-soft);
-	color: var(--accent);
+	border-radius: var(--r-pill);
+	background: var(--warn-soft);
+	color: var(--warn);
+	box-shadow: inset 0 0 0 1px var(--warn);
 	font-size: 12px;
 	font-weight: 500;
 	line-height: 1.4;
@@ -1090,10 +1107,13 @@ svg.i {
 }
 /* Task 10c — 出所のバッジだけは塗りを不透明にする。半透明のままだとガラスの上でオーブが
    透けて、12px の文字が実測 2.5:1 まで落ちた。白地での見え方は rgba(120, 140, 180, .12) を
-   白に重ねた色と同じなので、見た目は変わらない (--ink-2 との比は 5.79:1) */
+   白に重ねた色と同じなので、見た目は変わらない (--ink-2 との比は 5.79:1)。
+   Task 10k — 「場所」「参加者」など項目名を指す札は状態ではなく分類なので、Atlassian の
+   Tag に当たる (buttons.md 観点 B 原則 1)。人物のタグ (.badge.tag) と同じ枠にする */
 .badge.src {
 	background: #eef1f6;
 	color: var(--ink-2);
+	box-shadow: inset 0 0 0 1px #78849e;
 }
 /* Task 10h 修正ラウンド 1 — 承認の区分のうち中立の 2 つ (社内 / 低リスク)。出所のバッジと
    同じ灰色だが役割は別なので、修飾子を分ける。塗りを不透明にする理由は .badge.src と同じで、
@@ -1101,6 +1121,7 @@ svg.i {
 .badge.neutral {
 	background: #eef1f6;
 	color: var(--ink-2);
+	box-shadow: inset 0 0 0 1px #78849e;
 }
 /* audit 4 — 人物のタグは Atlassian の Tag (分類のための控えめなラベル)。状態を示す Lozenge
    (.badge の色付き) と役割が違うので、塗りを外して枠線だけにし、主張を一段落とす。
@@ -1114,22 +1135,38 @@ svg.i {
 	color: var(--ink-2);
 	box-shadow: inset 0 0 0 1px #78849e;
 }
+/* Task 10k — 案件が進行中であることを示す色。Atlassian の Lozenge の "inprogress"
+   (青) に当たり、Carbon の Status indicator の「青 = 受動的な通知」とも一致する
+   (buttons.md 資料 10、13)。割り当ては derived.ts の projectStatusClass */
+.badge.info {
+	background: var(--accent-soft);
+	color: var(--accent);
+	box-shadow: inset 0 0 0 1px var(--accent);
+}
+/* 終わった案件のうち失注。Atlassian の Lozenge の "removed" に当たる */
 .badge.warn {
 	background: var(--warn-soft);
 	color: var(--warn);
+	box-shadow: inset 0 0 0 1px var(--warn);
 }
+/* 受注と、承認を伴う作業履歴。Lozenge の "success"、Carbon の「緑 = 正常」 */
 .badge.ok {
 	background: var(--ok-soft);
 	color: var(--ok);
+	box-shadow: inset 0 0 0 1px var(--ok);
 }
-/* 件数カウンタ。高さの半分の角丸 (visual 4.13 の capsule) */
+/* 件数カウンタ。M3 の large badge (buttons.md 観点 B 原則 4) で、上の区分ラベルとは
+   別の部品。文字数の上限 4 は derived.ts の badgeCount が守る。ここでは塗りだけの
+   円形に戻す (Lozenge の枠は持たない) */
 .badge.count {
 	justify-content: center;
 	height: 20px;
 	min-width: 20px;
+	padding: 0 6px;
 	border-radius: var(--r-pill);
 	background: var(--accent);
 	color: #fff;
+	box-shadow: none;
 }
 .badge.count.warn {
 	background: var(--warn);
@@ -1971,12 +2008,11 @@ svg.i {
 	   書き込むので !important でしか下ろせない。canvas を消すだけだと塗りが none のままで
 	   カードが透明になるので、不透明な塗りも対で戻す。
 	   この @media print は下の Liquid Glass の節より前にあり、詳細度が同じだと後ろが勝つ。
-	   :root [data-liquid-glass='webgl'] .btn.sec (0,4,0) に勝たせるため body を足している */
+	   :root [data-liquid-glass='webgl'] .card (0,4,0) に勝たせるため body を足している */
 	[data-liquid-glass-layer] {
 		display: none !important;
 	}
-	:root body [data-liquid-glass='webgl'] .card,
-	:root body [data-liquid-glass='webgl'] .btn.sec {
+	:root body [data-liquid-glass='webgl'] .card {
 		background: #fff !important;
 	}
 }
@@ -2088,8 +2124,8 @@ svg.i {
    .btn[aria-disabled] の灰色にすると、状態の違いが色の変化として読まれてしまう。
    状態はラベル (NN/g State-Switch Controls)とチェックの形で示す */
 .btn.connect-cta[aria-disabled='true'] {
+	background: var(--accent);
 	color: #fff;
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 16px var(--accent-glow);
 }
 /* onboarding.md 3.2 — 完了は進捗バーではなくチェックマークで締める */
 .connect-cta .i {

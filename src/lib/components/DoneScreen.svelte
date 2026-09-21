@@ -30,8 +30,12 @@
 		KUROKO は今日、下書き {sum.drafts} 件、予定の仮押さえ {sum.holds} 件、送信 {sum.sends} 件、登録 {sum.registers}
 		件を行いました。
 	</p>
+	<!-- 仕様 5.1 の 2 つの行き先。Task 10k — 完了画面には他に塗りのボタンが無いので、
+	     常に出る「作業履歴を見る」を主ボタンにする (buttons.md 観点 A 原則 3 の 1 画面 1 個)。
+	     条件付きの「次の商談の Brief を見る」を主にすると、次の商談が無い日に主ボタンが
+	     消えてしまう -->
 	<div class="row done-links">
-		<a class="btn sec" href="/activity">作業履歴を見る</a>
+		<a class="btn pri" href="/activity">作業履歴を見る</a>
 		{#if nm}<a class="btn text" href="/meetings/{nm.meeting.id}">次の商談の Brief を見る</a>{/if}
 	</div>
 </section>

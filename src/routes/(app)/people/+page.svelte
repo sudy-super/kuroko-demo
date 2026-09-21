@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { db } from '$lib/store.svelte';
-	import { companyOf, personOf, projectStatusClass } from '$lib/derived';
+	import { badgeCount, companyOf, personOf, projectStatusClass } from '$lib/derived';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Avatars from '$lib/components/Avatars.svelte';
@@ -49,7 +49,7 @@
 			>
 				<Icon name="ic-check" size={18} class="chip-check" />
 				{t.label}
-				<span class="badge count">{count[t.key]}</span>
+				<span class="badge count">{badgeCount(count[t.key])}</span>
 			</button>
 		{/each}
 	</div>
