@@ -170,7 +170,9 @@ export function executeApproval(id: string, auto = false) {
 			s.threadId = th.id;
 		}
 		db.demo.stats.replied++;
-		log(`${a.to.split(' <')[0]}へメールを送信しました`, 'send', { actor: 'user', origin: a.origin, approved: true });
+		// 送った先はスレッドの出所そのもの。sendReply が決めた kind と文言を食い違わせない
+		const via = a.kind === 'mail' ? 'メール' : a.kind === 'line' ? 'LINE' : 'Slack';
+		log(`${a.to.split(' <')[0].split(' (')[0]}へ${via}を送信しました`, 'send', { actor: 'user', origin: a.origin, approved: true });
 	} else if (p.type === 'share') {
 		log(`${a.title}を実行しました`, 'send', { actor: 'user', origin: a.origin, approved: true });
 	} else if (p.type === 'agenda') {

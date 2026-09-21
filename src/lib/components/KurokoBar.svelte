@@ -49,7 +49,7 @@
 		class="iconbtn"
 		title="音声で依頼"
 		aria-label="音声で依頼"
-		onclick={() => goto('/chat?voice=1')}
+		onclick={() => (ui.voice = true)}
 	>
 		<Icon name="ic-mic" size={20} />
 	</button>

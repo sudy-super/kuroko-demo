@@ -10,6 +10,10 @@ export const identityOf = (db: Db, id: string) => db.identities.find((i) => i.id
    LINE / Slack の value は内部の ID なので、人が読める label (「LINE」「Slack」) に置き換える */
 export const addressOf = (idn: ChannelIdentity) =>
 	idn.kind === 'email' ? `<${idn.value}>` : `(${idn.label})`;
+
+/** 連絡先の一覧に出す文字。宛先の括弧を外した形 — 内部の ID はどちらでも出さない */
+export const contactOf = (idn: ChannelIdentity) =>
+	idn.kind === 'email' ? idn.value : `${idn.label} 連携済み`;
 export const personOfIdentity = (db: Db, identityId: string) =>
 	personOf(db, identityOf(db, identityId)?.personId);
 

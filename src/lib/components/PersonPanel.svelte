@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { db } from '$lib/store.svelte';
-	import { companyOf, identityOf, personOfIdentity, projectOf, projectStatusClass } from '$lib/derived';
+	import { companyOf, contactOf, identityOf, personOfIdentity, projectOf, projectStatusClass } from '$lib/derived';
 	import { identitiesOf, personStats } from '$lib/people';
 	import { parse, fmtMDW } from '$lib/dates';
 	import Icon from './Icon.svelte';
@@ -21,11 +21,12 @@
 	const identity = $derived(identityOf(db, identityId));
 	const person = $derived(personOfIdentity(db, identityId));
 	const company = $derived(companyOf(db, person?.companyId));
-	const mail = $derived(
-		person
-			? (identitiesOf(db, person.id).find((i) => i.kind === 'email')?.value ?? identity?.value)
-			: identity?.value
-	);
+	/* 連絡先はその人のメールを優先する。メールを持たない相手 (社内は slack_id / line_id しか
+	   持たない — seed.ts) の表し方は derived.ts の contactOf に閉じる (内部の ID は出さない) */
+	const contact = $derived.by(() => {
+		const idn = person ? (identitiesOf(db, person.id).find((i) => i.kind === 'email') ?? identity) : identity;
+		return idn && contactOf(idn);
+	});
 	const projects = $derived(
 		person ? person.projectIds.map((x) => projectOf(db, x)).filter((x) => !!x) : []
 	);
@@ -36,7 +37,7 @@
 	{#if person}
 		<svelte:element this={`h${headingLevel}`} class="pp-name">{person.name}</svelte:element>
 		<p class="muted">{company?.name ?? '会社の登録なし'} {person.title}</p>
-		<p class="pp-mail">{mail}</p>
+		<p class="pp-mail">{contact}</p>
 
 		{#each projects as pj (pj.id)}
 			<a class="list-row" href="/projects/{pj.id}">

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { seed } from '../seed';
-import { handleMention } from './line';
+import { handleMention, visibleActions } from './line';
 import { route } from './route';
 import { db as store, resetDb } from '../store.svelte';
 import { lineApprove } from '../actions';
@@ -57,5 +57,24 @@ describe('lineApprove', () => {
 		const a = store.approvals.find((x) => x.status === 'pending' && x.risk === 'external_send')!;
 		expect(lineApprove(a.id, 'owner', 'line')).toBe(true);
 		expect(store.approvals.find((x) => x.id === a.id)!.status).toBe('sending');
+	});
+});
+
+describe('visibleActions', () => {
+	const card = {
+		title: '田中様への返信',
+		lines: [],
+		actions: [
+			{ label: '内容を見る', act: 'preview', arg: 'ap-1' },
+			{ label: '承認して送信', act: 'approve', arg: 'ap-1' },
+			{ label: 'Inbox で見る', act: 'open', arg: '/inbox' }
+		]
+	};
+	// 本文の参照も社外送信も社長の判断 (handleMention が member の「メール見せて」を断るのと同じ)
+	it('Member には本文を見る操作も承認も出さない', () => {
+		expect(visibleActions(card, 'member').map((a) => a.act)).toEqual(['open']);
+	});
+	it('Owner には全部出す', () => {
+		expect(visibleActions(card, 'owner')).toHaveLength(3);
 	});
 });

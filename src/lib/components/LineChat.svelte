@@ -4,6 +4,7 @@
 	import type { LineMessage } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { lineApprove, lineSay } from '$lib/actions';
+	import { visibleActions } from '$lib/kuroko/line';
 	import { ui } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 
@@ -30,19 +31,17 @@
 		logEl?.children[before]?.scrollIntoView({ block: 'nearest' });
 	}
 
-	/* 承認は社外への送信を伴うので社長だけの操作 (仕様 5.13)。member には出さない。
-	   handleMention が member の依頼を断るのと同じ切り分けを、カードの操作にも当てる。
-	   押しても何も起きないボタンは残さない (出さないほうを選ぶ) */
-	const actionsOf = (card: NonNullable<LineMessage['card']>) =>
-		role === 'owner' ? card.actions : card.actions.filter((a) => a.act !== 'approve');
+	/** 見せてよい操作の切り分けは kuroko/line.ts (handleMention の role と同じ場所) */
+	const actionsOf = (card: NonNullable<LineMessage['card']>) => visibleActions(card, role);
 
 	/** カードのボタン。押すまで何も確定しない (chat.md 観点 2.2、Apple HIG 資料 1) */
 	function act(a: NonNullable<LineMessage['card']>['actions'][number]) {
 		// 用件の言い直し。押すとその文をそのまま送り直す (/chat のチップと同じ)
 		if (a.act === 'say') return void send(a.arg!);
 		if (a.act === 'open') return goto(a.arg!);
-		if (a.act === 'preview') return (ui.approvalDrawer = true);
-		// role は actions.ts 側でも見る。画面に出していないだけで通るようにはしない
+		// role は actions.ts 側でも見る。画面に出していないだけで通るようにはしない。
+		// 本文を見る操作も同じ扱い (visibleActions が出さない操作は、通り道も塞ぐ)
+		if (a.act === 'preview') return void (role === 'owner' && (ui.approvalDrawer = true));
 		if (a.act === 'approve') return void lineApprove(a.arg!, role, channel);
 		throw new Error(`知らない操作です: ${a.act}`);
 	}

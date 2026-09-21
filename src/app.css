@@ -182,7 +182,11 @@
 	   960px 以下はボトムナビも)の実際の高さ (上の 2 つの変数、.chatbar / .bottomnav の
 	   height と同じ)から、それが浮く分の隙間と読みやすい間 (--sp-8) を足して組み立てる。
 	   .main の padding-bottom と .main:has(.today) の下端は両方ここを見るので、
-	   画面ごとに別の calc を書かない (今まではここが 108〜196px の間でばらばらだった) */
+	   画面ごとに別の calc を書かない (今まではここが 108〜196px の間でばらばらだった)。
+	   置き場所が .app なのは、依頼バーを出さない画面が .app.no-bar で --chatbar-h を
+	   0 に差し替えるため。:root に置くとその差し替えより先に解決され、0 が効かない */
+}
+.app {
 	--content-bottom-clear: calc(var(--chatbar-h) + var(--sp-4) + var(--sp-8));
 }
 
@@ -1871,8 +1875,10 @@ svg.i {
 		--chatbar-bottom: calc(
 			var(--bottomnav-h) + env(safe-area-inset-bottom) + var(--sp-2) + var(--sp-2)
 		);
-		/* 依頼バーはボトムナビの上に載る。ボトムナビの高さと浮かせる分 (--chatbar-bottom)に、
-		   依頼バー自身の高さと読みやすい間をここでまとめて足す */
+	}
+	/* 依頼バーはボトムナビの上に載る。ボトムナビの高さと浮かせる分 (--chatbar-bottom)に、
+	   依頼バー自身の高さと読みやすい間をここでまとめて足す。置き場所は広い幅と同じ .app */
+	.app {
 		--content-bottom-clear: calc(var(--chatbar-bottom) + var(--chatbar-h) + var(--sp-8));
 	}
 	/* 幅が足りないので案内の札は段階だけにする。見出しは押して開く板の中に出る */

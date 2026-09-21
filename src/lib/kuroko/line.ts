@@ -107,3 +107,12 @@ export function handleMention(db: Db, text: string, role: 'owner' | 'member'): M
 		}
 	};
 }
+
+/* 社外への送信 (approve) と本文を見る操作 (preview) は社長だけ (仕様 5.13)。
+   handleMention が member の「メール見せて」を断るのと、カードの操作でも揃える。
+   押しても何も起きないボタンは残さない (出さないほうを選ぶ) — LineChat.svelte */
+const OWNER_ONLY = ['approve', 'preview'];
+export const visibleActions = (
+	card: NonNullable<LineMessage['card']>,
+	role: 'owner' | 'member'
+) => (role === 'owner' ? card.actions : card.actions.filter((a) => !OWNER_ONLY.includes(a.act)));

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
-	import { companyOf, projectOf, projectStatusClass } from '$lib/derived';
+	import { companyOf, contactOf, projectOf, projectStatusClass } from '$lib/derived';
 	import { identitiesOf, personHistory, personStats } from '$lib/people';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import { ui, toast, focusChatbar } from '$lib/ui.svelte';
@@ -123,7 +123,8 @@
 							<Tip text="{ch.label} の連絡先">
 								<Icon name={ch.icon} size={20} label="{ch.label} の連絡先" />
 							</Tip>
-							<span class="people-ident">{found.value}</span>
+							<!-- メール以外は内部の ID を出さない (derived.ts の contactOf) -->
+							<span class="people-ident">{contactOf(found)}</span>
 						{:else}
 							<!-- 文言側に名前が出るので、こちらの記号は飾りのままにする -->
 							<Icon name={ch.icon} size={20} />

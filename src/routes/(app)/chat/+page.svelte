@@ -25,18 +25,18 @@
 		logEl?.children[before]?.scrollIntoView({ block: 'nearest' });
 	}
 
-	// 依頼バーと ⌘K パレットはここへ ?q= 付き、依頼バーのマイクは ?voice=1 付きで飛ばしてくる
-	// (KurokoBar.svelte / Palette.svelte)。この画面から送ったときは行き先も /chat なので onMount は
-	// 走らない。印の変化で拾う。受け取ったら印を落とす (戻るたびに送り直さないため、履歴には
-	// 積まずに差し替える)。音声の覆いは Palette.svelte が置いた VoiceOverlay が ui.voice で開く
+	// 依頼バーと ⌘K パレットはここへ ?q= 付きで飛ばしてくる (KurokoBar.svelte / Palette.svelte)。
+	// この画面から送ったときは行き先も /chat なので onMount は走らない。印の変化で拾う。
+	// 受け取ったら印を落とす (戻るたびに送り直さないため、履歴には積まずに差し替える)。
+	// 音声の覆いは URL を経由しない — ui.voice を直に立てる (KurokoBar.svelte / Palette.svelte)。
+	// ここで goto と同時に開くと、URL の差し替えでこの $effect が再走して覆いが開く途中で消え、
+	// markOverlay の後片付け (ui.svelte.ts) が走らずガラスが落ちたままになる
 	$effect(() => {
 		const q = page.url.searchParams.get('q');
-		const voice = page.url.searchParams.get('voice');
-		if (!q && !voice) return;
+		if (!q) return;
 		untrack(() => {
 			goto('/chat', { replaceState: true, noScroll: true, keepFocus: true });
-			if (voice) ui.voice = true;
-			if (q) send(q);
+			send(q);
 		});
 	});
 </script>
