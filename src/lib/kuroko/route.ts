@@ -1,6 +1,6 @@
 import type { ChatMessage, Db, Suggestion } from '../types';
 import type { ContextChip } from '../ui.svelte';
-import { key, bizDay, parse, nowIso, fmtMDW, whenOf } from '../dates';
+import { key, bizDay, parse, nowIso, fmtMDW, whenOf, hourOf } from '../dates';
 import { companyOf, firstFreeStart, nextMeeting, personOf, projectOf } from '../derived';
 import { slotsFor, uid } from './generate';
 
@@ -9,6 +9,8 @@ export type Intent = {
 	kind: 'event' | 'task' | 'person' | 'mail' | 'brief' | 'schedule' | 'document' | 'unknown';
 	personId?: string;
 	when?: string;
+	/** 「11 時」のように時刻まで言われたとき。言われなければ空き枠に任せる (firstFreeStart) */
+	at?: string;
 	docKind?: '提案書' | '見積書' | '報告書';
 	raw: string;
 };
@@ -33,6 +35,7 @@ export function route(db: Db, text: string, ctx?: ContextChip): Intent {
 	const base = parse(db.seededOn);
 	const w = whenOf(t, base);
 	const when = w && key(w);
+	const at = hourOf(t);
 	const docKind = /提案書/.test(t)
 		? '提案書'
 		: /見積/.test(t)
@@ -53,7 +56,7 @@ export function route(db: Db, text: string, ctx?: ContextChip): Intent {
 		kind = 'event';
 	else if (/やり取り|この人|過去|について|プロフィール/.test(t) || (personId && !when))
 		kind = 'person';
-	return { kind, personId, when, docKind, raw: t };
+	return { kind, personId, when, at, docKind, raw: t };
 }
 
 /**
@@ -143,7 +146,7 @@ export function reply(db: Db, i: Intent, asked = false): Reply {
 
 	if (i.kind === 'event') {
 		// 埋まっている時間は避ける (derived.ts の firstFreeStart)。日程調整の候補と同じ扱い
-		const { date, start, end } = firstFreeStart(db, i.when ?? key(bizDay(1, base)));
+		const { date, start, end } = firstFreeStart(db, i.when ?? key(bizDay(1, base)), 60, i.at);
 		const title = `${nameOf(db, person!.id)}様との打ち合わせ`;
 		const s = sug('event', `「${i.raw}」を打ち合わせの依頼と受け取りました`, {
 			type: 'event',

@@ -232,10 +232,15 @@ export function freeSlots(db: Db, dateKey: string, from = '9:00', to = '18:00') 
 	return out.filter((x) => minutes(x.end) > minutes(x.start));
 }
 
-/** 候補に出す開始時刻。その日に既にある予定を避ける (freeSlots)。埋まっていれば翌営業日へ回す */
-export function firstFreeStart(db: Db, dateKey: string, duration = 60) {
+/* 候補に出す開始時刻。その日に既にある予定を避ける (freeSlots)。埋まっていれば翌営業日へ回す。
+   from は希望の時刻 (「明日 11 時に」)。その時刻が空いていればそのまま、埋まっていればその後ろの
+   空き枠へ回る。カードに日時を出すので、ずれたことは押す前に見える */
+export function firstFreeStart(db: Db, dateKey: string, duration = 60, from = '9:00') {
 	for (let d = parse(dateKey), i = 0; i < 10; d = bizDay(1, d), i++) {
-		const slot = freeSlots(db, key(d)).find((s) => minutes(s.end) - minutes(s.start) >= duration);
+		// 翌営業日へ回った分は希望の時刻を引きずらない (その日の朝から探す)
+		const slot = freeSlots(db, key(d), i === 0 ? from : '9:00').find(
+			(s) => minutes(s.end) - minutes(s.start) >= duration
+		);
 		if (slot) return { date: key(d), start: slot.start, end: toHm(minutes(slot.start) + duration) };
 	}
 	throw new Error(`空いている枠がありません: ${dateKey}`);

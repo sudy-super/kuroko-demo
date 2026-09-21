@@ -57,9 +57,15 @@
 	/* スレッドが完了した瞬間 (「対応済みにする」、または承認された返信が 5 秒後に実行される)
 	   に次の行へ移る。行き先を決める場所をここ 1 つにまとめる (review-task-15.md C3 / I2、
 	   Task 15 が ReplyBox 側に持っていた $effect との競合を解消) */
+	// 開いた時点で既に完了しているスレッドは読むために開かれている (案件・会社の「関連メール」や
+	// 「すべての受信メール」からの入口)。移すのは、見ている間に完了したときだけ
+	let opened: string | undefined;
 	$effect(() => {
 		const t = thread;
-		if (!t?.done) return;
+		if (!t) return;
+		const was = opened;
+		opened = t.done ? undefined : t.id;
+		if (!t.done || was !== t.id) return;
 		const next = nextInQueue(db, t.id);
 		// キューが空になったら一覧 (空の状態) に戻す。960px 以下では本文側に戻る手段が無くなるため
 		if (!next) showThread = false;

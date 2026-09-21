@@ -1,12 +1,12 @@
 import type { Db, LineMessage } from '../types';
-import { bizDay, key, parse, fmtMD, whenOf } from '../dates';
+import { bizDay, key, parse, fmtMD, whenOf, hourOf } from '../dates';
 import { freeSlots, personOf } from '../derived';
 
 export interface MentionResult {
 	reply: string;
 	card?: LineMessage['card'];
 	task?: { title: string; due: string; time?: string };
-	suggestion?: { title: string; date: string };
+	suggestion?: { title: string; date: string; at?: string };
 }
 
 const WD = ['日', '月', '火', '水', '木', '金', '土'];
@@ -36,7 +36,8 @@ export function handleMention(db: Db, text: string, role: 'owner' | 'member'): M
 	if (/予定.*(入れ|作)/.test(body)) {
 		const { date, label } = dayOf(db, body);
 		const title = body.match(/「(.+?)」/)?.[1] ?? '打ち合わせ';
-		const suggestion = { title, date: key(date) };
+		// 時刻まで言われたら候補もその時刻から探す (/chat の route.ts と同じ dates.ts の hourOf)
+		const suggestion = { title, date: key(date), at: hourOf(body) };
 		return owner
 			? { reply: `${label}曜の予定の候補を作りました。KUROKO のチャットで確認してください。`, suggestion }
 			: { reply: '予定の登録はオーナーに依頼します。', suggestion };
@@ -48,15 +49,15 @@ export function handleMention(db: Db, text: string, role: 'owner' | 'member'): M
 			body.match(/までに(.+?)[、。]/)?.[1] ??
 			body.replace(/.*までに/, '').replace(/[、。]?\s*(ToDo|todo)?\s*(入れて|覚えて).*$/i, '').trim();
 		const { date } = dayOf(db, body);
-		const hour = body.match(/(\d+)\s*時/)?.[1];
-		const task = { title, due: key(date), ...(hour ? { time: `${Number(hour)}:00` } : {}) };
+		const time = hourOf(body);
+		const task = { title, due: key(date), ...(time ? { time } : {}) };
 		const who = owner ? db.user.name : (personOf(db, 'p-yamada')?.name ?? '');
 		return {
 			reply: 'ToDo を登録しました。',
 			task,
 			card: {
 				title,
-				lines: [`期限 ${/明日/.test(body) ? '明日' : fmtMD(date)}${hour ? ` ${task.time}` : ''}`, `登録者 ${who}`],
+				lines: [`期限 ${/明日/.test(body) ? '明日' : fmtMD(date)}${time ? ` ${time}` : ''}`, `登録者 ${who}`],
 				actions: [{ label: 'ToDo で見る', act: 'open', arg: '/tasks' }]
 			}
 		};

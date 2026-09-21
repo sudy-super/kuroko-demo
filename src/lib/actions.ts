@@ -751,7 +751,7 @@ export async function lineSay(text: string, role: 'owner' | 'member') {
 	if (r.task) addTask({ title: r.task.title, due: r.task.due, time: r.task.time }, channel);
 	if (r.suggestion) {
 		// 埋まっている時間は避ける (derived.ts の firstFreeStart)。/chat の予定の候補と同じ扱い
-		const { date, start, end } = firstFreeStart(db, r.suggestion.date);
+		const { date, start, end } = firstFreeStart(db, r.suggestion.date, 60, r.suggestion.at);
 		const s: Suggestion = {
 			id: uid('sg'),
 			source: 'line',

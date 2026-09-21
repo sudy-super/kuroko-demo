@@ -37,3 +37,12 @@ export function whenOf(text: string, base: Date): Date | undefined {
   const w = text.match(/([日月火水木金土])曜/);
   return w ? nextWeekday(WD.indexOf(w[1]), base) : undefined;
 }
+
+/* 「11 時」「11:30」から時刻を取る。whenOf と同じく /chat と LINE の両方から使う。
+   業務時間 (freeSlots の既定は 9:00-18:00) の外や、一致しなければ undefined */
+export function hourOf(text: string): string | undefined {
+  const m = text.match(/(\d{1,2})\s*(?:時(半)?|:(\d{2}))/);
+  if (!m) return undefined;
+  const h = Number(m[1]), min = m[2] ? 30 : Number(m[3] ?? 0);
+  return h >= 9 && h < 18 && min < 60 ? `${h}:${pad(min)}` : undefined;
+}

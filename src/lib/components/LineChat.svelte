@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import type { LineMessage } from '$lib/types';
 	import { db } from '$lib/store.svelte';
-	import { lineApprove, lineSay } from '$lib/actions';
+	import { lineApprove, lineSay, undoApproval } from '$lib/actions';
 	import { visibleActions } from '$lib/kuroko/line';
 	import { ui } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
@@ -33,6 +33,11 @@
 
 	/** 見せてよい操作の切り分けは kuroko/line.ts (handleMention の role と同じ場所) */
 	const actionsOf = (card: NonNullable<LineMessage['card']>) => visibleActions(card, role);
+
+	/* 承認のカードは承認センター (ApprovalCard) と同じ承認を指すので、表示も同じ status で決める。
+	   ChatCard が Suggestion の status で操作を引っ込めるのと同じ形 */
+	const approvalOf = (card: NonNullable<LineMessage['card']>) =>
+		db.approvals.find((a) => a.id === card.actions.find((x) => x.act === 'approve')?.arg);
 
 	/** カードのボタン。押すまで何も確定しない (chat.md 観点 2.2、Apple HIG 資料 1) */
 	function act(a: NonNullable<LineMessage['card']>['actions'][number]) {
@@ -68,22 +73,39 @@
 				<div class="lc-bubble">
 					<p class="lc-text">{m.text}</p>
 					{#if m.card}
+						{@const ap = approvalOf(m.card)}
 						<div class="lc-card">
 							<p class="lc-card-title">{m.card.title}</p>
 							{#each m.card.lines as line (line)}<p class="lc-card-line">{line}</p>{/each}
-							<!-- buttons.md 観点 A + research-repeated-primary.md — 吹き出しが積み上がる画面なので
-							     カードごとに塗りの主ボタンを置かない。枠と文字だけで段を付ける -->
-							<div class="row lc-acts">
-								<!-- 鍵は並び順。同じ act を複数持つカード (用件の言い直しは 3 つとも say) があるので
-								     act では重複する。この列は並び替わらない -->
-								{#each actionsOf(m.card) as a, i (i)}
-									<button class="btn {i === 0 ? 'sec' : 'text'} sm" onclick={() => act(a)}>{a.label}</button>
-								{/each}
-							</div>
-							{#if m.card.actions.some((a) => a.act === 'approve')}
-								<p class="lc-note">
-									{role === 'owner' ? '押すまで送信されません' : '承認はオーナーのみが行えます'}
-								</p>
+							{#if ap && ap.status !== 'pending'}
+								<!-- 文言は承認センターの ApprovalCard に揃える。同じ承認を別の画面から見ているだけなので、
+								     食い違わせない -->
+								{#if ap.status === 'sending'}
+									<div class="row lc-acts">
+										<span class="lc-card-line">送信中…</span>
+										<button class="btn text sm" onclick={() => undoApproval(ap.id)}>取り消す</button>
+									</div>
+								{:else}
+									<p class="lc-done">
+										<Icon name={ap.status === 'executed' ? 'ic-check' : 'ic-x'} size={20} />
+										{ap.status === 'executed' ? '送信しました' : '却下しました'}
+									</p>
+								{/if}
+							{:else}
+								<!-- buttons.md 観点 A + research-repeated-primary.md — 吹き出しが積み上がる画面なので
+								     カードごとに塗りの主ボタンを置かない。枠と文字だけで段を付ける -->
+								<div class="row lc-acts">
+									<!-- 鍵は並び順。同じ act を複数持つカード (用件の言い直しは 3 つとも say) があるので
+									     act では重複する。この列は並び替わらない -->
+									{#each actionsOf(m.card) as a, i (i)}
+										<button class="btn {i === 0 ? 'sec' : 'text'} sm" onclick={() => act(a)}>{a.label}</button>
+									{/each}
+								</div>
+								{#if ap}
+									<p class="lc-note">
+										{role === 'owner' ? '押すまで送信されません' : '承認はオーナーのみが行えます'}
+									</p>
+								{/if}
 							{/if}
 						</div>
 					{/if}
@@ -227,8 +249,18 @@
 	}
 	.lc-acts {
 		flex-wrap: wrap;
+		align-items: center;
 		gap: var(--sp-2);
 		margin-top: var(--sp-1);
+	}
+	/* 済んだことの出し方は ChatCard の .chat-done と同じ */
+	.lc-done {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-2);
+		margin-top: var(--sp-1);
+		color: var(--ink-2);
+		font-size: 14px;
 	}
 	.lc-busy {
 		padding: var(--sp-2) var(--sp-4) 0;
