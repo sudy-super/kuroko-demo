@@ -34,8 +34,13 @@
 	];
 	const BLANK: CardFields = { name: '', kana: '', company: '', title: '', email: '', phone: '', lowConfidence: [] };
 
+	/** 控えと編集中の値を別の実体にする。$state の proxy を共有すると控えまで書き換わる */
+	const copy = (c: CardFields): CardFields => ({ ...c, lowConfidence: [...c.lowConfidence] });
+
 	let stage = $state<'pick' | 'scan' | 'confirm' | 'done'>('pick');
 	let fields = $state<CardFields>({ ...BLANK });
+	/** KUROKO が出した元の値。人が直した後も戻せるように控える (軸 2 原則 10) */
+	let aiFields = $state<CardFields>({ ...BLANK });
 	let preview = $state('');
 	let error = $state('');
 	let personId = $state('');
@@ -46,6 +51,14 @@
 	/* 電話番号のように確信度の低い項目だけに付ける印 (軸 2)。利用者が直した項目は
 	   AI の値ではなくなるので外す (Carbon「手で書き換えたら通常の部品に戻す」) */
 	const low = (k: keyof CardFields) => fields.lowConfidence.includes(k as string);
+	/* 戻すボタンを出すかどうか。控えが全部空のとき (読み取りに失敗して手で入力する場合)は
+	   戻す先が無い。要確認の印も比べるのは、人が元と同じ値を打ち直したときに印だけ
+	   消えたまま戻せなくなるのを防ぐため */
+	const edited = $derived(
+		FIELDS.some((f) => aiFields[f.key] !== '') &&
+			(fields.lowConfidence.length !== aiFields.lowConfidence.length ||
+				FIELDS.some((f) => fields[f.key] !== aiFields[f.key]))
+	);
 
 	/** 関連付けの候補。メールアドレスが一致する、まだ人物に結び付いていないスレッド */
 	let pending = $state<MessageThread[]>([]);
@@ -60,7 +73,10 @@
 	// 開いた回ごとに初めからやり直す。閉じている間の書き換えは持ち越さない
 	$effect(() => {
 		if (!open) return;
-		fields = from ? guessFrom(from.email) : { ...BLANK };
+		// 読むと書くが同じ状態になって $effect が自分を呼び戻すので、一度 local に取る
+		const scanned = from ? guessFrom(from.email) : { ...BLANK };
+		aiFields = scanned;
+		fields = copy(scanned);
 		stage = from ? 'confirm' : 'pick';
 		preview = error = personId = '';
 		linked = projected = false;
@@ -90,14 +106,24 @@
 		if (!file) return;
 		preview = URL.createObjectURL(file);
 		stage = 'scan';
+		let scanned: CardFields;
 		try {
-			fields = await integrations.ocr.scanBusinessCard(file);
+			scanned = await integrations.ocr.scanBusinessCard(file);
 		} catch {
 			// 読み取れなくても手で入力する道を残す (HIG Limitations)
-			fields = { ...BLANK };
+			scanned = { ...BLANK };
 			error = '名刺を読み取れませんでした。お手数ですが、内容を手で入力してください。';
 		}
+		aiFields = scanned;
+		fields = copy(scanned);
 		stage = 'confirm';
+	}
+
+	/* 手直しが効いたことをはっきり示す (HIG — provide a clear signal that their action had an effect)。
+	   戻すと要確認の印も控えのものに復活する */
+	function revert() {
+		fields = copy(aiFields);
+		toast('読み取った内容に戻しました');
 	}
 
 	/* エラーは送信時にだけ出す。一次資料は割れており (GOV.UK は送信時、Carbon は焦点が
@@ -185,6 +211,15 @@
 				</div>
 			{/each}
 		</form>
+		<!-- 軸 2 原則 10: 書き換えた後も元の読み取り結果に戻せる道を残す (Carbon revert to AI)。
+		     form の外なので読み上げソフトのフォームモードに埋もれない (W3C)。登録ボタンの直前に
+		     置くと、直し終えて下まで送ったところに必ず入る。この段階の塗りの主ボタンは
+		     「確認して登録」だけなので、枠だけの .sec にする (buttons.md 観点 A) -->
+		{#if edited}
+			<button class="btn sec sm" type="button" onclick={revert}>
+				<Icon name="ic-undo" size={16} />読み取った内容に戻す
+			</button>
+		{/if}
 	{:else}
 		<p class="ocr-ai"><Icon name="ic-check-c" size={20} />{fields.name} さんを登録しました</p>
 		<!-- 確からしい順。メールアドレスの一致は確実、案件の名前は役職からの推定 -->
