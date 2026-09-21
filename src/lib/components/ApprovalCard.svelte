@@ -100,7 +100,7 @@
 	{:else}
 		<!-- 本文は畳んでいる間も 3 行見せる (仕様 5.11)。bits-ui の Collapsible は閉じると
 		     中身を DOM から外すので使えない。行数で切り、押せる部分だけ自前で書く -->
-		<p class="ap-body" class:clamp={!bodyOpen} id="{id}-body" bind:this={bodyEl}>{a.body}</p>
+		<p class="mailbody" class:clamp={!bodyOpen} id="{id}-body" bind:this={bodyEl}>{a.body}</p>
 		{#if clipped}
 			<!-- buttons.md 観点B — 文字だけの操作 (最下位の重要度) -->
 			<button
@@ -152,20 +152,10 @@
 		color: var(--ink-2);
 		font-size: 13px;
 	}
-	.ap-body {
-		margin: var(--sp-1) 0 0;
-		padding: var(--sp-3) var(--sp-4);
-		border-radius: var(--r-s);
-		background: #fff;
-		box-shadow: inset 0 0 0 1px var(--line);
-		white-space: pre-wrap;
-		font-size: 14px;
-		line-height: 1.6;
-	}
 	/* 初期表示は 3 行まで (仕様 5.11)。overflow: hidden が切るのは内側の余白の外側なので、
 	   下の余白を残すと 4 行目の上端がそこに覗いて中途半端に切れて見える (1440x700 で実測)。
 	   畳んでいる間だけ下の余白を 0 にし、間隔は下の「本文を全部見る」の上の余白が持つ */
-	.ap-body.clamp {
+	.mailbody.clamp {
 		display: -webkit-box;
 		line-clamp: 3;
 		-webkit-line-clamp: 3;

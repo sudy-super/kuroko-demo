@@ -1,6 +1,7 @@
-import type { Db, TimeSlot, MessageThread } from '../types';
+import type { Db, TimeSlot, MessageThread, Minutes, Meeting } from '../types';
 import { bizDay, key, fmtMDW, parse, minutes, toHm } from '../dates';
 import { personOf } from '../derived';
+import { SAMPLE_TRANSCRIPT, SAMPLE_MINUTES } from './samples';
 
 let seq = 0;
 export const uid = (p: string) => `${p}-${Date.now().toString(36)}${(++seq).toString(36)}`;
@@ -61,4 +62,72 @@ export function replyDraft(
 		}
 	} as const;
 	return map[tone];
+}
+
+// 文字起こしから ToDo を拾う手がかり。仕様 5.20 (会議後)
+const TODO_HINTS = ['する', 'まで', 'お送り', '送付', '提出', '調整'];
+const DECISION_HINTS = ['合意', '決定', 'で進め'];
+
+/** 相手の宛先。会議に紐づく最初の人物のメールを使う */
+function mailToOf(db: Db, meetingId: string): string {
+	const m = db.meetings.find((x) => x.id === meetingId);
+	const p = personOf(db, m?.personIds[0]);
+	const idn = db.identities.find((i) => i.personId === p?.id && i.kind === 'email');
+	if (!p || !idn) throw new Error(`宛先が引けません: ${meetingId}`);
+	return `${p.name} <${idn.value}>`;
+}
+
+export function minutesFor(
+	db: Db,
+	meetingId: string,
+	text: string
+): { minutes: Minutes; todos: { title: string; due: string; reason: string }[] } {
+	const to = mailToOf(db, meetingId);
+	const from = parse(db.seededOn);
+	if (text.trim() === SAMPLE_TRANSCRIPT.trim()) {
+		return {
+			minutes: {
+				summary: SAMPLE_MINUTES.summary,
+				decisions: SAMPLE_MINUTES.decisions,
+				followUpMail: { to, ...SAMPLE_MINUTES.followUp }
+			},
+			todos: SAMPLE_MINUTES.todos.map((t) => ({
+				title: t.title,
+				due: key(bizDay(t.dueBiz, from)),
+				reason: t.reason
+			}))
+		};
+	}
+	const lines = text
+		.split('。')
+		.map((s) => s.trim())
+		.filter(Boolean);
+	const todos = lines
+		.filter((s) => TODO_HINTS.some((h) => s.includes(h)))
+		.slice(0, 3)
+		.map((s, i) => ({ title: s, due: key(bizDay(i + 2, from)), reason: `文字起こしの「${s}」から抽出` }));
+	return {
+		minutes: {
+			summary: lines.slice(0, 3).join('。') + (lines.length ? '。' : ''),
+			decisions: lines.filter((s) => DECISION_HINTS.some((h) => s.includes(h))).slice(0, 3),
+			followUpMail: {
+				to,
+				subject: '本日の打ち合わせのお礼',
+				body: `本日はお時間をいただきありがとうございました。\n打ち合わせの内容は議事録にまとめております。\nお気づきの点がありましたらお知らせください。\n\n引き続きよろしくお願いいたします。\n\n株式会社 KUROKO 佐々木 健`
+			}
+		},
+		todos
+	};
+}
+
+/** 会議のアジェンダの下書き。宿題と価格の 2 項目は、その会議に材料があるときだけ並べる
+    (材料の出所は Meeting.brief.homework と Meeting.purpose) */
+export function agendaFor(_db: Db, meeting: Meeting): string[] {
+	const items: string[] = [];
+	if (meeting.brief?.homework.length) items.push('前回宿題の確認');
+	items.push('導入スケジュールのすり合わせ');
+	if (meeting.purpose.includes('価格')) items.push('価格条件');
+	items.push('契約タイミング');
+	items.push('次回アクション');
+	return items;
 }

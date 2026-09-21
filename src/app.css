@@ -1244,6 +1244,19 @@ svg.i {
 	font-size: 14px;
 }
 
+/* メールの本文。承認カードと議事録のフォローメール案で同じ見た目にする (components の一貫性)。
+   改行はそのまま見せる。畳む挙動は使う側 (ApprovalCard の .clamp) が足す */
+.mailbody {
+	margin: var(--sp-1) 0 0;
+	padding: var(--sp-3) var(--sp-4);
+	border-radius: var(--r-s);
+	background: #fff;
+	box-shadow: inset 0 0 0 1px var(--line);
+	white-space: pre-wrap;
+	font-size: 14px;
+	line-height: 1.6;
+}
+
 /* Task 10p (参考の良い点 4) — 一覧の小見出し。アイコン + 文言 + 件数の塊
    (参考: 知人の Web システムの「自分の担当 1」「閲覧中 29」)。件数は --ink-3 の小さな数字で、
    .badge.count (塗りつぶしの件数バッジ) とは役割が違うので流用しない */

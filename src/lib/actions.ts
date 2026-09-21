@@ -17,7 +17,7 @@ import { db, save, resetDb } from './store.svelte';
 import { toast } from './ui.svelte';
 import { nowIso, parse, fmtMDW, minutes, toHm } from './dates';
 import { personOf, doneLogOf, todayCount } from './derived';
-import { slotsFor, slotsText, uid } from './kuroko/generate';
+import { agendaFor, slotsFor, slotsText, uid, minutesFor } from './kuroko/generate';
 import { integrations } from './integrations';
 
 export const SEND_DELAY_MS = 5000;
@@ -576,4 +576,96 @@ export function startScenario(n: number) {
 export function noteRecent(href: string) {
 	db.demo.recent = [href, ...db.demo.recent.filter((h) => h !== href)].slice(0, 5);
 	save();
+}
+
+/** 文字起こしを足し、議事録と ToDo 候補を作る。候補は登録せず、必ず人の承認を通す (仕様 5.4) */
+export function addTranscript(meetingId: string, text: string) {
+	const m = db.meetings.find((x) => x.id === meetingId);
+	if (!m) throw new Error(`会議が見つかりません: ${meetingId}`);
+	const { minutes: mi, todos } = minutesFor(db, meetingId, text);
+	db.transcripts.push({ id: uid('tr'), meetingId, text, addedAt: nowIso() });
+	m.transcriptIds.push(db.transcripts[db.transcripts.length - 1].id);
+	m.minutes = mi;
+	for (const t of todos) {
+		db.suggestions.unshift({
+			id: uid('sg'),
+			source: 'transcript',
+			kind: 'task',
+			status: 'pending',
+			reason: t.reason,
+			payload: {
+				type: 'task',
+				title: t.title,
+				due: t.due,
+				meetingId,
+				personId: m.personIds[0],
+				projectId: m.projectId
+			},
+			createdAt: nowIso()
+		});
+	}
+	log(`議事録と ToDo 候補 ${todos.length} 件を作成しました`, 'draft', { origin: 'meeting' });
+	save();
+	return m.minutes;
+}
+
+export function sendFollowUp(meetingId: string): Approval {
+	const m = db.meetings.find((x) => x.id === meetingId);
+	if (!m?.minutes) throw new Error(`議事録がありません: ${meetingId}`);
+	const mail = m.minutes.followUpMail;
+	// 相手が既に話しているスレッドがあればそこに返す。無ければ新規のメールとして送る
+	const threadId = db.threads.find((t) => t.personId === m.personIds[0])?.id;
+	return addApproval({
+		title: `${personOf(db, m.personIds[0])?.name.split(' ')[0] ?? '相手'}様へのフォローメール`,
+		risk: 'external_send',
+		kind: 'mail',
+		to: mail.to,
+		subject: mail.subject,
+		body: mail.body,
+		effectLine: `承認すると、${mail.to} にこのメールが送信されます`,
+		payload: { type: 'followup', meetingId, threadId },
+		origin: 'meeting'
+	});
+}
+
+/** Brief を開いた時点で既読にする。Today の「次の会議の準備」はこの印で消える (derived.ts todayItems) */
+export function markBriefRead(meetingId: string) {
+	const m = db.meetings.find((x) => x.id === meetingId);
+	if (!m) throw new Error(`会議がありません: ${meetingId}`);
+	if (m.briefRead) return;
+	m.briefRead = true;
+	save();
+}
+
+export function generateAgenda(meetingId: string) {
+	const m = db.meetings.find((x) => x.id === meetingId);
+	if (!m) throw new Error(`会議がありません: ${meetingId}`);
+	m.agenda = agendaFor(db, m);
+	log('アジェンダを作成しました', 'draft', { origin: 'meeting' });
+	save();
+}
+
+export function updateAgenda(meetingId: string, items: string[]) {
+	const m = db.meetings.find((x) => x.id === meetingId);
+	if (!m) throw new Error(`会議がありません: ${meetingId}`);
+	m.agenda = items;
+	save();
+}
+
+export function shareAgenda(meetingId: string, origin: Origin = 'meeting'): Approval {
+	const m = db.meetings.find((x) => x.id === meetingId);
+	if (!m) throw new Error(`会議がありません: ${meetingId}`);
+	const p = personOf(db, m.personIds[0]);
+	const idn = db.identities.find((i) => i.personId === p?.id && i.kind === 'email');
+	if (!p || !idn) throw new Error(`宛先が引けません: ${meetingId}`);
+	return addApproval({
+		title: `${p.name.split(' ')[0]}様へのアジェンダ共有`,
+		risk: 'external_send',
+		kind: 'share',
+		to: `${p.name} <${idn.value}>`,
+		body: m.agenda.join('\n'),
+		effectLine: `承認すると、${p.name.replace(' ', '')}様 (${idn.value}) にアジェンダが共有されます`,
+		payload: { type: 'agenda', meetingId },
+		origin
+	});
 }
