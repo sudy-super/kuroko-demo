@@ -1055,11 +1055,17 @@ svg.i {
 	background: #fff;
 	color: var(--accent);
 }
-.chip:disabled {
+/* 焦点を残したまま押せなくするため aria-disabled を使う場面がある (ReplyBox の返信案の作成中) */
+.chip:disabled,
+.chip[aria-disabled='true'] {
 	background: var(--disabled-soft);
 	color: var(--disabled-ink);
 	box-shadow: inset 0 0 0 1px var(--disabled-bg);
 	cursor: default;
+}
+.chip[aria-disabled='true']:hover,
+.chip[aria-disabled='true']:active {
+	background: var(--disabled-soft);
 }
 
 /* components 3.6 — バッジ (押せない表示専用。ruling: 文字は 12px まで) */
