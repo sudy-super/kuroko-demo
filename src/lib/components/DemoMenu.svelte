@@ -33,7 +33,12 @@
 		{/snippet}
 	</DropdownMenu.Trigger>
 	<DropdownMenu.Portal>
-		<DropdownMenu.Content class="demo-menu" align="end" sideOffset={14}>
+		<!-- preventScroll — bits-ui の Content だけが既定で true になっており (popper-layer-inner.svelte の
+		     `preventScroll ?? true`)、BodyScrollLock が body に pointer-events: none を置く
+		     (internal/body-scroll-lock.svelte.js)。これだと開いている間の 1 回目の押下が下のボタンに
+		     届かず、板への切り替えに 2 回かかる。Popover (PillPanel) と bits-ui 自身の入れ子メニューは
+		     どちらも false を明示しているので、それに揃える -->
+		<DropdownMenu.Content class="demo-menu" align="end" sideOffset={14} preventScroll={false}>
 			{#if canStart}
 				<DropdownMenu.Item class="demo-item" onSelect={startGuide}>デモを開始する</DropdownMenu.Item>
 			{/if}
