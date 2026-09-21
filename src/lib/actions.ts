@@ -11,13 +11,16 @@ import type {
 	Meeting,
 	Automation,
 	Suggestion,
-	Person
+	Person,
+	ChatMessage
 } from './types';
 import { db, save, resetDb } from './store.svelte';
-import { toast } from './ui.svelte';
+import { toast, type ContextChip } from './ui.svelte';
 import { nowIso, parse, fmtMDW, minutes, toHm } from './dates';
 import { personOf, doneLogOf, todayCount, mailTargetOf } from './derived';
 import { agendaFor, slotsFor, slotsText, uid, minutesFor } from './kuroko/generate';
+import { reply, route } from './kuroko/route';
+import { goto } from '$app/navigation';
 import { integrations } from './integrations';
 
 export const SEND_DELAY_MS = 5000;
@@ -666,4 +669,61 @@ export function shareAgenda(meetingId: string, origin: Origin = 'meeting'): Appr
 		payload: { type: 'agenda', meetingId },
 		origin
 	});
+}
+
+/* 履歴は切らない。件数で切ると、後から押せるはずの提案カードが黙って消える
+   (chat.md「過去の発言のカードの操作は後から押せるべき」)。長さへの一次資料の処方は
+   段階的開示であって件数の上限ではない */
+function pushChat(m: Omit<ChatMessage, 'id' | 'at'>) {
+	db.chat.push({ id: uid('c'), at: nowIso(), ...m });
+	save();
+}
+
+/**
+ * 依頼を 1 往復進める。KUROKO の返答は 800ms 後に積む (仕様 9.2 の「生成中」表示に合わせる)。
+ * 直前の発言が聞き返しなら、その次は聞き返さずに用件の選び直しへ倒す (仕様 9.1「1 往復まで」)
+ */
+export async function chatSend(text: string, ctx?: ContextChip) {
+	const q = text.trim();
+	if (!q) return;
+	const asked = db.chat[db.chat.length - 1]?.chips !== undefined;
+	pushChat({ role: 'user', text: q });
+	await new Promise((r) => setTimeout(r, 800));
+	const { suggestion, ...msg } = reply(db, route(db, q, ctx), asked);
+	if (suggestion) db.suggestions.push(suggestion);
+	pushChat({ role: 'kuroko', ...msg });
+}
+
+/** カードのボタン。既存の処理へ振り分けるだけで、ここでは何も組み立てない */
+export function chatAct(act: string, arg: string) {
+	const s = db.suggestions.find((x) => x.id === arg);
+	switch (act) {
+		case 'create-event': {
+			if (s?.payload.type !== 'event') throw new Error(`予定の候補がありません: ${arg}`);
+			const { type, personIds, ...rest } = s.payload;
+			createEvent({ ...rest, personIds, withMeeting: true }, 'chat');
+			s.status = 'accepted';
+			save();
+			toast('予定を登録しました');
+			return;
+		}
+		case 'change-date':
+			if (s?.payload.type !== 'event') throw new Error(`予定の候補がありません: ${arg}`);
+			// 日時だけ変えたいので、埋めた値を持ったまま予定の追加画面を開く
+			return goto(`/calendar?new=1&date=${s.payload.date}&start=${s.payload.start}`);
+		case 'add-task':
+			if (acceptTaskSuggestions([arg]).length === 0) throw new Error(`ToDo の候補がありません: ${arg}`);
+			toast('ToDo を登録しました');
+			return;
+		case 'open-person':
+			return goto(`/people/${arg}`);
+		case 'open-thread':
+			return goto(`/inbox?t=${arg}`);
+		case 'open-meeting':
+			return goto(`/meetings/${arg}`);
+		case 'gen-doc':
+			return goto(`/documents?kind=${encodeURIComponent(arg)}`);
+		default:
+			throw new Error(`知らない操作です: ${act}`);
+	}
 }
