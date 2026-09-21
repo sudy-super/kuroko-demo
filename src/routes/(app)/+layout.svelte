@@ -20,6 +20,10 @@
 	let { children } = $props();
 
 	const connected = $derived(db.settings.connections.filter((c) => c.connected));
+	/* LINE / Slack はその画面の入力欄そのものが依頼の口なので、固定の依頼バーを重ねない
+	   (重なると入力欄が押せない)。バーが無い分、本文の下に空ける高さも詰める
+	   (app.css の --chatbar-h と --content-bottom-clear) */
+	const hasBar = $derived(page.url.pathname !== '/integrations');
 
 
 	onMount(() => {
@@ -45,7 +49,7 @@
 	});
 </script>
 
-<div class="app" class:has-rail={connected.length > 0}>
+<div class="app" class:has-rail={connected.length > 0} class:no-bar={!hasBar}>
 	<!-- 枠のガラスのうち 5 面 (サイドナビ、上部バー、連携の列、携帯のボトムナビ・上部バー)は、
 	     この空の層に 1 枚の canvas でまとめて描く。面ごとに描画面 (WebGL context)を取ると、
 	     タブを 3 枚開いただけでブラウザの上限に届き、全面が backdrop-filter の経路に落ちる。
@@ -83,7 +87,7 @@
 			{/each}
 		</aside>
 	{/if}
-	<KurokoBar context={ui.context} />
+	{#if hasBar}<KurokoBar context={ui.context} />{/if}
 	<BottomNav />
 	<MobileMenu />
 	<ApprovalDrawer />

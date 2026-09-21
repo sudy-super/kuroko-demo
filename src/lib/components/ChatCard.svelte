@@ -1,11 +1,20 @@
 <script lang="ts">
 	import type { ChatCard } from '$lib/types';
+	import { db } from '$lib/store.svelte';
 	import { chatAct } from '$lib/actions';
 	import Icon from './Icon.svelte';
 
 	let { card }: { card: ChatCard } = $props();
 
 	const titleId = $props.id();
+
+	/* 押すたびに db が増える操作 (予定と ToDo の登録) は、その候補 (Suggestion) の状態を見る。
+	   /tasks の SuggestionCard も同じ候補を扱うので、どちらで登録しても両方の表示が揃う */
+	const consuming = $derived(
+		card.actions.find((a) => a.act === 'create-event' || a.act === 'add-task')
+	);
+	const suggestion = $derived(db.suggestions.find((s) => s.id === consuming?.arg));
+	const settled = $derived(suggestion && suggestion.status !== 'pending' ? suggestion : undefined);
 </script>
 
 <!-- 仕様 5 — 提案には必ず「なぜこれを出したか」の 1 行を付ける。
@@ -20,20 +29,35 @@
 		{#each card.lines as line (line)}<p>{line}</p>{/each}
 	</div>
 	{#if card.reason}<p class="chat-reason">{card.reason}</p>{/if}
-	<!-- chat.md 観点 2.6 — 作業を確定させる操作はボタン (M3「チップで作業を確定・前進させるな」)。
-	     buttons.md 観点 A + research-repeated-primary.md — 発言が積み上がる画面なので、カードごとに
-	     塗りの主ボタンを置くと画面中に塗りが並ぶ。Carbon が繰り返しのカードを名指しで
-	     tertiary / ghost としているのに倣い、塗りは使わず枠と文字だけで段を付ける -->
-	<div class="row chat-actions">
-		{#each card.actions as a, i (a.act)}
-			<button class="btn {i === 0 ? 'sec' : 'text'} sm" onclick={() => chatAct(a.act, a.arg ?? '')}>
-				{a.label}
-			</button>
-		{/each}
-	</div>
-	<!-- chat.md 観点 2.2 — 「押すまで確定しない」性質は伝えないと「もう作られたのか」と誤解される -->
-	{#if card.actions.some((a) => a.act === 'create-event' || a.act === 'add-task')}
-		<p class="chat-note">押すまで保存されません</p>
+	<!-- chat.md 観点 5.2 — カードの操作は後から押せるままにするのが一次資料に沿うが、これは
+	     「開く」のように何度押しても結果が変わらない操作の話。押すたびに予定や ToDo が増える
+	     操作は一度で終わらせ、HIG の "provide a clear signal that their action had an effect" に
+	     従って済んだことを出す (MinutesView の登録済みの行と同じ形) -->
+	{#if settled}
+		<p class="chat-done">
+			<Icon name={settled.status === 'accepted' ? 'ic-check' : 'ic-x'} size={20} />
+			{settled.status === 'accepted'
+				? settled.kind === 'event'
+					? '予定を登録しました'
+					: 'ToDo を登録しました'
+				: '破棄しました'}
+		</p>
+	{:else}
+		<!-- chat.md 観点 2.6 — 作業を確定させる操作はボタン (M3「チップで作業を確定・前進させるな」)。
+		     buttons.md 観点 A + research-repeated-primary.md — 発言が積み上がる画面なので、カードごとに
+		     塗りの主ボタンを置くと画面中に塗りが並ぶ。Carbon が繰り返しのカードを名指しで
+		     tertiary / ghost としているのに倣い、塗りは使わず枠と文字だけで段を付ける -->
+		<div class="row chat-actions">
+			{#each card.actions as a, i (a.act)}
+				<button class="btn {i === 0 ? 'sec' : 'text'} sm" onclick={() => chatAct(a.act, a.arg ?? '')}>
+					{a.label}
+				</button>
+			{/each}
+		</div>
+		<!-- chat.md 観点 2.2 — 「押すまで確定しない」性質は伝えないと「もう作られたのか」と誤解される -->
+		{#if consuming}
+			<p class="chat-note">押すまで保存されません</p>
+		{/if}
 	{/if}
 </section>
 
@@ -65,5 +89,13 @@
 		flex-wrap: wrap;
 		gap: var(--sp-2);
 		margin-top: var(--sp-1);
+	}
+	.chat-done {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-2);
+		margin-top: var(--sp-1);
+		color: var(--ink-2);
+		font-size: 14px;
 	}
 </style>

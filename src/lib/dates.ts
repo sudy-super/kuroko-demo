@@ -27,3 +27,13 @@ export function hm(d: Date = new Date()): string { return `${d.getHours()}:${pad
 export function nowIso(): string { const d = new Date(); return `${key(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; } // ローカル時刻。UTC にしない (todaySummary が日付で絞るため)
 export function minutes(hhmm: string): number { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; }
 export function toHm(min: number): string { return `${Math.floor(min / 60)}:${pad(min % 60)}`; }
+
+/* 「明日」「今週」「来週」「金曜」から日付を取る。/chat (kuroko/route.ts) と LINE (kuroko/line.ts) は
+   入口が別なので、時期の読み取りだけをここで共有する。一致しなければ undefined */
+export function whenOf(text: string, base: Date): Date | undefined {
+  if (/明日/.test(text)) return bizDay(1, base);
+  if (/今週/.test(text)) return bizDay(2, base);
+  if (/来週/.test(text)) return bizDay(5, base);
+  const w = text.match(/([日月火水木金土])曜/);
+  return w ? nextWeekday(WD.indexOf(w[1]), base) : undefined;
+}

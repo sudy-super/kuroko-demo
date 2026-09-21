@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { MessageThread } from '$lib/types';
 	import { db } from '$lib/store.svelte';
-	import { identityOf, threadSenderMeta } from '$lib/derived';
+	import { addressOf, identityOf, threadSenderMeta } from '$lib/derived';
 	import { replyDraft } from '$lib/kuroko/generate';
 	import { dropSlotsDraft, insertSlots, sendReply } from '$lib/actions';
 	import { ui } from '$lib/ui.svelte';
@@ -11,10 +11,13 @@
 
 	let { thread }: { thread: MessageThread } = $props();
 
-	// 社外宛はメールアドレスを省略しない (仕様 5.3)。差出人の呼び方は threadSenderMeta に
-	// 集約している (rereview-task-10p.md 新規 2、ThreadView と同じ考え方 — review-task-15.md M1)
+	// 社外宛は連絡先を省略しない (仕様 5.3)。メール以外の内部の ID は出さない (derived.ts の
+	// addressOf)。差出人の呼び方は threadSenderMeta に集約している (rereview-task-10p.md 新規 2、
+	// ThreadView と同じ考え方 — review-task-15.md M1)
 	const identity = $derived(identityOf(db, thread.identityId));
-	const to = $derived(identity ? `${threadSenderMeta(db, thread)} <${identity.value}>` : thread.sender);
+	const to = $derived(
+		identity ? `${threadSenderMeta(db, thread)} ${addressOf(identity)}` : thread.sender
+	);
 
 	const CHIPS = [
 		{ tone: 'short', label: '短く' },

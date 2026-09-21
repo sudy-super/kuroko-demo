@@ -56,7 +56,10 @@
 	let pending: Automation | null = $state(null);
 	const target = $derived(LEVELS.find((l) => l.key === pending));
 	const flips = $derived(!!pending && runsAuto(pending) !== runsAuto(db.settings.automation));
-	const arrow = $derived(pending && runsAuto(pending) ? '確認 → 自動' : '自動 → 確認');
+	// 変わるときは移り先を矢印で、変わらないときは今の扱いをそのまま出す
+	const arrow = $derived(
+		pending && runsAuto(pending) ? (flips ? '確認 → 自動' : '自動') : flips ? '自動 → 確認' : '確認'
+	);
 
 	function apply() {
 		if (!pending) return;
@@ -225,12 +228,14 @@
 <Modal
 	open={!!pending}
 	title="この設定に変えると"
-	description="「{target?.label}」に変えます。変わる操作と変わらない操作を確かめてください。"
+	description={flips
+		? `「${target?.label}」に変えます。変わる操作と変わらない操作を確かめてください。`
+		: `「${target?.label}」に変えます。社内の扱いは今と同じで、社外へ出るものは変わりません。`}
 	onclose={() => (pending = null)}
 >
 	<div class="set-diff">
 		<section aria-labelledby="set-diff-a">
-			<h4 id="set-diff-a">変わる操作</h4>
+			<h4 id="set-diff-a">{flips ? '変わる操作' : '変わらない操作 (社内)'}</h4>
 			{#if flips}
 				<ul>
 					{#each CHANGING as c (c)}
@@ -238,11 +243,21 @@
 					{/each}
 				</ul>
 			{:else}
-				<p class="muted">この設定では変わる操作はありません。</p>
+				<!-- 社外以外を自動で進める点は「社内は自動」と「ほぼ任せる」で同じなので、
+				     ここは実際に変わらない (actions.ts の autoExecutes)。空欄にせず、
+				     何がそのままなのかを書く -->
+				<ul>
+					{#each CHANGING as c (c)}
+						<li><span class="tc-text">{c}</span><span class="badge">今のまま {arrow}</span></li>
+					{/each}
+				</ul>
+				<p class="muted">
+					この操作は今も同じ扱いです。社外へ出るものは、どの設定でも必ず確認します。
+				</p>
 			{/if}
 		</section>
 		<section aria-labelledby="set-diff-b">
-			<h4 id="set-diff-b">変わらない操作</h4>
+			<h4 id="set-diff-b">変わらない操作 (社外)</h4>
 			<ul>
 				{#each ALWAYS as a (a)}
 					<li><span class="tc-text">{a}</span><span class="badge">常に確認</span></li>

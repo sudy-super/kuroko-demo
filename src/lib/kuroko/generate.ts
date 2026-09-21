@@ -1,6 +1,6 @@
 import type { Db, TimeSlot, MessageThread, Minutes, Meeting } from '../types';
 import { bizDay, key, fmtMDW, parse, minutes, toHm } from '../dates';
-import { personOf, mailTargetOf } from '../derived';
+import { personOf, meetingMailTargetFor } from '../derived';
 import { SAMPLE_TRANSCRIPT, SAMPLE_MINUTES } from './samples';
 
 let seq = 0;
@@ -73,14 +73,15 @@ export function minutesFor(
 	meetingId: string,
 	text: string
 ): { minutes: Minutes; todos: { title: string; due: string; reason: string }[] } {
-	const { to } = mailTargetOf(db, meetingId);
+	// メールを持たない相手 (社内の人物) にはフォローメール案を作らない。議事録自体は作る
+	const to = meetingMailTargetFor(db, meetingId)?.to;
 	const from = parse(db.seededOn);
 	if (text.trim() === SAMPLE_TRANSCRIPT.trim()) {
 		return {
 			minutes: {
 				summary: SAMPLE_MINUTES.summary,
 				decisions: SAMPLE_MINUTES.decisions,
-				followUpMail: { to, ...SAMPLE_MINUTES.followUp }
+				...(to ? { followUpMail: { to, ...SAMPLE_MINUTES.followUp } } : {})
 			},
 			todos: SAMPLE_MINUTES.todos.map((t) => ({
 				title: t.title,
@@ -101,11 +102,15 @@ export function minutesFor(
 		minutes: {
 			summary: lines.slice(0, 3).join('。') + (lines.length ? '。' : ''),
 			decisions: lines.filter((s) => DECISION_HINTS.some((h) => s.includes(h))).slice(0, 3),
-			followUpMail: {
-				to,
-				subject: '本日の打ち合わせのお礼',
-				body: `本日はお時間をいただきありがとうございました。\n打ち合わせの内容は議事録にまとめております。\nお気づきの点がありましたらお知らせください。\n\n引き続きよろしくお願いいたします。\n\n株式会社 KUROKO 佐々木 健`
-			}
+			...(to
+				? {
+						followUpMail: {
+							to,
+							subject: '本日の打ち合わせのお礼',
+							body: `本日はお時間をいただきありがとうございました。\n打ち合わせの内容は議事録にまとめております。\nお気づきの点がありましたらお知らせください。\n\n引き続きよろしくお願いいたします。\n\n株式会社 KUROKO 佐々木 健`
+						}
+					}
+				: {})
 		},
 		todos
 	};

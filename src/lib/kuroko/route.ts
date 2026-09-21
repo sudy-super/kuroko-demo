@@ -1,6 +1,6 @@
 import type { ChatMessage, Db, Suggestion } from '../types';
 import type { ContextChip } from '../ui.svelte';
-import { key, bizDay, nextWeekday, parse, nowIso, fmtMDW } from '../dates';
+import { key, bizDay, parse, nowIso, fmtMDW, whenOf } from '../dates';
 import { companyOf, nextMeeting, personOf, projectOf } from '../derived';
 import { slotsFor, uid } from './generate';
 
@@ -31,15 +31,8 @@ export function route(db: Db, text: string, ctx?: ContextChip): Intent {
 	const personId = PEOPLE.find(([name]) => t.includes(name))?.[1] ?? ctx?.personId;
 	// 「明日」はデモの基準日から数える。シードが seededOn を today として組まれているため
 	const base = parse(db.seededOn);
-	const when = /明日/.test(t)
-		? key(bizDay(1, base))
-		: /今週/.test(t)
-			? key(bizDay(2, base))
-			: /来週/.test(t)
-				? key(bizDay(5, base))
-				: /金曜/.test(t)
-					? key(nextWeekday(5, base))
-					: undefined;
+	const w = whenOf(t, base);
+	const when = w && key(w);
 	const docKind = /提案書/.test(t)
 		? '提案書'
 		: /見積/.test(t)

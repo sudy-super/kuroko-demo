@@ -21,6 +21,7 @@ import { db, save, resetDb } from './store.svelte';
 import { toast, type ContextChip } from './ui.svelte';
 import { nowIso, parse, fmtMDW, minutes, toHm, hm } from './dates';
 import {
+	addressOf,
 	personOf,
 	companyOf,
 	projectOf,
@@ -94,6 +95,16 @@ export function approve(id: string, origin: Origin = 'approval') {
 		toast('実行しました', l?.undo ? { undo: () => undo(l.id) } : {});
 	}
 	save();
+}
+
+/**
+ * LINE / Slack のカードからの承認。社外への送信を伴うので、承認できるのはオーナーだけ
+ * (仕様 5.13 と handleMention の role の切り分けと同じ考え方)。member には呼ばせない
+ */
+export function lineApprove(id: string, role: 'owner' | 'member', channel: 'line' | 'slack') {
+	if (role !== 'owner') return false;
+	approve(id, channel);
+	return true;
 }
 
 export function undoApproval(id: string) {
@@ -174,6 +185,12 @@ export function executeApproval(id: string, auto = false) {
 	} else if (p.type === 'document') {
 		log(`${a.title}を送信しました`, 'send', { actor: 'user', origin: a.origin, approved: true });
 	} else if (p.type === 'followup') {
+		// 相手のスレッドがあれば reply と同じように閉じる。無い会議 (threadId は省略可能) では何もしない
+		const th = p.threadId && db.threads.find((t) => t.id === p.threadId);
+		if (th) {
+			th.needsReply = false;
+			th.done = true;
+		}
 		log('フォローメールを送信しました', 'send', { actor: 'user', origin: a.origin, approved: true });
 	} else if (p.type === 'line') {
 		integrations.chat.post('line', p.text);
@@ -350,15 +367,19 @@ export function sendReply(threadId: string, body: string, origin: Origin = 'inbo
 	const p = personOf(db, th.personId);
 	const idn = db.identities.find((i) => i.id === th.identityId)!;
 	const draft = db.scheduling.find((s) => s.threadId === threadId && s.status === 'draft');
-	const to = p ? `${p.name} <${idn.value}>` : idn.value;
+	const addr = addressOf(idn);
+	const to = p ? `${p.name} ${addr}` : addr;
+	// 送る先はスレッドの出所そのもの。記号も効果文もここから引く (ApprovalIcon の MARK)
+	const kind = th.source === 'line' ? 'line' : th.source === 'slack' ? 'slack' : 'mail';
+	const what = kind === 'mail' ? 'このメール' : `この ${idn.label} の返信`;
 	return addApproval({
 		title: `${p?.name.split(' ')[0] ?? '相手'}様への返信`,
 		risk: 'external_send',
-		kind: 'mail',
+		kind,
 		to,
 		subject: `Re: ${th.subject}`,
 		body,
-		effectLine: `承認すると、${p?.name.replace(' ', '') ?? ''}様 (${idn.value}) にこのメールが送信されます${draft ? '。相手が候補を選ぶと、その日時で予定が確定します' : ''}`,
+		effectLine: `承認すると、${p?.name.replace(' ', '') ?? ''}様 ${addr} に${what}が送信されます${draft ? '。相手が候補を選ぶと、その日時で予定が確定します' : ''}`,
 		payload: { type: 'reply', threadId, body, schedulingId: draft?.id },
 		origin
 	});
@@ -628,6 +649,7 @@ export function sendFollowUp(meetingId: string): Approval {
 	const m = db.meetings.find((x) => x.id === meetingId);
 	if (!m?.minutes) throw new Error(`議事録がありません: ${meetingId}`);
 	const mail = m.minutes.followUpMail;
+	if (!mail) throw new Error(`フォローメール案がありません: ${meetingId}`);
 	// 相手が既に話しているスレッドがあればそこに返す。無ければ新規のメールとして送る
 	const threadId = db.threads.find((t) => t.personId === m.personIds[0])?.id;
 	return addApproval({
@@ -677,7 +699,7 @@ export function shareAgenda(meetingId: string, origin: Origin = 'meeting'): Appr
 		kind: 'share',
 		to,
 		body: m.agenda.join('\n'),
-		effectLine: `承認すると、${p.name.replace(' ', '')}様 (${idn.value}) にアジェンダが共有されます`,
+		effectLine: `承認すると、${p.name.replace(' ', '')}様 ${addressOf(idn)} にアジェンダが共有されます`,
 		payload: { type: 'agenda', meetingId },
 		origin
 	});
@@ -766,7 +788,9 @@ export function chatAct(act: string, arg: string) {
 	const s = db.suggestions.find((x) => x.id === arg);
 	switch (act) {
 		case 'create-event': {
-			if (s?.payload.type !== 'event') throw new Error(`予定の候補がありません: ${arg}`);
+			// 済んだ候補からは二度と作らない。表示側 (ChatCard) も同じ status で操作を引っ込める
+			if (s?.payload.type !== 'event' || s.status !== 'pending')
+				throw new Error(`予定の候補がありません: ${arg}`);
 			const { type, personIds, ...rest } = s.payload;
 			createEvent({ ...rest, personIds, withMeeting: true }, 'chat');
 			s.status = 'accepted';
@@ -827,7 +851,7 @@ export function sendDocument(docId: string, personId: string, origin: Origin = '
 		to,
 		subject: d.title,
 		body: `添付: ${d.title}.pdf`,
-		effectLine: `承認すると、${person.name.replace(' ', '')}様 (${identity.value}) にこの資料が送信されます`,
+		effectLine: `承認すると、${person.name.replace(' ', '')}様 ${addressOf(identity)} にこの資料が送信されます`,
 		payload: { type: 'document', documentId: d.id, personId },
 		origin
 	});

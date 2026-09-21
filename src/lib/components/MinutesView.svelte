@@ -63,6 +63,9 @@
 		</p>
 	{/if}
 
+	<!-- メールを持たない相手 (社内の人物) には案自体ができない (kuroko/generate.ts の minutesFor)。
+	     押しても送れないボタンを残さず、札ごと出さない -->
+	{#if minutes.followUpMail}
 	<section class="card mv" aria-label="フォローメール案">
 		<div class="tc-head">
 			<Icon name="ic-mail" size={20} />
@@ -72,7 +75,9 @@
 		<p class="mv-to">件名 {minutes.followUpMail.subject}</p>
 		<p class="mailbody">{minutes.followUpMail.body}</p>
 		<!-- buttons.md 観点A 原則 3 — この画面で塗りの主ボタンはここ 1 つだけ。上の候補カードは
-		     繰り返す要素なので塗らない (research-repeated-primary.md の Carbon の規定) -->
+		     繰り返す要素なので塗らない (research-repeated-primary.md の Carbon の規定)。
+		     議事録がある = 会議は終わっているので、アジェンダの作成 (会議の前の操作、
+		     meetings/[id]/+page.svelte) は塗りを外してこちらに譲っている -->
 		<div class="row mv-foot">
 			<button class="btn pri" onclick={send} disabled={sent}>
 				{sent ? '承認待ちに送りました' : '承認して送信'}
@@ -82,6 +87,7 @@
 			</button>
 		</div>
 	</section>
+	{/if}
 {/if}
 
 <style>

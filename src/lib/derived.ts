@@ -1,10 +1,15 @@
-import type { Db, TodayItem, Meeting, CalendarEvent, Task, ProjectStatus, MessageThread, ActivityLog } from './types';
+import type { Db, TodayItem, Meeting, CalendarEvent, Task, ProjectStatus, MessageThread, ActivityLog, ChannelIdentity } from './types';
 import { key, parse, addDays, minutes, toHm, hm } from './dates';
 
 export const personOf = (db: Db, id?: string) => db.people.find((p) => p.id === id);
 export const companyOf = (db: Db, id?: string) => db.companies.find((c) => c.id === id);
 export const projectOf = (db: Db, id?: string) => db.projects.find((p) => p.id === id);
 export const identityOf = (db: Db, id: string) => db.identities.find((i) => i.id === id);
+
+/* 宛先の行と効果文に出す連絡先の表し方。メールはアドレスを省略せずに出す (仕様 5.3)。
+   LINE / Slack の value は内部の ID なので、人が読める label (「LINE」「Slack」) に置き換える */
+export const addressOf = (idn: ChannelIdentity) =>
+	idn.kind === 'email' ? `<${idn.value}>` : `(${idn.label})`;
 export const personOfIdentity = (db: Db, identityId: string) =>
 	personOf(db, identityOf(db, identityId)?.personId);
 
@@ -16,19 +21,31 @@ export const pendingThreadsFor = (db: Db, email: string) =>
 
 /* 人物とそのメールアドレス。宛先を組むのも効果文に出すのもここから引く
    (shareAgenda と generate.ts の mailToOf が同じ 3 行を持っていた)。
-   引けないまま送り先不明のメールを作らないよう throw する */
-export function personMailTargetOf(db: Db, personId?: string) {
+   メールを持たない相手 (社内の人物は slack_id / line_id しか持たない — seed.ts) では
+   undefined。メールを送る操作を出してよいかの判定にも使う */
+export function mailTargetFor(db: Db, personId?: string) {
 	const person = personOf(db, personId);
 	const identity = db.identities.find((i) => i.personId === person?.id && i.kind === 'email');
-	if (!person || !identity) throw new Error(`宛先が引けません: ${personId}`);
-	return { person, identity, to: `${person.name} <${identity.value}>` };
+	if (!person || !identity) return undefined;
+	return { person, identity, to: `${person.name} ${addressOf(identity)}` };
+}
+
+/* 送る側から呼ぶ入口。ここまで来て引けないのは、呼び出し側が出すべきでない操作を
+   出していたということなので throw する (宛先不明のメールを作らせない) */
+export function personMailTargetOf(db: Db, personId?: string) {
+	const t = mailTargetFor(db, personId);
+	if (!t) throw new Error(`宛先が引けません: ${personId}`);
+	return t;
 }
 
 /** 会議の相手の宛先。相手は personIds の先頭 */
+export const meetingMailTargetFor = (db: Db, meetingId: string) =>
+	mailTargetFor(db, db.meetings.find((x) => x.id === meetingId)?.personIds[0]);
+
 export function mailTargetOf(db: Db, meetingId: string) {
-	const m = db.meetings.find((x) => x.id === meetingId);
-	if (!m) throw new Error(`宛先が引けません: ${meetingId}`);
-	return personMailTargetOf(db, m.personIds[0]);
+	const t = meetingMailTargetFor(db, meetingId);
+	if (!t) throw new Error(`宛先が引けません: ${meetingId}`);
+	return t;
 }
 
 /* Task 10p 修正ラウンド 1 (Critical) — 差出人 / 会社を組み立てる。thread.sender は

@@ -3,8 +3,8 @@ import { seed } from '../seed';
 import { minutesFor } from './generate';
 import { SAMPLE_TRANSCRIPT } from './samples';
 import { db as store, resetDb } from '../store.svelte';
-import { addTranscript, acceptTaskSuggestions, rejectSuggestions, sendFollowUp } from '../actions';
-import { todayCount, weekTasks } from '../derived';
+import { addTranscript, acceptTaskSuggestions, createEvent, executeApproval, rejectSuggestions, sendFollowUp, shareAgenda } from '../actions';
+import { meetingMailTargetFor, todayCount, weekTasks } from '../derived';
 
 describe('minutesFor', () => {
 	const db = seed(new Date(2026, 8, 15));
@@ -66,12 +66,63 @@ describe('addTranscript / acceptTaskSuggestions / sendFollowUp', () => {
 		expect(a.status).toBe('pending');
 		expect(a.risk).toBe('external_send');
 		expect(a.payload).toMatchObject({ type: 'followup', meetingId: 'm-abc' });
-		expect(a.body).toBe(store.meetings.find((x) => x.id === 'm-abc')!.minutes!.followUpMail.body);
+		expect(a.body).toBe(store.meetings.find((x) => x.id === 'm-abc')!.minutes!.followUpMail!.body);
 		// Today の承認待ちのタイルに乗る
 		expect(todayCount(store)).toBe(before + 1);
 	});
 
+	it('フォローメールを送るとそのスレッドが閉じる', () => {
+		addTranscript('m-abc', SAMPLE_TRANSCRIPT);
+		const a = sendFollowUp('m-abc');
+		const threadId = (a.payload as { threadId?: string }).threadId!;
+		expect(store.threads.find((t) => t.id === threadId)!.needsReply).toBe(true);
+		executeApproval(a.id);
+		const th = store.threads.find((t) => t.id === threadId)!;
+		expect(th.needsReply).toBe(false);
+		expect(th.done).toBe(true);
+	});
+
 	it('議事録がない会議のフォローメールは失敗する', () => {
 		expect(() => sendFollowUp('m-abc')).toThrow();
+	});
+
+	/* 社内の人物はメールの識別子を持たない (seed.ts の identities)。議事録と ToDo は作れるが
+	   フォローメール案は作れない。画面はこの有無を見て札を出し分ける (MinutesView.svelte) */
+	it('メールを持たない相手でも議事録は作れる。フォローメール案は付かない', () => {
+		const ev = createEvent(
+			{
+				date: store.seededOn,
+				start: '10:00',
+				end: '11:00',
+				title: '山田様との打ち合わせ',
+				personIds: ['p-yamada'],
+				withMeeting: true
+			},
+			'chat'
+		);
+		const meetingId = store.events.find((e) => e.id === ev.id)!.meetingId!;
+		const minutes = addTranscript(meetingId, SAMPLE_TRANSCRIPT);
+		expect(minutes.decisions.length).toBe(3);
+		expect(minutes.followUpMail).toBeUndefined();
+		expect(() => sendFollowUp(meetingId)).toThrow();
+	});
+
+	it('メールを持たない相手にはアジェンダを共有できない', () => {
+		const ev = createEvent(
+			{
+				date: store.seededOn,
+				start: '10:00',
+				end: '11:00',
+				title: '山田様との打ち合わせ',
+				personIds: ['p-yamada'],
+				withMeeting: true
+			},
+			'chat'
+		);
+		const meetingId = store.events.find((e) => e.id === ev.id)!.meetingId!;
+		expect(meetingMailTargetFor(store, meetingId)).toBeUndefined();
+		expect(() => shareAgenda(meetingId)).toThrow();
+		// 田中様は引けるので今までどおり
+		expect(meetingMailTargetFor(store, 'm-abc')?.to).toContain('tanaka@abc.co.jp');
 	});
 });

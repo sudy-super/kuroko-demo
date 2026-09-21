@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import type { LineMessage } from '$lib/types';
 	import { db } from '$lib/store.svelte';
-	import { approve, lineSay } from '$lib/actions';
+	import { lineApprove, lineSay } from '$lib/actions';
 	import { ui } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 
@@ -18,8 +18,7 @@
 	let busy = $state('');
 	let logEl: HTMLDivElement | undefined = $state();
 
-	async function send() {
-		const q = text.trim();
+	async function send(q = text.trim()) {
 		if (!q || busy) return;
 		text = '';
 		const before = messages.length;
@@ -31,11 +30,20 @@
 		logEl?.children[before]?.scrollIntoView({ block: 'nearest' });
 	}
 
+	/* 承認は社外への送信を伴うので社長だけの操作 (仕様 5.13)。member には出さない。
+	   handleMention が member の依頼を断るのと同じ切り分けを、カードの操作にも当てる。
+	   押しても何も起きないボタンは残さない (出さないほうを選ぶ) */
+	const actionsOf = (card: NonNullable<LineMessage['card']>) =>
+		role === 'owner' ? card.actions : card.actions.filter((a) => a.act !== 'approve');
+
 	/** カードのボタン。押すまで何も確定しない (chat.md 観点 2.2、Apple HIG 資料 1) */
 	function act(a: NonNullable<LineMessage['card']>['actions'][number]) {
+		// 用件の言い直し。押すとその文をそのまま送り直す (/chat のチップと同じ)
+		if (a.act === 'say') return void send(a.arg!);
 		if (a.act === 'open') return goto(a.arg!);
 		if (a.act === 'preview') return (ui.approvalDrawer = true);
-		if (a.act === 'approve') return approve(a.arg!, channel);
+		// role は actions.ts 側でも見る。画面に出していないだけで通るようにはしない
+		if (a.act === 'approve') return void lineApprove(a.arg!, role, channel);
 		throw new Error(`知らない操作です: ${a.act}`);
 	}
 </script>
@@ -67,12 +75,16 @@
 							<!-- buttons.md 観点 A + research-repeated-primary.md — 吹き出しが積み上がる画面なので
 							     カードごとに塗りの主ボタンを置かない。枠と文字だけで段を付ける -->
 							<div class="row lc-acts">
-								{#each m.card.actions as a, i (a.act)}
+								<!-- 鍵は並び順。同じ act を複数持つカード (用件の言い直しは 3 つとも say) があるので
+								     act では重複する。この列は並び替わらない -->
+								{#each actionsOf(m.card) as a, i (i)}
 									<button class="btn {i === 0 ? 'sec' : 'text'} sm" onclick={() => act(a)}>{a.label}</button>
 								{/each}
 							</div>
 							{#if m.card.actions.some((a) => a.act === 'approve')}
-								<p class="lc-note">押すまで送信されません</p>
+								<p class="lc-note">
+									{role === 'owner' ? '押すまで送信されません' : '承認はオーナーのみが行えます'}
+								</p>
 							{/if}
 						</div>
 					{/if}

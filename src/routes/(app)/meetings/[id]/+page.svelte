@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
-	import { personOf } from '$lib/derived';
+	import { meetingMailTargetFor, personOf } from '$lib/derived';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import { generateAgenda, markBriefRead, shareAgenda, updateAgenda } from '$lib/actions';
 	import { ui } from '$lib/ui.svelte';
@@ -14,6 +14,9 @@
 	const meeting = $derived(db.meetings.find((m) => m.id === id));
 	const event = $derived(db.events.find((e) => e.id === meeting?.eventId));
 	const person = $derived(personOf(db, meeting?.personIds[0]));
+	/* メールを送れる相手かどうか。社内の人物はメールの識別子を持たないので送れない
+	   (seed.ts の identities)。送れない相手にはメールを作る操作を出さない */
+	const mailTo = $derived(meeting ? meetingMailTargetFor(db, meeting.id) : undefined);
 
 	/* 「Brief を読んだ」の印。Today の「次の会議の準備」はこの印で消える (derived.ts todayItems)。
 	   会議が無い id では立てない */
@@ -104,8 +107,10 @@
 					<p class="muted" aria-live="polite">アジェンダを作成しています…</p>
 				{:else if !meeting.agenda.length}
 					<p class="muted">議事の下書きを KUROKO が作ります。</p>
-					<!-- 塗りの主ボタンはこの画面で 1 つだけ (buttons.md 観点 A 原則 3) -->
-					<button class="btn pri" onclick={create}>
+					<!-- buttons.md 観点 A 原則 3 — 塗りの主ボタンはこの画面で 1 つだけ。議事録が
+					     できていれば会議は終わっており、次にすべきなのは MinutesView の
+					     「承認して送信」なので、そちらへ塗りを譲る -->
+					<button class="btn {meeting.minutes ? 'sec' : 'pri'}" onclick={create}>
 						<Icon name="ic-spark" size={20} />アジェンダを作成
 					</button>
 				{:else if editing}
@@ -126,14 +131,20 @@
 						<button class="btn text" onclick={startEdit}>
 							<Icon name="ic-edit" size={18} />編集する
 						</button>
-						{#if !meeting.agendaShared}
+						{#if !meeting.agendaShared && mailTo}
 							<button class="btn sec" onclick={share}>
 								<Icon name="ic-share" size={18} />参加者に共有 (承認が必要)
 							</button>
 						{/if}
 					</div>
-					{#if !meeting.agendaShared && person}
-						<p class="muted">共有先: {person.name}</p>
+					{#if !meeting.agendaShared}
+						<!-- 出せない操作は黙って消さず、出せない理由を書く (chat.md 観点 4.1 —
+						     できないことは 1 文目で言い切る) -->
+						<p class="muted">
+							{mailTo
+								? `共有先: ${mailTo.person.name}`
+								: `${person?.name ?? 'この相手'}にはメールアドレスが登録されていないため、共有できません。`}
+						</p>
 					{/if}
 				{/if}
 			</section>

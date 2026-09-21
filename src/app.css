@@ -407,6 +407,12 @@ svg.i {
 	margin-left: calc(var(--side-w) + 32px);
 	padding: var(--bar-clear) var(--sp-6) var(--content-bottom-clear);
 }
+/* 依頼バーを出さない画面 (自前の入力欄を持つ /integrations — (app)/+layout.svelte)。
+   下に空ける高さは --chatbar-h から組み立てられているので (:root の
+   --content-bottom-clear)、バーの高さを 0 にすれば広い幅も 960px 以下も一度に詰まる */
+.app.no-bar {
+	--chatbar-h: 0px;
+}
 /* visual 4.4 + components 3.1 — 左サイドナビ (ruling: 幅 256、項目 48、角丸 16) */
 .sidebar {
 	position: fixed;

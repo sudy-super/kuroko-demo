@@ -1,5 +1,5 @@
 import type { Db, LineMessage } from '../types';
-import { bizDay, key, nextWeekday, parse, fmtMD } from '../dates';
+import { bizDay, key, parse, fmtMD, whenOf } from '../dates';
 import { freeSlots, personOf } from '../derived';
 
 export interface MentionResult {
@@ -11,11 +11,10 @@ export interface MentionResult {
 
 const WD = ['日', '月', '火', '水', '木', '金', '土'];
 const MENTION = /^@KUROKO\s*/;
-/** 「水曜」「水曜日」から曜日番号を取る。無ければ翌営業日の曜日に倒す */
+/** 時期の読み取りは /chat と同じ規則 (dates.ts の whenOf)。読み取れなければ翌営業日に倒す */
 function dayOf(db: Db, text: string): { date: Date; label: string } {
 	const base = parse(db.seededOn);
-	const m = text.match(/([日月火水木金土])曜/);
-	const date = m ? nextWeekday(WD.indexOf(m[1]), base) : bizDay(1, base);
+	const date = whenOf(text, base) ?? bizDay(1, base);
 	return { date, label: WD[date.getDay()] };
 }
 
@@ -92,5 +91,19 @@ export function handleMention(db: Db, text: string, role: 'owner' | 'member'): M
 		};
 	}
 
-	return { reply: 'この内容は引き受けられません。予定、空き時間、ToDo の登録をお試しください。' };
+	/* chat.md 観点 4.2 — 聞き返しの候補は文で並べず押せるものにする (NN/g: 文で出した
+	   Williams Sonoma より、ボタンで出した Home Depot のほうが「先に進む道筋が明確」)。
+	   /chat の unknown が 7 チップを出しているのと同じ形。押すとこの文がそのまま送り直される */
+	return {
+		reply: 'この内容は引き受けられません。次のどれをお手伝いしましょうか?',
+		card: {
+			title: '引き受けられる用件',
+			lines: [],
+			actions: [
+				{ label: '予定を入れる', act: 'say', arg: '@KUROKO 水曜に「打ち合わせ」の予定を入れて' },
+				{ label: '空き時間を聞く', act: 'say', arg: '@KUROKO 水曜は空いてる?' },
+				{ label: 'ToDo に入れる', act: 'say', arg: '@KUROKO 明日までに資料確認、ToDo に入れて' }
+			]
+		}
+	};
 }

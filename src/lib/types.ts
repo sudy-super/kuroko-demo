@@ -35,7 +35,7 @@ export interface MessageThread { id: string; source: Source; subject: string; se
 export interface Message { id: string; threadId: string; from: 'me' | 'them'; body: string; at: string; sentVia?: 'approval' }
 export interface CalendarEvent { id: string; date: string; start: string; end: string; title: string; place?: string; online?: 'meet' | 'zoom'; url?: string; personIds: string[]; companyId?: string; projectId?: string; meetingId?: string; source: 'gcal' | 'kuroko'; tentative?: boolean; bufferBefore?: number; bufferAfter?: number; remind?: number; purpose?: string }
 export interface Brief { createdAt: string; note?: string; history: string[]; lastPoints: string[]; homework: string[]; recentContacts: string[]; documentIds: string[] }
-export interface Minutes { summary: string; decisions: string[]; followUpMail: { to: string; subject: string; body: string } }
+export interface Minutes { summary: string; decisions: string[]; followUpMail?: { to: string; subject: string; body: string } }
 export interface Meeting { id: string; eventId: string; title: string; personIds: string[]; companyId?: string; projectId?: string; purpose: string; brief?: Brief; briefRead: boolean; agenda: string[]; agendaShared: boolean; transcriptIds: string[]; minutes?: Minutes }
 export interface Transcript { id: string; meetingId: string; text: string; addedAt: string }
 export interface Task { id: string; title: string; due?: string; time?: string; priority: 'high' | 'normal' | 'low'; personId?: string; companyId?: string; projectId?: string; meetingId?: string; memo?: string; status: 'todo' | 'doing' | 'done'; origin: Origin; createdAt: string }
