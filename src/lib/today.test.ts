@@ -7,7 +7,8 @@ import {
 	guideSection,
 	todayEvents,
 	nextMeeting,
-	canStartGuide
+	canStartGuide,
+	todaySummary
 } from './derived';
 import { addDays } from './dates';
 import { replaceDb, db } from './store.svelte';
@@ -79,6 +80,15 @@ describe('予定の並べ替え', () => {
 		db.meetings.push({ ...db.meetings[0], id: 'm-am', eventId: 'ev-am' });
 		db.meetings.push({ ...db.meetings[0], id: 'm-ten', eventId: 'ev-ten' });
 		expect(nextMeeting(db)?.meeting.id).toBe('m-am');
+	});
+});
+
+describe('todaySummary', () => {
+	it('今日の日付のログだけを kind ごとに数える (昨日以前と undone は除く)', () => {
+		const db = seed(new Date(2026, 8, 15));
+		expect(todaySummary(db)).toEqual({ drafts: 2, holds: 0, sends: 0, registers: 1 });
+		db.logs.find((l) => l.kind === 'register')!.undone = true;
+		expect(todaySummary(db).registers).toBe(0);
 	});
 });
 

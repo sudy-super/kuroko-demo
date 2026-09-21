@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Task, Origin } from '$lib/types';
-	import { ORIGIN_LABEL } from '$lib/types';
+	import { ORIGIN_LABEL, ORIGIN_ICON } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { doneLogOf, inTaskFilter } from '$lib/derived';
 	import { toggleTask, undo } from '$lib/actions';
@@ -21,22 +21,6 @@
 	   色は高だけ赤にする。塗りと線で形が違うので色だけに頼っていない */
 	const PRI: Partial<Record<Task['priority'], string>> = { high: '優先度 高', normal: '優先度 中' };
 
-	/* indicators.md「ToDo 一覧の登録経路」— 経路ごとに記号 1 個。文言は名前とツールチップに回す */
-	const ORIGIN_MARK: Record<Origin, string> = {
-		today: 'ic-home',
-		chat: 'ic-chat',
-		inbox: 'b-gmail',
-		line: 'b-line',
-		slack: 'b-slack',
-		approval: 'ic-check-c',
-		calendar: 'ic-cal',
-		meeting: 'ic-bell',
-		people: 'ic-people',
-		tasks: 'ic-list', // 一覧の記号。'ic-plus' は画面上の「追加」ボタンと同じ形で意味が二重になる
-		documents: 'ic-doc',
-		schedule: 'ic-clock',
-		palette: 'ic-search'
-	};
 	const originLabel = $derived(`${ORIGIN_LABEL[task.origin]}から登録`);
 </script>
 
@@ -64,7 +48,7 @@
 			</Tip>
 		{/if}
 		<Tip text={originLabel}>
-			<Icon name={ORIGIN_MARK[task.origin]} size={16} label={originLabel} class="task-origin" />
+			<Icon name={ORIGIN_ICON[task.origin]} size={16} label={originLabel} class="task-origin" />
 		</Tip>
 		{#if doneLog}
 			<button class="btn text sm" onclick={() => undo(doneLog.id)}>

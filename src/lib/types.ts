@@ -2,6 +2,9 @@ export type Source = 'gmail' | 'gcal' | 'slack' | 'line' | 'kuroko';
 export type RiskLevel = 'external_send' | 'internal' | 'internal_low';
 export type Origin = 'today' | 'chat' | 'inbox' | 'line' | 'slack' | 'approval' | 'calendar' | 'meeting' | 'people' | 'tasks' | 'documents' | 'schedule' | 'palette';
 export const ORIGIN_LABEL: Record<Origin, string> = { today: 'Today', chat: 'チャット', inbox: 'Inbox', line: 'LINE', slack: 'Slack', approval: '承認センター', calendar: 'カレンダー', meeting: '会議', people: 'People', tasks: 'ToDo', documents: 'ドキュメント', schedule: '日程調整', palette: '検索' };
+/* indicators.md「ToDo 一覧の登録経路」— 実行元は文言のタグではなく記号 1 個で示す。
+   TaskRow と ActivityList で同じ出所を扱うのでここに集約する */
+export const ORIGIN_ICON: Record<Origin, string> = { today: 'ic-home', chat: 'ic-chat', inbox: 'b-gmail', line: 'b-line', slack: 'b-slack', approval: 'ic-check-c', calendar: 'ic-cal', meeting: 'ic-bell', people: 'ic-people', tasks: 'ic-list', documents: 'ic-doc', schedule: 'ic-clock', palette: 'ic-search' };
 export type Reason = 'overdue' | 'unanswered_3d' | 'question' | 'project' | 'known_contact';
 export const REASON_ORDER: Reason[] = ['overdue', 'unanswered_3d', 'question', 'project', 'known_contact'];
 export const REASON_LABEL: Record<Reason, string> = { overdue: '返信期限超過', unanswered_3d: '3日間未返信', question: '質問が含まれています', project: '案件', known_contact: '登録済みの相手' };
