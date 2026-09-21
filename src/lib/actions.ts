@@ -109,6 +109,7 @@ export function reject(id: string, origin: Origin = 'approval') {
 	a.status = 'rejected';
 	a.sendingAt = undefined;
 	log(`${a.title}を却下しました`, 'other', { actor: 'user', origin });
+	toast('却下しました');
 	save();
 }
 

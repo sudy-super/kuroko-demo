@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { RISK_LABEL, type Approval, type Origin } from '$lib/types';
 	import { approve, reject, undoApproval, editApproval } from '$lib/actions';
+	import { toast } from '$lib/ui.svelte';
 	import ApprovalIcon from './ApprovalIcon.svelte';
 
 	let { approval: a, origin = 'approval' }: { approval: Approval; origin?: Origin } = $props();
@@ -13,12 +14,43 @@
 	let bodyEl: HTMLParagraphElement | undefined = $state();
 	let clipped = $state(false);
 	$effect(() => {
-		// a.body を読んで、編集で本文が変わったときも測り直す
+		// a.body を読んで、編集で本文が変わったときも測り直す (3 行のままだと下の観測が動かない)
 		a.body;
-		if (bodyEl && !bodyOpen) clipped = bodyEl.scrollHeight > bodyEl.clientHeight + 1;
+		const el = bodyEl;
+		if (!el) return;
+		const measure = () => {
+			if (!bodyOpen) clipped = el.scrollHeight > el.clientHeight + 1;
+		};
+		/* 畳んだ ApprovalDrawer の Collapsible の中では高さが 0 で描かれ、開くまで測れない。
+		   幅が変わったときも測り直す必要があるので、どちらも ResizeObserver で拾う */
+		const ro = new ResizeObserver(measure);
+		ro.observe(el);
+		measure();
+		return () => ro.disconnect();
 	});
 	let editing = $state(false);
 	let draft = $state('');
+	let taEl: HTMLTextAreaElement | undefined = $state();
+	let editBtn: HTMLButtonElement | undefined = $state();
+	let cardEl: HTMLElement | undefined = $state();
+	let wasEditing = false;
+
+	/* 編集の開閉で bits-ui の Dialog が焦点をドロワーの閉じるボタンへ飛ばすので、自分で戻す。
+	   「編集」が無い状態 (送信中) に閉じたときはカードへ寄せて、ドロワーの外へ出さない */
+	$effect(() => {
+		if (editing) taEl?.focus();
+		else if (wasEditing) (editBtn ?? cardEl)?.focus();
+		wasEditing = editing;
+	});
+
+	/* 外の画面で承認・却下されると保存が actions.ts の editApproval の条件に弾かれ、
+	   書いた内容が黙って消える。承認待ちでなくなった時点で編集を閉じる */
+	$effect(() => {
+		if (editing && a.status !== 'pending') {
+			editing = false;
+			toast('他の画面で処理されたため、編集を閉じました');
+		}
+	});
 
 	function startEdit() {
 		draft = a.body;
@@ -33,7 +65,8 @@
 	const primaryLabel = $derived(a.risk === 'external_send' ? '承認して送信' : '承認して実行');
 </script>
 
-<article class="card ap-card" aria-label={a.title}>
+<!-- tabindex は編集を閉じたときの焦点の受け皿 (上の $effect)。tab では止まらない -->
+<article class="card ap-card" aria-label={a.title} tabindex="-1" bind:this={cardEl}>
 	<div class="row ap-head">
 		<ApprovalIcon kind={a.kind} size={20} />
 		<!-- indicators.md「承認センターの区分」— 判断に直結する属性なので、Lozenge のまま
@@ -45,7 +78,8 @@
 	{#if a.subject}<p class="ap-subject">件名 {a.subject}</p>{/if}
 
 	{#if editing}
-		<textarea class="textarea ap-edit" rows="5" aria-label="本文を編集" bind:value={draft}></textarea>
+		<textarea class="textarea ap-edit" rows="5" aria-label="本文を編集" bind:value={draft} bind:this={taEl}
+		></textarea>
 		<div class="row ap-edit-foot">
 			<button class="btn pri sm" onclick={saveEdit}>保存</button>
 			<button class="btn text sm" onclick={() => (editing = false)}>取り消す</button>
@@ -78,7 +112,7 @@
 		<!-- buttons.md 観点A — 1 画面 1 主ボタン。24px 間隔で主 → 副 → 文字の順に並べる -->
 		<div class="row ap-foot">
 			<button class="btn pri sm" onclick={() => approve(a.id, origin)}>{primaryLabel}</button>
-			<button class="btn sec sm" onclick={startEdit}>編集</button>
+			<button class="btn sec sm" onclick={startEdit} bind:this={editBtn}>編集</button>
 			<button class="btn text sm" onclick={() => reject(a.id, origin)}>却下</button>
 		</div>
 	{/if}
