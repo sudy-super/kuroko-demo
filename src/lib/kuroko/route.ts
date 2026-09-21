@@ -28,14 +28,18 @@ const PEOPLE: [string, string][] = [
  */
 const NEEDS_PERSON: Intent['kind'][] = ['event', 'person', 'mail', 'schedule'];
 
-export function route(db: Db, text: string, ctx?: ContextChip): Intent {
+/**
+ * prev は聞き返しの直前の依頼 (actions.ts の chatSend が渡す)。
+ * 聞き返しの選択肢は短い言い直しなので日時を持たない (下の REASK)。元の依頼から引き継ぐ
+ */
+export function route(db: Db, text: string, ctx?: ContextChip, prev?: string): Intent {
 	const t = text.trim();
 	const personId = PEOPLE.find(([name]) => t.includes(name))?.[1] ?? ctx?.personId;
 	// 「明日」はデモの基準日から数える。シードが seededOn を today として組まれているため
 	const base = parse(db.seededOn);
-	const w = whenOf(t, base);
+	const w = whenOf(t, base) ?? (prev ? whenOf(prev, base) : undefined);
 	const when = w && key(w);
-	const at = hourOf(t);
+	const at = hourOf(t) ?? (prev ? hourOf(prev) : undefined);
 	const docKind = /提案書/.test(t)
 		? '提案書'
 		: /見積/.test(t)

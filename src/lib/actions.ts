@@ -726,9 +726,11 @@ export async function chatSend(text: string, ctx?: ContextChip) {
 	// 直前が人物の聞き返しだったときだけ「もう聞いた」とみなす。用件の選び直し (7 種のチップ)を
 	// 混ぜると、そこから人物なしで頼まれた 1 回目を聞き返せなくなる
 	const asked = db.chat[db.chat.length - 1]?.text === ASK_PERSON;
+	// 聞き返しの選択肢は人物しか運べないので、聞き返す前の依頼 (日時はそこにある)を route へ渡す
+	const prev = asked ? db.chat[db.chat.length - 2]?.text : undefined;
 	pushChat({ role: 'user', text: q });
 	await new Promise((r) => setTimeout(r, 800));
-	const { suggestion, ...msg } = reply(db, route(db, q, ctx), asked);
+	const { suggestion, ...msg } = reply(db, route(db, q, ctx, prev), asked);
 	if (suggestion) db.suggestions.push(suggestion);
 	pushChat({ role: 'kuroko', ...msg });
 }

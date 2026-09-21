@@ -50,4 +50,25 @@ describe('route', () => {
 		const c = reply(db, route(db, '田中さんと明日打ち合わせを入れて')).card!;
 		expect(c.lines[1]).toContain('9:00〜10:00');
 	});
+
+	/* 聞き返しの選択肢は人物しか運べない (REASK)。日時は聞き返す前の依頼から引き継ぐ。
+	   第 4 引数は actions.ts の chatSend が直前の発言を渡すもの */
+	it('聞き返しの選択肢に時刻を引き継ぐ', () => {
+		const i = route(db, '田中さんと打ち合わせを入れて', undefined, '明日 11 時に打ち合わせを入れて');
+		expect(i.at).toBe('11:00');
+		expect(reply(db, i).card!.lines[1]).toContain('11:00〜12:00');
+	});
+
+	it('聞き返しの選択肢に日付を引き継ぐ', () => {
+		const i = route(db, '田中さんと打ち合わせを入れて', undefined, '来週 打ち合わせを入れて');
+		expect(i.when).toBe(route(db, '来週 打ち合わせを入れて').when);
+		// 基準日 2026-09-15 の「来週」は bizDay(5) = 9/22。「明日」の 9/16 ではない
+		expect(reply(db, i).card!.lines[1]).toContain('9/22');
+	});
+
+	it('言い直しで日時を言えばそちらを使う', () => {
+		const i = route(db, '田中さんと明日 15 時に打ち合わせを入れて', undefined, '来週 11 時に打ち合わせ');
+		expect(i.at).toBe('15:00');
+		expect(i.when).toBe(route(db, '明日').when);
+	});
 });
