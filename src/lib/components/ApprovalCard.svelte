@@ -34,12 +34,16 @@
 	let editBtn: HTMLButtonElement | undefined = $state();
 	let cardEl: HTMLElement | undefined = $state();
 	let wasEditing = false;
+	let hadFocus = false;
 
 	/* 編集の開閉で bits-ui の Dialog が焦点をドロワーの閉じるボタンへ飛ばすので、自分で戻す。
-	   「編集」が無い状態 (送信中) に閉じたときはカードへ寄せて、ドロワーの外へ出さない */
+	   「編集」が無い状態 (送信中) に閉じたときはカードへ寄せて、ドロワーの外へ出さない。
+	   戻すのは閉じた時点で焦点が自分のカードの中にあった場合だけ (hadFocus)。下の自動クローズが
+	   加わって初めて「利用者が別のカードへ移った後に閉じる」経路ができた (d66ca4d には無い)ので、
+	   条件なしに戻すとその焦点を奪う */
 	$effect(() => {
 		if (editing) taEl?.focus();
-		else if (wasEditing) (editBtn ?? cardEl)?.focus();
+		else if (wasEditing && hadFocus) (editBtn ?? cardEl)?.focus();
 		wasEditing = editing;
 	});
 
@@ -47,8 +51,8 @@
 	   書いた内容が黙って消える。承認待ちでなくなった時点で編集を閉じる */
 	$effect(() => {
 		if (editing && a.status !== 'pending') {
-			editing = false;
-			toast('他の画面で処理されたため、編集を閉じました');
+			closeEdit();
+			toast('この承認は既に承認または却下されたため、編集を閉じました');
 		}
 	});
 
@@ -56,9 +60,14 @@
 		draft = a.body;
 		editing = true;
 	}
+	/* 焦点の位置は textarea が外れた瞬間に変わるので、閉じるより前にここで控える */
+	function closeEdit() {
+		hadFocus = !!cardEl && cardEl.contains(document.activeElement);
+		editing = false;
+	}
 	function saveEdit() {
 		editApproval(a.id, draft);
-		editing = false;
+		closeEdit();
 	}
 
 	// internal / internal_low は「実行」、external_send だけ「送信」(仕様 5.11)
@@ -82,7 +91,7 @@
 		></textarea>
 		<div class="row ap-edit-foot">
 			<button class="btn pri sm" onclick={saveEdit}>保存</button>
-			<button class="btn text sm" onclick={() => (editing = false)}>取り消す</button>
+			<button class="btn text sm" onclick={closeEdit}>取り消す</button>
 		</div>
 	{:else}
 		<!-- 本文は畳んでいる間も 3 行見せる (仕様 5.11)。bits-ui の Collapsible は閉じると
