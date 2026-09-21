@@ -115,30 +115,30 @@
 	{#if detail}
 		{@const people = detail.personIds.map((id) => personOf(db, id)?.name).filter(Boolean)}
 		<div class="list-row">
-			<span class="badge src">場所</span>
+			<span class="badge">場所</span>
 			<span class="tc-text">{detail.place ?? (detail.online ? 'オンライン' : '指定なし')}</span>
 		</div>
 		{#if people.length}
 			<div class="list-row">
-				<span class="badge src">参加者</span>
+				<span class="badge">参加者</span>
 				<span class="tc-text">{people.join('、')}</span>
 			</div>
 		{/if}
 		{#if detail.projectId}
 			<div class="list-row">
-				<span class="badge src">案件</span>
+				<span class="badge">案件</span>
 				<span class="tc-text">{projectOf(db, detail.projectId)?.name}</span>
 			</div>
 		{/if}
 		{#if detail.url}
 			<div class="list-row">
-				<span class="badge src">{detail.online === 'zoom' ? 'Zoom' : 'Meet'}</span>
+				<span class="badge">{detail.online === 'zoom' ? 'Zoom' : 'Meet'}</span>
 				<a class="tc-text" href={linkUrl(detail.url)} target="_blank" rel="noreferrer">{detail.url}</a>
 			</div>
 		{/if}
 		{#if detail.meetingId}
 			<div class="list-row">
-				<span class="badge src">会議</span>
+				<span class="badge">会議</span>
 				<a class="tc-text" href="/meetings/{detail.meetingId}">会議の準備を見る</a>
 			</div>
 		{/if}

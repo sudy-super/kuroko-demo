@@ -79,8 +79,10 @@
 	<div class="row ap-head">
 		<ApprovalIcon kind={a.kind} size={20} />
 		<!-- indicators.md「承認センターの区分」— 判断に直結する属性なので、Lozenge のまま
-		     文言で出す (アイコン化は却下)。文言の出所は types.ts の RISK_LABEL -->
-		<span class="badge" class:neutral={a.risk !== 'external_send'}>{RISK_LABEL[a.risk]}</span>
+		     文言で出す (アイコン化は却下)。文言の出所は types.ts の RISK_LABEL。
+		     外部送信だけ橙 (app.css の .badge.caution)、残る 2 つは既定の灰。Today の
+		     承認待ちカードも同じ組み方 -->
+		<span class="badge" class:caution={a.risk === 'external_send'}>{RISK_LABEL[a.risk]}</span>
 	</div>
 	<h3 class="ap-title">{a.title}</h3>
 	<p class="ap-to">宛先 {a.to}</p>
@@ -89,8 +91,10 @@
 	{#if editing}
 		<textarea class="textarea ap-edit" rows="5" aria-label="本文を編集" bind:value={draft} bind:this={taEl}
 		></textarea>
+		<!-- 編集はカードの中で開くだけで、Carbon の例外 (別フローが被さる temporary flow) に当たらない。
+		     複数のカードを同時に編集できるので保存も塗りにしない (上の ap-foot と同じ根拠) -->
 		<div class="row ap-edit-foot">
-			<button class="btn pri sm" onclick={saveEdit}>保存</button>
+			<button class="btn sec sm" onclick={saveEdit}>保存</button>
 			<button class="btn text sm" onclick={closeEdit}>取り消す</button>
 		</div>
 	{:else}
@@ -118,10 +122,12 @@
 			<button class="btn text sm" onclick={() => undoApproval(a.id)}>取り消す</button>
 		</div>
 	{:else if !editing}
-		<!-- buttons.md 観点A — 1 画面 1 主ボタン。24px 間隔で主 → 副 → 文字の順に並べる -->
+		<!-- buttons.md 観点A 原則 3 — カードが縦に並ぶ画面では塗りの主ボタンを使わない
+		     (research-repeated-primary.md の Carbon「Ghost buttons in productive cards」)。
+		     序列は枠の有無で付ける。24px 間隔で 枠付き → 文字 → 文字 の順 -->
 		<div class="row ap-foot">
-			<button class="btn pri sm" onclick={() => approve(a.id, origin)}>{primaryLabel}</button>
-			<button class="btn sec sm" onclick={startEdit} bind:this={editBtn}>編集</button>
+			<button class="btn sec sm" onclick={() => approve(a.id, origin)}>{primaryLabel}</button>
+			<button class="btn text sm" onclick={startEdit} bind:this={editBtn}>編集</button>
 			<button class="btn text sm" onclick={() => reject(a.id, origin)}>却下</button>
 		</div>
 	{/if}

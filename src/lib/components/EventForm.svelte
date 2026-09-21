@@ -138,7 +138,7 @@
 
 {#snippet range(e: CalendarEvent)}
 	<div class="list-row">
-		<span class="badge src">{e.place ?? 'オンライン'}</span>
+		<span class="badge">{e.place ?? 'オンライン'}</span>
 		<span class="tc-text">{e.title}</span>
 		<span class="num muted">{e.start}〜{e.end}</span>
 	</div>
@@ -256,7 +256,7 @@
 	{#if warn}
 		{@render range(warn.prev)}
 		<div class="list-row">
-			<span class="badge src">{place}</span>
+			<span class="badge">{place}</span>
 			<span class="tc-text">{title || '新しい予定'}</span>
 			<span class="num muted">{start}〜{end}</span>
 		</div>

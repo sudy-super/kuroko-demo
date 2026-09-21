@@ -82,7 +82,7 @@
 							<span class="people-name">{c.name}</span>
 							<span class="sub">{c.industry} / {c.size}</span>
 						</span>
-						<span class="badge src">担当 {staff(c.id)} 名</span>
+						<span class="badge">担当 {staff(c.id)} 名</span>
 					</a>
 				{/each}
 			{:else}

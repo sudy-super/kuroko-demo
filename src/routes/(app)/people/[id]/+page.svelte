@@ -151,7 +151,7 @@
 				<p class="people-stat">メール {stats?.mails} 通 / 会議 {stats?.meetings} 件</p>
 				{#each shown(history, 'history') as h (h.href + h.at)}
 					<a class="list-row" href={h.href}>
-						<span class="badge src">{h.label}</span>
+						<span class="badge">{h.label}</span>
 						<span class="people-ident">{h.title}</span>
 						<span class="num muted">{day(h.at)}</span>
 					</a>
@@ -186,7 +186,7 @@
 				<h2>関連資料</h2>
 				{#each shown(documents, 'documents') as d (d.id)}
 					<a class="list-row" href="/documents?d={d.id}">
-						<span class="badge src">{d.kind}</span>
+						<span class="badge">{d.kind}</span>
 						<span class="people-ident">{d.title}</span>
 					</a>
 				{/each}

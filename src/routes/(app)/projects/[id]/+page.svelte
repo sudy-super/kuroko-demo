@@ -111,7 +111,7 @@
 				<h2>資料</h2>
 				{#each shown(documents, 'documents') as d (d.id)}
 					<a class="list-row" href="/documents?d={d.id}">
-						<span class="badge src">{d.kind}</span>
+						<span class="badge">{d.kind}</span>
 						<span class="people-ident">{d.title}</span>
 					</a>
 				{/each}

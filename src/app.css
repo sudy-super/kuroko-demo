@@ -853,8 +853,11 @@ svg.i {
 .btn.danger:hover {
 	background: var(--warn-soft);
 }
+/* Task 10k 修正ラウンド 1 — 88% だと塗りが rgb(246,212,213) まで濃くなり、上に載る --warn が
+   4.19:1 で buttons.md 資料 14 の 4.5:1 を割っていた。WCAG 1.4.3 が比の対象から外すのは
+   disabled だけで、押下中は外れない。94% なら rgb(250,224,224) で 4.60:1 */
 .btn.danger:active {
-	background: color-mix(in srgb, var(--warn-soft) 88%, var(--warn));
+	background: color-mix(in srgb, var(--warn-soft) 94%, var(--warn));
 }
 /* 小ボタンは実寸 36px。透明領域で操作領域を 44px にする (components 3.4) */
 .btn.sm {
@@ -1077,24 +1080,29 @@ svg.i {
 }
 
 /* components 3.6 — バッジ (押せない表示専用。ruling: 文字は 12px まで)。
-   Task 10k — 寸法は IBM Carbon の Tag の medium を実測した値に合わせた (高さ 24px、
-   文字 12px、左右 8px、角丸は高さの半分の pill)。構造は Atlassian の Lozenge を実測した
-   形 (薄い塗り + 同系色の 1px の枠)を採る。枠を置くのは、色を外しても輪郭が残るため
-   (docs/research/buttons.md 観点 B 原則 2 の「記号・形・色・文字のうち 3 要素」のうち、
-   文字と色に形を足して 3 つにする)。枠の色は薄い色ではなく役割の色そのもので、
-   面との比が 3:1 を下回らないようにしてある (同 資料 14)。
-   既定の色は承認の区分のうち「外部送信」= 危険 (Carbon の Status indicator は赤を危険に
-   割り当てる、資料 10)。案件の状態は derived.ts の projectStatusClass が別の修飾子を返す */
+   Task 10k — 寸法は IBM Carbon の Tag の medium に合わせた (高さ 24px、文字 12px、左右 8px)。
+   角丸の 16px も Carbon の規定値で、Tag: Style の Structure の表が lg / md / sm の 3 段すべてに
+   16px を指定している (高さの半分ではない。md の半分は 12px)。トークンに 16px は無いので直値。
+   構造 (薄い塗り + 同系色の 1px の枠) は Atlassian の Lozenge の形を採る。Carbon の Tag の枠は
+   selectable / operational だけの「押せる」印なので、枠の出所は Atlassian だけで、Carbon ではない。
+   枠を置く理由は、色を外しても輪郭が残ること (docs/research/buttons.md 観点 B 原則 2 の
+   「記号・形・色・文字のうち 3 要素」のうち、文字と色に形を足して 3 つにする)。枠の色は薄い色では
+   なく役割の色そのもので、面との比が 3:1 を下回らないようにしてある (同 資料 14)。
+   Task 10k 修正ラウンド 1 — 既定を「外部送信」の赤にしていたが、修飾子の付かないバッジが黙って
+   危険の色になるのは向きが逆なので、既定は中立の灰にした。危険や注意を出す場所は修飾子を明示する。
+   この灰は元は .badge.src と .badge.neutral が別々に持っていた同じ 3 行で、既定に上げて 1 つにした。
+   塗りが半透明でなく不透明なのは Task 10c の理由で、ガラスの上ではオーブが透けて 12px の文字が
+   実測 2.5:1 まで落ちたため。白地での見え方は rgba(120, 140, 180, .12) を白に重ねた色と同じ */
 .badge {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--sp-1);
 	height: 24px;
 	padding: 0 var(--sp-2);
-	border-radius: var(--r-pill);
-	background: var(--warn-soft);
-	color: var(--warn);
-	box-shadow: inset 0 0 0 1px var(--warn);
+	border-radius: 16px;
+	background: #eef1f6;
+	color: var(--ink-2);
+	box-shadow: inset 0 0 0 1px #78849e;
 	font-size: 12px;
 	font-weight: 500;
 	line-height: 1.4;
@@ -1105,23 +1113,21 @@ svg.i {
 	width: 12px;
 	height: 12px;
 }
-/* Task 10c — 出所のバッジだけは塗りを不透明にする。半透明のままだとガラスの上でオーブが
-   透けて、12px の文字が実測 2.5:1 まで落ちた。白地での見え方は rgba(120, 140, 180, .12) を
-   白に重ねた色と同じなので、見た目は変わらない (--ink-2 との比は 5.79:1)。
-   Task 10k — 「場所」「参加者」など項目名を指す札は状態ではなく分類なので、Atlassian の
-   Tag に当たる (buttons.md 観点 B 原則 1)。人物のタグ (.badge.tag) と同じ枠にする */
-.badge.src {
-	background: #eef1f6;
-	color: var(--ink-2);
-	box-shadow: inset 0 0 0 1px #78849e;
-}
-/* Task 10h 修正ラウンド 1 — 承認の区分のうち中立の 2 つ (社内 / 低リスク)。出所のバッジと
-   同じ灰色だが役割は別なので、修飾子を分ける。塗りを不透明にする理由は .badge.src と同じで、
-   このロゼンジが載るのは Today の承認待ちカード (ガラス)と承認ドロワー (ガラス)の面 */
-.badge.neutral {
-	background: #eef1f6;
-	color: var(--ink-2);
-	box-shadow: inset 0 0 0 1px #78849e;
+/* Task 10k — 承認の区分のうち「外部送信」。Carbon の Status indicator は赤 (high attention)を
+   「system irregularity, malfunction, or potentially destructive action」に限っており、区分が何かを
+   述べているだけのこの札は当たらない。同パターンの Status color palette が「orange represents a
+   serious warning」とする橙を採る。色は同じ表の Orange 60 (#ba4e00、outline 用)と Orange 10
+   (#fff2e8)で、Carbon がこの 2 つを「added contrast accessibility」のために用意している組。
+   名前は Carbon が橙の状態に付けている "Caution major" から採る。同パターンで attention は
+   赤・橙・黄をまたぐ強さの軸の呼び名 (high / medium / low attention)で、橙はその medium に当たる。
+   修飾子名を attention にすると、退けたはずの赤 (high attention)を指して読めるので使わない。
+   下の .badge.warn (赤、失注)とは語感が近いが、色の役割は Carbon の表で別物 (赤 = danger or
+   error、橙 = serious warning)。文字は 4.58:1、枠は面 (白)に対して 5.03:1 (資料 14 の下限は
+   4.5:1 と 3:1) */
+.badge.caution {
+	background: #fff2e8;
+	color: #ba4e00;
+	box-shadow: inset 0 0 0 1px #ba4e00;
 }
 /* audit 4 — 人物のタグは Atlassian の Tag (分類のための控えめなラベル)。状態を示す Lozenge
    (.badge の色付き) と役割が違うので、塗りを外して枠線だけにし、主張を一段落とす。

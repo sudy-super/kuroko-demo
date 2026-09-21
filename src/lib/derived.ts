@@ -37,8 +37,8 @@ export const pendingApprovals = (db: Db) => db.approvals.filter((a) => a.status 
 
 /* 案件の状態は Atlassian の Lozenge (ワークフローの状態) にあたるので、一覧・人物詳細・会社・
    案件のどこでも同じ色で出す。終わった 2 つだけ色を分け、途中の状態は青 (進行中) にする。
-   Task 10k — 以前は途中の状態に修飾子を付けず .badge の既定に任せていたが、既定は
-   「外部送信」の危険 (赤) になったので、進行中は info を明示する (app.css の .badge を見よ) */
+   Task 10k — 途中の状態は .badge の既定 (中立の灰) に任せず info を明示する。既定の灰は
+   分類の札 (「場所」「提案書」など) が使う色で、状態とは役割が違う (app.css の .badge を見よ) */
 export const projectStatusClass = (s: ProjectStatus) =>
 	s === '受注' ? 'ok' : s === '失注' ? 'warn' : 'info';
 

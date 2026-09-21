@@ -125,8 +125,9 @@
 							<div class="list-row">
 								<ApprovalIcon kind={a.kind} />
 								<span class="tc-text">{a.title}</span>
-								<!-- ドロワーと同じ区分の Lozenge。文言の出所は types.ts の RISK_LABEL -->
-								<span class="badge" class:neutral={a.risk !== 'external_send'}>{RISK_LABEL[a.risk]}</span>
+								<!-- ドロワーと同じ区分の Lozenge。文言の出所は types.ts の RISK_LABEL。
+								     外部送信だけ橙 (app.css の .badge.caution)、残る 2 つは既定の灰 -->
+								<span class="badge" class:caution={a.risk === 'external_send'}>{RISK_LABEL[a.risk]}</span>
 							</div>
 						{/each}
 						{#if ap.length > 3}<p class="muted">残り {ap.length - 3} 件</p>{/if}
