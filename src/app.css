@@ -1494,6 +1494,14 @@ svg.i {
 .sheet .list-row {
 	flex: none;
 }
+/* Task 16 — 携帯を横向きにした高さでは 50dvh が 195px しかなく、つまみと見出しで埋まって
+   中身が 1 行も見えない (844x390 で実測)。この高さだけ画面をもっと使う。上端には
+   上部バーの分を残す (max-height はそのまま効く) */
+@media (max-width: 960px) and (max-height: 480px) {
+	.sheet {
+		height: calc(100dvh - 72px);
+	}
+}
 /* つまみ 32 x 4px (components 3.8)。上下の余白は余白の目盛りに合わせて 20px */
 .sheet-handle {
 	flex: none;

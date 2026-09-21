@@ -1,39 +1,87 @@
 <script lang="ts">
-	import { RISK_LABEL } from '$lib/types';
 	import { db } from '$lib/store.svelte';
-	import { pendingApprovals } from '$lib/derived';
-	import { approve, reject } from '$lib/actions';
 	import { ui } from '$lib/ui.svelte';
 	import Drawer from './Drawer.svelte';
-	import ApprovalIcon from './ApprovalIcon.svelte';
+	import ApprovalCard from './ApprovalCard.svelte';
+	import { Collapsible } from 'bits-ui';
+	import Icon from './Icon.svelte';
 
-	const pending = $derived(pendingApprovals(db));
+	// pending + sending (取り消せる間) を出す。executed / rejected はここに出さない
+	const active = $derived(db.approvals.filter((a) => a.status === 'pending' || a.status === 'sending'));
+	const external = $derived(active.filter((a) => a.risk === 'external_send'));
+	const internal = $derived(active.filter((a) => a.risk !== 'external_send'));
+	const recentExecuted = $derived(db.approvals.filter((a) => a.status === 'executed').slice(0, 3));
+
+	let internalOpen = $state(false);
 </script>
 
 <Drawer open={ui.approvalDrawer} title="承認待ち" onclose={() => (ui.approvalDrawer = false)}>
-	{#if pending.length === 0}
-		<p class="muted">承認をお待ちいただいているものはありません。</p>
-	{:else}
-		{#each pending as a (a.id)}
-			<div
-				class="list-row"
-				style="cursor: default; height: auto; flex-direction: column; align-items: stretch; gap: var(--sp-2); padding-block: var(--sp-3)"
-			>
-				<div>{a.title}</div>
-				<div class="row" style="justify-content: space-between">
-					<span class="row" style="gap: var(--sp-2)">
-						<ApprovalIcon kind={a.kind} size={20} />
-						<!-- 仕様 5.11 の種別バッジ。区分は判断に直結する属性なので Lozenge の文言で出す
-						     (indicators.md「承認センターの区分」。文言の出所は types.ts の RISK_LABEL)。
-						     外部送信だけ accent、社内と低リスクは灰色に落として、目を引く先を 1 つにする -->
-						<span class="badge" class:neutral={a.risk !== 'external_send'}>{RISK_LABEL[a.risk]}</span>
-					</span>
-					<span class="row" style="gap: var(--sp-6)">
-						<button class="btn pri sm" onclick={() => approve(a.id, 'approval')}>承認して送信</button>
-						<button class="btn text sm" onclick={() => reject(a.id, 'approval')}>却下</button>
-					</span>
+	{#if active.length === 0}
+		<p class="muted">承認待ちはありません。</p>
+		{#if recentExecuted.length}
+			<p class="ap-recent-head">実行済み</p>
+			{#each recentExecuted as a (a.id)}
+				<div class="list-row" style="cursor: default">
+					<span class="tc-text">{a.title}</span>
 				</div>
-			</div>
-		{/each}
+			{/each}
+		{/if}
+	{:else}
+		<div class="ap-list">
+			{#each external as a (a.id)}
+				<ApprovalCard approval={a} origin="approval" />
+			{/each}
+		</div>
+		{#if internal.length}
+			<Collapsible.Root bind:open={internalOpen} class="ap-internal">
+				<Collapsible.Trigger class="list-row ap-internal-trigger">
+					<Icon name="ic-chev" size={18} class={internalOpen ? 'ap-chev open' : 'ap-chev'} />
+					社内 {internal.length} 件
+				</Collapsible.Trigger>
+				<Collapsible.Content>
+					<div class="ap-list">
+						{#each internal as a (a.id)}
+							<ApprovalCard approval={a} origin="approval" />
+						{/each}
+					</div>
+				</Collapsible.Content>
+			</Collapsible.Root>
+		{/if}
 	{/if}
+	{#snippet footer()}
+		<p class="ap-footnote muted">メール送信・日程確定・外部共有は、承認するまで実行されません。</p>
+	{/snippet}
 </Drawer>
+
+<style>
+	.ap-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-4);
+	}
+	:global(.ap-internal) {
+		margin-top: var(--sp-4);
+	}
+	:global(.ap-internal-trigger) {
+		gap: var(--sp-2);
+		font-size: 14px;
+		color: var(--ink-2);
+	}
+	:global(.ap-chev) {
+		transition: rotate var(--d-fast) var(--ease-out);
+	}
+	:global(.ap-chev.open) {
+		rotate: 90deg;
+	}
+	:global(.ap-internal .ap-list) {
+		margin-top: var(--sp-2);
+	}
+	.ap-recent-head {
+		margin: var(--sp-4) 0 var(--sp-1);
+		color: var(--ink-3);
+		font-size: 12px;
+	}
+	.ap-footnote {
+		font-size: 12px;
+	}
+</style>

@@ -91,6 +91,15 @@ export function undoApproval(id: string) {
 	save();
 }
 
+export function editApproval(id: string, body: string) {
+	const a = db.approvals.find((x) => x.id === id);
+	if (!a || a.status !== 'pending') return;
+	a.body = body;
+	// reply 以外の payload は本文を持たないので、種類ごとに更新先を分ける (Task 16 仕様)
+	if (a.payload.type === 'reply') a.payload.body = body;
+	save();
+}
+
 export function reject(id: string, origin: Origin = 'approval') {
 	const a = db.approvals.find((x) => x.id === id);
 	if (!a || (a.status !== 'pending' && a.status !== 'sending')) return;

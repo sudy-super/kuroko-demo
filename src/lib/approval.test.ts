@@ -4,6 +4,7 @@ import {
 	addApproval,
 	approve,
 	undoApproval,
+	editApproval,
 	reject,
 	restoreStaleSending,
 	SEND_DELAY_MS,
@@ -44,6 +45,25 @@ describe('approval', () => {
 		vi.advanceTimersByTime(SEND_DELAY_MS);
 		expect(a.status).toBe('executed');
 		expect(db.logs[0].approved).toBe(true);
+	});
+	it('editApproval は pending のときだけ本文を差し替え、reply なら payload も揃える', () => {
+		const a = addApproval({
+			title: 't',
+			risk: 'external_send',
+			kind: 'mail',
+			to: 'a <a@b.jp>',
+			body: '元の本文',
+			effectLine: 'e',
+			payload: { type: 'reply', threadId: db.threads[0].id, body: '元の本文' },
+			origin: 'inbox'
+		});
+		editApproval(a.id, '書き換えた本文');
+		expect(a.body).toBe('書き換えた本文');
+		expect(a.payload).toMatchObject({ body: '書き換えた本文' });
+		// 送信待ちに入ったら書き換えさせない (送る中身が途中で変わらないようにする)
+		approve(a.id);
+		editApproval(a.id, 'さらに書き換え');
+		expect(a.body).toBe('書き換えた本文');
 	});
 	it('risk x 自動化レベルの 9 通り', () => {
 		const cases: [string, string, string][] = [
