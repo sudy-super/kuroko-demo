@@ -3,7 +3,7 @@
 	import { nextMeeting, todaySummary } from '$lib/derived';
 
 	const stats = $derived(db.demo.stats);
-	const sum = $derived(todaySummary(db));
+	const sum = $derived(todaySummary(db, 'KUROKO')); // 下の文が「KUROKO は」と名乗るので自分の操作は数えない
 	const nm = $derived(nextMeeting(db));
 
 	// 仕様 5.1 — 本日の実績 5 つ

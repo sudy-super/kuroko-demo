@@ -90,6 +90,12 @@ describe('todaySummary', () => {
 		db.logs.find((l) => l.kind === 'register')!.undone = true;
 		expect(todaySummary(db).registers).toBe(0);
 	});
+
+	it('actor を渡すとその実行主体の分だけ数える (DoneScreen の「KUROKO は」用)', () => {
+		const db = seed(new Date(2026, 8, 15));
+		// 種の登録 1 件は actor: 'user' なので KUROKO で絞ると 0 件になる
+		expect(todaySummary(db, 'KUROKO')).toEqual({ drafts: 2, holds: 0, sends: 0, registers: 0 });
+	});
 });
 
 describe('完了画面からの始め直し', () => {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ActivityLog } from '$lib/types';
 	import { ORIGIN_LABEL, ORIGIN_ICON } from '$lib/types';
+	import { key, parse, rel, today } from '$lib/dates';
 	import { undo } from '$lib/actions';
 	import { toast } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
@@ -12,6 +13,11 @@
 	   文言は名前とツールチップに回す (ActivityDrawer の現行実装と同じ考え方) */
 	const actorLabel = (actor: ActivityLog['actor']) => (actor === 'KUROKO' ? 'KUROKO の作業' : '自分の作業');
 
+	/* 昨日以前のログが時刻だけで並ぶと今日の分と見分けが付かないので、その日以外は日付を添える
+	   (dates.ts の rel が「昨日」や「9/18 (金)」を返す) */
+	const K = key(today());
+	const when = (at: string) => (at.startsWith(K) ? at.slice(11, 16) : `${rel(parse(at.slice(0, 10)))} ${at.slice(11, 16)}`);
+
 	function onUndo(l: ActivityLog) {
 		undo(l.id);
 		toast('元に戻しました');
@@ -19,13 +25,16 @@
 </script>
 
 {#each logs as l (l.id)}
+	{@const ku = l.actor === 'KUROKO'}
 	<div class="list-row lg activity-row" class:compact style="cursor: default">
-		<span class="num sub activity-at">{l.at.slice(11, 16)}</span>
+		<span class="num sub activity-at">{when(l.at)}</span>
 		<Tip text={actorLabel(l.actor)}>
-			<Icon name={l.actor === 'KUROKO' ? 'ic-spark' : 'ic-user'} size={16} label={actorLabel(l.actor)} class="activity-actor" />
+			<!-- indicators.md 93、99 行目 — 色だけにも形だけにも頼らないよう、記号と色の両方を変える -->
+			<Icon name={ku ? 'ic-spark' : 'ic-user'} size={16} label={actorLabel(l.actor)} class="activity-actor {ku ? 'by-kuroko' : ''}" />
 		</Tip>
 		<span class="activity-text" class:undone={l.undone}>{l.text}</span>
 		{#if !compact}
+			<!-- ドロワーの直近 5 件は場所が狭いので、実行元の記号を落として 1 行に収める -->
 			<Tip text={`${ORIGIN_LABEL[l.origin]}から`}>
 				<Icon name={ORIGIN_ICON[l.origin]} size={16} label={`${ORIGIN_LABEL[l.origin]}から`} class="activity-origin" />
 			</Tip>
@@ -43,20 +52,32 @@
 {/each}
 
 <style>
+	/* 折り返す行なので app.css の .list-row.lg の固定の高さ (56px) を解く。
+	   解かないと折り返した本文が箱からはみ出し、下の行に重なって描かれる */
 	.activity-row {
 		gap: var(--sp-3);
 		flex-wrap: wrap;
+		height: auto;
+		min-height: 56px;
+		padding-block: var(--sp-2);
 	}
 	.activity-at {
 		flex: none;
-		width: 40px;
+		min-width: 40px;
+		white-space: nowrap;
 	}
 	:global(.activity-actor) {
 		flex: none;
-		color: var(--ink-2);
+		color: var(--ink-3);
 	}
+	:global(.activity-actor.by-kuroko) {
+		color: var(--accent);
+	}
+	/* flex: 1 の基準は 0 幅なので、本文だけが 1 文字ずつまで潰れる。基準を与えて、
+	   それを割る狭さでは後ろのバッジとボタンを次の行へ回す
+	   (min() は本文より狭い箱 — ドロワー — で行からはみ出させないための上限) */
 	.activity-text {
-		flex: 1;
+		flex: 1 1 min(12em, 100%);
 		min-width: 0;
 	}
 	.activity-text.undone {
@@ -69,14 +90,5 @@
 	}
 	.activity-undo {
 		flex: none;
-	}
-	/* ドロワーの直近 5 件は場所が狭いので、実行元バッジを落として 1 行に収める */
-	.activity-row.compact {
-		flex-wrap: nowrap;
-		height: auto;
-		min-height: 56px;
-	}
-	.activity-row.compact .activity-text {
-		white-space: normal;
 	}
 </style>

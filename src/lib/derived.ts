@@ -1,4 +1,4 @@
-import type { Db, TodayItem, Meeting, CalendarEvent, Task, ProjectStatus, MessageThread } from './types';
+import type { Db, TodayItem, Meeting, CalendarEvent, Task, ProjectStatus, MessageThread, ActivityLog } from './types';
 import { key, parse, addDays, minutes, toHm, hm } from './dates';
 
 export const personOf = (db: Db, id?: string) => db.people.find((p) => p.id === id);
@@ -190,9 +190,11 @@ export function guideSection(db: Db): 0 | 1 | 2 | 3 | 4 | 5 {
 	return todayCount(db) === 0 ? 0 : 5;
 }
 
-export function todaySummary(db: Db) {
+/* actor を渡した呼び出しだけその実行主体に絞る。DoneScreen は「KUROKO は今日」と主語を
+   名乗るので絞り、/activity は「本日は」と全体を指すので絞らない */
+export function todaySummary(db: Db, actor?: ActivityLog['actor']) {
 	const k = T(db);
-	const L = db.logs.filter((l) => l.at.startsWith(k) && !l.undone);
+	const L = db.logs.filter((l) => l.at.startsWith(k) && !l.undone && (!actor || l.actor === actor));
 	const c = (kind: string) => L.filter((l) => l.kind === kind).length;
 	return { drafts: c('draft'), holds: c('hold'), sends: c('send'), registers: c('register') };
 }
