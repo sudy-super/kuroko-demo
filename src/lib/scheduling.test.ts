@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { db, resetDb } from './store.svelte';
-import { insertSlots, sendReply, approve, confirmSlot, cancelScheduling, SEND_DELAY_MS } from './actions';
+import { insertSlots, dropSlotsDraft, sendReply, approve, confirmSlot, cancelScheduling, SEND_DELAY_MS } from './actions';
 import { todayCount, nextMeeting } from './derived';
 
 beforeEach(() => {
@@ -101,5 +101,28 @@ describe('scheduling', () => {
 		expect(ap.payload.type).toBe('reply');
 		expect((ap.payload as { schedulingId?: string }).schedulingId).toBeUndefined();
 		expect(ap.effectLine).not.toContain('相手が候補を選ぶと');
+	});
+	// slots を採用したあと別トーンを採用すると本文から候補が消えるので、下書きも道連れにする
+	it('dropSlotsDraft のあとは sendReply の schedulingId が付かない', () => {
+		insertSlots('th-tanaka-next');
+		dropSlotsDraft('th-tanaka-next');
+		expect(db.scheduling.filter((s) => s.threadId === 'th-tanaka-next').length).toBe(0);
+		const ap = sendReply('th-tanaka-next', '承知しました。改めてご連絡いたします。', 'inbox');
+		expect((ap.payload as { schedulingId?: string }).schedulingId).toBeUndefined();
+		expect(ap.effectLine).not.toContain('相手が候補を選ぶと');
+		approve(ap.id);
+		vi.advanceTimersByTime(SEND_DELAY_MS);
+		expect(db.scheduling.some((s) => s.token)).toBe(false);
+	});
+	// 承認待ちの返信が指している下書きは、その本文に候補が載っているので消さない
+	it('承認待ちの返信が指す下書きは dropSlotsDraft でも残る', () => {
+		const s = insertSlots('th-tanaka-next');
+		const ap = sendReply('th-tanaka-next', 'body ' + s.text, 'inbox');
+		dropSlotsDraft('th-tanaka-next');
+		expect(db.scheduling).toContain(s);
+		approve(ap.id);
+		vi.advanceTimersByTime(SEND_DELAY_MS);
+		expect(s.status).toBe('sent');
+		expect(s.token).toBeTruthy();
 	});
 });

@@ -311,6 +311,25 @@ export function insertSlots(threadId: string): SchedulingRequest {
 	return db.scheduling[db.scheduling.length - 1];
 }
 
+// insertSlots() の逆。候補の載った本文を送らないと決まった時に呼ぶ。sendReply() は本文を見ず
+// threadId の draft を拾うだけなので、本文と下書きを合わせる責任はこちら側にある
+export function dropSlotsDraft(threadId: string) {
+	const i = db.scheduling.findIndex((s) => s.threadId === threadId && s.status === 'draft');
+	if (i < 0) return;
+	// 承認待ち・送信待ちの返信が指している下書きは、その本文に候補が載っているので残す
+	// (executeApproval() が token を発行する先 — payload.schedulingId)
+	const id = db.scheduling[i].id;
+	const held = db.approvals.some(
+		(a) =>
+			(a.status === 'pending' || a.status === 'sending') &&
+			a.payload.type === 'reply' &&
+			a.payload.schedulingId === id
+	);
+	if (held) return;
+	db.scheduling.splice(i, 1);
+	save();
+}
+
 export function sendReply(threadId: string, body: string, origin: Origin = 'inbox'): Approval {
 	const th = db.threads.find((t) => t.id === threadId)!;
 	const p = personOf(db, th.personId);

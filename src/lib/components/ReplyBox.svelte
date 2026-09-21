@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import type { MessageThread } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { identityOf, threadSenderMeta } from '$lib/derived';
 	import { replyDraft } from '$lib/kuroko/generate';
-	import { insertSlots, sendReply } from '$lib/actions';
+	import { dropSlotsDraft, insertSlots, sendReply } from '$lib/actions';
 	import { ui } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 	import Modal from './Modal.svelte';
@@ -27,6 +28,9 @@
 	const chips = $derived(CHIPS.filter((c) => c.tone !== 'slots' || thread.personId));
 
 	let body = $state('');
+	// スレッドを開き直すとこの欄は空から始まる ({#key thread.id} で作り直される — inbox の +page.svelte)。
+	// 前に採用した候補の本文はもう無いので、その下書きは送る当てを失っている
+	onMount(() => dropSlotsDraft(thread.id));
 	let proposal = $state<{ body: string; reason: string; tone: (typeof CHIPS)[number]['tone'] } | null>(
 		null
 	);
@@ -54,9 +58,10 @@
 
 	function accept() {
 		if (!proposal) return;
-		// 下書きの生成を採用した時点に寄せる。破棄や他トーンへの乗り換えでは呼ばれないので、
-		// 送っていない本文に日程調整の効果文が付くことがなくなる (review-task-15.md C2)
+		// 本文を差し替えるこの一点で下書きの有無を本文に合わせる。採用のたびに前の採用を
+		// 上書きするので、候補の無い本文に日程調整の効果文が付くことがない (review-task-15.md C2)
 		if (proposal.tone === 'slots') insertSlots(thread.id);
+		else dropSlotsDraft(thread.id);
 		body = proposal.body;
 		proposal = null;
 		bodyEl?.focus();
