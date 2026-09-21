@@ -87,12 +87,12 @@
 	}
 </script>
 
-<svelte:head><title>Inbox — KUROKO AI</title></svelte:head>
+<svelte:head><title>メール — KUROKO AI</title></svelte:head>
 
 <div class="inbox" class:show-right={showRight} class:show-thread={showThread}>
 	<header class="inbox-head page-head">
 		<div class="page-title">
-			<h1>Inbox</h1>
+			<h1>メール</h1>
 			<p class="page-desc">要対応のメールだけを並べています。</p>
 		</div>
 		<button class="btn text sm" onclick={() => (allOpen = true)}>

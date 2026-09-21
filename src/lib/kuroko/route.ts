@@ -1,7 +1,7 @@
 import type { ChatMessage, Db, Suggestion } from '../types';
 import type { ContextChip } from '../ui.svelte';
 import { key, bizDay, parse, nowIso, fmtMDW, whenOf } from '../dates';
-import { companyOf, nextMeeting, personOf, projectOf } from '../derived';
+import { companyOf, firstFreeStart, nextMeeting, personOf, projectOf } from '../derived';
 import { slotsFor, uid } from './generate';
 
 /** 仕様 9.1 のキーワード表による振り分け。LLM は使わない */
@@ -142,14 +142,15 @@ export function reply(db: Db, i: Intent, asked = false): Reply {
 	const base = parse(db.seededOn);
 
 	if (i.kind === 'event') {
-		const date = i.when ?? key(bizDay(1, base));
+		// 埋まっている時間は避ける (derived.ts の firstFreeStart)。日程調整の候補と同じ扱い
+		const { date, start, end } = firstFreeStart(db, i.when ?? key(bizDay(1, base)));
 		const title = `${nameOf(db, person!.id)}様との打ち合わせ`;
 		const s = sug('event', `「${i.raw}」を打ち合わせの依頼と受け取りました`, {
 			type: 'event',
 			title,
 			date,
-			start: '10:00',
-			end: '11:00',
+			start,
+			end,
 			personIds: [person!.id],
 			projectId: person!.projectIds[0],
 			online: 'meet'
@@ -158,7 +159,7 @@ export function reply(db: Db, i: Intent, asked = false): Reply {
 			card: {
 				icon: 'ic-cal',
 				title: '予定の候補',
-				lines: [title, `${fmtMDW(parse(date))} 10:00〜11:00`, 'Meet'],
+				lines: [title, `${fmtMDW(parse(date))} ${start}〜${end}`, 'Meet'],
 				reason: s.reason,
 				actions: [
 					{ label: 'この内容で作成', act: 'create-event', arg: s.id },

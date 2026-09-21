@@ -57,7 +57,7 @@ export function handleMention(db: Db, text: string, role: 'owner' | 'member'): M
 			card: {
 				title,
 				lines: [`期限 ${/明日/.test(body) ? '明日' : fmtMD(date)}${hour ? ` ${task.time}` : ''}`, `登録者 ${who}`],
-				actions: [{ label: 'Tasks で見る', act: 'open', arg: '/tasks' }]
+				actions: [{ label: 'ToDo で見る', act: 'open', arg: '/tasks' }]
 			}
 		};
 	}
@@ -86,7 +86,7 @@ export function handleMention(db: Db, text: string, role: 'owner' | 'member'): M
 			card: {
 				title: th.subject,
 				lines: [th.sender],
-				actions: [{ label: 'Inbox で見る', act: 'open', arg: `/inbox?t=${th.id}` }]
+				actions: [{ label: 'メールを開く', act: 'open', arg: `/inbox?t=${th.id}` }]
 			}
 		};
 	}

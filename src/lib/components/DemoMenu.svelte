@@ -5,7 +5,7 @@
 	import { canStartGuide } from '$lib/derived';
 	import { resetDemo, startGuide } from '$lib/actions';
 	import { SCENARIOS, pickScenario } from '$lib/scenarios';
-	import { ui } from '$lib/ui.svelte';
+	import { panels, ui } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 	import Modal from './Modal.svelte';
 
@@ -20,7 +20,11 @@
 	}
 </script>
 
-<DropdownMenu.Root>
+<!-- 上部バーの板と同じ 1 つだけ開く決まりに乗る (ui.svelte.ts の panels) -->
+<DropdownMenu.Root
+	open={panels.open === 'demo'}
+	onOpenChange={(v) => (panels.open = v ? 'demo' : null)}
+>
 	<DropdownMenu.Trigger>
 		{#snippet child({ props })}
 			<button {...props} class="iconbtn" title="デモの操作" aria-label="デモの操作">

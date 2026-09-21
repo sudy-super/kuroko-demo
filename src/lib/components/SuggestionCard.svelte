@@ -24,6 +24,13 @@
 		else picked.add(id);
 	}
 
+	/* 候補が出た直後、この行が依頼バーの裏に入って 1 回目の押下がバーに取られることがある
+	   (議事録の作成直後で実測)。ReplyBox の .proposal-foot と同じ形で視界へ運ぶ。
+	   block: 'nearest' なので既に見えていれば動かない (/tasks では画面の上寄りにあるため無動作) */
+	function scrollIntoView(node: HTMLElement) {
+		node.scrollIntoView({ block: 'nearest' });
+	}
+
 	/** 候補の中身を 1 行で言い表す。ToDo 以外の候補もこのカードで出せるようにしておく */
 	function label(s: Suggestion): string {
 		const p = s.payload;
@@ -51,7 +58,7 @@
 	{/each}
 	<!-- 塗りの主ボタンは画面に 1 つ (buttons.md 観点 A 原則 3)。/tasks のそれは見出しの
 	     「新しい ToDo を追加」なので、この札の中は 3 つとも塗りなしで枠と文字だけで段を付ける -->
-	<div class="row tc-foot sg-foot">
+	<div class="row tc-foot sg-foot" use:scrollIntoView>
 		<button class="btn sec" disabled={chosen.length === 0} onclick={() => onaccept(chosen)}>
 			選択した {chosen.length} 件を登録
 		</button>
@@ -85,5 +92,8 @@
 	.sg-foot {
 		flex-wrap: wrap;
 		gap: var(--sp-4);
+		/* 視界へ運ぶとき、下端に重なる依頼バーとボトムナビの分だけ手前で止める
+		   (app.css の --content-bottom-clear。ReplyBox の .send-row と同じ) */
+		scroll-margin-bottom: var(--content-bottom-clear);
 	}
 </style>

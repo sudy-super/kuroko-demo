@@ -3,7 +3,7 @@
 	import { badgeCount, pendingApprovals, guideSection } from '$lib/derived';
 	import { fmtYMDW, fmtMDW, hm } from '$lib/dates';
 	import { stopGuide } from '$lib/actions';
-	import { ui } from '$lib/ui.svelte';
+	import { panels, ui } from '$lib/ui.svelte';
 	import { media } from '$lib/media.svelte';
 	import Icon from './Icon.svelte';
 	import DemoMenu from './DemoMenu.svelte';
@@ -18,7 +18,7 @@
 		2: {
 			title: '田中様に返信する',
 			steps:
-				'Inbox で田中様のメールを開き、「日程候補を入れる」で返信案を作って送信し、承認します'
+				'メールの一覧から田中様のメールを開き、「日程候補を入れる」で返信案を作って送信し、承認します'
 		},
 		3: {
 			title: '日程が決まる',
@@ -38,9 +38,6 @@
 	};
 
 	let now = $state(new Date());
-	let logPanel = $state(false);
-	let apPanel = $state(false);
-	let guidePanel = $state(false);
 
 	const pending = $derived(pendingApprovals(db));
 	const logs = $derived(db.logs.slice(0, 3));
@@ -61,7 +58,7 @@
 
 {#snippet tools()}
 	<!-- island.md「広がったときの中身」— 板には直近の数件だけを出し、全件は既存のドロワーへ送る -->
-	<PillPanel bind:open={logPanel}>
+	<PillPanel name="log">
 		{#snippet trigger(props)}
 			<button {...props} class="iconbtn" title="作業履歴" aria-label="作業履歴">
 				<Icon name="ic-history" size={20} />
@@ -81,7 +78,7 @@
 		<button
 			class="btn text sm"
 			onclick={() => {
-				logPanel = false;
+				panels.open = null;
 				ui.activityDrawer = true;
 			}}
 		>
@@ -89,7 +86,7 @@
 		</button>
 	</PillPanel>
 
-	<PillPanel bind:open={apPanel}>
+	<PillPanel name="approvals">
 		{#snippet trigger(props)}
 			<button
 				{...props}
@@ -120,7 +117,7 @@
 		<button
 			class="btn text sm"
 			onclick={() => {
-				apPanel = false;
+				panels.open = null;
 				ui.approvalDrawer = true;
 			}}
 		>
@@ -142,7 +139,7 @@
 		<!-- 仕様 11.3 の案内。段階が進んでも入れ物は作り直さず、中の文字だけが変わる
 		     (island.md「動きの時間と緩急」の「既存の要素を保ったまま動かす」)。
 		     ピルの幅の変化は .header.glass の transition が 300ms で追う -->
-		<PillPanel bind:open={guidePanel}>
+		<PillPanel name="guide">
 			{#snippet trigger(props)}
 				<button
 					{...props}

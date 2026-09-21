@@ -1,5 +1,5 @@
 import type { Db, TodayItem, Meeting, CalendarEvent, Task, ProjectStatus, MessageThread, ActivityLog, ChannelIdentity } from './types';
-import { key, parse, addDays, minutes, toHm, hm } from './dates';
+import { key, parse, addDays, bizDay, minutes, toHm, hm } from './dates';
 
 export const personOf = (db: Db, id?: string) => db.people.find((p) => p.id === id);
 export const companyOf = (db: Db, id?: string) => db.companies.find((c) => c.id === id);
@@ -230,6 +230,15 @@ export function freeSlots(db: Db, dateKey: string, from = '9:00', to = '18:00') 
 	}
 	if (cur < minutes(to)) out.push({ start: toHm(cur), end: toHm(minutes(to)) });
 	return out.filter((x) => minutes(x.end) > minutes(x.start));
+}
+
+/** 候補に出す開始時刻。その日に既にある予定を避ける (freeSlots)。埋まっていれば翌営業日へ回す */
+export function firstFreeStart(db: Db, dateKey: string, duration = 60) {
+	for (let d = parse(dateKey), i = 0; i < 10; d = bizDay(1, d), i++) {
+		const slot = freeSlots(db, key(d)).find((s) => minutes(s.end) - minutes(s.start) >= duration);
+		if (slot) return { date: key(d), start: slot.start, end: toHm(minutes(slot.start) + duration) };
+	}
+	throw new Error(`空いている枠がありません: ${dateKey}`);
 }
 
 // 保存された進行状況ではなく、今の状態だけから案内の段階を決める

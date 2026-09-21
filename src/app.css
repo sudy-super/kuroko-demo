@@ -3162,12 +3162,15 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu {
    文字が多い面は可読性を優先するという HIG Materials の regular 変種の考え方に沿って、
    canvas の上に薄い白を 1 枚重ねて下限を持ち上げる。ぼかしと屈折は canvas 側でそのまま
    効くので、下が透けてぼやける見え方は保たれる。トーストは濃い地に白文字なので対象外
-   (下の .toast の注記を見よ) */
+   (下の .toast の注記を見よ)。
+   完了画面のカード (.today-done .card) も同じ扱い。見出しがオーブの塊の直上に来ると
+   背景のいちばん濃い点で 2.74:1 まで落ち、legibility.md 2.2 の下限 (4.5:1)を割る (実測) */
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer::before,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .sheet::before,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .modal::before,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .pill-panel::before,
-body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu::before {
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu::before,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .today-done .card::before {
 	content: '';
 	position: absolute;
 	inset: 0;

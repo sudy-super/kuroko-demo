@@ -33,14 +33,18 @@
 				db.approvals.find(
 					(x) => x.status === 'pending' && x.payload.type === 'reply' && x.payload.threadId === TANAKA
 				) ?? sendReply(TANAKA, '田中様\n\nご連絡ありがとうございます。\n次回の日程を調整いたします。', 'line');
-			integrations.chat.post(db.demo.lineTab, '田中様への返信案ができました', {
-				title: a.title,
-				lines: [`宛先 ${a.to}`, a.effectLine],
-				actions: [
-					{ label: '内容を見る', act: 'preview', arg: a.id },
-					{ label: '承認して送信', act: 'approve', arg: a.id }
-				]
-			});
+			// 同じ承認のカードが既に出ているなら積み直さない。この URL は途中でやり直すために
+			// 開き直されるので、そのたびにカードと承認が増えないようにする
+			const shown = db[db.demo.lineTab].some((m) => m.card?.actions.some((x) => x.arg === a.id));
+			if (!shown)
+				integrations.chat.post(db.demo.lineTab, '田中様への返信案ができました', {
+					title: a.title,
+					lines: [`宛先 ${a.to}`, a.effectLine],
+					actions: [
+						{ label: '内容を見る', act: 'preview', arg: a.id },
+						{ label: '承認して送信', act: 'approve', arg: a.id }
+					]
+				});
 		}
 		const say = page.url.searchParams.get('say');
 		if (say) lineSay(say, db.demo.lineRole);

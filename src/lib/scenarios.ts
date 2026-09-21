@@ -6,27 +6,27 @@ import { startScenario } from './actions';
 export const SCENARIOS: { label: string; href: string }[] = [
 	{
 		label:
-			'Today から予定追加 → 田中さん・ABC 社案件を選択 → Meet 作成 → Calendar / Today 反映 → Meeting 生成',
+			'Today から予定追加 → 田中さん・ABC 社案件を選択 → Meet 作成 → カレンダー / Today 反映 → 会議の生成',
 		href: '/calendar?new=1'
 	},
 	{
-		label: 'Inbox から「KUROKO に依頼」→ 過去のやり取り照会 → 人物プロフィール',
+		label: 'メールから「KUROKO に依頼」→ 過去のやり取り照会 → 人物プロフィール',
 		href: '/inbox?t=th-tanaka-next'
 	},
 	{
-		label: 'KUROKO チャットで「金曜までに ABC 社へ見積提出、覚えて」→ 確認 → Task 登録',
+		label: 'KUROKO チャットで「金曜までに ABC 社へ見積提出、覚えて」→ 確認 → ToDo 登録',
 		href: `/chat?q=${encodeURIComponent('金曜までに ABC 社へ見積提出、覚えて')}`
 	},
 	{
-		label: 'People から名刺 OCR → 確認 → 登録 → 過去メールの関連付け提案',
+		label: '人物から名刺 OCR → 確認 → 登録 → 過去メールの関連付け提案',
 		href: '/people?ocr=1'
 	},
 	{
-		label: 'LINE Demo: 「@KUROKO 明日 17 時までに資料確認、ToDo 入れて」→ Tasks 反映',
+		label: 'LINE デモ: 「@KUROKO 明日 17 時までに資料確認、ToDo 入れて」→ ToDo 反映',
 		href: `/integrations?say=${encodeURIComponent('@KUROKO 明日 17 時までに資料確認、ToDo 入れて')}`
 	},
 	{
-		label: 'LINE Demo: 承認を LINE で返す / Member 権限の挙動',
+		label: 'LINE デモ: 承認を LINE で返す / Member 権限の挙動',
 		href: '/integrations?scene=approve'
 	},
 	{

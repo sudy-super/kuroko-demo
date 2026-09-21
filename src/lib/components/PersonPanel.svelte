@@ -68,7 +68,7 @@
 		<!-- 同じ画面に出る ReplyBox の「採用」が塗りの主ボタンなので、こちらは副ボタン
 		     (buttons.md 観点 A 原則 3) -->
 		<button class="btn sec sm" onclick={() => (addOpen = true)}>
-			<Icon name="ic-plus" size={18} />People に追加
+			<Icon name="ic-plus" size={18} />人物に追加
 		</button>
 	{/if}
 </aside>

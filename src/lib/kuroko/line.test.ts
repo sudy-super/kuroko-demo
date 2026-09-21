@@ -67,7 +67,7 @@ describe('visibleActions', () => {
 		actions: [
 			{ label: '内容を見る', act: 'preview', arg: 'ap-1' },
 			{ label: '承認して送信', act: 'approve', arg: 'ap-1' },
-			{ label: 'Inbox で見る', act: 'open', arg: '/inbox' }
+			{ label: 'メールを開く', act: 'open', arg: '/inbox' }
 		]
 	};
 	// 本文の参照も社外送信も社長の判断 (handleMention が member の「メール見せて」を断るのと同じ)

@@ -26,6 +26,7 @@ import {
 	companyOf,
 	projectOf,
 	doneLogOf,
+	firstFreeStart,
 	todayCount,
 	mailTargetOf,
 	personMailTargetOf
@@ -749,6 +750,8 @@ export async function lineSay(text: string, role: 'owner' | 'member') {
 	await new Promise((res) => setTimeout(res, 800));
 	if (r.task) addTask({ title: r.task.title, due: r.task.due, time: r.task.time }, channel);
 	if (r.suggestion) {
+		// 埋まっている時間は避ける (derived.ts の firstFreeStart)。/chat の予定の候補と同じ扱い
+		const { date, start, end } = firstFreeStart(db, r.suggestion.date);
 		const s: Suggestion = {
 			id: uid('sg'),
 			source: 'line',
@@ -758,9 +761,9 @@ export async function lineSay(text: string, role: 'owner' | 'member') {
 			payload: {
 				type: 'event',
 				title: r.suggestion.title,
-				date: r.suggestion.date,
-				start: '10:00',
-				end: '11:00',
+				date,
+				start,
+				end,
 				personIds: []
 			},
 			createdAt: nowIso()
@@ -772,7 +775,7 @@ export async function lineSay(text: string, role: 'owner' | 'member') {
 			card: {
 				icon: 'ic-cal',
 				title: '予定の候補',
-				lines: [r.suggestion.title, `${fmtMDW(parse(r.suggestion.date))} 10:00〜11:00`],
+				lines: [r.suggestion.title, `${fmtMDW(parse(date))} ${start}〜${end}`],
 				reason: s.reason,
 				actions: [
 					{ label: 'この内容で作成', act: 'create-event', arg: s.id },

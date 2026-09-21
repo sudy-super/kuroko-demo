@@ -156,7 +156,7 @@
 
 <Modal
 	{open}
-	title={stage === 'done' ? '登録しました' : from ? 'People に追加' : '名刺から追加'}
+	title={stage === 'done' ? '登録しました' : from ? '人物に追加' : '名刺から追加'}
 	size={stage === 'confirm' ? 'md' : 'sm'}
 	{onclose}
 >

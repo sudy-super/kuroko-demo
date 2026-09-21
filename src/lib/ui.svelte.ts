@@ -20,6 +20,11 @@ export const ui = $state({
 	voice: false
 });
 
+/* 上部バーの板 (PillPanel) と「デモの操作」のメニュー (DemoMenu) は 1 つずつしか開かない。
+   bits-ui の Popover / DropdownMenu は Root ごとに独立して開くので、開いている 1 つを
+   ここで覚え、各 Root の open をこの値から引く。開き直すと他は閉じる */
+export const panels = $state({ open: null as string | null });
+
 /** 依頼バーの入力欄へ焦点を移す。'.chatbar input' の知識をここ 1 か所に閉じる */
 export function focusChatbar() {
 	document.querySelector<HTMLInputElement>('.chatbar input')?.focus();

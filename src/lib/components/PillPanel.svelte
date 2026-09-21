@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { Popover } from 'bits-ui';
+	import { panels } from '$lib/ui.svelte';
 
 	/* Task 10n — 浮かぶ上部のピルの中のボタンを押したときだけ、ピルの直下に開く小さな板。
 	   island.md「広がる条件」— 常時は compact のまま、押した 1 つだけを一時的に開く。
@@ -12,18 +13,21 @@
 	   「戻る」が板の開閉に取られて画面の行き来ができなくなる。覆いも出ないので
 	   markOverlay も呼ばない (カードのガラスを落とす必要がない) */
 	let {
-		open = $bindable(false),
+		name,
 		trigger,
 		children
 	}: {
-		open?: boolean;
+		/** 上部バーで開いている板を 1 つに保つための名前 (ui.svelte.ts の panels) */
+		name: string;
 		/** 押すボタンそのもの。bits-ui が渡す属性 (aria-expanded ほか)を受け取って付ける */
 		trigger: Snippet<[Record<string, unknown>]>;
 		children: Snippet;
 	} = $props();
+
+	const open = $derived(panels.open === name);
 </script>
 
-<Popover.Root bind:open>
+<Popover.Root {open} onOpenChange={(v) => (panels.open = v ? name : null)}>
 	<Popover.Trigger>
 		{#snippet child({ props })}{@render trigger(props)}{/snippet}
 	</Popover.Trigger>
