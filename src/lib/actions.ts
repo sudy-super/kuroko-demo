@@ -19,7 +19,7 @@ import { toast, type ContextChip } from './ui.svelte';
 import { nowIso, parse, fmtMDW, minutes, toHm } from './dates';
 import { personOf, doneLogOf, todayCount, mailTargetOf } from './derived';
 import { agendaFor, slotsFor, slotsText, uid, minutesFor } from './kuroko/generate';
-import { reply, route } from './kuroko/route';
+import { ASK_PERSON, reply, route } from './kuroko/route';
 import { goto } from '$app/navigation';
 import { integrations } from './integrations';
 
@@ -686,7 +686,9 @@ function pushChat(m: Omit<ChatMessage, 'id' | 'at'>) {
 export async function chatSend(text: string, ctx?: ContextChip) {
 	const q = text.trim();
 	if (!q) return;
-	const asked = db.chat[db.chat.length - 1]?.chips !== undefined;
+	// 直前が人物の聞き返しだったときだけ「もう聞いた」とみなす。用件の選び直し (7 種のチップ)を
+	// 混ぜると、そこから人物なしで頼まれた 1 回目を聞き返せなくなる
+	const asked = db.chat[db.chat.length - 1]?.text === ASK_PERSON;
 	pushChat({ role: 'user', text: q });
 	await new Promise((r) => setTimeout(r, 800));
 	const { suggestion, ...msg } = reply(db, route(db, q, ctx), asked);

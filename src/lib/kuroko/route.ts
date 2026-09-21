@@ -19,7 +19,11 @@ const PEOPLE: [string, string][] = [
 	['山田', 'p-yamada']
 ];
 
-/** 人物が要る用件。埋まらないときだけ聞き返す (仕様 9.1「1 往復まで」) */
+/**
+ * 人物が要る用件。埋まらないときだけ聞き返す。
+ * 往復の上限を定めた一次資料は無い (chat.md 観点 4.4 — NN/g の 425 会話は平均 3.6 往復で、
+ * 長さと有用性に相関なし)。1 往復に限っているのはデモの都合であって規定ではない
+ */
 const NEEDS_PERSON: Intent['kind'][] = ['event', 'person', 'mail', 'schedule'];
 
 export function route(db: Db, text: string, ctx?: ContextChip): Intent {
@@ -59,7 +63,11 @@ export function route(db: Db, text: string, ctx?: ContextChip): Intent {
 	return { kind, personId, when, docKind, raw: t };
 }
 
-/** 振り分け先が分からないときに出す 7 種。押すとその文言をそのまま送り直す */
+/**
+ * 振り分け先が分からないときに出す 7 種。押すとその文言をそのまま送り直す。
+ * 扱える用件を最初に並べる (chat.md 観点 4.5 — 「何でもどうぞ」と言わない)。
+ * どれも 20 文字以内 (chat.md 観点 2.7、M3 Chips の規定)
+ */
 export const GUIDE_CHIPS = [
 	'打ち合わせを入れて',
 	'ToDo を覚えて',
@@ -84,8 +92,47 @@ const sug = (kind: Suggestion['kind'], reason: string, payload: Suggestion['payl
 
 const nameOf = (db: Db, personId: string) => personOf(db, personId)?.name.split(' ')[0] ?? '';
 
-/** 人物の指定が要る用件で相手が分からないとき、その用件のまま送り直せる文言にする */
-const personChips = (raw: string) => PEOPLE.map(([name]) => `${name}さん ${raw}`);
+/* 聞き返しのチップは元の依頼文をそのまま抱えると 20 文字を超える (chat.md 観点 2.7)。
+   用件ごとの短い言い直しに畳む。押すとこの文が送り直されるので、意図も人物も復元できる */
+const REASK: Record<string, string> = {
+	event: 'と打ち合わせを入れて',
+	person: 'とのやり取り',
+	mail: 'のメールに返信',
+	schedule: 'に候補送って'
+};
+
+/** 人物を聞き返す文。chatSend がこの文で「もう聞いた」を見分ける (1 往復に限るため) */
+export const ASK_PERSON = 'どなたについてでしょうか?';
+
+/** 人物の指定が要る用件で相手が分からないときの選択肢。必ず 3 つの集合で出す (chat.md 観点 2.6) */
+const personChips = (kind: Intent['kind']) => PEOPLE.map(([name]) => `${name}さん${REASK[kind]}`);
+
+/**
+ * 考えている間に出す文。「処理中…」のような曖昧な語を使わず、何をしているかを書く
+ * (chat.md 観点 3.1、HIG Generative AI の "instead of 'Processing…'…")
+ */
+export function thinking(db: Db, text: string, ctx?: ContextChip): string {
+	const i = route(db, text, ctx);
+	const name = i.personId ? nameOf(db, i.personId) : '';
+	switch (i.kind) {
+		case 'event':
+			return name ? `${name}様との予定を組み立てています` : '予定の候補を組み立てています';
+		case 'task':
+			return 'ToDo の候補を組み立てています';
+		case 'person':
+			return name ? `${name}様のこれまでのやり取りを探しています` : '登録済みの人物を探しています';
+		case 'mail':
+			return name ? `${name}様からの連絡を探しています` : '要対応の連絡を探しています';
+		case 'brief':
+			return '直近の会議の Brief を探しています';
+		case 'schedule':
+			return name ? `${name}様との日程の空きを調べています` : '日程の空きを調べています';
+		case 'document':
+			return `${i.docKind}の下書きの材料を集めています`;
+		default:
+			return 'ご依頼を読み取っています';
+	}
+}
 
 /**
  * 意図から KUROKO の返答を組み立てる。event と task は候補 (Suggestion) までで、
@@ -95,8 +142,9 @@ export function reply(db: Db, i: Intent, asked = false): Reply {
 	const person = personOf(db, i.personId);
 	if (!person && NEEDS_PERSON.includes(i.kind)) {
 		// 聞き返しは 1 往復まで。一度聞いても埋まらなければ用件の選び直しに戻す (仕様 9.1)
-		if (asked) return { text: 'うまく聞き取れませんでした。次のどれをお手伝いしましょうか?', chips: GUIDE_CHIPS };
-		return { text: 'どなたについてでしょうか?', chips: personChips(i.raw) };
+		// できないことは 1 文目で言い切る (chat.md 観点 4.1)。長い説明を先に置かない
+		if (asked) return { text: 'どなたか分かりませんでした。次のどれをお手伝いしましょうか?', chips: GUIDE_CHIPS };
+		return { text: ASK_PERSON, chips: personChips(i.kind) };
 	}
 	const base = parse(db.seededOn);
 
@@ -233,18 +281,3 @@ export function reply(db: Db, i: Intent, asked = false): Reply {
 
 	return { text: '次のどれをお手伝いしましょうか?', chips: GUIDE_CHIPS };
 }
-
-/* 待っている間に出す文。HIG の Generative AI は「Processing… ではなく Finding substitutions
-   for ingredients のように何をしているかを書け」と例示する (chat.md 資料 1)。
-   意図が分からないときだけ、何を探しているか言えないので曖昧なままにする */
-const WORKING: Record<Intent['kind'], string> = {
-	event: '空いている時間を探しています',
-	task: 'ToDo の内容をまとめています',
-	person: '過去のやり取りを探しています',
-	mail: 'メールの返信案を作っています',
-	brief: '会議の資料を集めています',
-	schedule: '日程の候補を選んでいます',
-	document: '書類の下書きを作っています',
-	unknown: 'ご依頼の内容を読み取っています'
-};
-export const workingText = (i: Intent) => WORKING[i.kind];

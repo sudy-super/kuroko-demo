@@ -5,31 +5,24 @@
 	import { db } from '$lib/store.svelte';
 	import { chatSend } from '$lib/actions';
 	import { ui } from '$lib/ui.svelte';
-	import { GUIDE_CHIPS, route, workingText } from '$lib/kuroko/route';
+	import { GUIDE_CHIPS, thinking } from '$lib/kuroko/route';
 	import ChatCard from '$lib/components/ChatCard.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 
-	let busy = $state(false);
-	// 読み上げ利用者にも待機中 → 返答を伝える常設の live region (ReplyBox.svelte と同じ作り)。
-	// 領域ごと出し入れすると aria-live は読まれない
-	let liveText = $state('');
-	// 待っている間の文は「処理中…」で済ませず、何をしているかを書く (route.ts の workingText)
-	let working = $state('');
+	// 考えている間に何をしているかを書く (chat.md 観点 3.1)。空文字の間は待っていない
+	let busy = $state('');
 	let logEl: HTMLDivElement | undefined = $state();
 
 	async function send(text: string) {
 		if (busy) return;
-		busy = true;
-		working = workingText(route(db, text, ui.context ?? undefined));
-		liveText = working;
+		busy = thinking(db, text, ui.context ?? undefined);
+		const before = db.chat.length;
 		await chatSend(text, ui.context ?? undefined);
-		busy = false;
-		const last = db.chat[db.chat.length - 1];
-		liveText = last?.text ?? last?.card?.title ?? '返答が届きました';
-		// 積み上がった発言のいちばん下を見せる。behavior を指定しなければ即時なので
-		// prefers-reduced-motion と食い違わない
+		busy = '';
+		// 末尾まで飛ばさず、新しい発言の先頭に位置を合わせる (chat.md 観点 1.4)。
+		// behavior を指定しなければ既定の auto = 即時なので prefers-reduced-motion と食い違わない
 		await tick();
-		logEl?.lastElementChild?.scrollIntoView({ block: 'nearest' });
+		logEl?.children[before]?.scrollIntoView({ block: 'nearest' });
 	}
 
 	// 依頼バーと ⌘K パレットはここへ ?q= 付きで飛ばしてくる (KurokoBar.svelte / Palette.svelte)。
@@ -57,33 +50,44 @@
 		</div>
 	</header>
 
-	<div class="chat-log" bind:this={logEl}>
+	<!-- chat.md 観点 6.1 — 発言の積み上がりは role="log" で伝える (W3C ARIA23 の例 1 がチャットそのもの)。
+	     暗黙で aria-live="polite" / aria-atomic="false" を持つので、足された分だけが割り込まずに読まれる。
+	     入れ物は最初から DOM に置く (同 6.2) -->
+	<div class="chat-log" role="log" aria-label="KUROKO とのやり取り" bind:this={logEl}>
 		{#each db.chat as m (m.id)}
-			<div class="chat-turn" class:me={m.role === 'user'}>
-				{#if m.role === 'kuroko'}
-					<span class="chat-who"><Icon name="ic-robot" size={18} />KUROKO</span>
-				{/if}
-				{#if m.text}<p class="bubble" class:me={m.role === 'user'}>{m.text}</p>{/if}
+			<div class="chat-turn" class:mine={m.role === 'user'}>
+				<!-- chat.md 観点 1.2 — 送り手は位置や色だけでなく名前でも示す。
+				     Carbon for AI (資料 10) が求める「AI であることの表示」も兼ねる -->
+				<p class="chat-who">
+					{#if m.role === 'kuroko'}<Icon name="ic-robot" size={16} />{/if}
+					{m.role === 'kuroko' ? 'KUROKO' : db.user.name}
+				</p>
+				{#if m.text}<p class="chat-body">{m.text}</p>{/if}
 				{#if m.card}<ChatCard card={m.card} />{/if}
 				{#if m.chips}
+					<!-- chat.md 観点 2.6 — 話の枝分かれはチップ。必ず集合で出し、単独では置かない -->
 					<div class="row chat-chips" role="group" aria-label="用件を選ぶ">
 						{#each m.chips as c (c)}
-							<button class="chip" aria-disabled={busy} onclick={() => send(c)}>{c}</button>
+							<button class="chip" aria-disabled={!!busy} onclick={() => send(c)}>{c}</button>
 						{/each}
 					</div>
 				{/if}
 			</div>
 		{/each}
-		<p class="sr-only" aria-live="polite">{liveText}</p>
-		{#if busy}<p class="chat-busy">{working}</p>{/if}
 	</div>
 
+	<!-- chat.md 観点 3.3 — 待ちの表示は role="status" で伝える。WCAG 2.2 の 4.1.3 (レベル AA) の要求。
+	     入れ物は常設し中身の文字だけ入れ替える (同 6.2。領域ごと出し入れすると読まれない)。
+	     生成中の演出はこの 1 か所だけにする (同 3.4。Atlassian「目を引く生成中表示を重ねるな」) -->
+	<p class="chat-busy" role="status">{busy}</p>
+
 	{#if db.chat.length === 0 && !busy}
+		<!-- chat.md 観点 4.5 — 扱える用件を最初に示す。「何でもどうぞ」と言わない -->
 		<div class="chat-empty">
 			<p>次のどれをお手伝いしましょうか?</p>
 			<div class="row chat-chips" role="group" aria-label="用件を選ぶ">
 				{#each GUIDE_CHIPS as c (c)}
-					<button class="chip" aria-disabled={busy} onclick={() => send(c)}>{c}</button>
+					<button class="chip" onclick={() => send(c)}>{c}</button>
 				{/each}
 			</div>
 		</div>
@@ -102,40 +106,57 @@
 		flex-direction: column;
 		align-items: flex-start;
 		gap: var(--sp-2);
-		/* 発言はカードより幅を抑えて、誰の発言かを行の長さでも見分けられるようにする */
+		/* 吹き出しの形や左右への振り分けを規定した一次資料は無い (chat.md 観点 1.1)。
+		   既存の ThreadView.svelte (.msg) と同じ寄せ方にそろえる。ただし割合では詰めない:
+		   カードの中のボタンは折り返さないので、幅 360px では 85% (245px) がカードの
+		   最小幅 (250px) を下回り、カードが行からはみ出す。文だけの ThreadView と違い、
+		   ここは中身が縮まない。送り手は名前でも示しているので割合の余白は要らない
+		   (chat.md 観点 1.2) */
 		max-width: min(640px, 100%);
 	}
-	.chat-turn.me {
-		align-self: flex-end;
+	.chat-turn.mine {
+		margin-left: auto;
 		align-items: flex-end;
 	}
 	.chat-who {
 		display: flex;
 		align-items: center;
 		gap: var(--sp-2);
-		color: var(--ink-2);
-		font-size: 13px;
+		color: var(--ink-3);
+		font-size: 12px;
 	}
-	.bubble {
-		padding: var(--sp-3) var(--sp-4);
+	.chat-body {
+		padding: var(--sp-4);
 		border-radius: var(--r-m);
 		background: #fff;
-		box-shadow: inset 0 0 0 1px var(--line), var(--e1);
-		font-size: 15px;
-		line-height: 1.6;
-		/* 高さを決め打ちしないので、折り返した分だけ吹き出しが伸びる (下の行に重ならない) */
+		box-shadow: inset 0 0 0 1px var(--line);
+		white-space: pre-wrap;
+		/* 高さを決め打ちしないので、折り返した分だけ伸びる (下の行に重ならない) */
 		overflow-wrap: anywhere;
 	}
-	.bubble.me {
+	.chat-turn.mine .chat-body {
 		background: var(--accent-soft);
 		box-shadow: none;
 	}
+	/* chat.md 観点 2.7 — 横一列に並べ、あふれたら折り返す。間隔は最低 8dp (--sp-2) */
 	.chat-chips {
 		flex-wrap: wrap;
+		gap: var(--sp-2);
+	}
+	/* 同じ節が押せる領域を最低 48dp と規定する。app.css の .chip は 40px + ::after の
+	   inset: -2px 0 で 44px (components 3.4 の値) なので、この画面の分だけ 48px まで広げる。
+	   行の間隔は 8px あるので、広げた領域どうしが重なることはない */
+	.chat-chips .chip::after {
+		inset: -4px 0;
 	}
 	.chat-busy {
+		padding: var(--sp-3) var(--sp-5) 0;
 		color: var(--ink-2);
 		font-size: 13px;
+	}
+	/* 待っていない間も入れ物は残す (読み上げのため)。空の行が余白を作らないようにする */
+	.chat-busy:empty {
+		padding: 0;
 	}
 	.chat-empty {
 		display: flex;
