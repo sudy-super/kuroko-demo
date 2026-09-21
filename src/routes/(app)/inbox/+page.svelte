@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { db } from '$lib/store.svelte';
-	import { companyOf, personOf, queue } from '$lib/derived';
+	import { companyOf, personOf, queue, nextInQueue } from '$lib/derived';
 	import { markDone } from '$lib/actions';
 	import { ui, toast } from '$lib/ui.svelte';
 	import { media } from '$lib/media.svelte';
@@ -49,11 +49,18 @@
 
 	function done() {
 		if (!thread) return;
-		// 対応済みにするとこのスレッドはキューから消えるので、消える前に次を決める
-		const i = q.findIndex((t) => t.id === thread.id);
-		const next = q[i + 1] ?? q.find((t) => t.id !== thread.id);
 		markDone(thread.id);
 		toast('対応済みにしました');
+		// 行き先は下の $effect (thread.done を見て遷移) に任せる
+	}
+
+	/* スレッドが完了した瞬間 (「対応済みにする」、または承認された返信が 5 秒後に実行される)
+	   に次の行へ移る。行き先を決める場所をここ 1 つにまとめる (review-task-15.md C3 / I2、
+	   Task 15 が ReplyBox 側に持っていた $effect との競合を解消) */
+	$effect(() => {
+		const t = thread;
+		if (!t?.done) return;
+		const next = nextInQueue(db, t.id);
 		// キューが空になったら一覧 (空の状態) に戻す。960px 以下では本文側に戻る手段が無くなるため
 		if (!next) showThread = false;
 		goto(next ? `/inbox?t=${next.id}` : '/inbox', {
@@ -61,7 +68,7 @@
 			noScroll: true,
 			keepFocus: true
 		});
-	}
+	});
 
 	function select() {
 		showThread = true;

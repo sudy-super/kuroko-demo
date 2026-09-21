@@ -287,20 +287,23 @@ export function undo(logId: string) {
 
 export function insertSlots(threadId: string): SchedulingRequest {
 	const th = db.threads.find((t) => t.id === threadId)!;
+	// 日程調整は相手の会社・案件に予定を結び付ける機能なので、人物が分からないまま作らない
+	// (fail-close。人物なしで作ると confirmSlot() が落ちる — review-task-15.md C1)
+	if (!th.personId) throw new Error(`insertSlots: ${threadId} に personId がありません`);
 	const existing = db.scheduling.find((s) => s.threadId === threadId && s.status === 'draft');
 	if (existing) return existing;
-	const slots = slotsFor(db, th.personId ?? '');
+	const slots = slotsFor(db, th.personId);
 	const s: SchedulingRequest = {
 		id: uid('sr'),
 		token: '',
-		personId: th.personId ?? '',
+		personId: th.personId,
 		duration: 60,
 		range: { from: slots[0].date, to: slots[3].date },
 		online: 'meet',
 		slots,
 		status: 'draft',
 		threadId,
-		text: slotsText(slots, personOf(db, th.personId)?.name.split(' ')[0] ?? '')
+		text: slotsText(slots, personOf(db, th.personId)!.name.split(' ')[0])
 	};
 	db.scheduling.push(s);
 	log('日程候補 3 件を提案しました', 'draft', { origin: 'inbox' });
@@ -347,7 +350,10 @@ export function confirmSlot(token: string, slotId: string) {
 		db.events = db.events.filter((e) => e.id !== s.eventId);
 		db.meetings = db.meetings.filter((m) => m.id !== s.meetingId);
 	}
-	const p = personOf(db, s.personId)!;
+	// insertSlots() が personId 必須になった後も、古い下書き ('' のまま) が残っていれば
+	// ここで弾く (防御を 1 段足す。review-task-15.md C1)
+	const p = personOf(db, s.personId);
+	if (!p) return null;
 	const event: CalendarEvent = {
 		id: uid('ev'),
 		date: slot.date,

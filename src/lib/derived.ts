@@ -22,6 +22,17 @@ export const threadSenderMeta = (db: Db, thread: MessageThread): string => {
 export const queue = (db: Db) =>
 	db.threads.filter((t) => t.inQueue && !t.done).sort((a, b) => b.lastAt.localeCompare(a.lastAt));
 export const replyNeeded = (db: Db) => queue(db).filter((t) => t.needsReply);
+
+/* このスレッドが完了した (対応済みにする、または承認された返信が実行された) ときに移る先。
+   done を !done で先に絞ると、このスレッド自身がもう完了している呼び出し元 (返信の送信は
+   5 秒後の承認実行で非同期に完了する) では自分の位置を見失うため、並び順だけ inQueue 全体
+   から取り、完了済みかどうかは絞り込みの側で見る (review-task-15.md C3 / I2) */
+export const nextInQueue = (db: Db, threadId: string): MessageThread | undefined => {
+	const ordered = db.threads.filter((t) => t.inQueue).sort((a, b) => b.lastAt.localeCompare(a.lastAt));
+	const i = ordered.findIndex((t) => t.id === threadId);
+	if (i === -1) return undefined;
+	return ordered.slice(i + 1).find((t) => !t.done) ?? ordered.find((t) => !t.done && t.id !== threadId);
+};
 export const pendingApprovals = (db: Db) => db.approvals.filter((a) => a.status === 'pending');
 
 /* 案件の状態は Atlassian の Lozenge (ワークフローの状態) にあたるので、一覧・人物詳細・会社・

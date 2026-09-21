@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import type { MessageThread } from '$lib/types';
 	import { db } from '$lib/store.svelte';
-	import { identityOf, personOf, queue } from '$lib/derived';
+	import { identityOf, threadSenderMeta } from '$lib/derived';
 	import { replyDraft } from '$lib/kuroko/generate';
 	import { insertSlots, sendReply } from '$lib/actions';
 	import { ui } from '$lib/ui.svelte';
@@ -11,12 +10,10 @@
 
 	let { thread }: { thread: MessageThread } = $props();
 
-	// 社外宛はメールアドレスを省略しない (仕様 5.3)
+	// 社外宛はメールアドレスを省略しない (仕様 5.3)。差出人の呼び方は threadSenderMeta に
+	// 集約している (rereview-task-10p.md 新規 2、ThreadView と同じ考え方 — review-task-15.md M1)
 	const identity = $derived(identityOf(db, thread.identityId));
-	const person = $derived(personOf(db, thread.personId));
-	const to = $derived(
-		person && identity ? `${person.name} <${identity.value}>` : (identity?.value ?? thread.sender)
-	);
+	const to = $derived(identity ? `${threadSenderMeta(db, thread)} <${identity.value}>` : thread.sender);
 
 	const CHIPS = [
 		{ tone: 'short', label: '短く' },
@@ -25,92 +22,123 @@
 		{ tone: 'decline', label: '断る' },
 		{ tone: 'slots', label: '日程候補を入れる' }
 	] as const;
+	// 日程調整は人物に予定を結び付ける機能なので、人物が未登録のスレッドではチップ自体を
+	// 出さない (insertSlots() が fail-close で throw するようになったため — review-task-15.md C1)
+	const chips = $derived(CHIPS.filter((c) => c.tone !== 'slots' || thread.personId));
 
 	let body = $state('');
-	let proposal = $state<{ body: string; reason: string } | null>(null);
+	let proposal = $state<{ body: string; reason: string; tone: (typeof CHIPS)[number]['tone'] } | null>(
+		null
+	);
 	let busy = $state(false);
+	// 読み上げ利用者にも待機中 → 提案完了を伝える常設の live region (ConnectStep.svelte と同じ
+	// 作り。要素ごと出し入れすると読まれない — review-task-15.md I4)
+	let liveText = $state('');
 	// mail.createDraft は throw する (Db に下書きの置き場が無いため fail-close、task-6-report.md 気になっている点 4)。
 	// この Task では置き場を新設しないので、押しても未実装の案内だけ出す
 	let draftNotice = $state(false);
 	const id = $props.id();
+	let bodyEl: HTMLTextAreaElement | undefined = $state();
+	let chipsEl: HTMLDivElement | undefined = $state();
 
 	async function pick(tone: (typeof CHIPS)[number]['tone']) {
 		if (busy) return;
 		busy = true;
-		if (tone === 'slots') insertSlots(thread.id);
-		const forThread = thread.id;
+		liveText = 'KUROKO が返信案を作成しています…';
 		await new Promise((r) => setTimeout(r, 800));
-		// 待っている間にスレッドを離れていたら状態を書き換えない
-		if (thread.id !== forThread) return;
-		proposal = replyDraft(db, thread, tone);
+		const draft = replyDraft(db, thread, tone);
+		proposal = { ...draft, tone };
 		busy = false;
+		liveText = '返信案ができました';
 	}
 
 	function accept() {
 		if (!proposal) return;
+		// 下書きの生成を採用した時点に寄せる。破棄や他トーンへの乗り換えでは呼ばれないので、
+		// 送っていない本文に日程調整の効果文が付くことがなくなる (review-task-15.md C2)
+		if (proposal.tone === 'slots') insertSlots(thread.id);
 		body = proposal.body;
 		proposal = null;
+		bodyEl?.focus();
 	}
 
 	function discard() {
 		proposal = null;
+		chipsEl?.querySelector('button')?.focus();
+	}
+
+	// 844x390 では提案カードが依頼バーとボトムナビの下から始まり、採用・破棄が隠れる
+	// (review-task-15.md M4)。カード全体は 390px の高さに収まらないので、押させたい操作の行を
+	// 視界へ運ぶ。バーの分は .proposal-foot の scroll-margin-bottom で避ける。
+	// behavior を指定しなければ既定の auto = 即時なので prefers-reduced-motion と食い違わない
+	function scrollIntoView(node: HTMLElement) {
+		node.scrollIntoView({ block: 'nearest' });
 	}
 
 	function send() {
 		if (!body.trim()) return;
 		sendReply(thread.id, body, 'inbox');
 		ui.approvalDrawer = true;
+		// 承認を作り終えたので返信欄を空にする。連打しても同じ本文の承認が積まれない
+		// (review-task-15.md I1)
+		body = '';
 	}
-
-	// 送信後、承認が実行されてこのスレッドが完了になったら次の要返信スレッドへ移る
-	$effect(() => {
-		if (!thread.done) return;
-		const next = queue(db).find((t) => t.id !== thread.id);
-		if (next) goto(`/inbox?t=${next.id}`, { replaceState: true, noScroll: true, keepFocus: true });
-	});
 </script>
 
 <section class="card reply" aria-label="返信">
 	<p class="to">宛先 {to}</p>
 
-	<div class="row chips" role="group" aria-label="返信案の作成">
+	<div class="row chips" role="group" aria-label="返信案の作成" bind:this={chipsEl}>
 		<!-- 押している間に disabled にすると焦点が body へ落ちてキーボードの位置を見失う
 		     (ConnectStep.svelte と同じ理由で aria-disabled にする)。押下は pick() 側で弾く -->
-		{#each CHIPS as c (c.tone)}
+		{#each chips as c (c.tone)}
 			<button class="chip" aria-disabled={busy} onclick={() => pick(c.tone)}>{c.label}</button>
 		{/each}
 	</div>
-	{#if busy}<p class="busy" aria-live="polite">KUROKO が返信案を作成しています…</p>{/if}
+	<!-- 読み上げ用は要素を常設し、中身の文字だけ入れ替える (ConnectStep.svelte と同じ作り)。
+	     領域ごと出し入れすると aria-live は読まれない (review-task-15.md I4)。目で見る手がかりは
+	     別の行で出し入れする (aria-live を持たないので二重に読まれない) -->
+	<p class="sr-only" aria-live="polite">{liveText}</p>
+	{#if busy}<p class="busy">KUROKO が返信案を作成しています…</p>{/if}
 
 	<!-- 提案カードが出ている間、主ボタンは「採用」に譲る (1 画面 1 主ボタン)。採用するまで本文へは
 	     何も反映されておらず、送信しても提案前の本文しか送れないため、まず本文を確定させる採用の
 	     ほうが今できる主な操作になる。送信は提案が無いときだけ主ボタンに戻す -->
 	{#if proposal}
-		<div class="proposal">
+		<div
+			class="proposal"
+			role="group"
+			aria-labelledby="{id}-proposal-head"
+			aria-describedby="{id}-note"
+		>
 			<div class="tc-head">
 				<Icon name="ic-spark" size={20} />
-				<h3>KUROKO の返信案</h3>
+				<h3 id="{id}-proposal-head">KUROKO の返信案</h3>
 			</div>
 			<p class="reason">{proposal.reason}</p>
 			<p class="preview">{proposal.body}</p>
 			<!-- 幅が足りないと折り返すので、押せる 2 つを先に並べて説明だけを次の行に落とす。
 			     間に挟むと「破棄」が「採用」の真下に来て押し間違いやすい (1440x700 で実測)。
-			     読み上げの順は aria-describedby で保つ -->
-			<div class="row proposal-foot">
-				<button class="btn pri sm" onclick={accept} aria-describedby="{id}-note">採用</button>
+			     注記はカード全体の説明として aria-describedby で結んでいる (review-task-15.md M3) -->
+			<div class="row proposal-foot" use:scrollIntoView>
+				<button class="btn pri sm" onclick={accept}>採用</button>
 				<button class="btn text sm" onclick={discard}>破棄</button>
 				<p class="note" id="{id}-note">本文に入ります。送信はしません</p>
 			</div>
 		</div>
 	{/if}
 
-	<textarea {id} class="textarea" rows="5" aria-label="返信の本文" bind:value={body}></textarea>
+	<textarea {id} bind:this={bodyEl} class="textarea" rows="5" aria-label="返信の本文" bind:value={body}
+	></textarea>
+
+	<!-- 外部へ出る直前にもう一度宛先を見せる。ボタンと同じ行に置くと列の幅を奪い合って
+	     メールアドレスから省略されるので、行を分けて全文を出す (review-task-15.md I3) -->
+	<p class="to-again">→ {to}</p>
 
 	<div class="row send-row">
 		<button class="btn {proposal ? 'sec' : 'pri'}" disabled={!body.trim()} onclick={send}>
 			<Icon name="ic-send" size={18} />送信
 		</button>
-		<p class="to-again">→ {to}</p>
 		<button class="btn text" onclick={() => (draftNotice = true)}>下書き保存</button>
 	</div>
 </section>
@@ -176,6 +204,9 @@
 	}
 	.proposal-foot {
 		flex-wrap: wrap;
+		/* 提案が出た直後にこの行を視界へ運ぶ (script の scrollIntoView)。下端には依頼バーと
+		   ボトムナビが重なるので、その分だけ手前で止める (app.css の --content-bottom-clear) */
+		scroll-margin-bottom: var(--content-bottom-clear);
 	}
 	.proposal-foot .note {
 		margin: 0;
@@ -187,11 +218,8 @@
 		gap: var(--sp-4);
 	}
 	.to-again {
-		flex: 1;
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		/* メールアドレスは単語として切れないので、折り返せる位置を明示しないと列からはみ出す */
+		overflow-wrap: anywhere;
 	}
 	/* 携帯を横向きにした高さでは、本文欄の既定 (96px + 余白) とチップの行で画面をほぼ
 	   使い切り、返信案が画面の外に出る。app.css の同じ条件 (max-width: 960px) and
@@ -206,9 +234,13 @@
 			min-height: 0;
 			height: 72px;
 		}
+		/* 押した人がまず確かめる日程候補 3 件 (本文の 3〜7 行目) までをスクロールなしで出す。
+		   本文欄を 72px まで削った分をここへ回している (review-task-15.md I6)。
+		   入れ子のスクロールなので overscroll-behavior が要る */
 		.preview {
-			max-height: 120px;
+			max-height: 180px;
 			overflow-y: auto;
+			overscroll-behavior: contain;
 		}
 	}
 </style>
