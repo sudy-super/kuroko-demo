@@ -18,12 +18,14 @@
 		open: boolean;
 		title: string;
 		description?: string;
-		size?: 'md' | 'sm';
+		/** palette は ⌘K の形 (components 3.10)。題の行も操作の行も持たず、上端に寄る */
+		size?: 'md' | 'sm' | 'palette';
 		onclose: () => void;
 		/** 開いた直後に焦点を置く先。渡さないと bits-ui は最初の tabbable (閉じるボタン)に置く */
 		openFocus?: () => HTMLElement | null;
 		children?: Snippet;
-		actions: Snippet;
+		/** palette は下の操作の行を持たない (行そのものが操作) */
+		actions?: Snippet;
 		/** 外枠の要素。closest('.modal') のように内部の class 名へ依存させたくない
 		    呼び出し側 (Palette の ↑↓ 送りなど)向けの公開 API */
 		box?: HTMLElement | null;
@@ -92,16 +94,27 @@
 						bind:this={box}
 						class="modal"
 						class:sm={size === 'sm'}
+						class:palette={size === 'palette'}
 						class:leave={leaving}
 					>
-						<div class="row" style="justify-content: space-between; margin-bottom: var(--sp-3)">
+						{#if size === 'palette'}
+							<!-- 題は読み上げにだけ出す。入力欄の placeholder が見えている題を兼ねる
+							     (components 3.10 の表に題の行が無い) -->
 							<Dialog.Title>
-								{#snippet child({ props: titleProps })}<h3 {...titleProps}>{title}</h3>{/snippet}
+								{#snippet child({ props: titleProps })}
+									<h3 {...titleProps} class="sr-only">{title}</h3>
+								{/snippet}
 							</Dialog.Title>
-							<Dialog.Close class="iconbtn" aria-label="閉じる">
-								<Icon name="ic-x" size={20} />
-							</Dialog.Close>
-						</div>
+						{:else}
+							<div class="row" style="justify-content: space-between; margin-bottom: var(--sp-3)">
+								<Dialog.Title>
+									{#snippet child({ props: titleProps })}<h3 {...titleProps}>{title}</h3>{/snippet}
+								</Dialog.Title>
+								<Dialog.Close class="iconbtn" aria-label="閉じる">
+									<Icon name="ic-x" size={20} />
+								</Dialog.Close>
+							</div>
+						{/if}
 						<!-- 中身だけスクロールさせる。題と操作の行は箱に留めるので、行数が増えても
 						     主ボタンが画面外へ出ない (仕様 5.14)。children を渡さない呼び出し
 						     (確認モーダルなど)でも description は送れないと、極端に低い窓で
@@ -117,9 +130,11 @@
 							{#if children}{@render children()}{/if}
 						</div>
 						<!-- 仕様 5 / components 5.1 — 主ボタンは左。呼び出し側は主 → 副の順に置く -->
-						<div class="row modal-actions">
-							{@render actions()}
-						</div>
+						{#if actions}
+							<div class="row modal-actions">
+								{@render actions()}
+							</div>
+						{/if}
 					</div>
 				{/if}
 			{/snippet}
