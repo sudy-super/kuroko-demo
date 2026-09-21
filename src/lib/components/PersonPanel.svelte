@@ -4,7 +4,7 @@
 	import { identitiesOf, personStats } from '$lib/people';
 	import { parse, fmtMDW } from '$lib/dates';
 	import Icon from './Icon.svelte';
-	import Modal from './Modal.svelte';
+	import OcrFlow from './OcrFlow.svelte';
 
 	/** compact は狭い場所 (メールのスレッドの頭) 向け。メモと実績を落として身元だけ出す。
 	    headingLevel — 人物名の見出しレベルは置かれる場所によって正しい階層が変わるので
@@ -72,15 +72,10 @@
 	{/if}
 </aside>
 
-<!-- Task 25 で名刺と同じ確認画面を差出人の情報で開く。ここは先に置いた入り口 -->
-<Modal
+<!-- 名刺と同じ確認画面を、差出人のメールアドレスで段階 2 から開く -->
+<OcrFlow
 	open={addOpen}
-	title="People に追加"
-	description="差出人の情報から人物を登録する機能は、後の手順で使えるようになります。"
-	size="sm"
 	onclose={() => (addOpen = false)}
->
-	{#snippet actions()}
-		<button class="btn pri" onclick={() => (addOpen = false)}>閉じる</button>
-	{/snippet}
-</Modal>
+	from={identity ? { email: identity.value } : undefined}
+	origin="inbox"
+/>

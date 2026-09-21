@@ -13,7 +13,9 @@ import type {
 	Suggestion,
 	Person,
 	ChatMessage,
-	Document
+	Document,
+	CardFields,
+	Project
 } from './types';
 import { db, save, resetDb } from './store.svelte';
 import { toast, type ContextChip } from './ui.svelte';
@@ -775,4 +777,77 @@ export function sendDocument(docId: string, personId: string, origin: Origin = '
 		payload: { type: 'document', documentId: d.id, personId },
 		origin
 	});
+}
+
+/** 名刺の読み取り結果から人物を登録する。会社は名前で引き、無ければ作る。
+    メールアドレスの ChannelIdentity が既にあれば personId を付けない (関連付けは
+    利用者が linkIdentity で選ぶ。過去のスレッドが黙って別人に結び付くのを避ける) */
+export function addPerson(fields: CardFields, origin: Origin): Person {
+	let company = db.companies.find((c) => c.name === fields.company);
+	if (!company && fields.company) {
+		db.companies.push({
+			id: uid('c'),
+			name: fields.company,
+			domain: fields.email.split('@')[1] ?? '',
+			industry: '',
+			size: ''
+		});
+		company = db.companies[db.companies.length - 1];
+	}
+	db.people.push({
+		id: uid('p'),
+		name: fields.name,
+		kana: fields.kana,
+		companyId: company?.id,
+		title: fields.title,
+		phone: fields.phone || undefined,
+		memo: '',
+		tags: [],
+		projectIds: []
+	});
+	const p = db.people[db.people.length - 1];
+	if (!db.identities.some((i) => i.kind === 'email' && i.value === fields.email))
+		db.identities.push({ id: uid('id'), personId: p.id, kind: 'email', value: fields.email, label: 'Gmail' });
+	log(`人物「${p.name}」を登録しました`, 'register', { actor: 'user', origin });
+	save();
+	return p;
+}
+
+/** ChannelIdentity と、そこから来た全スレッドを人物に結び付ける */
+export function linkIdentity(identityId: string, personId: string) {
+	const i = db.identities.find((x) => x.id === identityId);
+	if (!i) throw new Error(`ChannelIdentity がありません: ${identityId}`);
+	i.personId = personId;
+	const company = personOf(db, personId)?.companyId;
+	for (const t of db.threads)
+		if (t.identityId === identityId) {
+			t.personId = personId;
+			t.companyId ??= company;
+		}
+	log(`${db.threads.filter((t) => t.identityId === identityId).length} 件のメールを人物に関連付けました`, 'register', {
+		actor: 'user',
+		origin: 'people',
+		undo: { kind: 'link_identity', identityId }
+	});
+	save();
+}
+
+/** 人物の会社の案件を作り、人物に紐付ける。商談はこれから始まるので状態は「商談前」 */
+export function createProjectFor(personId: string, name: string): Project {
+	const p = personOf(db, personId);
+	if (!p?.companyId) throw new Error(`会社が引けません: ${personId}`);
+	db.projects.push({
+		id: uid('pj'),
+		name,
+		companyId: p.companyId,
+		status: '商談前',
+		amount: '未定',
+		personIds: [personId],
+		documentIds: []
+	});
+	const pj = db.projects[db.projects.length - 1];
+	p.projectIds.push(pj.id);
+	log(`案件「${pj.name}」を作成しました`, 'register', { actor: 'user', origin: 'people' });
+	save();
+	return pj;
 }

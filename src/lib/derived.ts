@@ -8,6 +8,12 @@ export const identityOf = (db: Db, id: string) => db.identities.find((i) => i.id
 export const personOfIdentity = (db: Db, identityId: string) =>
 	personOf(db, identityOf(db, identityId)?.personId);
 
+/** そのメールアドレスから来た、まだ人物に結び付いていないスレッド。関連付けの提案の材料 */
+export const pendingThreadsFor = (db: Db, email: string) =>
+	db.threads.filter(
+		(t) => !t.personId && db.identities.find((i) => i.id === t.identityId)?.value === email
+	);
+
 /* 人物とそのメールアドレス。宛先を組むのも効果文に出すのもここから引く
    (shareAgenda と generate.ts の mailToOf が同じ 3 行を持っていた)。
    引けないまま送り先不明のメールを作らないよう throw する */

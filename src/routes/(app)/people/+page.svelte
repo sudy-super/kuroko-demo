@@ -1,8 +1,9 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
 	import { badgeCount, companyOf, personOf, projectStatusClass } from '$lib/derived';
 	import Icon from '$lib/components/Icon.svelte';
-	import Modal from '$lib/components/Modal.svelte';
+	import OcrFlow from '$lib/components/OcrFlow.svelte';
 	import Avatars from '$lib/components/Avatars.svelte';
 
 	type Tab = 'people' | 'companies' | 'projects';
@@ -13,7 +14,8 @@
 	];
 
 	let tab = $state<Tab>('people');
-	let cardOpen = $state(false);
+	// 案内の筋書き (scenarios.ts) が /people?ocr=1 で直接開く
+	let cardOpen = $state(page.url.searchParams.get('ocr') === '1');
 
 	const count = $derived({
 		people: db.people.length,
@@ -103,15 +105,4 @@
 	</div>
 </div>
 
-<!-- Task 25 で名刺の読み取りと確認画面を入れる。ここは先に置いた入り口 -->
-<Modal
-	open={cardOpen}
-	title="名刺から追加"
-	description="名刺の画像から人物を登録する機能は、後の手順で使えるようになります。"
-	size="sm"
-	onclose={() => (cardOpen = false)}
->
-	{#snippet actions()}
-		<button class="btn pri" onclick={() => (cardOpen = false)}>閉じる</button>
-	{/snippet}
-</Modal>
+<OcrFlow open={cardOpen} onclose={() => (cardOpen = false)} />
