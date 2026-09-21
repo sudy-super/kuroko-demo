@@ -8,15 +8,21 @@ export const identityOf = (db: Db, id: string) => db.identities.find((i) => i.id
 export const personOfIdentity = (db: Db, identityId: string) =>
 	personOf(db, identityOf(db, identityId)?.personId);
 
-/* 会議の相手とそのメールアドレス。宛先を組むのも効果文に出すのもここから引く
+/* 人物とそのメールアドレス。宛先を組むのも効果文に出すのもここから引く
    (shareAgenda と generate.ts の mailToOf が同じ 3 行を持っていた)。
    引けないまま送り先不明のメールを作らないよう throw する */
+export function personMailTargetOf(db: Db, personId?: string) {
+	const person = personOf(db, personId);
+	const identity = db.identities.find((i) => i.personId === person?.id && i.kind === 'email');
+	if (!person || !identity) throw new Error(`宛先が引けません: ${personId}`);
+	return { person, identity, to: `${person.name} <${identity.value}>` };
+}
+
+/** 会議の相手の宛先。相手は personIds の先頭 */
 export function mailTargetOf(db: Db, meetingId: string) {
 	const m = db.meetings.find((x) => x.id === meetingId);
-	const person = personOf(db, m?.personIds[0]);
-	const identity = db.identities.find((i) => i.personId === person?.id && i.kind === 'email');
-	if (!person || !identity) throw new Error(`宛先が引けません: ${meetingId}`);
-	return { person, identity, to: `${person.name} <${identity.value}>` };
+	if (!m) throw new Error(`宛先が引けません: ${meetingId}`);
+	return personMailTargetOf(db, m.personIds[0]);
 }
 
 /* Task 10p 修正ラウンド 1 (Critical) — 差出人 / 会社を組み立てる。thread.sender は

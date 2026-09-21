@@ -1,12 +1,26 @@
 // TODO(real): LLM による生成に差し替える
-import type { Brief, Db } from '../../types';
-import type { DocumentProvider } from '../types';
+import type { Brief, Db, Document } from '../../types';
+import type { DocumentContext, DocumentProvider } from '../types';
 import { fmtMD, nowIso, parse } from '../../dates';
 import { meetingsOf } from '../../derived';
+import { DOC_TEMPLATES } from '../../kuroko/samples';
+import { uid } from '../../kuroko/generate';
 
 export const document: DocumentProvider = {
-	generate() {
-		throw new Error('not implemented: 資料の生成は Task 19 と 24 で実装する');
+	generate(kind: Document['kind'], ctx: DocumentContext): Document {
+		const company = ctx.companyName ?? '';
+		const theme = ctx.theme ?? company;
+		return {
+			id: uid('doc'),
+			kind,
+			// シードの題名と同じ組み方 (src/lib/seed.ts の documents)。件名のあとに種別を続ける
+			title: `${theme}${kind}`.trim(),
+			projectId: ctx.projectId,
+			personId: ctx.personId,
+			createdBy: 'KUROKO',
+			createdAt: nowIso(),
+			sections: DOC_TEMPLATES[kind](company, theme)
+		};
 	},
 	brief(db: Db, personId?: string, projectId?: string): Brief {
 		const past = db.events

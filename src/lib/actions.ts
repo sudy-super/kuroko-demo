@@ -12,12 +12,21 @@ import type {
 	Automation,
 	Suggestion,
 	Person,
-	ChatMessage
+	ChatMessage,
+	Document
 } from './types';
 import { db, save, resetDb } from './store.svelte';
 import { toast, type ContextChip } from './ui.svelte';
 import { nowIso, parse, fmtMDW, minutes, toHm } from './dates';
-import { personOf, doneLogOf, todayCount, mailTargetOf } from './derived';
+import {
+	personOf,
+	companyOf,
+	projectOf,
+	doneLogOf,
+	todayCount,
+	mailTargetOf,
+	personMailTargetOf
+} from './derived';
 import { agendaFor, slotsFor, slotsText, uid, minutesFor } from './kuroko/generate';
 import { ASK_PERSON, reply, route } from './kuroko/route';
 import { goto } from '$app/navigation';
@@ -728,4 +737,42 @@ export function chatAct(act: string, arg: string) {
 		default:
 			throw new Error(`知らない操作です: ${act}`);
 	}
+}
+
+/** 資料を 1 件作って db に積む。1200ms の待ちは呼び出し側 (/documents) が見せる */
+export function generateDocument(
+	kind: Document['kind'],
+	projectId: string | undefined,
+	origin: Origin
+): Document {
+	const project = projectOf(db, projectId);
+	const d = integrations.document.generate(kind, {
+		companyName: companyOf(db, project?.companyId)?.name,
+		theme: project?.name,
+		projectId: project?.id,
+		personId: project?.personIds[0]
+	});
+	db.documents.unshift(d);
+	// 案件の資料一覧 (/projects/[id]) と Brief の関連資料から辿れるようにする
+	if (project) project.documentIds.unshift(d.id);
+	log(`${d.title}を作成しました`, 'draft', { origin });
+	save();
+	return db.documents[0];
+}
+
+export function sendDocument(docId: string, personId: string, origin: Origin = 'documents'): Approval {
+	const d = db.documents.find((x) => x.id === docId);
+	if (!d) throw new Error(`資料がありません: ${docId}`);
+	const { person, identity, to } = personMailTargetOf(db, personId);
+	return addApproval({
+		title: `${person.name.split(' ')[0]}様への${d.kind}の送付`,
+		risk: 'external_send',
+		kind: 'document',
+		to,
+		subject: d.title,
+		body: `添付: ${d.title}.pdf`,
+		effectLine: `承認すると、${person.name.replace(' ', '')}様 (${identity.value}) にこの資料が送信されます`,
+		payload: { type: 'document', documentId: d.id, personId },
+		origin
+	});
 }
