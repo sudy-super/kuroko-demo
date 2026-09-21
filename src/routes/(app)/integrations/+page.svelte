@@ -27,12 +27,11 @@
 	onMount(() => {
 		// 承認のシーン: 田中様への返信案を KUROKO のカードとして LINE に出す。
 		// 無ければここで作る (/inbox を通らずにこの画面だけで見せられるように)。
-		// 承認待ちなら何でもよいわけではない。カードの文と宛先が食い違う
+		// status は見ない。送信済みや却下済みでも作り直さない (やり直しは「デモをリセット」)
 		if (page.url.searchParams.get('scene') === 'approve') {
 			const a =
-				db.approvals.find(
-					(x) => x.status === 'pending' && x.payload.type === 'reply' && x.payload.threadId === TANAKA
-				) ?? sendReply(TANAKA, '田中様\n\nご連絡ありがとうございます。\n次回の日程を調整いたします。', 'line');
+				db.approvals.find((x) => x.payload.type === 'reply' && x.payload.threadId === TANAKA) ??
+				sendReply(TANAKA, '田中様\n\nご連絡ありがとうございます。\n次回の日程を調整いたします。', 'line');
 			// 同じ承認のカードが既に出ているなら積み直さない。この URL は途中でやり直すために
 			// 開き直されるので、そのたびにカードと承認が増えないようにする
 			const shown = db[db.demo.lineTab].some((m) => m.card?.actions.some((x) => x.arg === a.id));
