@@ -1,6 +1,6 @@
 import type { Db, TimeSlot, MessageThread, Minutes, Meeting } from '../types';
 import { bizDay, key, fmtMDW, parse, minutes, toHm } from '../dates';
-import { personOf } from '../derived';
+import { personOf, mailTargetOf } from '../derived';
 import { SAMPLE_TRANSCRIPT, SAMPLE_MINUTES } from './samples';
 
 let seq = 0;
@@ -68,21 +68,12 @@ export function replyDraft(
 const TODO_HINTS = ['する', 'まで', 'お送り', '送付', '提出', '調整'];
 const DECISION_HINTS = ['合意', '決定', 'で進め'];
 
-/** 相手の宛先。会議に紐づく最初の人物のメールを使う */
-function mailToOf(db: Db, meetingId: string): string {
-	const m = db.meetings.find((x) => x.id === meetingId);
-	const p = personOf(db, m?.personIds[0]);
-	const idn = db.identities.find((i) => i.personId === p?.id && i.kind === 'email');
-	if (!p || !idn) throw new Error(`宛先が引けません: ${meetingId}`);
-	return `${p.name} <${idn.value}>`;
-}
-
 export function minutesFor(
 	db: Db,
 	meetingId: string,
 	text: string
 ): { minutes: Minutes; todos: { title: string; due: string; reason: string }[] } {
-	const to = mailToOf(db, meetingId);
+	const { to } = mailTargetOf(db, meetingId);
 	const from = parse(db.seededOn);
 	if (text.trim() === SAMPLE_TRANSCRIPT.trim()) {
 		return {

@@ -16,7 +16,7 @@ import type {
 import { db, save, resetDb } from './store.svelte';
 import { toast } from './ui.svelte';
 import { nowIso, parse, fmtMDW, minutes, toHm } from './dates';
-import { personOf, doneLogOf, todayCount } from './derived';
+import { personOf, doneLogOf, todayCount, mailTargetOf } from './derived';
 import { agendaFor, slotsFor, slotsText, uid, minutesFor } from './kuroko/generate';
 import { integrations } from './integrations';
 
@@ -655,14 +655,12 @@ export function updateAgenda(meetingId: string, items: string[]) {
 export function shareAgenda(meetingId: string, origin: Origin = 'meeting'): Approval {
 	const m = db.meetings.find((x) => x.id === meetingId);
 	if (!m) throw new Error(`会議がありません: ${meetingId}`);
-	const p = personOf(db, m.personIds[0]);
-	const idn = db.identities.find((i) => i.personId === p?.id && i.kind === 'email');
-	if (!p || !idn) throw new Error(`宛先が引けません: ${meetingId}`);
+	const { person: p, identity: idn, to } = mailTargetOf(db, meetingId);
 	return addApproval({
 		title: `${p.name.split(' ')[0]}様へのアジェンダ共有`,
 		risk: 'external_send',
 		kind: 'share',
-		to: `${p.name} <${idn.value}>`,
+		to,
 		body: m.agenda.join('\n'),
 		effectLine: `承認すると、${p.name.replace(' ', '')}様 (${idn.value}) にアジェンダが共有されます`,
 		payload: { type: 'agenda', meetingId },

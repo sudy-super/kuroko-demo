@@ -80,7 +80,10 @@
 		height: auto;
 		padding-block: var(--sp-3);
 	}
+	/* 3 つで 360px の幅を超えるので折り返す。.row にも .tc-foot にも高さの指定が無いので
+	   (app.css)、折り返した分だけ行が伸びる。固定の高さを解く必要は無い */
 	.sg-foot {
+		flex-wrap: wrap;
 		gap: var(--sp-4);
 	}
 </style>

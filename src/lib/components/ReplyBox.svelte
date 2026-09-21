@@ -44,6 +44,7 @@
 	const id = $props.id();
 	let bodyEl: HTMLTextAreaElement | undefined = $state();
 	let chipsEl: HTMLDivElement | undefined = $state();
+	let sendEl: HTMLDivElement | undefined = $state();
 
 	async function pick(tone: (typeof CHIPS)[number]['tone']) {
 		if (busy) return;
@@ -64,7 +65,11 @@
 		else dropSlotsDraft(thread.id);
 		body = proposal.body;
 		proposal = null;
-		bodyEl?.focus();
+		// 採用すると提案カードが消えるので、その行に掛けた scrollIntoView (下の use:) は効かない。
+		// 1440x900 でも送信ボタンは折り返した本文の下 (scrollY 1126、文書 2026px) にあるため、
+		// 焦点を移すだけでは画面外に残る。次に押す送信の行まで運ぶ
+		bodyEl?.focus({ preventScroll: true });
+		sendEl?.scrollIntoView({ block: 'nearest' });
 	}
 
 	function discard() {
@@ -140,7 +145,7 @@
 	     メールアドレスから省略されるので、行を分けて全文を出す (review-task-15.md I3) -->
 	<p class="to-again">→ {to}</p>
 
-	<div class="row send-row">
+	<div class="row send-row" bind:this={sendEl}>
 		<button class="btn {proposal ? 'sec' : 'pri'}" disabled={!body.trim()} onclick={send}>
 			<Icon name="ic-send" size={18} />送信
 		</button>
@@ -221,6 +226,9 @@
 	.send-row {
 		flex-wrap: wrap;
 		gap: var(--sp-4);
+		/* 採用の直後にこの行へ運ぶ (script の accept)。.proposal-foot と同じ理由で、
+		   下端に重なる依頼バーとボトムナビの分だけ手前で止める */
+		scroll-margin-bottom: var(--content-bottom-clear);
 	}
 	.to-again {
 		/* メールアドレスは単語として切れないので、折り返せる位置を明示しないと列からはみ出す */
