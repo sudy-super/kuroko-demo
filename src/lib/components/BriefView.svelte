@@ -14,17 +14,8 @@
 	);
 </script>
 
-{#snippet lines(items: string[])}
-	{#if items.length}
-		<ul>
-			{#each items as t (t)}<li>{t}</li>{/each}
-		</ul>
-	{:else}
-		<span class="muted">なし</span>
-	{/if}
-{/snippet}
-
-<!-- 8 項目は「見出し + 値」の並びなので、/projects/[id] と同じ .kv に全部載せる -->
+<!-- 短い 3 項目は /projects/[id] と同じ 2 列の .kv。
+     残る 5 項目は値が箇条書きや行なので、見出しの下に全幅で置く -->
 <dl class="kv">
 	<dt>相手</dt>
 	<dd>
@@ -39,27 +30,44 @@
 	</dd>
 	<dt>目的</dt>
 	<dd>{meeting.purpose}</dd>
-	<dt>これまでの経緯</dt>
-	<dd>{@render lines(brief?.history ?? [])}</dd>
-	<dt>前回のポイント</dt>
-	<dd>{@render lines(brief?.lastPoints ?? [])}</dd>
-	<dt>前回の宿題</dt>
-	<dd>{@render lines(brief?.homework ?? [])}</dd>
-	<dt>最近の連絡</dt>
-	<dd>{@render lines(brief?.recentContacts ?? [])}</dd>
-	<dt>関連資料</dt>
-	<dd>
-		{#each documents as d (d.id)}
-			<span class="row"><span class="badge">{d.kind}</span>
-				<a href="/documents?d={d.id}">{d.title}</a></span>
-		{/each}
-		{#if !documents.length}<span class="muted">なし</span>{/if}
-	</dd>
 </dl>
 
+{#snippet sec(title: string, items: string[])}
+	<h3>{title}</h3>
+	{#if items.length}
+		<ul>
+			{#each items as t (t)}<li>{t}</li>{/each}
+		</ul>
+	{:else}
+		<p class="muted">なし</p>
+	{/if}
+{/snippet}
+
+{@render sec('これまでの経緯', brief?.history ?? [])}
+{@render sec('前回のポイント', brief?.lastPoints ?? [])}
+{@render sec('前回の宿題', brief?.homework ?? [])}
+{@render sec('最近の連絡', brief?.recentContacts ?? [])}
+
+<h3>関連資料</h3>
+{#each documents as d (d.id)}
+	<a class="list-row" href="/documents?d={d.id}">
+		<span class="badge">{d.kind}</span>
+		<span class="people-ident">{d.title}</span>
+	</a>
+{/each}
+{#if !documents.length}<p class="muted">なし</p>{/if}
+
 <style>
+	/* 値の見出し。.kv dt と同じ色と大きさにそろえる */
+	h3 {
+		margin: var(--sp-4) 0 var(--sp-2);
+		color: var(--ink-3);
+		font-size: 14px;
+		font-weight: 500;
+	}
 	ul {
 		margin: 0;
 		padding-left: 1.2em;
+		line-height: 1.7;
 	}
 </style>
