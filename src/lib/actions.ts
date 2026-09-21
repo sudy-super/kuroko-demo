@@ -19,7 +19,7 @@ import type {
 } from './types';
 import { db, save, resetDb } from './store.svelte';
 import { toast, type ContextChip } from './ui.svelte';
-import { nowIso, parse, fmtMDW, minutes, toHm } from './dates';
+import { nowIso, parse, fmtMDW, minutes, toHm, hm } from './dates';
 import {
 	personOf,
 	companyOf,
@@ -31,6 +31,7 @@ import {
 } from './derived';
 import { agendaFor, slotsFor, slotsText, uid, minutesFor } from './kuroko/generate';
 import { ASK_PERSON, reply, route } from './kuroko/route';
+import { handleMention } from './kuroko/line';
 import { goto } from '$app/navigation';
 import { integrations } from './integrations';
 
@@ -705,6 +706,59 @@ export async function chatSend(text: string, ctx?: ContextChip) {
 	const { suggestion, ...msg } = reply(db, route(db, q, ctx), asked);
 	if (suggestion) db.suggestions.push(suggestion);
 	pushChat({ role: 'kuroko', ...msg });
+}
+
+/**
+ * LINE / Slack の 1 往復。発言を積み、800ms 後に KUROKO の返答を同じ入れ物へ積む
+ * (chatSend と同じ待ち)。`@KUROKO` で始まらない発言には返さない (handleMention が null)。
+ * member (従業員) の「予定を入れて」は書き込まず、社長のチャットへ候補として回す
+ */
+export async function lineSay(text: string, role: 'owner' | 'member') {
+	const q = text.trim();
+	if (!q) return;
+	const channel = db.demo.lineTab;
+	const who = role === 'owner' ? db.user.name.split(' ')[0] : '山田';
+	(channel === 'line' ? db.line : db.slack).push({ id: uid('ln'), who, text: q, at: hm(), role });
+	save();
+	const r = handleMention(db, q, role);
+	if (!r) return;
+	await new Promise((res) => setTimeout(res, 800));
+	if (r.task) addTask({ title: r.task.title, due: r.task.due, time: r.task.time }, channel);
+	if (r.suggestion) {
+		const s: Suggestion = {
+			id: uid('sg'),
+			source: 'line',
+			kind: 'event',
+			status: 'pending',
+			reason: `${who}さんから「${q}」の依頼がありました`,
+			payload: {
+				type: 'event',
+				title: r.suggestion.title,
+				date: r.suggestion.date,
+				start: '10:00',
+				end: '11:00',
+				personIds: []
+			},
+			createdAt: nowIso()
+		};
+		db.suggestions.push(s);
+		// 社長のチャット (/chat) へ回す。押すまで予定にならないのは chatAct の create-event 任せ
+		pushChat({
+			role: 'kuroko',
+			card: {
+				icon: 'ic-cal',
+				title: '予定の候補',
+				lines: [r.suggestion.title, `${fmtMDW(parse(r.suggestion.date))} 10:00〜11:00`],
+				reason: s.reason,
+				actions: [
+					{ label: 'この内容で作成', act: 'create-event', arg: s.id },
+					{ label: '日時を変更する', act: 'change-date', arg: s.id }
+				]
+			}
+		});
+	}
+	integrations.chat.post(channel, r.reply, r.card);
+	save();
 }
 
 /** カードのボタン。既存の処理へ振り分けるだけで、ここでは何も組み立てない */

@@ -4,6 +4,7 @@ import type {
 	CardFields,
 	Db,
 	Document,
+	LineMessage,
 	Message,
 	MessageThread
 } from '../types';
@@ -22,7 +23,7 @@ export interface CalendarProvider {
 	findFreeSlots(db: Db, date: string, duration: number): { start: string; end: string }[];
 }
 export interface ChatProvider {
-	post(channel: 'slack' | 'line', text: string): void;
+	post(channel: 'slack' | 'line', text: string, card?: LineMessage['card']): void;
 }
 export interface ConferenceProvider {
 	createMeetingUrl(kind: 'meet' | 'zoom'): string;

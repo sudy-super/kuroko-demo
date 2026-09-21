@@ -1,0 +1,130 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { db, save } from '$lib/store.svelte';
+	import { lineSay, sendReply } from '$lib/actions';
+	import { integrations } from '$lib/integrations';
+	import Icon from '$lib/components/Icon.svelte';
+	import LineChat from '$lib/components/LineChat.svelte';
+
+	const TABS = [
+		{ key: 'line', label: 'LINE' },
+		{ key: 'slack', label: 'Slack' }
+	] as const;
+	const ROLES = [
+		{ key: 'owner', label: 'Owner (社長)' },
+		{ key: 'member', label: 'Member (山田)' }
+	] as const;
+
+	// 承認のシーンで使う、田中様とのやり取り (src/lib/seed.ts の queueThreads)
+	const TANAKA = 'th-tanaka-next';
+
+	const set = <K extends 'lineTab' | 'lineRole'>(k: K, v: (typeof db.demo)[K]) => {
+		db.demo[k] = v;
+		save();
+	};
+
+	onMount(() => {
+		// 承認のシーン: 田中様への返信案を KUROKO のカードとして LINE に出す。
+		// 無ければここで作る (/inbox を通らずにこの画面だけで見せられるように)。
+		// 承認待ちなら何でもよいわけではない。カードの文と宛先が食い違う
+		if (page.url.searchParams.get('scene') === 'approve') {
+			const a =
+				db.approvals.find(
+					(x) => x.status === 'pending' && x.payload.type === 'reply' && x.payload.threadId === TANAKA
+				) ?? sendReply(TANAKA, '田中様\n\nご連絡ありがとうございます。\n次回の日程を調整いたします。', 'line');
+			integrations.chat.post(db.demo.lineTab, '田中様への返信案ができました', {
+				title: a.title,
+				lines: [`宛先 ${a.to}`, a.effectLine],
+				actions: [
+					{ label: '内容を見る', act: 'preview', arg: a.id },
+					{ label: '承認して送信', act: 'approve', arg: a.id }
+				]
+			});
+		}
+		const say = page.url.searchParams.get('say');
+		if (say) lineSay(say, db.demo.lineRole);
+	});
+</script>
+
+<svelte:head><title>LINE / Slack — KUROKO AI</title></svelte:head>
+
+<div class="ig">
+	<header class="page-head">
+		<div class="page-title">
+			<h1>LINE / Slack</h1>
+			<p class="page-desc">
+				ふだん使っているグループから KUROKO に頼めます。見せてよい範囲は話しかけた人によって変わります。
+			</p>
+		</div>
+	</header>
+
+	<!-- indicators.md — 状態は文言のタグではなくアイコンと文で示す -->
+	<p class="ig-banner">
+		<Icon name="ic-shield" size={20} />
+		<!-- 文は 1 つの要素にまとめる。地の文と <strong> を直接置くと別々の flex item になり、
+		     幅が足りないときにそれぞれが縮んで単語の途中で折り返す -->
+		<span>KUROKO は <strong>@KUROKO</strong> と書かれた内容だけを処理します。ほかの会話は読みません。</span>
+	</p>
+
+	<div class="ig-switches">
+		<!-- /tasks と同じ形 (.chip + aria-pressed)。選択中はチェック印も出す (WCAG 1.4.1) -->
+		<div class="row ig-row" role="group" aria-label="サービスを選ぶ">
+			{#each TABS as t (t.key)}
+				<button
+					class="chip"
+					class:on={db.demo.lineTab === t.key}
+					aria-pressed={db.demo.lineTab === t.key}
+					onclick={() => set('lineTab', t.key)}
+				>
+					<Icon name="ic-check" size={18} class="chip-check" />{t.label}
+				</button>
+			{/each}
+		</div>
+		<div class="row ig-row" role="group" aria-label="話しかける人を選ぶ">
+			{#each ROLES as r (r.key)}
+				<button
+					class="chip"
+					class:on={db.demo.lineRole === r.key}
+					aria-pressed={db.demo.lineRole === r.key}
+					onclick={() => set('lineRole', r.key)}
+				>
+					<Icon name="ic-check" size={18} class="chip-check" />{r.label}
+				</button>
+			{/each}
+		</div>
+	</div>
+
+	<!-- 切り替えるとやり取りの入れ物ごと変わる。log をそのまま作り直させる -->
+	{#key db.demo.lineTab}
+		<LineChat channel={db.demo.lineTab} role={db.demo.lineRole} />
+	{/key}
+</div>
+
+<style>
+	.ig {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sp-4);
+		padding: 0 var(--sp-5);
+	}
+	.ig-banner {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-2);
+		padding: var(--sp-3) var(--sp-4);
+		border-radius: var(--r-m);
+		background: var(--accent-soft);
+		color: var(--ink-2);
+		font-size: 14px;
+	}
+	.ig-switches {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sp-3) var(--sp-5);
+	}
+	.ig-row {
+		flex-wrap: wrap;
+		gap: var(--sp-2);
+	}
+</style>

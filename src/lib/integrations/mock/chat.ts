@@ -6,8 +6,8 @@ import { hm } from '../../dates';
 import { uid } from '../../kuroko/generate';
 
 export const chat: ChatProvider = {
-	post(channel, text) {
-		const m: LineMessage = { id: uid('ln'), who: 'KUROKO', text, at: hm() };
+	post(channel, text, card) {
+		const m: LineMessage = { id: uid('ln'), who: 'KUROKO', text, at: hm(), card };
 		(channel === 'line' ? db.line : db.slack).push(m);
 	}
 };
