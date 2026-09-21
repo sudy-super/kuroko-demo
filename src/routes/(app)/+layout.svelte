@@ -46,11 +46,11 @@
 </script>
 
 <div class="app" class:has-rail={connected.length > 0}>
-	<!-- Task 10i — 枠のガラス (Task 10w で携帯のボトムナビと上部バーを足して 6 面)は、
+	<!-- 枠のガラスのうち 5 面 (サイドナビ、上部バー、連携の列、携帯のボトムナビ・上部バー)は、
 	     この空の層に 1 枚の canvas でまとめて描く。面ごとに描画面 (WebGL context)を取ると、
 	     タブを 3 枚開いただけでブラウザの上限に届き、全面が backdrop-filter の経路に落ちる。
-	     層は本文より後・覆いより前に敷くので、本文はガラスの背後の絵に入り、6 面自身は
-	     入らない。src/lib/glass.ts の chromeGlass -->
+	     層は本文より後・覆いより前に敷くので、本文はガラスの背後の絵に入り、5 面自身は
+	     入らない。依頼バーだけは自分の描画面を持つ (src/lib/glass.ts の chromeGlass / barGlass) -->
 	<div class="chrome" {@attach chromeGlass}></div>
 	<!-- Task 10w (glass-scope.md 1〜3 節) — ドロワー・シート・モーダル・ポップオーバー・
 	     メニューは bits-ui の Portal で <body> 直下に出る。この層も Portal で <body> の

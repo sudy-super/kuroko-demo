@@ -10,7 +10,10 @@ import {
 	weekOf,
 	monthGrid,
 	eventsOn,
-	eventsIn
+	eventsIn,
+	WEEK_HOUR_PX,
+	WEEK_MIN_EVENT_PX,
+	WEEK_MIN_DURATION_MIN
 } from './calendar';
 import { deleteEvent, undo } from './actions';
 import { replaceDb, db } from './store.svelte';
@@ -109,11 +112,14 @@ describe('layoutColumns', () => {
 			['c', 0, 1]
 		]);
 	});
-	it('minDurationMin を渡すと、実時間では重ならない予定も描画上の終了で重ねる (Task 11r 再レビュー 2 Important 1)', () => {
+	it('minDurationMin を渡すと、実時間では重ならない予定も描画上の終了で重ねる', () => {
 		// 11:00〜11:15 は実時間どおりなら 11:15 に終わるが、WeekView の 44px 下限で描画は
-		// 11:30 まで伸びる (30 分 = MIN_HEIGHT / PX)。その分を渡すと直後の 11:15〜12:00 と
+		// 11:30 まで伸びる (WEEK_MIN_DURATION_MIN 分)。その分を渡すと直後の 11:15〜12:00 と
 		// 重なったとみなされ、列が分かれる
-		const out = layoutColumns([ev('a', '11:00', '11:15'), ev('b', '11:15', '12:00')], 30);
+		const out = layoutColumns(
+			[ev('a', '11:00', '11:15'), ev('b', '11:15', '12:00')],
+			WEEK_MIN_DURATION_MIN
+		);
 		expect(out.map((x) => [x.event.id, x.col, x.cols])).toEqual([
 			['a', 0, 2],
 			['b', 1, 2]
@@ -126,11 +132,16 @@ describe('layoutColumns', () => {
 			['b', 0, 1]
 		]);
 	});
-	it('minDurationMin がちょうど 30 なら、ちょうど 30 分の予定どうしは列を分けない', () => {
-		// WeekView.svelte の MIN_DURATION_MIN は (44 * 60) / 88 で、これは浮動小数点の誤差なく
-		// 30 になる。44 / (88 / 60) だと 30.000000000000004 になり、0:00〜0:30 の終わりが
-		// わずかに 0:30 を超えて 0:30〜1:00 と重なったと誤判定される (この境目を確認する)
-		const out = layoutColumns([ev('a', '0:00', '0:30'), ev('b', '0:30', '1:00')], (44 * 60) / 88);
+	it('WEEK_MIN_DURATION_MIN は丸めの誤差を持たないので、ちょうど 30 分の予定どうしは列を分けない', () => {
+		// WEEK_MIN_EVENT_PX / (WEEK_HOUR_PX / 60) と書くと 30.000000000000004 になり、
+		// 0:00〜0:30 の終わりがわずかに 0:30 を超えて 0:30〜1:00 と重なったと誤判定される。
+		// 定数側が先に 60 を掛けているのでちょうど 30 になる (この境目を確認する)
+		expect(WEEK_MIN_DURATION_MIN).toBe(30);
+		expect(WEEK_MIN_EVENT_PX / (WEEK_HOUR_PX / 60)).not.toBe(30);
+		const out = layoutColumns(
+			[ev('a', '0:00', '0:30'), ev('b', '0:30', '1:00')],
+			WEEK_MIN_DURATION_MIN
+		);
 		expect(out.map((x) => [x.event.id, x.col, x.cols])).toEqual([
 			['a', 0, 1],
 			['b', 0, 1]

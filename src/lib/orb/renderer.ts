@@ -411,16 +411,22 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 	let onScreen = true;
 	let lost = false;
 	let t0 = performance.now();
+	/* 描画そのものの失敗も復帰やリサイズと同じ経路に流す。rAF の中で投げると誰も受けないまま
+	   rAF が止まり、呼び出し側は死んだ canvas を握ったままになる (preserveDrawingBuffer で
+	   最後のフレームが残るので、カードの背後にその絵が焼き付く) */
+	const safeDraw = (time: number) => {
+		try { draw(time); return true; } catch (e) { fail(e); return false; }
+	};
 	const tick = (now: number) => {
 		raf = 0;
 		if (!running || !onScreen || document.hidden || lost) return;
-		draw((now - t0) / 1000);
+		if (!safeDraw((now - t0) / 1000)) return;
 		raf = requestAnimationFrame(tick);
 	};
 	/* 動かせる状態なら rAF を回し、reduced-motion なら固定時刻で 1 枚だけ描く */
 	const kick = () => {
 		if (lost || !running) return;
-		if (opts.reducedMotion) { draw(REDUCED_TIME); return; }
+		if (opts.reducedMotion) { safeDraw(REDUCED_TIME); return; }
 		if (!raf && onScreen && !document.hidden) raf = requestAnimationFrame(tick);
 	};
 	const halt = () => {

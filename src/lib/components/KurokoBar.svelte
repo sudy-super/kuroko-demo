@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { ui, type ContextChip } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
+	import { barGlass } from '$lib/glass';
 
 	let { context = null }: { context?: ContextChip | null } = $props();
 
@@ -19,8 +20,12 @@
 	}
 </script>
 
+<!-- 依頼バーだけは枠の層に乗せず自分の描画面を持つ (src/lib/glass.ts の barGlass)。
+     層に乗せた面は層の段で切られた絵しか映せず、段 50〜54 のサイドナビ・上部バー・連携の列が
+     このバーの屈折に入らなくなるため -->
 <form
 	class="chatbar"
+	{@attach barGlass}
 	onsubmit={(e) => {
 		e.preventDefault();
 		send();

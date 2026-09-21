@@ -2,22 +2,26 @@
 	import type { CalendarEvent } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { key, minutes, hm } from '$lib/dates';
-	import { layoutColumns, eventsOn, weekOf } from '$lib/calendar';
+	import {
+		layoutColumns,
+		eventsOn,
+		weekOf,
+		WEEK_HOUR_PX,
+		WEEK_MIN_EVENT_PX,
+		WEEK_MIN_DURATION_MIN
+	} from '$lib/calendar';
 	import Icon from './Icon.svelte';
 	import Tip from './Tip.svelte';
 
 	let { cursor, onopen }: { cursor: Date; onopen: (e: CalendarEvent) => void } = $props();
 
-	/* Task 11r 修正ラウンド 1 (Important 1、監査 9) — components 3.12 の既定は 1 時間 48px
-	   (30 分の予定が 24px)だったが、当たり判定が Apple HIG / WCAG 2.5.8 の下限 44px に届かない
-	   (実測 24px のまま)。疑似要素での継ぎ足しは親の overflow: hidden に切られて効かなかったため、
-	   目盛りそのものを 1 時間 88px に上げ、30 分の予定の実寸を直接 44px にした。上下・左右の
-	   隣接予定の間隔も同じ倍率で広がるので重なりは生まれない。components.md の「48px/時」からは
-	   外れるが、44px の当たり判定を確保するための意図的な変更 (app.css .week-body 側にも
-	   同じ倍率でコメント)。
-	   0:00〜24:00 の全部を持ち、見える高さ (12 時間分) は CSS の .week-body で切って縦に送る。
-	   8:00〜20:00 だけを持つと、20:00 より後に作った予定がどこにも出なくなる */
-	const PX = 88 / 60;
+	/* 1 分あたりの高さ。components 3.12 の既定は 48px/時 だが、それだと 30 分の予定が 24px にしか
+	   ならず、当たり判定が Apple HIG / WCAG 2.5.8 の下限 44px に届かない。疑似要素での継ぎ足しは
+	   親の overflow: hidden に切られるので、目盛りそのものを上げて 30 分の予定の実寸を 44px にした
+	   (値は calendar.ts の WEEK_HOUR_PX、app.css の .week-hour / .week-col と同じ)。
+	   格子は 0:00〜24:00 の全部を持つ。8:00〜20:00 だけを持つと、20:00 より後に作った予定が
+	   どこにも出なくなる。見える高さで切って縦に送るのは app.css の .week */
+	const PX = WEEK_HOUR_PX / 60;
 	const HOURS = Array.from({ length: 24 }, (_, i) => i);
 	const OPEN = 8 * 60 * PX; // 開いた直後に見せる位置 (8:00)
 	const WD = ['月', '火', '水', '木', '金', '土', '日'];
@@ -39,22 +43,14 @@
 	});
 
 	const top = (m: number) => m * PX;
-	/* Task 11r 修正ラウンド 2 (再レビュー 新規 1) — 1 時間を 88px に上げた後も、この下限だけ
-	   48px/時 時代の 24px (WCAG 2.2 SC 2.5.8 の最小)のまま残っていて、16.4 分未満の予定は
-	   44px を割ったまま描かれていた (予定を追加する画面から 2 手で再現できる)。
-	   responsive-policy.md の条件 4 (タップ領域 44px 以上、buttons.md 資料 14 の Baymard の
-	   強化基準)に合わせ、下限も 44px にする。上下に隣り合う予定の塗りを離すのは CSS 側の
-	   透明な下線 (.week-ev の border-bottom + background-clip) に任せ、どの長さでも同じ
-	   1px の隙間にする */
-	const MIN_HEIGHT = 44;
-	const height = (e: CalendarEvent) => Math.max(MIN_HEIGHT, (minutes(e.end) - minutes(e.start)) * PX);
-	/* 上の下限で描画が実時間より下へ伸びるぶん、layoutColumns の重なり判定にも同じ分だけ
-	   描画上の終了位置を渡す。実時間のままだと、続けて入った予定 (例: 11:00〜11:15 と
-	   11:15〜12:00) の描画が重なり、文字も当たり判定も潰れる。
-	   分単位に戻すのは MIN_HEIGHT / PX だが、PX = 88 / 60 の浮動小数点の丸めで
-	   30.000000000000004 になり、ちょうど 30 分の予定 (0:00〜0:30 と 0:30〜1:00 など) まで
-	   重なり判定に誤って引っかかる。60 を先に掛けてから 88 で割れば 30 ちょうどになる */
-	const MIN_DURATION_MIN = (MIN_HEIGHT * 60) / 88;
+	/* 短い予定も当たり判定の下限 (calendar.ts の WEEK_MIN_EVENT_PX) まで伸ばして描く。
+	   上下に隣り合う予定の塗りを離すのは CSS 側の透明な下線 (.week-ev の border-bottom +
+	   background-clip) に任せ、どの長さでも同じ 1px の隙間にする。
+	   伸びたぶんは layoutColumns の重なり判定にも渡す (WEEK_MIN_DURATION_MIN)。実時間の
+	   ままだと、続けて入った予定 (例: 11:00〜11:15 と 11:15〜12:00) の描画が重なり、
+	   文字も当たり判定も潰れる */
+	const height = (e: CalendarEvent) =>
+		Math.max(WEEK_MIN_EVENT_PX, (minutes(e.end) - minutes(e.start)) * PX);
 
 	/* 重なりの横位置。左右の余白を 4px でそろえたいので、幅から 1px 引いて右にずらす手は
 	   使わず、先に列の間の隙間 (cols - 1)px を引いてから均等に割る */
@@ -91,9 +87,9 @@
 			.join(' ');
 </script>
 
-<!-- Task 11r 修正ラウンド 3 (再レビュー 2 所見 6) — 横 (格子の最小幅) と縦 (24 時間分) の
-     送りをこの箱 1 つに一本化した (app.css .week 参照)。曜日の行 (.week-head) はこの箱の
-     中で position: sticky にできるので、送っても見えたままになる。
+<!-- 横 (格子の最小幅) と縦 (24 時間分) の送りはこの箱 1 つが持つ (app.css .week 参照)。
+     曜日の行 (.week-head) はこの箱の中で position: sticky にできるので、送っても見えたままになる
+     (sticky は送れない祖先を基準にできないため、送りを分けると効かない)。
      予定が 1 つもない週では中に押せるものが無く、キーボードだけではここへ来られないので、
      領域そのものを焦点に入れる (WCAG 2.1.1)。規則は「押せない要素に tabindex を置くな」だが、
      送れる領域はその例外に当たる -->
@@ -115,7 +111,7 @@
 		{#each days as d, i (i)}
 			{@const k = key(d)}
 			<div class="week-col" class:on={k === todayKey}>
-				{#each layoutColumns(eventsOn(db, k), MIN_DURATION_MIN) as { event, col, cols } (event.id)}
+				{#each layoutColumns(eventsOn(db, k), WEEK_MIN_DURATION_MIN) as { event, col, cols } (event.id)}
 					{@const h = height(event)}
 					{@const a = attrs(event)}
 					<!-- 重なりは塊の幅から列の間の隙間を引いて均等に割る -->

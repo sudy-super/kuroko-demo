@@ -176,6 +176,8 @@
 	--bar-clear: calc(var(--sp-4) + var(--header-h) + var(--sp-2));
 	--chatbar-h: 60px;
 	--bottomnav-h: 72px;
+	/* チップの高さ (下の .chip)。依頼バーの折り返し行の角丸がここから同心に決まるので変数にする */
+	--chip-h: 40px;
 	/* Task 11r — 本文の下端の余白を 1 つの仕組みに統合する。固定要素 (依頼バー、
 	   960px 以下はボトムナビも)の実際の高さ (上の 2 つの変数、.chatbar / .bottomnav の
 	   height と同じ)から、それが浮く分の隙間と読みやすい間 (--sp-8) を足して組み立てる。
@@ -711,20 +713,17 @@ svg.i {
 	:root:has(.chatbar .chip) {
 		--chatbar-h: 112px;
 	}
-	/* Task 11r 修正ラウンド 3 (再レビュー 2 Important 2) — border-radius: var(--r-pill) の
-	   ままだと、112px の高さでは角の半径が 56px になり、この折り返し行の中身 (チップの右上、
-	   送信ボタンの右下)が丸い輪郭からはみ出す (実測: チップ 3.6px、送信ボタン 2.5px)。
-	   修正ラウンド 4 (再レビュー 3 Important 1) — 上の式の当てはめが誤りだった。中身は角丸 0
-	   の直角ではなく、チップは capsule (高さ 40px、半径 20px)、送信ボタンは円 (直径 42px、
-	   半径 21px)。visual.md 3.7「内側の角丸 = 外側の角丸 − 間隔」を正しく解くと
-	   外側の角丸 = 内側の角丸 + 間隔。間隔はこの行で最も狭い padding (top/right/bottom
-	   = --sp-2 = 8px、left だけ --sp-5 = 20px) を採り、チップの半径 (40px の半分) + 8px = 28px
-	   にする。実測でチップ・送信ボタンとも輪郭の内側に約 8px の余裕を保ち、はみ出しは 0 */
+	/* border-radius: var(--r-pill) のままだと、112px の高さでは角の半径が 56px になり、
+	   この折り返し行の中身 (チップの右上、送信ボタンの右下)が丸い輪郭からはみ出す。
+	   visual.md 3.7「内側の角丸 = 外側の角丸 − 間隔」を解くと 外側 = 内側 + 間隔。
+	   中身のうち輪郭にいちばん近いのはチップ (capsule なので半径は自身の高さの半分)で、
+	   間隔はこの行で最も狭い padding (top/right/bottom = --sp-2。left だけ --sp-5 と広い)。
+	   チップの高さは下の .chip を見よ */
 	.chatbar:has(.chip) {
 		flex-wrap: wrap;
 		padding-top: var(--sp-2);
 		padding-bottom: var(--sp-2);
-		border-radius: calc(40px / 2 + var(--sp-2));
+		border-radius: calc(var(--chip-h) / 2 + var(--sp-2));
 	}
 	.chatbar .chip {
 		flex-basis: 100%;
@@ -1016,7 +1015,7 @@ svg.i {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--sp-2);
-	height: 40px;
+	height: var(--chip-h);
 	padding: 0 var(--sp-4);
 	border: 0;
 	border-radius: var(--r-pill);
@@ -2920,9 +2919,10 @@ section.tc .list-row:not(label):not(a):hover {
    WebGL2 が無い環境では data-liquid-glass="fallback" が付いてこの指定は当たらず、
    これまでどおり backdrop-filter のすりガラスになる。
    ========================================================================== */
-/* Task 10i — 枠の 6 面 (Task 10w でボトムナビ・携帯の上部バーを追加) は .chrome の canvas に
-   まとめて描かれるので、属性は入れ物の .chrome に付く。面はその層の子ではなくきょうだいなので、
-   塗りを下ろす指定も ~ で書く。
+/* 枠の 5 面 (サイドナビ、上部バー、連携の列、ボトムナビ、携帯の上部バー) は .chrome の
+   canvas にまとめて描かれるので、属性は入れ物の .chrome に付く。面はその層の子ではなく
+   きょうだいなので、塗りを下ろす指定も ~ で書く。依頼バーは自分が host なので、上の
+   :root [data-liquid-glass='webgl'] のほうで拾う (src/lib/glass.ts の barGlass)。
 
    Task 10w (glass-scope.md 2〜3 節) — ドロワー・シート・モーダル・ポップオーバー・メニューは
    overlay-chrome の canvas にまとめて描かれる。この 5 面は <body> の直接の子 (drawer/sheet/
@@ -2939,7 +2939,6 @@ section.tc .list-row:not(label):not(a):hover {
 .chrome[data-liquid-glass='webgl'] ~ .sidebar,
 .chrome[data-liquid-glass='webgl'] ~ .header.glass,
 .chrome[data-liquid-glass='webgl'] ~ .rail,
-.chrome[data-liquid-glass='webgl'] ~ .chatbar,
 .chrome[data-liquid-glass='webgl'] ~ .header.solid,
 .chrome[data-liquid-glass='webgl'] ~ .bottomnav,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer,
@@ -3029,7 +3028,6 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu::before {
 .chrome[data-liquid-glass='webgl'] ~ .sidebar::after,
 .chrome[data-liquid-glass='webgl'] ~ .header.glass::after,
 .chrome[data-liquid-glass='webgl'] ~ .rail::after,
-.chrome[data-liquid-glass='webgl'] ~ .chatbar::after,
 .chrome[data-liquid-glass='webgl'] ~ .header.solid::after,
 .chrome[data-liquid-glass='webgl'] ~ .bottomnav::after,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer::after,
@@ -3223,7 +3221,13 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
    高さは、画面の中でヘッダーの下端から依頼バーの上端までに使える分 (100dvh から
    --bar-clear と --content-bottom-clear を引いた残り)を渡す。見出し・切り替え行の高さは
    引かない (幅や高さごとに実測して差し引く定数を持たない)。その分だけページを送れば、
-   .week の上端がヘッダーの下端にちょうど揃い、曜日の行と格子を同時に使える状態になる */
+   曜日の行と格子を同時に使える状態になる。
+   ただし .week とページの下端の間には .cal-panel の余白 (calendar/+page.svelte、16px) が
+   あるので、最後まで送ったときの .week の上端は「--bar-clear − その余白」に来る。
+   ヘッダーの下端とそろうのは、--bar-clear のうちヘッダーの下に置いた隙間がこの余白と
+   等しいときだけで、960px 以下 (隙間 --sp-4 = 16px) は一致し、960px 超 (隙間 --sp-2 = 8px)
+   では曜日の行の上 8px がピルの下に入る (1440x900 で実測 7.9px)。
+   曜日の文字は読めるうえ押せる要素でもないので、隙間の差を式に持ち込んでまでは合わせない */
 .week {
 	overflow: auto;
 	max-height: calc(100dvh - var(--bar-clear) - var(--content-bottom-clear));

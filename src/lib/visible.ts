@@ -14,7 +14,7 @@ export type VisibilitySource = {
 	removeEventListener(type: 'visibilitychange', listener: () => void): void;
 };
 
-export const HIDDEN_RELEASE_MS = 5000;
+const HIDDEN_RELEASE_MS = 5000;
 
 /** 画面が見えている間だけ acquire した資源を保つ。戻り値を呼ぶと後片付けまで済ませる */
 export function whileVisible(

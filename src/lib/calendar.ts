@@ -30,11 +30,23 @@ export function travelWarning(db: Db, i: Slot): { prev: CalendarEvent; gapMin: n
 	return gapMin <= 30 ? { prev, gapMin } : null;
 }
 
+/* 週表示の目盛り。app.css の .week-hour / .week-col の高さと同じ値で、片方だけ動かすと
+   格子と予定の位置がずれる。WEEK_HOUR_PX が 48 (components 3.12 の既定) ではない理由は
+   WeekView.svelte の PX の注記を見よ */
+export const WEEK_HOUR_PX = 88;
+/** 予定の描画の高さの下限 (WCAG 2.5.8 / Apple HIG の当たり判定 44px) */
+export const WEEK_MIN_EVENT_PX = 44;
+/** 上の下限を分に直した長さ。layoutColumns の minDurationMin に渡す。
+    先に 60 を掛けてから割るのは、WEEK_MIN_EVENT_PX / (WEEK_HOUR_PX / 60) だと浮動小数点の
+    丸めで 30.000000000000004 になり、ちょうど 30 分の予定どうしまで重なり判定に
+    引っかかるため */
+export const WEEK_MIN_DURATION_MIN = (WEEK_MIN_EVENT_PX * 60) / WEEK_HOUR_PX;
+
 /** 週表示の重なり (calendar-block.md「重なり」)。時間が途切れない予定の塊ごとに列を割り、
     その塊の幅を列数で均等に分ける。col は 0 から数えた列、cols は塊全体の列数。
-    minDurationMin は描画上の最小の長さ (分)。WeekView.svelte が予定の高さに 44px の下限を
-    敷いているため (WCAG 2.5.8)、実時間が短くても描画はそこまで伸びる。実時間の終了で重なりを
-    判定すると、伸びた分だけ次の予定と描画が重なり、文字も当たり判定も潰れる。
+    minDurationMin は描画上の最小の長さ (分、WEEK_MIN_DURATION_MIN)。予定の高さに下限が
+    あるため、実時間が短くても描画はそこまで伸びる。実時間の終了で重なりを判定すると、
+    伸びた分だけ次の予定と描画が重なり、文字も当たり判定も潰れる。
     既定値 0 (実時間どおり) は既存の呼び出し・テストと同じ結果 */
 export type Placed = { event: CalendarEvent; col: number; cols: number };
 export function layoutColumns(events: CalendarEvent[], minDurationMin = 0): Placed[] {
