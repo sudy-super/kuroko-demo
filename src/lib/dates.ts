@@ -5,7 +5,7 @@ export function today(): Date { const d = new Date(); d.setHours(0, 0, 0, 0); re
 export function key(d: Date): string { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
 export function parse(k: string): Date { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); }
 export function addDays(n: number, from: Date = today()): Date { const d = new Date(from); d.setDate(d.getDate() + n); return d; }
-export function isWeekend(d: Date): boolean { return d.getDay() === 0 || d.getDay() === 6; }
+function isWeekend(d: Date): boolean { return d.getDay() === 0 || d.getDay() === 6; }
 export function bizDay(n: number, from: Date = today()): Date {
   let d = new Date(from); let left = n;
   while (left > 0) { d = addDays(1, d); if (!isWeekend(d)) left--; }

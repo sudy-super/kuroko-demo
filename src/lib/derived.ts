@@ -5,6 +5,7 @@ export const personOf = (db: Db, id?: string) => db.people.find((p) => p.id === 
 export const companyOf = (db: Db, id?: string) => db.companies.find((c) => c.id === id);
 export const projectOf = (db: Db, id?: string) => db.projects.find((p) => p.id === id);
 export const identityOf = (db: Db, id: string) => db.identities.find((i) => i.id === id);
+export const meetingOf = (db: Db, id?: string) => db.meetings.find((m) => m.id === id);
 
 /* 宛先の行と効果文に出す連絡先の表し方。メールはアドレスを省略せずに出す (仕様 5.3)。
    LINE / Slack の value は内部の ID なので、人が読める label (「LINE」「Slack」) に置き換える */
@@ -44,7 +45,7 @@ export function personMailTargetOf(db: Db, personId?: string) {
 
 /** 会議の相手の宛先。相手は personIds の先頭 */
 export const meetingMailTargetFor = (db: Db, meetingId: string) =>
-	mailTargetFor(db, db.meetings.find((x) => x.id === meetingId)?.personIds[0]);
+	mailTargetFor(db, meetingOf(db, meetingId)?.personIds[0]);
 
 export function mailTargetOf(db: Db, meetingId: string) {
 	const t = meetingMailTargetFor(db, meetingId);
@@ -137,11 +138,6 @@ export const addLogOf = (db: Db, taskId: string) =>
 // 時刻は '9:00' のように 1 桁時もあるので、文字列ではなく分に直して比べる
 export const todayEvents = (db: Db) =>
 	db.events.filter((e) => e.date === T(db)).sort((a, b) => minutes(a.start) - minutes(b.start));
-// nextEvent だけは実時刻と比べる (今まさに次の予定を出すため)
-export const nextEvent = (db: Db) => {
-	const now = minutes(hm());
-	return todayEvents(db).find((e) => minutes(e.end) > now);
-};
 
 /** 会議は自前の日付を持たないので、ひも付く予定の日付で新しい順に並べる。
     会社・案件の関連会議と Brief の「前回の論点」で同じ順序を使う */

@@ -24,6 +24,8 @@ import {
 	addressOf,
 	personOf,
 	companyOf,
+	identityOf,
+	meetingOf,
 	projectOf,
 	doneLogOf,
 	firstFreeStart,
@@ -177,7 +179,7 @@ export function executeApproval(id: string, auto = false) {
 	} else if (p.type === 'share') {
 		log(`${a.title}を実行しました`, 'send', { actor: 'user', origin: a.origin, approved: true });
 	} else if (p.type === 'agenda') {
-		const m = db.meetings.find((x) => x.id === p.meetingId)!;
+		const m = meetingOf(db, p.meetingId)!;
 		m.agendaShared = true;
 		log('アジェンダを参加者に共有しました', 'send', {
 			actor: 'user',
@@ -306,11 +308,11 @@ export function undo(logId: string) {
 		db.meetings.push(...u.meetings);
 	}
 	if (u.kind === 'agenda_share') {
-		const m = db.meetings.find((x) => x.id === u.meetingId);
+		const m = meetingOf(db, u.meetingId);
 		if (m) m.agendaShared = false;
 	}
 	if (u.kind === 'link_identity') {
-		const i = db.identities.find((x) => x.id === u.identityId);
+		const i = identityOf(db, u.identityId);
 		if (i) {
 			i.personId = undefined;
 			for (const t of db.threads) if (t.identityId === i.id) t.personId = undefined;
@@ -368,7 +370,7 @@ export function dropSlotsDraft(threadId: string) {
 export function sendReply(threadId: string, body: string, origin: Origin = 'inbox'): Approval {
 	const th = db.threads.find((t) => t.id === threadId)!;
 	const p = personOf(db, th.personId);
-	const idn = db.identities.find((i) => i.id === th.identityId)!;
+	const idn = identityOf(db, th.identityId)!;
 	const draft = db.scheduling.find((s) => s.threadId === threadId && s.status === 'draft');
 	const addr = addressOf(idn);
 	const to = p ? `${p.name} ${addr}` : addr;
@@ -417,7 +419,7 @@ export function confirmSlot(token: string, slotId: string) {
 		date: slot.date,
 		start: slot.start,
 		end: slot.end,
-		title: `${db.companies.find((c) => c.id === p.companyId)?.name ?? ''} 打ち合わせ`,
+		title: `${companyOf(db, p.companyId)?.name ?? ''} 打ち合わせ`,
 		place: 'オンライン',
 		online: 'meet',
 		url: integrations.conference.createMeetingUrl('meet'),
@@ -547,7 +549,7 @@ export function addBuffer(eventId: string, min: number) {
 
 /** People のメモ。中身が変わったときだけ作業履歴に残す */
 export function updatePersonMemo(personId: string, memo: string): Person | undefined {
-	const p = db.people.find((x) => x.id === personId);
+	const p = personOf(db, personId);
 	if (!p || p.memo === memo) return p;
 	p.memo = memo;
 	log(`${p.name}様のメモを更新しました`, 'other', { actor: 'user', origin: 'people' });
@@ -619,7 +621,7 @@ export function noteRecent(href: string) {
 
 /** 文字起こしを足し、議事録と ToDo 候補を作る。候補は登録せず、必ず人の承認を通す (仕様 5.4) */
 export function addTranscript(meetingId: string, text: string) {
-	const m = db.meetings.find((x) => x.id === meetingId);
+	const m = meetingOf(db, meetingId);
 	if (!m) throw new Error(`会議が見つかりません: ${meetingId}`);
 	const { minutes: mi, todos } = minutesFor(db, meetingId, text);
 	db.transcripts.push({ id: uid('tr'), meetingId, text, addedAt: nowIso() });
@@ -649,7 +651,7 @@ export function addTranscript(meetingId: string, text: string) {
 }
 
 export function sendFollowUp(meetingId: string): Approval {
-	const m = db.meetings.find((x) => x.id === meetingId);
+	const m = meetingOf(db, meetingId);
 	if (!m?.minutes) throw new Error(`議事録がありません: ${meetingId}`);
 	const mail = m.minutes.followUpMail;
 	if (!mail) throw new Error(`フォローメール案がありません: ${meetingId}`);
@@ -670,7 +672,7 @@ export function sendFollowUp(meetingId: string): Approval {
 
 /** Brief を開いた時点で既読にする。Today の「次の会議の準備」はこの印で消える (derived.ts todayItems) */
 export function markBriefRead(meetingId: string) {
-	const m = db.meetings.find((x) => x.id === meetingId);
+	const m = meetingOf(db, meetingId);
 	if (!m) throw new Error(`会議がありません: ${meetingId}`);
 	if (m.briefRead) return;
 	m.briefRead = true;
@@ -678,7 +680,7 @@ export function markBriefRead(meetingId: string) {
 }
 
 export function generateAgenda(meetingId: string) {
-	const m = db.meetings.find((x) => x.id === meetingId);
+	const m = meetingOf(db, meetingId);
 	if (!m) throw new Error(`会議がありません: ${meetingId}`);
 	m.agenda = agendaFor(db, m);
 	log('アジェンダを作成しました', 'draft', { origin: 'meeting' });
@@ -686,14 +688,14 @@ export function generateAgenda(meetingId: string) {
 }
 
 export function updateAgenda(meetingId: string, items: string[]) {
-	const m = db.meetings.find((x) => x.id === meetingId);
+	const m = meetingOf(db, meetingId);
 	if (!m) throw new Error(`会議がありません: ${meetingId}`);
 	m.agenda = items;
 	save();
 }
 
 export function shareAgenda(meetingId: string, origin: Origin = 'meeting'): Approval {
-	const m = db.meetings.find((x) => x.id === meetingId);
+	const m = meetingOf(db, meetingId);
 	if (!m) throw new Error(`会議がありません: ${meetingId}`);
 	const { person: p, identity: idn, to } = mailTargetOf(db, meetingId);
 	return addApproval({
@@ -900,7 +902,7 @@ export function addPerson(fields: CardFields, origin: Origin): Person {
 
 /** ChannelIdentity と、そこから来た全スレッドを人物に結び付ける */
 export function linkIdentity(identityId: string, personId: string) {
-	const i = db.identities.find((x) => x.id === identityId);
+	const i = identityOf(db, identityId);
 	if (!i) throw new Error(`ChannelIdentity がありません: ${identityId}`);
 	i.personId = personId;
 	const company = personOf(db, personId)?.companyId;
