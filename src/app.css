@@ -596,18 +596,20 @@ svg.i {
 	box-shadow:
 		inset 0 0 0 1px rgba(30, 42, 71, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9),
 		0 8px 24px rgba(30, 42, 71, 0.08);
-	transition:
-		transform var(--d-base) var(--ease-out),
-		box-shadow var(--d-base) var(--ease-out);
+	transition: box-shadow var(--d-base) var(--ease-out);
 }
+/* buttons.md 観点 A 原則 1 — 状態は浮き (elevation) ではなく塗りの濃淡で示す。ボタンの
+   .btn.sec / .btn.pri と同じ考え方で、カード自身の背景に重ねる分の不透明度を足す
+   (押せる面の共通トークン --hover / --press、:root の rgba(30, 42, 71, ...)) */
 .card:hover {
-	transform: translateY(-3px);
 	box-shadow:
 		inset 0 0 0 1px rgba(30, 42, 71, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9),
-		0 16px 40px rgba(30, 42, 71, 0.12);
+		inset 0 0 0 999px var(--hover), 0 8px 24px rgba(30, 42, 71, 0.08);
 }
 .card:active {
-	transform: translateY(-1px);
+	box-shadow:
+		inset 0 0 0 1px rgba(30, 42, 71, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9),
+		inset 0 0 0 999px var(--press), 0 8px 24px rgba(30, 42, 71, 0.08);
 	transition-duration: var(--d-fast);
 }
 .card.on {
@@ -1374,14 +1376,12 @@ svg.i {
 	outline-offset: -2px;
 }
 
-/* components 3.7 — トースト (画面上端の中央。下端は依頼バーが占有している)。
-   Task 10w (glass-scope.md 5 節) — HIG に素材の明記はない (未確認) が、HIG に反する理由もない
-   ので regular 変種としてガラスを採る。
-   Task 10w 修正ラウンド 2 (review-glass-batch.md I1) — ただし描く層 (.overlay-chrome) は使わず、
-   この面自身の backdrop-filter でぼかす。トースト (z-index 90)は層 (71)の子孫ではなく <body> の
-   別の枝にあるので、層の canvas はトーストより後ろに来る。トーストは濃紺の塗りを持つため、
-   後ろの canvas は塗りに隠れて一度も画面に出ない (実測: 下に縞を敷いてもまったくぼけない)。
-   白い反射の縁 (--rim) は濃い地に合わないので付けない */
+/* components 3.7 / ユーザー指摘 2026-09-23 (指摘 1) — 他の面 (.sheet 等) と同じ regular 変種の
+   ガラスに揃える。旧版は「描く層 (.overlay-chrome) の canvas が濃紺の塗りに隠れて無駄」という
+   理由で不透明にしていたが (glass.ts の OVERLAY_TIERS 注記)、layer を使わない点はそのままに
+   .sheet と同じ var(--glass-sheet) + var(--blur-sheet) の自前 backdrop-filter に変えるだけで
+   無駄な canvas を増やさず見た目だけ揃う。地が明るくなったので文字色・縁を他の面と揃え直す
+   (実測: 4.5:1 の下限は下の各色で満たす。fix-toast-report.md 参照) */
 .toast {
 	position: fixed;
 	top: var(--sp-6);
@@ -1396,13 +1396,13 @@ svg.i {
 	min-height: 48px;
 	padding: 0 var(--sp-2) 0 var(--sp-4);
 	border-radius: var(--r-s);
-	background: rgba(30, 42, 71, 0.92);
+	background: var(--glass-sheet);
 	-webkit-backdrop-filter: var(--blur-sheet);
 	backdrop-filter: var(--blur-sheet);
-	color: #fff;
+	color: var(--ink);
 	font-size: 14px;
 	line-height: 1.4;
-	box-shadow: var(--e3);
+	box-shadow: var(--rim), var(--e3);
 	animation: toast-in var(--d-enter) var(--ease-enter) both;
 }
 .toast-msg {
@@ -1416,13 +1416,13 @@ svg.i {
 	border: 0;
 	border-radius: var(--r-xs);
 	background: none;
-	color: #9fe0bd;
+	color: var(--accent);
 	font-size: 14px;
 	font-weight: 700;
 	cursor: pointer;
 }
 .toast-undo:hover {
-	background: rgba(255, 255, 255, 0.08);
+	background: var(--hover-accent);
 }
 /* 残り秒数。数字の周りに円弧を描いて残り時間を図でも示す (components 3.7) */
 .toast-ring {
@@ -1435,16 +1435,33 @@ svg.i {
 	font-size: 12px;
 	font-weight: 700;
 	line-height: 1.4;
-	color: #fff;
+	color: var(--ink);
+}
+/* 指摘 4 — 旧版は setInterval が 1 秒ごとに --p を書き換えていたためカクついた。
+   --p を @property で登録し、CSS アニメーションだけで滑らかに減らす。JS 側 (ui.svelte.ts)
+   は数字の描画だけを担う。--dur は Toast.svelte がトーストの猶予秒数をインラインで渡す */
+@property --p {
+	syntax: '<number>';
+	inherits: false;
+	initial-value: 1;
 }
 .toast-ring::before {
 	content: '';
 	position: absolute;
 	inset: 0;
 	border-radius: 50%;
-	background: conic-gradient(#9fe0bd calc(var(--p) * 360deg), rgba(255, 255, 255, 0.22) 0);
+	background: conic-gradient(var(--accent) calc(var(--p) * 360deg), var(--sel-gray) 0);
 	-webkit-mask: radial-gradient(circle, transparent 11px, #000 12px);
 	mask: radial-gradient(circle, transparent 11px, #000 12px);
+	animation: toast-countdown var(--dur, 4s) linear both;
+}
+@keyframes toast-countdown {
+	from {
+		--p: 1;
+	}
+	to {
+		--p: 0;
+	}
 }
 /* visual 4.10 — 入場は減速、退場は加速。上端から出るので符号を反転する */
 .toast.leave {
@@ -1817,8 +1834,8 @@ svg.i {
 	}
 }
 
-/* visual 4.2 — ぼかしが使えない環境では不透明に倒す。トーストは濃い地の塗りをそのまま
-   使う (rgba(30, 42, 71, 0.92)、上の .toast 参照) ので対象外 */
+/* visual 4.2 — ぼかしが使えない環境では不透明に倒す。トーストも指摘 1 の修正で .sheet と
+   同じ regular 変種のガラスになったので、他の面と同じ扱いに入れる (旧版の濃紺塗りは撤去) */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 	.glass,
 	.card,
@@ -1833,13 +1850,15 @@ svg.i {
 	.modal,
 	.pill-panel,
 	.demo-menu,
-	.select-menu {
+	.select-menu,
+	.toast {
 		background: rgba(255, 255, 255, 0.94);
 	}
 }
 
-/* ruling 13 — 1280px: Inbox の右パネルを畳む */
-@media (max-width: 1280px) {
+/* ruling 13 (Task fix-hover — 1280px から 1600px に拡張。本文の幅を確保するため。
+   +page.svelte の同じ閾値のコメントを見よ): 1600px 以下で Inbox の右パネルを畳む */
+@media (max-width: 1600px) {
 	.inbox .pane-right {
 		display: none;
 	}
@@ -2169,6 +2188,21 @@ svg.i {
 		scale: 0.85;
 	}
 }
+/* 「接続中…」の間だけ出す回転リング。reduced-motion では上の全体規則で静止するが、
+   輪の形自体が処理中であることを示すので文字のラベルと合わせて意味は保たれる */
+.connect-cta .spinner {
+	width: 18px;
+	height: 18px;
+	border: 2px solid rgb(255 255 255 / 0.4);
+	border-top-color: #fff;
+	border-radius: 50%;
+	animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
 
 /* 下端に寄せる操作群。主ボタンは幅いっぱいの pill、副操作は文字リンク */
 .public-foot {
@@ -2347,11 +2381,11 @@ svg.i {
 	text-decoration: none;
 	cursor: pointer;
 }
-/* 押せないカード (押せないタイルと完了画面) は浮かせない */
+/* 押せないカード (押せないタイルと完了画面) はホバーで塗りを変えない (押せることを
+   示す効果は押せる部品だけに付ける) */
 section.card,
 section.card:hover,
 section.card:active {
-	transform: none;
 	box-shadow:
 		inset 0 0 0 1px rgba(30, 42, 71, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9),
 		0 8px 24px rgba(30, 42, 71, 0.08);
@@ -3161,8 +3195,8 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu {
    3.84:1 までしか出ず、4.5:1 に届かない (実測: 覆いの面の文字の矩形の中の背景で測定)。
    文字が多い面は可読性を優先するという HIG Materials の regular 変種の考え方に沿って、
    canvas の上に薄い白を 1 枚重ねて下限を持ち上げる。ぼかしと屈折は canvas 側でそのまま
-   効くので、下が透けてぼやける見え方は保たれる。トーストは濃い地に白文字なので対象外
-   (下の .toast の注記を見よ)。
+   効くので、下が透けてぼやける見え方は保たれる。トーストはこの WebGL 層 (.overlay-chrome)
+   自体を使わないので対象外 (glass.ts の OVERLAY_TIERS の注記、上の .toast の注記を見よ)。
    完了画面のカード (.today-done .card) も同じ扱い。見出しがオーブの塊の直上に来ると
    背景のいちばん濃い点で 2.74:1 まで落ち、legibility.md 2.2 の下限 (4.5:1)を割る (実測) */
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer::before,

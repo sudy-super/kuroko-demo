@@ -44,9 +44,8 @@
 		}
 	}
 
-	/* 裁定 4 — ラベル自体を「接続する」→「接続中…」→「接続済み」と変える
-	   (NN/g State-Switch Controls)。実際の認証は行わないが、即座に終わると
-	   押した実感がないので 600ms 待ち、完了を 800ms 見せてから次の画面へ送る */
+	/* 裁定 4 — ラベル自体を「接続する」→「接続中…」と変える (NN/g State-Switch Controls)。
+	   実際の認証は行わないが、即座に終わると押した実感がないので 600ms 待つ */
 	function link() {
 		if (busy || done) return;
 		busy = true;
@@ -55,11 +54,19 @@
 			setTimeout(() => {
 				connect(id);
 				busy = false;
-				status = `${name} 接続済み`;
-				timers.push(setTimeout(advance, 800));
 			}, 600)
 		);
 	}
+
+	/* ユーザー指摘 2026-09-23 — 「接続済み」の文言と「次へ」ボタンを消し、チェックの
+	   アイコンを一拍見せてから自動で次へ進む。今つないだ場合だけでなく、戻るボタンで
+	   既に済んだ画面に戻ってきた場合 (done が最初から true)も同じ経路で進める */
+	$effect(() => {
+		if (!done) return;
+		status = `${name} 接続済み`;
+		const t = setTimeout(advance, 800);
+		return () => clearTimeout(t);
+	});
 </script>
 
 <svelte:head><title>{heading} — KUROKO AI</title></svelte:head>
@@ -79,17 +86,20 @@
 </div>
 
 <div class="public-foot">
-	<!-- 押せない間も焦点を失わせないため disabled ではなく aria-disabled にする -->
+	<!-- 押せない間も焦点を失わせないため disabled ではなく aria-disabled にする。
+	     完了後は自動で次へ進むので、文言でなくチェックの形だけで完了を示す -->
 	<button
 		class="btn pri public-cta connect-cta in"
 		style="--delay: 240ms"
 		aria-disabled={busy || done}
 		onclick={link}
 	>
-		{#if done}<Icon name="ic-check" size={18} />{/if}
-		{busy ? '接続中…' : done ? '接続済み' : '接続する'}
+		{#if done}<Icon name="ic-check" size={18} />{:else if busy}<span class="spinner" aria-hidden="true"></span>{/if}
+		{done ? '' : busy ? '接続中…' : '接続する'}
 	</button>
-	<!-- 接続済みの画面で「あとで」は文言と状態が食い違うので、進むだけの「次へ」にする -->
-	<button class="btn text in" style="--delay: 290ms" onclick={advance}>{done ? '次へ' : 'あとで'}</button>
+	<!-- 未接続の間だけ「あとで」を出す。完了後は自動で次へ進むので副操作は不要 -->
+	{#if !done}
+		<button class="btn text in" style="--delay: 290ms" onclick={advance}>あとで</button>
+	{/if}
 </div>
 <p class="sr-only" aria-live="polite">{status}</p>

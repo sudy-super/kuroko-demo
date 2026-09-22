@@ -224,12 +224,15 @@
 	.all-mail li {
 		padding-block: var(--sp-1);
 	}
-	/* 1280px 以上は 3 列。畳む操作は要らない */
+	/* 1600px 以上は 3 列。畳む操作は要らない。1440px (会議室の投影、MacBook Pro 16) では
+	   本文が 392px しかなく、全角 35〜40 字の目安 (legibility.md 76 行目) に対して
+	   実測 299px と半分程度しか無かった。ここを 1280px から広げ、人物パネルは畳んで
+	   一覧 + 本文の 2 列にすると、本文は 728px 前後まで広がる (実測は fix-hover-report.md) */
 	.back,
 	.person {
 		display: none;
 	}
-	@media (max-width: 1280px) {
+	@media (max-width: 1600px) {
 		.panes {
 			grid-template-columns: 360px minmax(0, 1fr);
 		}

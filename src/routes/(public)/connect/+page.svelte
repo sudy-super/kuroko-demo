@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { db } from '$lib/store.svelte';
-	import { connectAll, markStarted } from '$lib/actions';
+	import { markStarted } from '$lib/actions';
 	import { nextStep } from '$lib/connect';
 
-	/* 裁定 2 — 導入画面に一覧は置かない。4 つを一度に見せない (ユーザー判定) */
-	function open(all: boolean) {
-		if (all) connectAll();
+	/* ユーザー指摘 2026-09-23 — 「4 つまとめて繋ぐ」は要らない、1 つずつで進める。
+	   一括接続の経路 (connectAll) 自体をこの画面から外す */
+	function skip() {
 		markStarted();
 		goto('/today');
 	}
@@ -15,7 +15,7 @@
 	function one() {
 		const next = nextStep(db.settings.connections);
 		if (next) goto(`/connect/${next}`);
-		else open(false);
+		else skip();
 	}
 </script>
 
@@ -23,15 +23,10 @@
 
 <div class="public-main">
 	<h1 class="in" style="--delay: 80ms">使うツールをつなぎます</h1>
-	<p class="muted in" style="--delay: 130ms">各 1 クリック、合計 10 秒。あとから設定で変更できます。</p>
+	<p class="muted in" style="--delay: 130ms">1 つずつ、各 1 クリック。あとから設定で変更できます。</p>
 </div>
 
 <div class="public-foot">
-	<button class="btn pri public-cta in" style="--delay: 200ms" onclick={() => open(true)}>
-		4 つすべて接続して開く
-	</button>
-	<button class="btn text in" style="--delay: 250ms" onclick={one}>1 つずつ接続する</button>
-	<button class="btn text in" style="--delay: 300ms" onclick={() => open(false)}>
-		スキップして開く
-	</button>
+	<button class="btn pri public-cta in" style="--delay: 200ms" onclick={one}>接続をはじめる</button>
+	<button class="btn text in" style="--delay: 250ms" onclick={skip}>スキップして開く</button>
 </div>

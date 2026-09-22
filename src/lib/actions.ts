@@ -86,11 +86,9 @@ export function approve(id: string, origin: Origin = 'approval') {
 			id,
 			setTimeout(() => executeApproval(id), SEND_DELAY_MS)
 		);
-		toast('5 秒後に送信します', {
-			seconds: 5,
-			undo: () => undoApproval(id),
-			done: '送信しました (デモのため実送信していません)'
-		});
+		// Gmail の送信取り消しと同じ順序 (指摘 2) — 「送信しました」を先に出し、5 秒だけ取り消せる。
+		// 5 秒が過ぎても文言は変えない (実行前にすでに完了として出しているため)
+		toast('送信しました (デモのため実送信していません)', { seconds: SEND_DELAY_MS / 1000, undo: () => undoApproval(id) });
 	} else {
 		executeApproval(id);
 		// 押された時点ではなく、今できたログを取り消す。取り消せない種類には取り消しを出さない
@@ -567,18 +565,10 @@ export function toggleConnection(id: 'gmail' | 'gcal' | 'slack' | 'line') {
 	c.lastSync = c.connected ? nowIso() : undefined;
 	save();
 }
-// 一覧から 1 つずつ繋ぐ。toggleConnection は反転なので、600ms の待ちの間に
-// connectAll が走ると繋いだはずの 1 件が外れる。繋ぐ向きにしか動かさない
+// 1 つずつ繋ぐ。toggleConnection は反転なので、繋ぐ向きにしか動かさない
 export function connect(id: Connection['id']) {
 	const c = db.settings.connections.find((x) => x.id === id)!;
 	if (!c.connected) toggleConnection(id);
-}
-export function connectAll() {
-	for (const c of db.settings.connections) {
-		c.connected = true;
-		c.lastSync = nowIso();
-	}
-	save();
 }
 export function resetDemo() {
 	for (const t of timers.values()) clearTimeout(t);
@@ -593,7 +583,7 @@ export function markStarted() {
 export function startGuide() {
 	// 完了画面 (やること 0 件)からの始め直し。案内する対象が無いので、まず初期状態に戻す。
 	// Welcome へは戻らずその場に留まるため、seed() が未接続に戻した接続は始め直す前の状態に戻す。
-	// connectAll() で一律に繋ぐと、「スキップして開く」で未接続のまま使っていた人の画面に
+	// 全接続を一律に繋ぐと、「スキップして開く」で未接続のまま使っていた人の画面に
 	// 連携アイコンの列が生えてしまう (「デモをリセット」は Welcome へ戻るので未接続のままでよい)
 	if (todayCount(db) === 0) {
 		const before = new Map(db.settings.connections.map((c) => [c.id, c.connected]));

@@ -3,8 +3,9 @@ export type Toast = {
 	id: number;
 	msg: string;
 	undo?: () => void;
+	/** 取り消しの猶予秒数。CSS アニメーションの長さに使うので、カウントダウン中も変えない */
+	seconds?: number;
 	secondsLeft?: number;
-	done?: string;
 	leaving?: boolean;
 };
 
@@ -55,25 +56,31 @@ function closeToast(id: number) {
 	}, EXIT_MS);
 }
 
-export function toast(msg: string, opts: { undo?: () => void; seconds?: number; done?: string } = {}) {
+/**
+ * 送信は完了として即座に伝える (Gmail の送信取り消しと同じ順序、指摘 2)。取り消せる間だけ
+ * ゲージと残り秒数を出す。ゲージの見た目は CSS アニメーション (app.css の toast-countdown)
+ * が受け持ち、ここでは残り秒数の「数字」だけを 1 秒ごとに進める。数字は
+ * prefers-reduced-motion でアニメーションが切れても残るので (components 3.7)、
+ * 更新自体はやめない
+ */
+export function toast(msg: string, opts: { undo?: () => void; seconds?: number } = {}) {
 	if (timer) clearInterval(timer);
-	const t: Toast = { id: ++seq, msg, undo: opts.undo, secondsLeft: opts.seconds, done: opts.done };
+	const t: Toast = { id: ++seq, msg, undo: opts.undo, seconds: opts.seconds, secondsLeft: opts.seconds };
 	ui.toast = t;
-	let left = opts.seconds ?? 4;
+	if (!opts.seconds) return;
+	let left = opts.seconds;
 	timer = setInterval(() => {
 		left -= 1;
 		if (ui.toast?.id !== t.id) {
 			clearInterval(timer!);
 			return;
 		}
-		if (opts.seconds) ui.toast.secondsLeft = left;
 		if (left <= 0) {
 			clearInterval(timer!);
-			// done があれば完了表示に差し替え、4 秒後に消す
-			if (opts.done) {
-				ui.toast = { id: t.id, msg: opts.done };
-				setTimeout(() => closeToast(t.id), 4000);
-			} else closeToast(t.id);
+			// 取り消しボタンとゲージだけを引っ込める。本文は消さない (components 3.7)
+			ui.toast = { id: t.id, msg: t.msg };
+		} else {
+			ui.toast.secondsLeft = left;
 		}
 	}, 1000);
 }
