@@ -3911,6 +3911,14 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
 .people-amount {
 	font-size: 14px;
 }
+/* 携帯の幅では案件名の欄が 128px まで詰まり、長い名前の後半が読めなくなる。
+   金額を落として名前に回す (会社名と状態は残るので案件は見分けられる)。
+   境目は段組みが 1 列になる幅に合わせた (上の @media を見よ) */
+@media (max-width: 700px) {
+	.people-amount {
+		display: none;
+	}
+}
 .people-list {
 	padding-inline: var(--sp-5);
 	padding-block: var(--sp-2);
