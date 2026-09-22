@@ -89,6 +89,7 @@
 		</div>
 		{#if event.url}
 			<div class="list-row lg">
+				<span class="badge">{event.online === 'zoom' ? 'Zoom' : 'Meet'}</span>
 				<a class="tc-text" href={linkUrl(event.url)} target="_blank" rel="noreferrer">{event.url}</a>
 			</div>
 		{/if}

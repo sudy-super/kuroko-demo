@@ -3,6 +3,8 @@
 	import { ui } from '$lib/ui.svelte';
 	import Drawer from './Drawer.svelte';
 	import ApprovalCard from './ApprovalCard.svelte';
+	import ApprovalIcon from './ApprovalIcon.svelte';
+	import { RISK_LABEL } from '$lib/types';
 	import { Collapsible } from 'bits-ui';
 	import Icon from './Icon.svelte';
 
@@ -31,14 +33,6 @@
 	{/if}
 	{#if active.length === 0}
 		<p class="muted">承認待ちはありません。</p>
-		{#if recentExecuted.length}
-			<p class="ap-recent-head">実行済み</p>
-			{#each recentExecuted as a (a.id)}
-				<div class="list-row" style="cursor: default">
-					<span class="tc-text">{a.title}</span>
-				</div>
-			{/each}
-		{/if}
 	{:else}
 		<div class="ap-list">
 			{#each external as a (a.id)}
@@ -60,6 +54,19 @@
 				</Collapsible.Content>
 			</Collapsible.Root>
 		{/if}
+	{/if}
+	<!-- 自動化レベルが社内を自動で実行するため (設定の既定)、社内あての連絡はここにしか出ない。
+	     承認待ちが残っている間も畳まない -->
+	{#if recentExecuted.length}
+		<p class="ap-recent-head">実行済み</p>
+		{#each recentExecuted as a (a.id)}
+			<div class="list-row" style="cursor: default">
+				<ApprovalIcon kind={a.kind} />
+				<span class="tc-text">{a.title}</span>
+				<!-- 承認待ちのカードと同じ区分の Lozenge。文言の出所は types.ts の RISK_LABEL -->
+				<span class="badge" class:warn={a.risk === 'external_send'}>{RISK_LABEL[a.risk]}</span>
+			</div>
+		{/each}
 	{/if}
 	{#snippet footer()}
 		<p class="ap-footnote muted">メール送信・日程確定・外部共有は、承認するまで実行されません。</p>

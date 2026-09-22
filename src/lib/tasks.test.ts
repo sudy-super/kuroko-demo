@@ -128,7 +128,10 @@ describe('ToDo 候補', () => {
 		expect(made.map((t) => [t.title, t.origin, t.due])).toEqual([
 			['見積を作る', 'meeting', '2026-09-18']
 		]);
-		expect(db.suggestions.map((s) => s.status)).toEqual(['accepted', 'pending']);
+		expect(['sg-1', 'sg-2'].map((id) => db.suggestions.find((s) => s.id === id)!.status)).toEqual([
+			'accepted',
+			'pending'
+		]);
 	});
 	it('同じ候補を二度登録しない', () => {
 		replaceDb(seed(BASE));
@@ -142,7 +145,7 @@ describe('ToDo 候補', () => {
 		db.suggestions.push(sug('sg-1', '見積を作る'));
 		const before = db.tasks.length;
 		rejectSuggestions(['sg-1']);
-		expect(db.suggestions[0].status).toBe('rejected');
+		expect(db.suggestions.find((s) => s.id === 'sg-1')!.status).toBe('rejected');
 		expect(db.tasks).toHaveLength(before);
 	});
 });

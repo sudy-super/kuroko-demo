@@ -16,6 +16,7 @@ import {
 	WEEK_MIN_DURATION_MIN
 } from './calendar';
 import { deleteEvent, undo } from './actions';
+import { linkUrl } from './derived';
 import { replaceDb, db } from './store.svelte';
 
 const BASE = new Date(2026, 8, 15); // 火曜。シードの相対日付はこの日を基準にする
@@ -203,5 +204,14 @@ describe('deleteEvent の取り消し', () => {
 		expect(db.events.find((e) => e.id === 'ev-shibuya')!.title).toBe(target.title);
 		expect(db.meetings.filter((m) => m.eventId === target.id).length).toBe(meetings);
 		expect(db.logs.find((x) => x.id === l.id)!.undone).toBe(true);
+	});
+});
+
+describe('linkUrl', () => {
+	it('scheme が無い URL に https を補い、ある URL はそのまま', () => {
+		// integrations/mock/conference.ts が作る表示用の形
+		expect(linkUrl('meet.google.com/abc-defg-hij')).toBe('https://meet.google.com/abc-defg-hij');
+		expect(linkUrl('https://zoom.us/j/123')).toBe('https://zoom.us/j/123');
+		expect(linkUrl('http://zoom.us/j/123')).toBe('http://zoom.us/j/123');
 	});
 });

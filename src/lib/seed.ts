@@ -1,4 +1,4 @@
-import type { Db, MessageThread, Message, Document } from './types';
+import type { Db, MessageThread, Message, Document, Suggestion } from './types';
 import { key, bizDay, addDays, nextWeekday, fmtMD } from './dates';
 import { FILLER_SUBJECTS, DOC_TEMPLATES } from './kuroko/samples';
 
@@ -356,7 +356,7 @@ export function seed(base: Date = new Date()): Db {
 				phone: '03-1234-5678',
 				memo: '佐藤さんから紹介。\n価格について慎重。\n決裁は本人。',
 				tags: ['重要', '決裁者'],
-				projectIds: ['pj-abc-dx']
+				projectIds: ['pj-abc-dx', 'pj-abc-analysis']
 			},
 			{
 				id: 'p-sato',
@@ -367,7 +367,7 @@ export function seed(base: Date = new Date()): Db {
 				phone: '03-9876-5432',
 				memo: 'AI 研修の担当。\n今月中に見積が欲しい。',
 				tags: ['研修'],
-				projectIds: ['pj-xyz-ai']
+				projectIds: ['pj-xyz-ai', 'pj-xyz-elearning']
 			},
 			{
 				id: 'p-yamada',
@@ -412,6 +412,46 @@ export function seed(base: Date = new Date()): Db {
 				amount: '120 万円',
 				personIds: ['p-sato'],
 				documentIds: ['doc-xyz-training', 'doc-xyz-quote']
+			},
+			/* 進行中の 2 件の前後にある案件。状態の色分けは derived.ts の projectStatusClass。
+			   並び順は先頭を変えない (人物の projectIds[0] を既定の案件として使う箇所がある) */
+			{
+				id: 'pj-abc-analysis',
+				name: 'ABC 社 業務分析',
+				companyId: 'c-abc',
+				status: '受注',
+				amount: '80 万円',
+				personIds: ['p-tanaka'],
+				documentIds: []
+			},
+			{
+				id: 'pj-xyz-elearning',
+				name: 'XYZ 社 店舗向け e ラーニング',
+				companyId: 'c-xyz',
+				status: '検討中',
+				amount: '90 万円',
+				personIds: ['p-sato'],
+				documentIds: []
+			},
+			// 面談日程の相談 (th-sunrise-interview) がこれから始まる案件。担当者は未登録
+			{
+				id: 'pj-sunrise-interview',
+				name: 'サンライズ社 面談代行',
+				companyId: 'c-sunrise',
+				status: '商談前',
+				amount: '未定',
+				personIds: [],
+				documentIds: []
+			},
+			// 見積を出したが見送られた案件 (th-sunrise-quote が当時のやり取り)
+			{
+				id: 'pj-sunrise-ats',
+				name: 'サンライズ社 採用管理ツール',
+				companyId: 'c-sunrise',
+				status: '失注',
+				amount: '150 万円',
+				personIds: [],
+				documentIds: []
 			}
 		],
 		threads: [...queueThreads, ...sunriseThreads, ...fillerThreads],
@@ -573,9 +613,74 @@ export function seed(base: Date = new Date()): Db {
 				createdAt: at(T, '8:55'),
 				payload: { type: 'share', personId: 'p-tanaka', what: `議事録 ${md(-21)}` },
 				origin: 'meeting'
+			},
+			/* 社内の 3 件。初期の自動化レベル (下の settings.automation) では社内は自動で実行される
+			   ので、承認待ちではなく実行済みとして持つ (actions.ts の autoExecutes と同じ切り分け)。
+			   出る場所は承認待ちドロワーの「実行済み」(ApprovalDrawer が executedAt の新しい順に 3 件)。
+			   承認待ちの件数には入らない (derived.ts の pendingApprovals は pending のみ) */
+			{
+				id: 'ap-yamada-quote-ok',
+				title: '山田さんへの見積書の確認結果の返信',
+				risk: 'internal',
+				kind: 'slack',
+				to: '山田 健二 (Slack)',
+				body: '見積書を確認しました。金額と条件ともにこの内容で問題ありません。',
+				effectLine: '社内あての連絡のため、確認を待たずに送信しました',
+				status: 'executed',
+				createdAt: at(T, '8:32'),
+				executedAt: at(T, '8:32'),
+				payload: { type: 'reply', threadId: 'th-yamada-quote', body: '見積書を確認しました。' },
+				origin: 'slack'
+			},
+			{
+				id: 'ap-standup-doc',
+				title: '社内定例の資料のたたき台の共有',
+				risk: 'internal_low',
+				kind: 'document',
+				to: '山田 健二 (Slack)',
+				subject: '社内定例 資料のたたき台',
+				body: '前回の決定事項と今週の進捗をまとめたたたき台です。',
+				effectLine: '社内あての共有のため、確認を待たずに実行しました',
+				status: 'executed',
+				createdAt: at(T, '8:12'),
+				executedAt: at(T, '8:12'),
+				payload: { type: 'share', personId: 'p-yamada', what: '社内定例 資料のたたき台' },
+				origin: 'slack'
+			},
+			{
+				id: 'ap-yamada-line-remind',
+				title: '山田さんへの内見の日程の確認',
+				risk: 'internal_low',
+				kind: 'line',
+				to: '山田 健二 (LINE)',
+				body: 'オフィスの内見、来週で日程を押さえておいてください。',
+				effectLine: '社内あての連絡のため、確認を待たずに送信しました',
+				status: 'executed',
+				createdAt: at(Y, '20:05'),
+				executedAt: at(Y, '20:05'),
+				payload: { type: 'line', text: 'オフィスの内見、来週で日程を押さえておいてください。' },
+				origin: 'line'
 			}
 		],
-		suggestions: [],
+		suggestions: [
+			/* 田中様のメールから拾った宿題の候補。KUROKO は登録まではせず、必ず人が選ぶ (仕様 5.4)。
+			   中身は m-abc の Brief の homework と同じ宿題を指す。出る場所は /tasks の候補カード */
+			{
+				id: 'sg-abc-schedule',
+				source: 'email',
+				kind: 'task',
+				status: 'pending',
+				reason: '「次回お打ち合わせについて」の社内検討中との連絡から抽出',
+				payload: {
+					type: 'task',
+					title: 'ABC 社へ導入スケジュールを提出する',
+					due: B3,
+					personId: 'p-tanaka',
+					projectId: 'pj-abc-dx'
+				},
+				createdAt: at(T, '9:15')
+			}
+		] satisfies Suggestion[],
 		scheduling: [],
 		logs: [
 			{ id: 'log-1', at: at(T, '9:58'), actor: 'KUROKO', kind: 'draft', text: 'XYZ 社 見積書 (修正版) の下書きを作成し承認待ちにしました', origin: 'inbox', approved: false },
