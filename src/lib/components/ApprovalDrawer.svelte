@@ -5,8 +5,6 @@
 	import ApprovalCard from './ApprovalCard.svelte';
 	import ApprovalIcon from './ApprovalIcon.svelte';
 	import RiskIcon from './RiskIcon.svelte';
-	import { Collapsible } from 'bits-ui';
-	import Icon from './Icon.svelte';
 
 	// pending + sending (取り消せる間) を出す。executed / rejected はここに出さない
 	const active = $derived(db.approvals.filter((a) => a.status === 'pending' || a.status === 'sending'));
@@ -23,8 +21,6 @@
 			.toSorted((x, y) => (y.executedAt ?? '').localeCompare(x.executedAt ?? ''))
 			.slice(0, 3)
 	);
-
-	let internalOpen = $state(false);
 </script>
 
 <Drawer open={ui.approvalDrawer} title="承認待ち" onclose={() => (ui.approvalDrawer = false)}>
@@ -39,20 +35,21 @@
 				<ApprovalCard approval={a} origin="approval" />
 			{/each}
 		</div>
+		<!-- 社内あては拡大表示の中に開閉をさらに入れない (docs/research/card-expand-content.md「承認待ち」)。
+		     ただし畳むのをやめただけで、隠してよいわけではない。自動化を「常に確認」にすると
+		     社内あても承認待ちのまま溜まる (actions.ts の autoExecutes は level !== 'draft' が条件)
+		     ので、そのときは社外あてと同じ列に並べて承認できるようにする。
+		     自動で実行される設定のとき (送信中の 5 秒間だけここに現れる) は件数の注記で足りる -->
 		{#if internal.length}
-			<Collapsible.Root bind:open={internalOpen} class="ap-internal">
-				<Collapsible.Trigger class="list-row ap-internal-trigger">
-					<Icon name="ic-chev" size={18} class={internalOpen ? 'ap-chev open' : 'ap-chev'} />
-					社内 {internal.length} 件
-				</Collapsible.Trigger>
-				<Collapsible.Content>
-					<div class="ap-list">
-						{#each internal as a (a.id)}
-							<ApprovalCard approval={a} origin="approval" />
-						{/each}
-					</div>
-				</Collapsible.Content>
-			</Collapsible.Root>
+			{#if db.settings.automation === 'draft'}
+				<div class="ap-list" style="margin-top: var(--sp-4)">
+					{#each internal as a (a.id)}
+						<ApprovalCard approval={a} origin="approval" />
+					{/each}
+				</div>
+			{:else}
+				<p class="ap-internal-note">社内 {internal.length} 件 (自動実行)</p>
+			{/if}
 		{/if}
 	{/if}
 	<!-- 自動化レベルが社内を自動で実行するため (設定の既定)、社内あての連絡はここにしか出ない。
@@ -79,22 +76,10 @@
 		flex-direction: column;
 		gap: var(--sp-4);
 	}
-	:global(.ap-internal) {
-		margin-top: var(--sp-4);
-	}
-	:global(.ap-internal-trigger) {
-		gap: var(--sp-2);
-		font-size: 14px;
+	.ap-internal-note {
+		margin: var(--sp-4) 0 0;
 		color: var(--ink-2);
-	}
-	:global(.ap-chev) {
-		transition: rotate var(--d-fast) var(--ease-out);
-	}
-	:global(.ap-chev.open) {
-		rotate: 90deg;
-	}
-	:global(.ap-internal .ap-list) {
-		margin-top: var(--sp-2);
+		font-size: 14px;
 	}
 	.ap-recent-head {
 		margin: var(--sp-4) 0 var(--sp-1);
