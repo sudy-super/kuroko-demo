@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
-	import { eventDateOf, meetingsOf, projectStatusClass } from '$lib/derived';
+	import { eventDateOf, meetingsOf } from '$lib/derived';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import Icon from '$lib/components/Icon.svelte';
 	import SourceIcon from '$lib/components/SourceIcon.svelte';
+	import ProjectStatusIcon from '$lib/components/ProjectStatusIcon.svelte';
 
 	const id = $derived(page.params.id!);
 	const company = $derived(db.companies.find((c) => c.id === id));
@@ -75,7 +76,7 @@
 				{#each shown(projects, 'projects') as pj (pj.id)}
 					<a class="list-row" href="/projects/{pj.id}">
 						<span class="people-ident">{pj.name}</span>
-						<span class="badge {projectStatusClass(pj.status)}">{pj.status}</span>
+						<ProjectStatusIcon status={pj.status} />
 						<span class="num muted">{pj.amount}</span>
 					</a>
 				{/each}

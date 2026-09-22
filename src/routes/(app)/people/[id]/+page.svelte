@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
-	import { companyOf, contactOf, projectOf, projectStatusClass } from '$lib/derived';
+	import { companyOf, contactOf, projectOf } from '$lib/derived';
 	import { identitiesOf, personHistory, personStats } from '$lib/people';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import { ui, toast, focusChatbar } from '$lib/ui.svelte';
 	import { updatePersonMemo } from '$lib/actions';
 	import Icon from '$lib/components/Icon.svelte';
 	import Tip from '$lib/components/Tip.svelte';
+	import ProjectStatusIcon from '$lib/components/ProjectStatusIcon.svelte';
 
 	const CHANNELS = [
 		{ kind: 'email', label: 'Gmail', icon: 'b-gmail' },
@@ -139,7 +140,7 @@
 				{#each shown(projects, 'projects') as pj (pj.id)}
 					<a class="list-row" href="/projects/{pj.id}">
 						<span class="people-ident">{pj.name}</span>
-						<span class="badge {projectStatusClass(pj.status)}">{pj.status}</span>
+						<ProjectStatusIcon status={pj.status} />
 						<span class="num muted">{pj.amount}</span>
 					</a>
 				{/each}

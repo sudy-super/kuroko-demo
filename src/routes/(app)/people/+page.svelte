@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
-	import { badgeCount, companyOf, personOf, projectStatusClass } from '$lib/derived';
+	import { badgeCount, companyOf, personOf } from '$lib/derived';
 	import Icon from '$lib/components/Icon.svelte';
+	import ProjectStatusIcon from '$lib/components/ProjectStatusIcon.svelte';
 	import OcrFlow from '$lib/components/OcrFlow.svelte';
 	import Avatars from '$lib/components/Avatars.svelte';
 
@@ -95,7 +96,7 @@
 							<span class="people-name">{pj.name}</span>
 							<span class="sub">{companyOf(db, pj.companyId)?.name ?? ''}</span>
 						</span>
-						<span class="badge {projectStatusClass(pj.status)}">{pj.status}</span>
+						<ProjectStatusIcon status={pj.status} />
 						<span class="num muted people-amount">{pj.amount}</span>
 						<Avatars {people} />
 					</a>
