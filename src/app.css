@@ -2097,6 +2097,18 @@ svg.i {
 	max-width: 560px;
 	text-align: center;
 }
+/* 携帯を横向きにした高さでは、オーブを下限の 120px まで縮めても上の余白 (24px) と
+   要素の間隔 (20px x 2) で主ボタンが画面の外に出る。器の余白と間隔をここで詰めて、
+   最初の画面に主ボタンが入るようにする (responsive-policy.md 3「最初の画面で主要な
+   情報が見えること」)。app.css の他の低い窓の規則と同じ条件 */
+@media (max-width: 960px) and (max-height: 480px) {
+	.public {
+		padding-top: var(--sp-2);
+	}
+	.public-col {
+		gap: var(--sp-2);
+	}
+}
 /* オーブと本文の塊は上下の空きを等分した位置に、操作群は下端に置く (下の margin-top: auto と対) */
 .public-col > .orb {
 	/* 縮む余地を持つのはオーブだけ。窓が低ければ他の要素の実寸のぶんだけ自動で縮む。
