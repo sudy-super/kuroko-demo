@@ -40,8 +40,10 @@
 			</Tip>
 		{/if}
 		{#if l.approved}
-			<!-- indicators.md「承認センターの区分」— 判断に直結する重要な属性は文言の Lozenge のまま出す -->
-			<span class="badge ok">承認あり</span>
+			<!-- 「承認あり」は真偽だけの印で、種類の記号と混ざる相手がここには無いので ic-check-c 1 個で足りる -->
+			<Tip text="承認あり">
+				<Icon name="ic-check-c" size={16} label="承認あり" class="activity-approved" />
+			</Tip>
 		{/if}
 		{#if l.undo && !l.undone}
 			<button class="btn text sm activity-undo" onclick={() => onUndo(l)}>
@@ -87,6 +89,10 @@
 	:global(.activity-origin) {
 		flex: none;
 		color: var(--ink-2);
+	}
+	:global(.activity-approved) {
+		flex: none;
+		color: var(--ok);
 	}
 	.activity-undo {
 		flex: none;

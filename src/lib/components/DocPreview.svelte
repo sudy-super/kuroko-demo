@@ -3,6 +3,7 @@
 	import { db } from '$lib/store.svelte';
 	import { companyOf, projectOf } from '$lib/derived';
 	import { parse, rel } from '$lib/dates';
+	import DocKindIcon from './DocKindIcon.svelte';
 
 	let { doc }: { doc: Document } = $props();
 
@@ -14,7 +15,7 @@
 <!-- 印刷ではこの節だけが残る (app.css の @media print)。紙に出る内容をここに閉じる -->
 <article class="doc-paper">
 	<header class="doc-paper-head">
-		<span class="badge">{doc.kind}</span>
+		<DocKindIcon kind={doc.kind} size={20} />
 		<h2>{doc.title}</h2>
 		<p class="doc-meta">
 			{company ? `${company.name} 御中 / ` : ''}{doc.createdBy === 'KUROKO'

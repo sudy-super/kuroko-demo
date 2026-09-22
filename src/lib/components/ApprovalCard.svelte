@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { RISK_LABEL, type Approval, type Origin } from '$lib/types';
+	import type { Approval, Origin } from '$lib/types';
 	import { approve, reject, undoApproval, editApproval } from '$lib/actions';
 	import { toast } from '$lib/ui.svelte';
 	import ApprovalIcon from './ApprovalIcon.svelte';
+	import RiskIcon from './RiskIcon.svelte';
 
 	let { approval: a, origin = 'approval' }: { approval: Approval; origin?: Origin } = $props();
 	const id = $props.id();
@@ -78,11 +79,9 @@
 <article class="card ap-card" aria-label={a.title} tabindex="-1" bind:this={cardEl}>
 	<div class="row ap-head">
 		<ApprovalIcon kind={a.kind} size={20} />
-		<!-- indicators.md「承認センターの区分」— 判断に直結する属性なので、Lozenge のまま
-		     文言で出す (アイコン化は却下)。文言の出所は types.ts の RISK_LABEL。
-		     外部送信だけ橙 (app.css の .badge.warn)、残る 2 つは既定の灰。Today の
-		     承認待ちカードも同じ組み方 -->
-		<span class="badge" class:warn={a.risk === 'external_send'}>{RISK_LABEL[a.risk]}</span>
+		<!-- ApprovalIcon (何を送るか) とは別の記号にして、隣に並んでも区分と種類が混ざらないようにする。
+		     区分の形: 外部送信=警告の三角/社内=盾/低リスク=鍵。RiskIcon.svelte -->
+		<RiskIcon risk={a.risk} size={20} />
 	</div>
 	<h3 class="ap-title">{a.title}</h3>
 	<p class="ap-to">宛先 {a.to}</p>

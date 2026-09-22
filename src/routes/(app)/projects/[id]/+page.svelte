@@ -6,6 +6,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import SourceIcon from '$lib/components/SourceIcon.svelte';
 	import ProjectStatusIcon from '$lib/components/ProjectStatusIcon.svelte';
+	import DocKindIcon from '$lib/components/DocKindIcon.svelte';
 
 	const id = $derived(page.params.id!);
 	const project = $derived(db.projects.find((p) => p.id === id));
@@ -112,7 +113,7 @@
 				<h2>資料</h2>
 				{#each shown(documents, 'documents') as d (d.id)}
 					<a class="list-row" href="/documents?d={d.id}">
-						<span class="badge">{d.kind}</span>
+						<DocKindIcon kind={d.kind} />
 						<span class="people-ident">{d.title}</span>
 					</a>
 				{/each}

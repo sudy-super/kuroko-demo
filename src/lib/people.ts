@@ -16,6 +16,14 @@ export const HISTORY_LABEL: Record<HistoryKind, string> = {
 	meeting: '会議'
 };
 
+// 「最近のやりとり」の種類を示す記号。ORIGIN_ICON (types.ts) と同じ絵を使う
+export const HISTORY_ICON: Record<HistoryKind, string> = {
+	mail: 'b-gmail',
+	line: 'b-line',
+	slack: 'b-slack',
+	meeting: 'ic-bell'
+};
+
 // 予定の開始時刻は '9:00' のように 1 桁時もある。文字列のまま比べると 19:40 より後ろに来るので 0 埋めする
 const stamp = (dateKey: string, start: string) => `${dateKey}T${start.padStart(5, '0')}`;
 

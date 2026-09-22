@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { MediaQuery } from 'svelte/reactivity';
+	import { innerWidth } from 'svelte/reactivity/window';
+	import { fluid } from '$lib/fluid';
 	import { db } from '$lib/store.svelte';
-	import { REASON_ORDER, RISK_LABEL } from '$lib/types';
+	import { REASON_ORDER } from '$lib/types';
 	import {
 		badgeCount,
 		personOf,
@@ -21,6 +23,7 @@
 	import SourceIcon from '$lib/components/SourceIcon.svelte';
 	import ReasonIcon from '$lib/components/ReasonIcon.svelte';
 	import ApprovalIcon from '$lib/components/ApprovalIcon.svelte';
+	import RiskIcon from '$lib/components/RiskIcon.svelte';
 	import DoneScreen from '$lib/components/DoneScreen.svelte';
 	import { glass, CARD, orbBackdrop } from '$lib/glass';
 
@@ -52,8 +55,15 @@
 	/* Task 10l — 箱の一辺。球の直径はその 48% (shader.ts の R0)なので 448 で 215px。
 	   10j の 560 から 2 割小さくした。カードの列の間も同じ比で縮む (app.css の .bento の
 	   max-width: 80%) ので、球の外周と光彩がカードの縁に掛かる関係は変わらず、
-	   そこでカードのガラスの縁が破片を曲げる (visual 2.8 の 6) */
-	const orbSize = $derived(narrow.current ? 300 : 448);
+	   そこでカードのガラスの縁が破片を曲げる (visual 2.8 の 6)。
+	   ユーザー指摘 (2026-09-23) — 窓のリサイズ中も値が飛ばず連続的に追従すること。
+	   700px (narrow の境目) を下限、.bento が環状配置に切り替わる 1100px を上限にして
+	   300→448 を線形に補間する。narrow (折りたたみ表示、または携帯の横向きで高さが低い)
+	   のときは 700px 以下と同じ 300 で止める (この場合の "narrow" は高さ由来でも起こるため、
+	   幅だけの補間だと逆に大きくなってしまう) */
+	const orbSize = $derived(
+		narrow.current ? 300 : fluid(innerWidth.current ?? 1440, 700, 1100, 300, 448)
+	);
 
 	/* Task 10r — .hole のオーブが今握っている canvas。CARD のガラスの backdrop に渡し、
 	   .bento の子孫であるために除外されていた背後の絵へ実際に足す
@@ -125,9 +135,8 @@
 							<div class="list-row">
 								<ApprovalIcon kind={a.kind} />
 								<span class="tc-text">{a.title}</span>
-								<!-- ドロワーと同じ区分の Lozenge。文言の出所は types.ts の RISK_LABEL。
-								     外部送信だけ橙 (app.css の .badge.warn)、残る 2 つは既定の灰 -->
-								<span class="badge" class:warn={a.risk === 'external_send'}>{RISK_LABEL[a.risk]}</span>
+								<!-- ドロワーと同じ区分の記号。ApprovalIcon (種類) とは別の形にして混ざらないようにする -->
+								<RiskIcon risk={a.risk} />
 							</div>
 						{/each}
 						{#if ap.length > 3}<p class="muted">残り {ap.length - 3} 件</p>{/if}

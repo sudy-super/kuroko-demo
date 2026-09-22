@@ -4,7 +4,7 @@
 	import Drawer from './Drawer.svelte';
 	import ApprovalCard from './ApprovalCard.svelte';
 	import ApprovalIcon from './ApprovalIcon.svelte';
-	import { RISK_LABEL } from '$lib/types';
+	import RiskIcon from './RiskIcon.svelte';
 	import { Collapsible } from 'bits-ui';
 	import Icon from './Icon.svelte';
 
@@ -63,8 +63,8 @@
 			<div class="list-row" style="cursor: default">
 				<ApprovalIcon kind={a.kind} />
 				<span class="tc-text">{a.title}</span>
-				<!-- 承認待ちのカードと同じ区分の Lozenge。文言の出所は types.ts の RISK_LABEL -->
-				<span class="badge" class:warn={a.risk === 'external_send'}>{RISK_LABEL[a.risk]}</span>
+				<!-- 承認待ちのカードと同じ区分の記号 -->
+				<RiskIcon risk={a.risk} />
 			</div>
 		{/each}
 	{/if}

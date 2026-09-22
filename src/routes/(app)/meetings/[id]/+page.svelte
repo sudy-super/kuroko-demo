@@ -6,6 +6,7 @@
 	import { generateAgenda, markBriefRead, shareAgenda, updateAgenda } from '$lib/actions';
 	import { ui } from '$lib/ui.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import Tip from '$lib/components/Tip.svelte';
 	import BriefView from '$lib/components/BriefView.svelte';
 	import TranscriptModal from '$lib/components/TranscriptModal.svelte';
 	import MinutesView from '$lib/components/MinutesView.svelte';
@@ -100,7 +101,11 @@
 			<section class="card people-sec">
 				<h2 class="row">
 					アジェンダ
-					{#if meeting.agendaShared}<span class="badge ok">共有済み</span>{/if}
+					{#if meeting.agendaShared}
+						<Tip text="アジェンダ共有済み">
+							<Icon name="ic-share" size={16} label="アジェンダ共有済み" class="meet-shared" />
+						</Tip>
+					{/if}
 				</h2>
 
 				{#if generating}
@@ -193,5 +198,8 @@
 	.people-sec .row {
 		flex-wrap: wrap;
 		gap: var(--sp-3);
+	}
+	:global(.meet-shared) {
+		color: var(--ok);
 	}
 </style>

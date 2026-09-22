@@ -2,13 +2,14 @@
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
 	import { companyOf, contactOf, projectOf } from '$lib/derived';
-	import { identitiesOf, personHistory, personStats } from '$lib/people';
+	import { identitiesOf, personHistory, personStats, HISTORY_ICON } from '$lib/people';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import { ui, toast, focusChatbar } from '$lib/ui.svelte';
 	import { updatePersonMemo } from '$lib/actions';
 	import Icon from '$lib/components/Icon.svelte';
 	import Tip from '$lib/components/Tip.svelte';
 	import ProjectStatusIcon from '$lib/components/ProjectStatusIcon.svelte';
+	import DocKindIcon from '$lib/components/DocKindIcon.svelte';
 
 	const CHANNELS = [
 		{ kind: 'email', label: 'Gmail', icon: 'b-gmail' },
@@ -153,7 +154,9 @@
 				<p class="people-stat">メール {stats?.mails} 通 / 会議 {stats?.meetings} 件</p>
 				{#each shown(history, 'history') as h (h.href + h.at)}
 					<a class="list-row" href={h.href}>
-						<span class="badge">{h.label}</span>
+						<Tip text={h.label}>
+							<Icon name={HISTORY_ICON[h.kind]} size={16} label={h.label} class="ph-history-icon" />
+						</Tip>
 						<span class="people-ident">{h.title}</span>
 						<span class="num muted">{day(h.at)}</span>
 					</a>
@@ -188,7 +191,7 @@
 				<h2>関連資料</h2>
 				{#each shown(documents, 'documents') as d (d.id)}
 					<a class="list-row" href="/documents?d={d.id}">
-						<span class="badge">{d.kind}</span>
+						<DocKindIcon kind={d.kind} />
 						<span class="people-ident">{d.title}</span>
 					</a>
 				{/each}

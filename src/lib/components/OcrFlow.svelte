@@ -7,6 +7,7 @@
 	import { toast } from '$lib/ui.svelte';
 	import Modal from './Modal.svelte';
 	import Icon from './Icon.svelte';
+	import Tip from './Tip.svelte';
 
 	let {
 		open,
@@ -190,9 +191,13 @@
 						<!-- GOV.UK は必須の星印を禁じるので語で示す。任意の側に語を添えるかは
 						     一次資料が割れており、印の数を減らす製品の判断として上の 1 文にまとめた -->
 						{#if f.key === 'name'}<span class="ocr-req">必須</span>{/if}
-						<!-- 軸 2: 確信度の低い項目だけ。色だけに頼らないようアイコンと文言を併せる
+						<!-- 軸 2: 確信度の低い項目だけ。色だけに頼らないようアクセシブルな名前を付けた記号にする
 						     (WCAG 1.4.1)。検証の失敗ではないので aria-invalid は使わない (ARIA21) -->
-						{#if low(f.key)}<span class="badge warn"><Icon name="ic-alert" size={12} />要確認</span>{/if}
+						{#if low(f.key)}
+							<Tip text="要確認">
+								<Icon name="ic-alert" size={16} label="要確認" class="ocr-req-icon" />
+							</Tip>
+						{/if}
 					</label>
 					<input
 						class="input"
@@ -303,6 +308,9 @@
 	.input.low {
 		border-color: #ba4e00;
 		box-shadow: inset 0 0 0 1px #ba4e00;
+	}
+	:global(.ocr-req-icon) {
+		color: #ba4e00;
 	}
 	.ocr-low {
 		margin-top: var(--sp-2);

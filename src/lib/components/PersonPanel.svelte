@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { db } from '$lib/store.svelte';
-	import { companyOf, contactOf, identityOf, personOfIdentity, projectOf, projectStatusClass } from '$lib/derived';
+	import { companyOf, contactOf, identityOf, personOfIdentity, projectOf } from '$lib/derived';
 	import { identitiesOf, personStats } from '$lib/people';
 	import { parse, fmtMDW } from '$lib/dates';
 	import Icon from './Icon.svelte';
 	import OcrFlow from './OcrFlow.svelte';
+	import ProjectStatusIcon from './ProjectStatusIcon.svelte';
 
 	/** compact は狭い場所 (メールのスレッドの頭) 向け。メモと実績を落として身元だけ出す。
 	    headingLevel — 人物名の見出しレベルは置かれる場所によって正しい階層が変わるので
@@ -42,7 +43,7 @@
 		{#each projects as pj (pj.id)}
 			<a class="list-row" href="/projects/{pj.id}">
 				<span class="people-ident">{pj.name}</span>
-				<span class="badge {projectStatusClass(pj.status)}">{pj.status}</span>
+				<ProjectStatusIcon status={pj.status} />
 				<span class="num muted">{pj.amount}</span>
 			</a>
 		{/each}

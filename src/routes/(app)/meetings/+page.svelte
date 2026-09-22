@@ -4,6 +4,7 @@
 	import { parse, fmtMDW } from '$lib/dates';
 	import Icon from '$lib/components/Icon.svelte';
 	import Avatars from '$lib/components/Avatars.svelte';
+	import Tip from '$lib/components/Tip.svelte';
 
 	/* 会議は自前の日付を持たないので、ひも付く予定の日付で並べる (derived.ts meetingsOf は降順)。
 	   「今後」は基準日 (db.seededOn) 当日を含み、近い順に見せたいので反転する */
@@ -38,7 +39,11 @@
 								<span class="num sub"
 									>{ev ? `${fmtMDW(parse(ev.date))} ${ev.start}〜${ev.end}` : '日時未定'}</span
 								>
-								{#if m.agendaShared}<span class="badge ok">共有済み</span>{/if}
+								{#if m.agendaShared}
+									<Tip text="アジェンダ共有済み">
+										<Icon name="ic-share" size={16} label="アジェンダ共有済み" class="meet-shared" />
+									</Tip>
+								{/if}
 								<Avatars people={m.personIds.map((x) => personOf(db, x)).filter((x) => !!x)} />
 							</span>
 							<span class="people-name">{m.title}</span>
@@ -58,5 +63,9 @@
 	/* 日時は縮めない。縮むのは題名の側 (.people-name が省略記号を出す) */
 	.row .sub {
 		flex: none;
+	}
+	:global(.meet-shared) {
+		flex: none;
+		color: var(--ok);
 	}
 </style>

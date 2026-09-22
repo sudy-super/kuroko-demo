@@ -10,6 +10,7 @@
 	import type { Document } from '$lib/types';
 	import Icon from '$lib/components/Icon.svelte';
 	import DocPreview from '$lib/components/DocPreview.svelte';
+	import DocKindIcon from '$lib/components/DocKindIcon.svelte';
 
 	// 一覧は新しい順。シードは作成の古い順に並んでいる
 	const docs = $derived([...db.documents].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
@@ -97,7 +98,7 @@
 				<button class="list-row xl" class:on={d.id === doc?.id} onclick={() => select(d.id)}>
 					<span class="people-col">
 						<span class="row docs-line">
-							<span class="badge">{d.kind}</span>
+							<DocKindIcon kind={d.kind} />
 							{#if pj}<span class="badge tag">{pj.name}</span>{/if}
 						</span>
 						<span class="people-name">{d.title}</span>
