@@ -10,6 +10,7 @@
 	import { linkUrl } from '$lib/derived';
 	import { personOf, projectOf } from '$lib/derived';
 	import Icon from '$lib/components/Icon.svelte';
+	import Tip from '$lib/components/Tip.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import WeekView from '$lib/components/WeekView.svelte';
 	import MonthView from '$lib/components/MonthView.svelte';
@@ -115,30 +116,30 @@
 	{#if detail}
 		{@const people = detail.personIds.map((id) => personOf(db, id)?.name).filter(Boolean)}
 		<div class="list-row">
-			<span class="badge">場所</span>
+			<Tip text="場所"><Icon name="ic-pin" size={16} label="場所" /></Tip>
 			<span class="tc-text">{detail.place ?? (detail.online ? 'オンライン' : '指定なし')}</span>
 		</div>
 		{#if people.length}
 			<div class="list-row">
-				<span class="badge">参加者</span>
+				<Tip text="参加者"><Icon name="ic-people" size={16} label="参加者" /></Tip>
 				<span class="tc-text">{people.join('、')}</span>
 			</div>
 		{/if}
 		{#if detail.projectId}
 			<div class="list-row">
-				<span class="badge">案件</span>
+				<Tip text="案件"><Icon name="ic-target" size={16} label="案件" /></Tip>
 				<span class="tc-text">{projectOf(db, detail.projectId)?.name}</span>
 			</div>
 		{/if}
 		{#if detail.url}
 			<div class="list-row">
-				<span class="badge">{detail.online === 'zoom' ? 'Zoom' : 'Meet'}</span>
+				<Tip text={detail.online === 'zoom' ? 'Zoom' : 'Meet'}><Icon name="ic-video" size={16} label={detail.online === 'zoom' ? 'Zoom' : 'Meet'} /></Tip>
 				<a class="tc-text" href={linkUrl(detail.url)} target="_blank" rel="noreferrer">{detail.url}</a>
 			</div>
 		{/if}
 		{#if detail.meetingId}
 			<div class="list-row">
-				<span class="badge">会議</span>
+				<Tip text="会議"><Icon name="ic-bell" size={16} label="会議" /></Tip>
 				<a class="tc-text" href="/meetings/{detail.meetingId}">会議の準備を見る</a>
 			</div>
 		{/if}

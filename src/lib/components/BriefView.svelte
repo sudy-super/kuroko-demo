@@ -2,6 +2,8 @@
 	import type { Meeting } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { companyOf, personOf, projectOf } from '$lib/derived';
+	import ProjectStatusIcon from './ProjectStatusIcon.svelte';
+	import DocKindIcon from './DocKindIcon.svelte';
 
 	let { meeting }: { meeting: Meeting } = $props();
 
@@ -26,7 +28,7 @@
 	<dt>案件</dt>
 	<dd>
 		{#if project}<a href="/projects/{project.id}">{project.name}</a>
-			<span class="badge">{project.status}</span>{:else}紐づく案件はありません{/if}
+			<ProjectStatusIcon status={project.status} />{:else}紐づく案件はありません{/if}
 	</dd>
 	<dt>目的</dt>
 	<dd>{meeting.purpose}</dd>
@@ -51,7 +53,7 @@
 <h3>関連資料</h3>
 {#each documents as d (d.id)}
 	<a class="list-row" href="/documents?d={d.id}">
-		<span class="badge">{d.kind}</span>
+		<DocKindIcon kind={d.kind} />
 		<span class="people-ident">{d.title}</span>
 	</a>
 {/each}
