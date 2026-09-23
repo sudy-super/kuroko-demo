@@ -42,10 +42,17 @@
 		};
 	});
 
-	// noteRecent は db.demo.recent を読んでから書くので、追跡したままだと更新が止まらなくなる
+	// noteRecent は db.demo.recent を読んでから書くので、追跡したままだと更新が止まらなくなる。
+	// 焦点を閉じ込めない覆い (枠が押せるよう trapFocus を外した) はページ遷移そのものでは
+	// 閉じないので、ここで明示的に閉じる (ユーザー指示 2026-09-23)
 	$effect(() => {
 		const path = page.url.pathname;
-		untrack(() => noteRecent(path));
+		untrack(() => {
+			noteRecent(path);
+			ui.approvalDrawer = false;
+			ui.activityDrawer = false;
+			ui.palette = false;
+		});
 	});
 </script>
 

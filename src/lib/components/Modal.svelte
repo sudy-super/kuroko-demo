@@ -80,17 +80,26 @@
 		</Dialog.Overlay>
 		<Dialog.Content
 			forceMount
+			trapFocus={false}
 			onOpenAutoFocus={(e) => {
 				const el = openFocus?.();
 				if (!el) return;
 				e.preventDefault();
 				el.focus();
 			}}
+			onInteractOutside={(e) => {
+				// 枠 (上部バー・サイドナビ・連携の列) と枠から開く板を押しても覆いを閉じない
+				// (ユーザー指示 2026-09-23: 枠はどの覆いが開いていても触れる)。
+				// サイドナビのリンクは遷移するので、覆いは遷移で閉じる
+				if ((e.target as Element | null)?.closest('.header.glass, .sidebar, .rail, .pill-panel, .demo-menu'))
+					e.preventDefault();
+			}}
 		>
 			{#snippet child({ props })}
 				{#if render}
 					<div
 						{...props}
+						aria-modal="false"
 						bind:this={box}
 						class="modal"
 						class:sm={size === 'sm'}

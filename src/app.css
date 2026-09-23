@@ -365,9 +365,10 @@ svg.i {
 /* ruling — 骨格 */
 .app {
 	position: relative;
-	z-index: 1;
 	min-height: 100dvh;
-	/* Task 11r (監査 8) — カードのガラス (glass()。bleed は材質から決まり、今の値では 47px)が
+	/* 上部バーとサイドナビを覆い (Portal で <body> 直下、段 75) より前に出すため、
+	   ここで積み重ねの文脈を作らない (ユーザー指示 2026-09-23)。
+	   Task 11r (監査 8) — カードのガラス (glass()。bleed は材質から決まり、今の値では 47px)が
 	   窓の右端に近いカードでは画面幅より外へはみ出し、横スクロールを生んでいた
 	   (当時は Inbox や人物の一覧にもガラスがあった。Task 10w で内容の層から外したので
 	   今 glass() を使うのは Today の 2 か所だけだが、切る指定は残す。canvas 自体は
@@ -380,12 +381,13 @@ svg.i {
 	overflow-y: visible;
 }
 /* Task 10i — 枠のガラスをまとめて描くための空の層。中身はガラスの canvas 1 枚だけ。
-   本文 (段を持たない)より後、浮いている物 (依頼バーの 55 以上)より前に敷く。画面いっぱいに広げるので、
+   本文 (段を持たない)より後、覆い (75) より前、枠の面と同じ段に敷く。枠の面は DOM 順が
+   後なので canvas の上に乗る。画面いっぱいに広げるので、
    pointer-events を切らないと画面全体が押せなくなる */
 .chrome {
 	position: fixed;
 	inset: 0;
-	z-index: 50;
+	z-index: 76;
 	pointer-events: none;
 }
 /* Task 10w (glass-scope.md 1〜3 節) — ドロワー・シート・モーダル・ポップオーバー・メニューを
@@ -393,9 +395,9 @@ svg.i {
    .chrome と同じ作り (中身は canvas 1 枚、pointer-events なし)
    だが、bits-ui の Portal で <body> の直接の子として足す ((app)/+layout.svelte) ので、
    ここでは通常の入れ物としての見た目だけを持たせる。
-   z-index 71 — scrim (70) より上、この層が受け持つ覆いの面 (75)より下。.pill-panel/.demo-menu も
-   同じ 71 に上げてあり (下を見よ)、この層は Portal で常駐する分、DOM 順で必ず面より先に
-   入るので、tie でも面が上に乗る (.chrome と .sidebar の関係と同じ) */
+   z-index 71 — scrim (70) より上、この層が受け持つ覆いの面 (75)より下。.pill-panel/.demo-menu は
+   枠 (76) から開くので枠より前の 77 に上げてあり (下を見よ)、この層は Portal で常駐する分、
+   DOM 順で必ず面より先に入るので、tie でも面が上に乗る (.chrome と .sidebar の関係と同じ) */
 .overlay-chrome {
 	position: fixed;
 	inset: 0;
@@ -423,7 +425,8 @@ svg.i {
 	left: var(--sp-4);
 	top: var(--sp-4);
 	bottom: var(--sp-4);
-	z-index: 50;
+	z-index: 76;
+	pointer-events: auto;
 	display: flex;
 	flex-direction: column;
 	gap: var(--sp-1);
@@ -512,7 +515,8 @@ svg.i {
 	right: var(--sp-4);
 	top: 50%;
 	transform: translateY(-50%);
-	z-index: 50;
+	z-index: 76;
+	pointer-events: auto;
 	display: flex;
 	flex-direction: column;
 	gap: var(--sp-2);
@@ -545,6 +549,8 @@ svg.i {
 	position: fixed;
 	top: var(--sp-4);
 	right: var(--sp-4);
+	z-index: 76;
+	pointer-events: auto;
 	max-width: calc(100vw - var(--sp-4) * 2);
 	border-radius: var(--r-pill);
 	/* 幅は Header.svelte が中身 (.hdr-inner) の自然な幅を測って px で渡す。
@@ -1533,7 +1539,7 @@ svg.i {
 }
 .drawer {
 	position: fixed;
-	top: 0;
+	top: var(--bar-clear);
 	right: 0;
 	bottom: 0;
 	z-index: 75;
@@ -1673,7 +1679,7 @@ svg.i {
 	display: flex;
 	flex-direction: column;
 	width: min(560px, calc(100vw - 32px));
-	max-height: calc(100dvh - 96px);
+	max-height: calc(100dvh - var(--bar-clear) * 2);
 	padding: var(--sp-6);
 	border-radius: var(--r-l);
 	background: var(--glass-sheet);
@@ -1799,11 +1805,11 @@ svg.i {
 /* Task 10n — ピルの中のボタンを押したときだけ開く板 (PillPanel.svelte)。
    出す中身は直近の数件と全件への導線だけ (island.md「広がったときの中身」)。
    Task 10w (glass-scope.md 5 節) — ポップオーバーは Adopting Liquid Glass がガラスを持つと
-   明記するので regular 変種を採る。z-index — scrim (70) と同じだった値を 71 に上げ、上の
-   overlay-chrome (src/lib/glass.ts の overlayGlass、同じく 71 で DOM 順が先) より確実に上、
-   覆いの面 (drawer/sheet/modal 75) より確実に下にする */
+   明記するので regular 変種を採る。枠 (.header.glass、76) から開くので枠より前の 77 に出す。
+   覆いの面 (drawer/sheet/modal 75) より前になるため、覆いが開いている間は板のガラスの
+   背後に覆いの canvas (71) が映らないことがある (ユーザー指示 2026-09-23) */
 .pill-panel {
-	z-index: 71;
+	z-index: 77;
 	display: flex;
 	flex-direction: column;
 	gap: var(--sp-2);
@@ -3110,9 +3116,9 @@ section.tc .list-row:not(label):not(a):hover {
 /* Task 10m — 上部バー右端の「デモの操作」から開くメニュー。中の「他のシナリオを試す」は
    入れ子のメニューで、仕様 11.4 の 8 件を出す。文言が長いので折り返させ、高さは行数に任せる。
    Task 10w (glass-scope.md 5 節) — メニューは Adopting Liquid Glass がガラスを持つと明記する
-   ので regular 変種を採る。z-index は .pill-panel と同じ理由で 71 に上げた */
+   ので regular 変種を採る。z-index は .pill-panel と同じ理由で 77 に上げた */
 .demo-menu {
-	z-index: 71;
+	z-index: 77;
 	width: 220px;
 	max-width: calc(100vw - var(--sp-8));
 	padding: var(--sp-2);
