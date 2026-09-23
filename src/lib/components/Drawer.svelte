@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { tick, type Snippet } from 'svelte';
 	import { Dialog } from 'bits-ui';
 	import { pushState } from '$app/navigation';
 	import { media } from '$lib/media.svelte';
-	import { markOverlay } from '$lib/ui.svelte';
+	import { markOverlay, ui } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 
 	let {
@@ -27,6 +27,29 @@
 	/** app.css の --d-exit。退場の 200 ミリ秒を見せてから中身を外す */
 	const EXIT_MS = 200;
 
+	/* カードから広がる/縮む動き (docs/research/card-expand.md、view-transition.md)。
+	   実要素の top/left/width/height を WAAPI で動かす。scale() を使わないのは、
+	   ガラス (src/lib/glass.ts) が実要素の矩形を毎フレーム読んで描くため */
+	const GROW = 'cubic-bezier(0.05, 0.7, 0.1, 1)'; // M3 Emphasized decelerate
+	const SHRINK = 'cubic-bezier(0.3, 0, 0.8, 0.15)'; // M3 Emphasized accelerate
+	const MORPH_MS = 450;
+
+	let panel: HTMLElement | undefined = $state();
+	// 起点があり、中央のパネルで、動きを減らす設定でないときだけ広げる
+	const morph = $derived(
+		variant === 'center' &&
+			!media.mobile &&
+			!!ui.approvalFrom &&
+			!matchMedia('(prefers-reduced-motion: reduce)').matches
+	);
+	const box = (r: DOMRect) => ({
+		top: `${r.top}px`,
+		left: `${r.left}px`,
+		width: `${r.width}px`,
+		height: `${r.height}px`,
+		transform: 'none'
+	});
+
 	let render = $state(false);
 	let leaving = $state(false);
 	let prev = false;
@@ -45,11 +68,36 @@
 			pushed = true;
 			return;
 		}
+		const wasMorph = morph;
+		const from = ui.approvalFrom;
+		if (wasMorph && panel && from) {
+			panel.animate([box(panel.getBoundingClientRect()), box(from)], {
+				duration: MORPH_MS,
+				easing: SHRINK,
+				fill: 'forwards'
+			});
+		}
 		leaving = true;
-		timer = setTimeout(() => {
-			render = false;
-			leaving = false;
-		}, EXIT_MS);
+		timer = setTimeout(
+			() => {
+				render = false;
+				leaving = false;
+				if (wasMorph && from) {
+					ui.approvalFrom = null;
+					// カードは縮み終わるまで visibility: hidden なので、bits-ui の戻し
+					// (onCloseAutoFocus で止めてある) では焦点が乗らない。見えるようにしてから戻す
+					tick().then(() => document.querySelector<HTMLElement>('.card[data-card="approvals"]')?.focus());
+				}
+			},
+			wasMorph ? MORPH_MS : EXIT_MS
+		);
+	});
+
+	// 開いた直後: 今の (CSS の) 位置を終点にして、カードの矩形から広げる
+	$effect(() => {
+		if (!panel || !morph || leaving) return;
+		const to = panel.getBoundingClientRect();
+		panel.animate([box(ui.approvalFrom!), box(to)], { duration: MORPH_MS, easing: GROW });
 	});
 
 	// 退場の 200 ミリ秒が終わるまでカードの塗りを戻さない。open で切ると覆いが消える前に
@@ -96,13 +144,15 @@
 				{#if render}<div {...props} class="scrim" class:leave={leaving}></div>{/if}
 			{/snippet}
 		</Dialog.Overlay>
-		<Dialog.Content forceMount>
+		<Dialog.Content forceMount onCloseAutoFocus={(e) => morph && e.preventDefault()}>
 			{#snippet child({ props })}
 				{#if render}
 					<div
 						{...props}
+						bind:this={panel}
 						class={media.mobile ? 'sheet' : variant === 'center' ? 'panel-center' : 'drawer'}
 						class:leave={leaving}
+						class:morph
 					>
 						{#if media.mobile}<div class="sheet-handle"></div>{/if}
 						<div class="row" style="justify-content: space-between; margin-bottom: var(--sp-4)">

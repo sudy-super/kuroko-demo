@@ -15,6 +15,10 @@ export type Toast = {
 export const ui = $state({
 	toast: null as Toast | null,
 	approvalDrawer: false,
+	/** 承認待ちカードから開いたときの、カードの位置と寸法。Drawer.svelte がここから
+	    広がる/ここへ縮むアニメーションの起点にする。Today のカード以外 (上部バー・会議の
+	    案内など) から開いたときは null のまま (docs/research/card-expand.md) */
+	approvalFrom: null as DOMRect | null,
 	activityDrawer: false,
 	palette: false,
 	mobileMenu: false,

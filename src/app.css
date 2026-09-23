@@ -1590,6 +1590,20 @@ svg.i {
 .panel-center.leave {
 	animation: modal-out var(--d-exit) var(--ease-exit) both;
 }
+/* カードから広がる/縮む間は Drawer.svelte 側の WAAPI が top/left/width/height を
+   直接動かすので、この scale アニメーションと競合させない (docs/research/card-expand.md) */
+.panel-center.morph {
+	animation: none;
+}
+.panel-center.morph.leave {
+	animation: none;
+}
+.panel-center.morph > * {
+	animation: fade-in 200ms 250ms both;
+}
+.panel-center.morph.leave > * {
+	animation: fade-out 150ms both;
+}
 .sheet {
 	position: fixed;
 	left: 0;

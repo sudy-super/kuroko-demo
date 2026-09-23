@@ -10,6 +10,7 @@
 		target,
 		rel,
 		onclick,
+		expanded,
 		children
 	}: {
 		/* Task 10t 修正ラウンド 2 — カードの種類。app.css の環状配置がこれで位置を選ぶ
@@ -22,7 +23,10 @@
 		   相手の画面 (別タブ)へ飛ばすために要る */
 		target?: string;
 		rel?: string;
-		onclick?: () => void;
+		onclick?: (e: MouseEvent & { currentTarget: HTMLElement }) => void;
+		/* 承認パネルがこのカードから広がり、縮み終わるまでの間。カード自体を隠し、
+		   同じ物が 2 つ見えないようにする (docs/research/card-expand.md)。ボタンでだけ使う */
+		expanded?: boolean;
 		children: Snippet;
 	} = $props();
 
@@ -45,7 +49,14 @@
 	>
 {:else if onclick}
 	<!-- ボタンは中身から名前を作る。aria-label を足すと中の行が読み上げから落ちる -->
-	<button type="button" class="card tc" data-card={card} {onclick}>{@render inner()}</button>
+	<button
+		type="button"
+		class="card tc"
+		data-card={card}
+		{onclick}
+		aria-expanded={expanded}
+		style:visibility={expanded ? 'hidden' : undefined}>{@render inner()}</button
+	>
 {:else}
 	<section class="card tc" data-card={card} aria-label={title}>{@render inner()}</section>
 {/if}

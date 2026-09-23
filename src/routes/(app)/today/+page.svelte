@@ -129,7 +129,11 @@
 						card="approvals"
 						title="承認待ち {ap.length} 件"
 						icon="ic-check-c"
-						onclick={() => (ui.approvalDrawer = true)}
+						onclick={(e) => {
+							ui.approvalFrom = e.currentTarget.getBoundingClientRect();
+							ui.approvalDrawer = true;
+						}}
+						expanded={!!ui.approvalFrom}
 					>
 						{#each ap.slice(0, 3) as a (a.id)}
 							<div class="list-row">
