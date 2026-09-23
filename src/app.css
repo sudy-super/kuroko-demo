@@ -1653,6 +1653,25 @@ svg.i {
 .sheet .list-row {
 	flex: none;
 }
+/* 中央の承認パネルと右のドロワーは、題の行を留めて中身 (.modal-body) だけを送る。
+   枠ごと送っていたときは、承認カードが 2 枚でパネルの上限の高さを超えると、flex の
+   既定の縮みで実行済みの行が 22px に潰れて重なり、枠の高さで描かれる縁の線が中身と
+   一緒に流れて途中に出ていた (1440x900 で実測、ユーザー指摘 2026-09-23)。
+   送り箱の中は縮ませず、はみ出した分は送る */
+.panel-center,
+.drawer {
+	overflow: hidden;
+}
+.panel-center .modal-body,
+.drawer .modal-body {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+}
+.panel-center .modal-body > *,
+.drawer .modal-body > * {
+	flex: none;
+}
 /* Task 16 — 携帯を横向きにした高さでは 50dvh が 195px しかなく、つまみと見出しで埋まって
    中身が 1 行も見えない (844x390 で実測)。この高さだけ画面をもっと使う。上端には
    上部バーの分を残す (max-height はそのまま効く) */

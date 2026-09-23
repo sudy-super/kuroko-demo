@@ -175,10 +175,14 @@
 								<Icon name="ic-x" size={20} />
 							</Dialog.Close>
 						</div>
-						{@render children()}
-						{#if footer}
-							<div style="margin-top: auto; padding-top: var(--sp-4)">{@render footer()}</div>
-						{/if}
+						<!-- 送るのはこの箱だけ。枠 (ガラス・縁) ごと送ると、枠の高さで描かれる縁の
+						     疑似要素が中身と一緒に流れて途中に線が出る (.modal-body と同じ作り) -->
+						<div class="modal-body">
+							{@render children()}
+							{#if footer}
+								<div style="margin-top: auto; padding-top: var(--sp-4)">{@render footer()}</div>
+							{/if}
+						</div>
 					</div>
 				{/if}
 			{/snippet}
