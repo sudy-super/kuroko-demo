@@ -87,8 +87,13 @@ export function approve(id: string, origin: Origin = 'approval') {
 			setTimeout(() => executeApproval(id), SEND_DELAY_MS)
 		);
 		// Gmail の送信取り消しと同じ順序 (指摘 2) — 「送信しました」を先に出し、5 秒だけ取り消せる。
-		// 5 秒が過ぎても文言は変えない (実行前にすでに完了として出しているため)
-		toast('送信しました (デモのため実送信していません)', { seconds: SEND_DELAY_MS / 1000, undo: () => undoApproval(id) });
+		// 5 秒が過ぎても文言は変えない (実行前にすでに完了として出しているため)。
+		// key: id を渡し、別の送信の取り消しがこのトーストを誤って閉じないようにする (レビュー M2)
+		toast('送信しました (デモのため実送信していません)', {
+			seconds: SEND_DELAY_MS / 1000,
+			undo: () => undoApproval(id),
+			key: id
+		});
 	} else {
 		executeApproval(id);
 		// 押された時点ではなく、今できたログを取り消す。取り消せない種類には取り消しを出さない
@@ -116,8 +121,8 @@ export function undoApproval(id: string) {
 	a.status = 'pending';
 	a.sendingAt = undefined;
 	save();
-	// どこから取り消しても、残り時間を数えているトースト (デスクトップではピル) を閉じる
-	dismissToast();
+	// この承認の送信のトーストだけを閉じる。別の送信が今表示中なら閉じない (レビュー M2)
+	dismissToast(id);
 }
 
 export function editApproval(id: string, body: string) {

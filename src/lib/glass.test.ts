@@ -134,7 +134,7 @@ describe('ガラスの配線', () => {
 		expect(observers[0].connected).toBe(false);
 	});
 
-	it('依頼バーは層に乗らず自分の描画面を持つ (段 50〜54 の面を背後に映すため)', () => {
+	it('依頼バーは層に乗らず自分の描画面を持つ (枠の面と同じ層に乗せると互いを映せないため)', () => {
 		barGlass(fakeLayer({}));
 		// tiers を持たない = 自分自身が面。層に乗せると層の段で切られた絵しか映せない
 		expect(created[0].options.targets).toBeUndefined();

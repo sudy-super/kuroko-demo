@@ -22,8 +22,7 @@
 		const measure = () => {
 			if (!bodyOpen) clipped = el.scrollHeight > el.clientHeight + 1;
 		};
-		/* 畳んだ ApprovalDrawer の Collapsible の中では高さが 0 で描かれ、開くまで測れない。
-		   幅が変わったときも測り直す必要があるので、どちらも ResizeObserver で拾う */
+		/* 幅が変わると行数が変わるので、ResizeObserver で測り直す */
 		const ro = new ResizeObserver(measure);
 		ro.observe(el);
 		measure();

@@ -131,9 +131,10 @@
 						icon="ic-check-c"
 						onclick={(e) => {
 							ui.approvalFrom = e.currentTarget.getBoundingClientRect();
+							ui.approvalCardHidden = true;
 							ui.approvalDrawer = true;
 						}}
-						expanded={!!ui.approvalFrom}
+						expanded={ui.approvalCardHidden}
 					>
 						{#each ap.slice(0, 3) as a (a.id)}
 							<div class="list-row">

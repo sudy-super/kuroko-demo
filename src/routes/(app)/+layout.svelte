@@ -4,7 +4,7 @@
 	import { page } from '$app/state';
 	import { db, installStorageSync } from '$lib/store.svelte';
 	import { restoreStaleSending, noteRecent } from '$lib/actions';
-	import { ui } from '$lib/ui.svelte';
+	import { ui, closeOverlays } from '$lib/ui.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Header from '$lib/components/Header.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
@@ -44,14 +44,14 @@
 
 	// noteRecent は db.demo.recent を読んでから書くので、追跡したままだと更新が止まらなくなる。
 	// 焦点を閉じ込めない覆い (枠が押せるよう trapFocus を外した) はページ遷移そのものでは
-	// 閉じないので、ここで明示的に閉じる (ユーザー指示 2026-09-23)
+	// 閉じないので、ここで明示的に閉じる (ユーザー指示 2026-09-23)。
+	// レビュー I4 — デモのリセットの確かめ・音声の全画面がこの一覧から漏れていたので、
+	// ui.svelte.ts の closeOverlays() に集めて漏れを防ぐ
 	$effect(() => {
 		const path = page.url.pathname;
 		untrack(() => {
 			noteRecent(path);
-			ui.approvalDrawer = false;
-			ui.activityDrawer = false;
-			ui.palette = false;
+			closeOverlays();
 		});
 	});
 </script>

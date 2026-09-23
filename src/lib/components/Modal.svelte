@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { Dialog } from 'bits-ui';
-	import { markOverlay } from '$lib/ui.svelte';
+	import { markOverlay, keepOpenOnFrame } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 
 	let {
@@ -38,12 +38,18 @@
 	let leaving = $state(false);
 	let prev = false;
 	let timer: ReturnType<typeof setTimeout> | undefined;
+	// レビュー I3 — 枠 (上部バー・サイドナビ) がある画面 ((app) 配下) だけ trapFocus を外し、
+	// 焦点は inert (markOverlay 側) で本文から締め出す。枠が無い公開の日程調整画面では
+	// 締め出す本文が無いので、bits-ui 既定の閉じ込めをそのまま使う。$derived にすると描画の
+	// たびに document.querySelector を読むので、開いた時点の値で固定する
+	let framed = $state(true);
 
 	$effect(() => {
 		if (open === prev) return;
 		prev = open;
 		clearTimeout(timer);
 		if (open) {
+			framed = !!document.querySelector('.sidebar');
 			render = true;
 			leaving = false;
 			return;
@@ -80,26 +86,20 @@
 		</Dialog.Overlay>
 		<Dialog.Content
 			forceMount
-			trapFocus={false}
+			trapFocus={!framed}
 			onOpenAutoFocus={(e) => {
 				const el = openFocus?.();
 				if (!el) return;
 				e.preventDefault();
 				el.focus();
 			}}
-			onInteractOutside={(e) => {
-				// 枠 (上部バー・サイドナビ・連携の列) と枠から開く板を押しても覆いを閉じない
-				// (ユーザー指示 2026-09-23: 枠はどの覆いが開いていても触れる)。
-				// サイドナビのリンクは遷移するので、覆いは遷移で閉じる
-				if ((e.target as Element | null)?.closest('.header.glass, .sidebar, .rail, .pill-panel, .demo-menu'))
-					e.preventDefault();
-			}}
+			onInteractOutside={keepOpenOnFrame}
 		>
 			{#snippet child({ props })}
 				{#if render}
 					<div
 						{...props}
-						aria-modal="false"
+						aria-modal={framed ? 'false' : 'true'}
 						bind:this={box}
 						class="modal"
 						class:sm={size === 'sm'}

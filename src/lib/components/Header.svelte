@@ -182,14 +182,19 @@
 			</button>
 		</PillPanel>
 	{/if}
-	{#if counting}
-		<!-- id で key し、猶予が改めて始まるたびに輪の CSS アニメーションを最初から動かす -->
-		{#key ui.toast?.id}
-			<div class="pill-countdown" role="status" aria-live="polite" style:--dur="{ui.toast?.seconds}s">
-				<ToastCountdown />
-			</div>
-		{/key}
-	{/if}
+	<!-- 読み上げの箱は常駐させ、中身だけを出し入れする。箱ごと足すと、足されたばかりの
+	     ライブ領域の中身を読まない読み上げソフトがある (レビュー S1)。空の間は
+	     display: contents で幅も gap も取らない -->
+	<div class="pill-live" role="status" aria-live="polite">
+		{#if counting}
+			<!-- id で key し、猶予が改めて始まるたびに輪の CSS アニメーションを最初から動かす -->
+			{#key ui.toast?.id}
+				<div class="pill-countdown" style:--dur="{ui.toast?.seconds}s">
+					<ToastCountdown />
+				</div>
+			{/key}
+		{/if}
+	</div>
 	<div class="row" style="margin-left: auto; gap: var(--sp-3)">
 		{#if !media.mobile && !guideOn && !counting}<span class="muted">{db.user.name}</span>{/if}
 		{@render tools()}

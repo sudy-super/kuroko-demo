@@ -10,15 +10,26 @@ export type Toast = {
 	    デスクトップでは上部バーのピルの中で本文を出し続ける (Header.svelte) */
 	island?: boolean;
 	leaving?: boolean;
+	/** どの操作のトーストかを表す識別子 (承認の id など)。dismissToast(key) に渡すと、
+	    今のトーストがその操作のものだったときだけ閉じる (レビュー M2) */
+	key?: string;
 };
 
 export const ui = $state({
 	toast: null as Toast | null,
 	approvalDrawer: false,
 	/** 承認待ちカードから開いたときの、カードの位置と寸法。Drawer.svelte がここから
-	    広がる/ここへ縮むアニメーションの起点にする。Today のカード以外 (上部バー・会議の
-	    案内など) から開いたときは null のまま (docs/research/card-expand.md) */
+	    広がる/ここへ縮むアニメーションの起点にする。開いた直後 (今回の Drawer が起点として
+	    使う値) だけ意味を持ち、Drawer.svelte の閉じる分岐で即座に null へ戻す
+	    (レビュー C2/I1 — wasMorph の有無に関係なく戻さないと、動きを減らす設定や
+	    961px 未満では二度と広がる動きが起きず、カードが visibility: hidden のまま固定される)。
+	    Today のカード以外 (上部バー・会議の案内など) から開いたときは null のまま
+	    (docs/research/card-expand.md) */
 	approvalFrom: null as DOMRect | null,
+	/** 承認待ちカードを隠す (visibility: hidden) かどうか。approvalFrom は開いた瞬間に
+	    使い切って null に戻すので、縮み終わるまでカードを隠し続けるにはこちらの寿命が要る
+	    (レビュー C2/I1)。Today のカードの onclick で true、Drawer.svelte の後始末で false */
+	approvalCardHidden: false,
 	activityDrawer: false,
 	palette: false,
 	mobileMenu: false,
@@ -40,11 +51,36 @@ export function focusChatbar() {
 
 let overlays = 0;
 
-/** app.css の body[data-overlay='on'] を生かす。ドロワーとモーダルが 1 枚でも出ている間だけ立てる */
+/** app.css の body[data-overlay='on'] を生かす。ドロワーとモーダルが 1 枚でも出ている間だけ立てる。
+    Drawer/Modal は枠 (上部バー・サイドナビ・連携の列) を押せるよう trapFocus を外したので、
+    本文と依頼バー・ボトムナビは覆いが開いている間 inert にして Tab を通さない
+    (レビュー I3 — 外さないと覆いの後ろ・真下の要素に焦点が入り、見えないまま操作できてしまう) */
 export function markOverlay(open: boolean) {
 	overlays = Math.max(0, overlays + (open ? 1 : -1));
 	if (overlays > 0) document.body.dataset.overlay = 'on';
 	else delete document.body.dataset.overlay;
+	document
+		.querySelectorAll<HTMLElement>('.main, .chatbar, .bottomnav')
+		.forEach((e) => (e.inert = overlays > 0));
+}
+
+/** 遷移で閉じる覆いの一覧をここ 1 か所に集める (レビュー I4)。新しい覆いを ui に足したら、
+    ここにも足すこと */
+export function closeOverlays() {
+	ui.approvalDrawer = false;
+	ui.activityDrawer = false;
+	ui.palette = false;
+	ui.demoReset = false;
+	ui.voice = false;
+	ui.mobileMenu = false;
+}
+
+/** Drawer/Modal の onInteractOutside で共通に使う判定 (レビュー M7)。枠 (上部バー・
+    サイドナビ・連携の列) と枠から開く板を押しても覆いを閉じない (ユーザー指示 2026-09-23:
+    枠はどの覆いが開いていても触れる)。サイドナビのリンクは遷移するので、覆いは遷移で閉じる */
+export function keepOpenOnFrame(e: Event) {
+	if ((e.target as Element | null)?.closest('.header.glass, .sidebar, .rail, .pill-panel, .demo-menu'))
+		e.preventDefault();
 }
 
 let seq = 0;
@@ -70,9 +106,17 @@ function closeToast(id: number) {
  * prefers-reduced-motion でアニメーションが切れても残るので (components 3.7)、
  * 更新自体はやめない
  */
-export function toast(msg: string, opts: { undo?: () => void; seconds?: number } = {}) {
+export function toast(msg: string, opts: { undo?: () => void; seconds?: number; key?: string } = {}) {
 	if (timer) clearInterval(timer);
-	const t: Toast = { id: ++seq, msg, undo: opts.undo, seconds: opts.seconds, secondsLeft: opts.seconds, island: !!opts.seconds };
+	const t: Toast = {
+		id: ++seq,
+		msg,
+		undo: opts.undo,
+		seconds: opts.seconds,
+		secondsLeft: opts.seconds,
+		island: !!opts.seconds,
+		key: opts.key
+	};
 	ui.toast = t;
 	if (!opts.seconds) return;
 	let left = opts.seconds;
@@ -85,7 +129,7 @@ export function toast(msg: string, opts: { undo?: () => void; seconds?: number }
 		if (left <= 0) {
 			clearInterval(timer!);
 			// 取り消しボタンとゲージだけを引っ込める。本文は消さない (components 3.7)
-			ui.toast = { id: t.id, msg: t.msg, island: true };
+			ui.toast = { id: t.id, msg: t.msg, island: true, key: t.key };
 			/* 本文は取り消しなしのトーストの表示時間 (components 3.7 の 4000ms) だけ残して閉じる。
 			   閉じないとデスクトップのピルが伸びたまま戻らない。取り消しは作業履歴からできるので、
 			   消えても時間制限にはならない (同 3.7、WCAG 2.2.1) */
@@ -96,6 +140,11 @@ export function toast(msg: string, opts: { undo?: () => void; seconds?: number }
 	}, 1000);
 }
 
-export function dismissToast() {
-	if (ui.toast) closeToast(ui.toast.id);
+/** key を渡すと、今のトーストがその key のものだったときだけ閉じる (レビュー M2 —
+    別の送信の取り消しが今表示中のトーストを誤って閉じないようにする)。渡さなければ従来どおり
+    常に今のトーストを閉じる (ToastCountdown の「取り消す」ボタンなど) */
+export function dismissToast(key?: string) {
+	if (!ui.toast) return;
+	if (key !== undefined && ui.toast.key !== key) return;
+	closeToast(ui.toast.id);
 }

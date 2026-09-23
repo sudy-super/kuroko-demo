@@ -118,12 +118,13 @@ export function glass(options: LiquidGlassElementOptions) {
 /* 画面の枠のガラスのうち 5 面 (サイドナビ、上部バー、連携の列、携帯のボトムナビ、
    携帯の上部バー)を 1 枚の canvas にまとめる。依頼バーだけは別 (下の barGlass を見よ)。
    面ごとに 1 つずつ描画面 (WebGL context)を取ると、タブ 3 枚でブラウザの上限 (1 ページ約 16)に
-   届いてしまう。まとめ先は本文の上・覆いの下に敷いた空の層 (.chrome、z-index 50)で、
+   届いてしまう。まとめ先は本文の上・覆いの下に敷いた空の層 (.chrome。デスクトップ
+   [961px 以上] は覆い 75 より前の 76、モバイル [960px 以下] は元の重なりのまま 50)で、
    5 面はその層の子ではなく、きょうだいのまま動かさない。ライブラリは面の位置を
    入れ物の箱を基準に測るだけなので、画面いっぱいの層からなら画面のどこの面でも指せる。
    子にしないのは、入れ物の子孫がガラスの背後の絵から外れる決まりだからで、
    子にすると上部バーが下の文字を溶かせなくなる。逆に 5 面は層より後に描かれる
-   ので (同じ z-index 50 で DOM の順が後)、面自身の文字や塗りは背後の絵に入らない。
+   ので (同じ z-index で DOM の順が後)、面自身の文字や塗りは背後の絵に入らない。
    裏返すと、層にまとめた面どうしは互いの絵を映せない。今の 5 面は互いに重ならないので
    影響しない (サイドナビ・連携の列は左右の端、上部バーは上端、ボトムナビは下端)。
 
@@ -144,11 +145,14 @@ const CHROME_TIERS = {
 };
 
 /* 依頼バー (段 55) だけはこの層に入れず、自分の描画面を持つ。
-   まとめて描く層の背後の絵は層そのものの位置 (段 50) で切られるので、層に乗せた面どうしは
-   互いを映せない。依頼バーは段 50〜54 の面 (サイドナビ・上部バー・連携の列) より上にあり、
-   本来はそれらを屈折させるべき面なので、ここだけ分ける。描画面は 1 つ増えて 2 つになるが、
-   ブラウザの上限 (1 ページおよそ 16) に対しては余裕がある。
-   他の 5 面は段 50〜54 に互いに重なるものが無く (サイドナビ・連携の列は左右の端、上部バーは
+   まとめて描く層の背後の絵は層そのものの位置で切られるので、層に乗せた面どうしは
+   互いを映せない。依頼バーはサイドナビ・上部バー・連携の列と横に重ならない
+   (依頼バーの左端 = サイドナビの右端 + 32px、右端も連携の列の左)ので、段の前後関係
+   (今は .chrome が 76 で依頼バーの 55 より後ろ)に関わらず、互いを映す・映さないの
+   問題はそもそも起きない。それでも分けるのは、層に乗せると依頼バー自身の文字や塗りが
+   背後の絵に入らなくなる (上の CHROME_TIERS の注記を見よ) ため。描画面は 1 つ増えて
+   2 つになるが、ブラウザの上限 (1 ページおよそ 16) に対しては余裕がある。
+   他の 5 面は互いに重なるものが無く (サイドナビ・連携の列は左右の端、上部バーは
    上端、ボトムナビは下端)、層にまとめたままでよい */
 export const barGlass = (node: Element) => mount(node as HTMLElement, BAR);
 
@@ -167,12 +171,11 @@ export const chromeGlass = (node: Element) =>
    既定で <body> 直下に出るので、host の scope (= node.parentElement = <body>) の
    querySelectorAll でどの面も (入れ物の div が 1 枚挟まる面も含め) 深さに関係なく見つかる。
 
-   scrim (70) より上、覆いの面 (drawer/sheet/modal 75)より下に描画面を敷く必要が
-   あるが、pill-panel と demo-menu だけは scrim と同じ 70 だったので、両方を 71 に上げて
-   隙間を作った (app.css)。この層も 71 にして、tiers の面より必ず先に DOM へ入る ((app) の
-   骨組みが乗った時に一度だけ Portal で足すため、ユーザーが覆いを開くのは必ずそれより後) ので、
-   同じ 71 でも面自身が上に乗る (chromeGlass と .sidebar の関係と同じ、同じ z-index は DOM 順が
-   勝つ)。
+   scrim (70) より上、覆いの面 (drawer/sheet/modal/panel-center 75)より下の 71 に
+   描画面を敷く。tiers の面は 75 で層の 71 より高いので、DOM 順に関わらず面が上に乗る。
+   pill-panel と demo-menu はこの層の対象に含めない。枠 (.header.glass、76) から開く板
+   として 77 に出しており、この層 (71) より前面にあるため (すぐ下の OVERLAY_TIERS の
+   コメントを見よ)。
 
    どの面も SHEET の塗り・ぼかしをそのまま使う。
 
@@ -194,7 +197,7 @@ export const chromeGlass = (node: Element) =>
 const OVERLAY_TIERS = {
 	/* .panel-center — 承認待ちの中央寄り固定パネル (ApprovalDrawer だけが使う variant="center")。
 	   .modal と同じ SHEET の塗り・ぼかしをそのまま使う */
-	'.drawer, .sheet, .modal, .panel-center, .pill-panel, .demo-menu': SHEET.tint as number,
+	'.drawer, .sheet, .modal, .panel-center': SHEET.tint as number,
 	/* Task 10w 修正ラウンド 2 (review-glass-batch.md I1) — トーストはここに入れない。
 	   .select-menu と同じ理由で、この層の canvas はトースト (z-index 90)より後ろに来るうえ、
 	   トースト自身が濃紺の塗りを持つので、canvas が描いた絵は一度も画面に出ない
@@ -202,6 +205,12 @@ const OVERLAY_TIERS = {
 	   無駄なので層から外し、app.css の .toast の backdrop-filter でぼかす */
 	'.overlay-chrome-anchor': 0
 };
+/* レビュー I5 — .pill-panel と .demo-menu は枠 (.header.glass、76) から開くので、覆いの面
+   (drawer/sheet/modal 75) より前の 77 に出している。この層 (.overlay-chrome) は 71 で
+   77 より後ろなので、板がドロワー等と横に重なる場面では板の地 (canvas が描く塗り) がその
+   覆いの後ろに隠れ、板の文字が下の覆いの文字に直接乗ってしまう。板を tiers から外し、
+   .select-menu と同じく自分の backdrop-filter (app.css) で描くことで、段の前後関係に
+   関わらず自分の真後ろだけを確実にぼかす */
 
 export const overlayGlass = (node: Element) =>
 	mount(node as HTMLElement, { ...SHEET, bleed: 0 }, 50, OVERLAY_TIERS);

@@ -168,6 +168,10 @@
 	/* 骨格の寸法 (ruling: サイドナビ 256) */
 	--side-w: 256px;
 	--rail-w: 56px;
+	/* レビュー I2 — 枠 (サイドナビ・連携の列、段 76) が覆い (段 75) より前にあるので、
+	   覆いは枠の内側の帯に隠れないよう、この 2 つの間に中央寄せ・右寄せする */
+	--frame-left: calc(var(--side-w) + 32px);
+	--frame-right: var(--sp-4);
 	/* Task 10n — 上部バーは帯をやめて中央に浮くピルになった。高さは操作領域の下限 (44px)を
 	   割らないところまでで、island.md「普段の形と寸法」の 48〜52px の上端を取る */
 	--header-h: 52px;
@@ -573,6 +577,9 @@ svg.i {
 /* 取り消し猶予の間、ピルの中に出す輪 + 文言 + 取り消す (ToastCountdown.svelte、
    Toast.svelte と中身は共通)。.toast-msg 等は .toast に閉じたセレクタではないのでそのまま効くが、
    .header は高さ固定 (52px) なので折り返すと欠ける。ここだけ 1 行に留める */
+.pill-live {
+	display: contents;
+}
 .pill-countdown {
 	display: flex;
 	align-items: center;
@@ -597,8 +604,11 @@ svg.i {
    猶予の間だけ上限を外し、ピルを左へ伸ばす (island.md「広がったときの中身」)。
    上限はピルではなく中身に持たせる。ピルに持たせると、猶予が終わった瞬間に上限が
    戻って幅が transition を経ずに跳ぶ */
+/* レビュー M3 — 猶予の間はピルが左へ伸びるため、サイドナビ (--frame-left)と重なる。
+   回避幅を --frame-left に差し替える。右はピル自身の左右の余白 (--sp-4 x 2)と右端の余白
+   (--sp-4) */
 .header.glass:has(.pill-countdown) .hdr-inner {
-	max-width: calc(100vw - var(--sp-4) * 4);
+	max-width: calc(100vw - var(--frame-left) - var(--sp-4) * 3);
 }
 /* Task 10w (glass-scope.md 1 節) — 携帯の上部バーは HIG Toolbars がガラスを持つと明記する
    部品。src/lib/glass.ts の CHROME_TIERS に加えたので、下は .header.glass と同じ扱いにする */
@@ -1540,19 +1550,25 @@ svg.i {
 .drawer {
 	position: fixed;
 	top: var(--bar-clear);
-	right: 0;
-	bottom: 0;
+	/* レビュー I2 — 連携の列 (段 76) が覆い (75) より前にあるので、右端をそのぶん空ける。
+	   960px 以下は --frame-right が 0 になり、元の右端いっぱいに戻る */
+	right: var(--frame-right);
+	bottom: var(--sp-4);
 	z-index: 75;
 	display: flex;
 	flex-direction: column;
-	width: min(400px, 100vw);
+	width: min(400px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));
 	padding: var(--sp-6);
-	border-radius: var(--r-m) 0 0 var(--r-m);
+	/* レビュー I2 — 右端から浮くようになったので、右側も角を丸める */
+	border-radius: var(--r-m);
 	background: var(--glass-sheet);
 	-webkit-backdrop-filter: var(--blur-sheet);
 	backdrop-filter: var(--blur-sheet);
 	box-shadow: var(--rim), var(--e3);
-	overflow-y: auto;
+	/* レビュー M9 — 送り箱は中の .modal-body (下) が受け持つので、本体は縮ませず隠す。
+	   以前はここが overflow-y: auto で、後ろの .panel-center, .drawer { overflow: hidden }
+	   に上書きされる打ち消し合いになっていた */
+	overflow: hidden;
 	animation: drawer-in var(--d-enter) var(--ease-enter) both;
 }
 @keyframes drawer-in {
@@ -1577,12 +1593,15 @@ svg.i {
 .panel-center {
 	position: fixed;
 	top: 50%;
-	left: 50%;
+	/* レビュー I2 — 枠 (段 76) が覆い (75) より前にあるので、覆いは枠の間 (--frame-left
+	   〜 100vw - --frame-right) の中央に置く。960px 以下は 2 変数とも 0 になり、元の
+	   画面中央 (50%)と同じ式に戻る */
+	left: calc((var(--frame-left) + 100vw - var(--frame-right)) / 2);
 	transform: translate(-50%, -50%);
 	z-index: 75;
 	display: flex;
 	flex-direction: column;
-	width: min(680px, calc(100vw - 32px));
+	width: min(680px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));
 	max-height: calc(100dvh - var(--bar-clear) * 2);
 	padding: var(--sp-6);
 	border-radius: var(--r-l);
@@ -1590,18 +1609,18 @@ svg.i {
 	-webkit-backdrop-filter: var(--blur-sheet);
 	backdrop-filter: var(--blur-sheet);
 	box-shadow: var(--rim), var(--e3);
-	overflow-y: auto;
+	/* レビュー M9 — .drawer と同じ理由 (上のコメントを見よ) */
+	overflow: hidden;
 	animation: modal-in var(--d-enter) var(--ease-enter) both;
 }
 .panel-center.leave {
 	animation: modal-out var(--d-exit) var(--ease-exit) both;
 }
 /* カードから広がる/縮む間は Drawer.svelte 側の WAAPI が top/left/width/height を
-   直接動かすので、この scale アニメーションと競合させない (docs/research/card-expand.md) */
+   直接動かすので、この scale アニメーションと競合させない (docs/research/card-expand.md)。
+   レビュー M9 — .morph.leave 用の宣言は、詳細度が同じこの .morph の animation: none で
+   既に打ち消されており効いていなかったので消した */
 .panel-center.morph {
-	animation: none;
-}
-.panel-center.morph.leave {
 	animation: none;
 }
 .panel-center.morph > * {
@@ -1629,7 +1648,11 @@ svg.i {
 	-webkit-backdrop-filter: var(--blur-sheet);
 	backdrop-filter: var(--blur-sheet);
 	box-shadow: var(--rim), var(--e3);
-	overflow-y: auto;
+	/* レビュー M9 — 下の .sheet .modal-body が送り箱としてスクロールを持つので、本体は
+	   縮ませず隠す (.drawer/.panel-center と同じ形。以前はここが overflow-y: auto だったが、
+	   .list-row に flex: none を付けても .modal-body が block のままだと縮み止めが効かず、
+	   実質は本体のスクロールで支えていた) */
+	overflow: hidden;
 	animation: sheet-in var(--d-enter) var(--ease-enter) both;
 }
 @keyframes sheet-in {
@@ -1645,31 +1668,24 @@ svg.i {
 		transform: translateY(100%);
 	}
 }
-/* Task 11r 修正ラウンド 1 (Important 3) — .sheet は flex-direction: column の高さ固定 (50dvh)
-   な器で、.list-row は既定で flex-shrink: 1 (block の初期値)なので、11 項目 (56px x 11 =
-   616px)が 390x844 の 422px に収まらないとき、縮んで送るのではなく縮んで詰まっていた
-   (実測 27px、当たり判定 28px)。.sheet はもともと overflow-y: auto なので、行を縮ませずに
-   はみ出した分をそちらへ渡せば済む */
-.sheet .list-row {
-	flex: none;
-}
-/* 中央の承認パネルと右のドロワーは、題の行を留めて中身 (.modal-body) だけを送る。
-   枠ごと送っていたときは、承認カードが 2 枚でパネルの上限の高さを超えると、flex の
-   既定の縮みで実行済みの行が 22px に潰れて重なり、枠の高さで描かれる縁の線が中身と
+/* 中央の承認パネル・右のドロワー・下のシートは、題の行 (とつまみ)を留めて中身 (.modal-body)
+   だけを送る。枠ごと送っていたときは、承認カードが 2 枚でパネルの上限の高さを超えると、
+   flex の既定の縮みで実行済みの行が 22px に潰れて重なり、枠の高さで描かれる縁の線が中身と
    一緒に流れて途中に出ていた (1440x900 で実測、ユーザー指摘 2026-09-23)。
-   送り箱の中は縮ませず、はみ出した分は送る */
-.panel-center,
-.drawer {
-	overflow: hidden;
-}
+   送り箱の中は縮ませず、はみ出した分は送る。
+   レビュー M9 — Task 11r で .sheet .list-row に付けていた flex: none は、行が
+   .modal-body (block) の子でありこの箱の flex item ではないため効いていなかった。
+   .sheet も他の 2 面と同じ送り箱の形にまとめ、.modal-body > * の縮み止めに寄せる */
 .panel-center .modal-body,
-.drawer .modal-body {
+.drawer .modal-body,
+.sheet .modal-body {
 	display: flex;
 	flex-direction: column;
 	flex: 1;
 }
 .panel-center .modal-body > *,
-.drawer .modal-body > * {
+.drawer .modal-body > *,
+.sheet .modal-body > * {
 	flex: none;
 }
 /* Task 16 — 携帯を横向きにした高さでは 50dvh が 195px しかなく、つまみと見出しで埋まって
@@ -1692,12 +1708,13 @@ svg.i {
 .modal {
 	position: fixed;
 	top: 50%;
-	left: 50%;
+	/* レビュー I2 — .panel-center と同じ理由 (上のコメントを見よ) */
+	left: calc((var(--frame-left) + 100vw - var(--frame-right)) / 2);
 	transform: translate(-50%, -50%);
 	z-index: 75;
 	display: flex;
 	flex-direction: column;
-	width: min(560px, calc(100vw - 32px));
+	width: min(560px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));
 	max-height: calc(100dvh - var(--bar-clear) * 2);
 	padding: var(--sp-6);
 	border-radius: var(--r-l);
@@ -1709,7 +1726,7 @@ svg.i {
 	animation: modal-in var(--d-enter) var(--ease-enter) both;
 }
 .modal.sm {
-	width: min(400px, calc(100vw - 32px));
+	width: min(400px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));
 }
 /* 中身だけスクロールさせる。題と操作の行は箱に留めるので、行数が増えても
    主ボタンが画面外へ出ない (仕様 5.14)。Task 10m 修正で一時的に Modal.svelte の
@@ -1825,8 +1842,10 @@ svg.i {
    出す中身は直近の数件と全件への導線だけ (island.md「広がったときの中身」)。
    Task 10w (glass-scope.md 5 節) — ポップオーバーは Adopting Liquid Glass がガラスを持つと
    明記するので regular 変種を採る。枠 (.header.glass、76) から開くので枠より前の 77 に出す。
-   覆いの面 (drawer/sheet/modal 75) より前になるため、覆いが開いている間は板のガラスの
-   背後に覆いの canvas (71) が映らないことがある (ユーザー指示 2026-09-23) */
+   レビュー I5 — 板は覆いの面 (drawer/sheet/modal 75) より前の 77 なので、.overlay-chrome の
+   canvas (71) は板より後ろに回り、板の地には映らない。.select-menu と同じく overlayGlass の
+   tiers (src/lib/glass.ts の OVERLAY_TIERS) から外し、下の background/backdrop-filter で
+   自分の真後ろを直接ぼかす */
 .pill-panel {
 	z-index: 77;
 	display: flex;
@@ -1976,11 +1995,27 @@ svg.i {
 	.app.has-rail .chatbar {
 		right: calc(var(--rail-w) + 32px);
 	}
+	/* レビュー I2 — 覆いは Portal で <body> 直下に出るため .app.has-rail の子孫ではないが、
+	   :has() で連携の列の有無を <html> から見て、覆いの右の枠幅を連携の列のぶんに広げる */
+	:root:has(.app.has-rail) {
+		--frame-right: calc(var(--rail-w) + 32px);
+	}
 }
 
 /* components 2.2 — 960px: サイドナビをボトムナビに替える */
 @media (max-width: 960px) {
+	/* レビュー C1 — .chrome (枠のガラスの canvas) を 76 に上げたのは幅が広い側の話で、
+	   モバイルでは .header.solid/.bottomnav が段を上げていないため、canvas が面より前に
+	   出て文字とアイコンの上にぼかしが乗ってしまう。「モバイルは変えない」に合わせて
+	   元の重なり (50) に戻す */
+	.chrome {
+		z-index: 50;
+	}
 	:root {
+		/* レビュー I2 — モバイルはサイドナビ・連携の列が消えて枠が横に無いので、覆いを
+		   避ける幅も要らない */
+		--frame-left: 0px;
+		--frame-right: 0px;
 		/* 上端に貼り付く不透明な帯なので、浮かせるぶんの 16px が要らない */
 		--bar-clear: calc(var(--header-h) + var(--sp-4));
 		/* Task 11r 修正ラウンド 1 (Minor 1) — 「依頼バーの底」の式 (ボトムナビの高さ + セーフ
@@ -2024,6 +2059,12 @@ svg.i {
 		margin-inline: 0;
 		transform: none;
 		bottom: var(--chatbar-bottom);
+	}
+	/* レビュー M10 — .modal の max-height は --bar-clear (浮くピルの下端)を天井から 2 回
+	   引く式だが、モバイルの --bar-clear は帯の高さでピルの下端ではないため、天井が上へ
+	   ずれて縮みすぎていた。元の固定値 (帯の高さ 52px + 上下の余白 44px)に戻す */
+	.modal {
+		max-height: calc(100dvh - 96px);
 	}
 	/* components 3.7 — モバイルのトーストは上端いっぱい */
 	.toast {
@@ -2772,9 +2813,9 @@ section.tc .list-row:not(label):not(a):hover {
 /* Task 10c — オーブはガラスが屈折させる対象なので、ガラスの canvas より下に置く。
    canvas は要素の z-index: -1 の子なので、穴は -2 にする。0 のままだと canvas の上に出て、
    オーブが屈折もぼかしも受けずに鮮明に載る。
-   Task 10e — -2 を閉じ込めているのは .bento の isolation: isolate で、.app の z-index: 1 では
-   ない。.bento が積み重ねの文脈になるので、-2 は .bento の中で止まり、背景の色の塊
-   (.bg、根の z-index 0) より下へは抜けない */
+   Task 10e — -2 を閉じ込めているのは .bento の isolation: isolate。.bento が積み重ねの
+   文脈になるので、-2 は .bento の中で止まり、背景の色の塊 (.bg、根の z-index 0) より
+   下へは抜けない */
 .today .bento .hole {
 	position: absolute;
 	inset: 0;
@@ -2824,7 +2865,9 @@ section.tc .list-row:not(label):not(a):hover {
    狭い幅では画面からはみ出さないよう、既存のモーダルと同じ 16px の余白を残す */
 .modal.palette {
 	top: max(15vh, 96px);
-	width: min(640px, calc(100vw - 32px));
+	/* レビュー I2 — .panel-center と同じ理由。left/transform は .modal の中央寄せを
+	   継いでおり、ここでは幅の上限だけ枠のぶん詰める */
+	width: min(640px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));
 	max-height: calc(100dvh - max(15vh, 96px) - 24px);
 	padding: var(--sp-2);
 	border-radius: var(--r-m);
@@ -3135,7 +3178,9 @@ section.tc .list-row:not(label):not(a):hover {
 /* Task 10m — 上部バー右端の「デモの操作」から開くメニュー。中の「他のシナリオを試す」は
    入れ子のメニューで、仕様 11.4 の 8 件を出す。文言が長いので折り返させ、高さは行数に任せる。
    Task 10w (glass-scope.md 5 節) — メニューは Adopting Liquid Glass がガラスを持つと明記する
-   ので regular 変種を採る。z-index は .pill-panel と同じ理由で 77 に上げた */
+   ので regular 変種を採る。z-index は .pill-panel と同じ理由で 77 に上げた。
+   レビュー I5 — 板のガラスの描き方も .pill-panel と同じ (下の background/backdrop-filter を
+   自分で持つ。overlayGlass の対象外、src/lib/glass.ts の OVERLAY_TIERS の注記を見よ) */
 .demo-menu {
 	z-index: 77;
 	width: 220px;
@@ -3275,7 +3320,9 @@ section.tc .list-row:not(label):not(a):hover {
    .select-menu と .toast はここに含めない (src/lib/glass.ts の OVERLAY_TIERS の注記を見よ)。
    SelectField は常にモーダルの中で使うため、一覧は「このガラス化で透明にしたモーダル」の
    上に開き、canvas は一覧のさらに後ろ (モーダルの向こう側) に隠れて画面に出ない。
-   .select-menu だけは自分の CSS の backdrop-filter を持ち続ける (下の .select-menu を見よ) */
+   .select-menu だけは自分の CSS の backdrop-filter を持ち続ける (下の .select-menu を見よ)。
+   .pill-panel と .demo-menu も同じ理由でここに含めない (レビュー I5、src/lib/glass.ts の
+   OVERLAY_TIERS の注記を見よ) */
 :root [data-liquid-glass='webgl'],
 :root [data-liquid-glass='webgl'] .card,
 .chrome[data-liquid-glass='webgl'] ~ .sidebar,
@@ -3286,9 +3333,7 @@ section.tc .list-row:not(label):not(a):hover {
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .sheet,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .modal,
-body:has(> .overlay-chrome[data-liquid-glass='webgl']) .panel-center,
-body:has(> .overlay-chrome[data-liquid-glass='webgl']) .pill-panel,
-body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu {
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .panel-center {
 	background: none;
 	-webkit-backdrop-filter: none;
 	backdrop-filter: none;
@@ -3313,8 +3358,6 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer::before,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .sheet::before,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .modal::before,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .panel-center::before,
-body:has(> .overlay-chrome[data-liquid-glass='webgl']) .pill-panel::before,
-body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu::before,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .today-done .card::before {
 	content: '';
 	position: absolute;
@@ -3381,9 +3424,7 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .today-done .card::before
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer::after,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .sheet::after,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .modal::after,
-body:has(> .overlay-chrome[data-liquid-glass='webgl']) .panel-center::after,
-body:has(> .overlay-chrome[data-liquid-glass='webgl']) .pill-panel::after,
-body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu::after {
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .panel-center::after {
 	z-index: -1;
 }
 
