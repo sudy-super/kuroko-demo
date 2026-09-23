@@ -545,14 +545,11 @@ svg.i {
 	position: fixed;
 	top: var(--sp-4);
 	right: var(--sp-4);
-	width: max-content;
-	max-width: 560px;
+	max-width: calc(100vw - var(--sp-4) * 2);
 	border-radius: var(--r-pill);
-	/* max-content は既定では transition できないキーワード値なので、この面だけに
-	   allow-keywords を効かせて幅の変化を滑らかにする (Chromium 系のみ、他は瞬時に切り替わる。
-	   review-task-10n.md Minor 3 — :root に置くと文書全体に効いて影響範囲が読めなくなるので、
-	   width を遷移させるこの 1 か所に絞る) */
-	interpolate-size: allow-keywords;
+	/* 幅は Header.svelte が中身 (.hdr-inner) の自然な幅を測って px で渡す。
+	   max-content と interpolate-size では、中身が入れ替わったときに幅が跳んだ
+	   (指定値が変わらないので transition が走らない。実測で 486→725px が 0ms) */
 	transition: width var(--d-enter) var(--ease-out);
 	background: var(--glass-panel);
 	-webkit-backdrop-filter: var(--blur-m);
@@ -566,6 +563,36 @@ svg.i {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+/* 取り消し猶予の間、ピルの中に出す輪 + 文言 + 取り消す (ToastCountdown.svelte、
+   Toast.svelte と中身は共通)。.toast-msg 等は .toast に閉じたセレクタではないのでそのまま効くが、
+   .header は高さ固定 (52px) なので折り返すと欠ける。ここだけ 1 行に留める */
+.pill-countdown {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-3);
+	flex: none;
+}
+.pill-countdown .toast-msg {
+	white-space: nowrap;
+}
+/* ピルの中身。これの幅を Header.svelte が測ってピルに渡す。ピルが遷移の途中で狭くても
+   中身は縮まない (flex: none) ので、測った値は常に伸び切ったときの幅になる。
+   max-width はピルの上限 560px から左右の余白を引いた値。当たったら .hdr-date が縮む。
+   ピル自身の max-width は画面からはみ出さないための安全柵でしかない */
+.hdr-inner {
+	display: flex;
+	flex: none;
+	align-items: center;
+	gap: var(--sp-3);
+	max-width: calc(560px - var(--sp-4) * 2);
+}
+/* 上限の 560px は案内の並びに合わせた値で、文言が入るとアイコンの下へはみ出す。
+   猶予の間だけ上限を外し、ピルを左へ伸ばす (island.md「広がったときの中身」)。
+   上限はピルではなく中身に持たせる。ピルに持たせると、猶予が終わった瞬間に上限が
+   戻って幅が transition を経ずに跳ぶ */
+.header.glass:has(.pill-countdown) .hdr-inner {
+	max-width: calc(100vw - var(--sp-4) * 4);
 }
 /* Task 10w (glass-scope.md 1 節) — 携帯の上部バーは HIG Toolbars がガラスを持つと明記する
    部品。src/lib/glass.ts の CHROME_TIERS に加えたので、下は .header.glass と同じ扱いにする */

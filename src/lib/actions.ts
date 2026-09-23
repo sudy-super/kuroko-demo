@@ -18,7 +18,7 @@ import type {
 	Project
 } from './types';
 import { db, save, resetDb } from './store.svelte';
-import { toast, type ContextChip } from './ui.svelte';
+import { toast, dismissToast, type ContextChip } from './ui.svelte';
 import { nowIso, parse, fmtMDW, minutes, toHm, hm } from './dates';
 import {
 	addressOf,
@@ -116,6 +116,8 @@ export function undoApproval(id: string) {
 	a.status = 'pending';
 	a.sendingAt = undefined;
 	save();
+	// どこから取り消しても、残り時間を数えているトースト (デスクトップではピル) を閉じる
+	dismissToast();
 }
 
 export function editApproval(id: string, body: string) {

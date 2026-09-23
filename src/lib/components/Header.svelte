@@ -9,6 +9,7 @@
 	import DemoMenu from './DemoMenu.svelte';
 	import PillPanel from './PillPanel.svelte';
 	import ApprovalIcon from './ApprovalIcon.svelte';
+	import ToastCountdown from './ToastCountdown.svelte';
 
 	/* 仕様 11.3 — 節ごとの見出しと手順。Task 10n で GuideCard.svelte から移した。
 	   案内のために本文の領域を使わない (ユーザー裁定 2026-09-16)ので、見出しはピルの中に、
@@ -48,6 +49,27 @@
 	/* island.md「常時見せる情報」— compact に残すのは一目で分かる最小限だけ。
 	   案内の最中は段階の表示を足すぶん、日付を短い形に畳んで幅を 560px に収める */
 	const shortDate = $derived(media.mobile || guideOn);
+
+	/* 取り消しの猶予を持つトーストは、デスクトップではピルの中に出す (Toast.svelte は出さない)。
+	   猶予の間は輪 + 文言 + 取り消す、切れたあとは文言だけを、トーストが消えるまで出す
+	   (components 3.7「5 秒が過ぎても中身は消えない」)。その間は日付・利用者名・案内の段階札を
+	   畳んで幅を空ける (island.md「広がったときの中身」— 1 度に 1 項目)。
+	   時計・承認待ちの件数バッジ・アイコン 3 つは island.md「常時見せる情報」なので残す */
+	const counting = $derived(!media.mobile && !!ui.toast?.island && !ui.toast.leaving);
+
+	/* 幅は max-content のままだと、中身が入れ替わった瞬間に transition を経ずに跳ぶ
+	   (interpolate-size は width の指定値が変わったときにしか効かない。実測で 486→725px が 0ms)。
+	   中身の自然な幅を測って px で渡し、.header.glass の transition に伸び縮みを追わせる
+	   (island.md「動きの時間と緩急」)。測るのは中身の側 (.hdr-inner) なので、
+	   ピル自身の幅が遷移中でも正しい値が取れる */
+	let inner: HTMLElement | undefined = $state();
+	let pillW = $state<number>();
+	$effect(() => {
+		if (!inner) return;
+		const ro = new ResizeObserver(([e]) => (pillW = e.borderBoxSize[0].inlineSize));
+		ro.observe(inner);
+		return () => ro.disconnect();
+	});
 
 	// 1 分ごとに時計を進める
 	$effect(() => {
@@ -129,13 +151,15 @@
 {/snippet}
 
 {#snippet bar()}
-	<span class="num hdr-date">{shortDate ? fmtMDW(now) : fmtYMDW(now)}</span>
+	{#if !counting}
+		<span class="num hdr-date">{shortDate ? fmtMDW(now) : fmtYMDW(now)}</span>
+	{/if}
 	<!-- island.md「常時見せる情報」で時計は畳む対象に無い (brief 3 項も時刻を常時表示に挙げる)。
 	     デスクトップは案内中も時計を残し、代わりに利用者名を畳む (review-task-10n.md Minor 2)。
 	     モバイルは 390px 幅にハンバーガー・アイコン 3 個まで並ぶので、案内中に段階の札を出す
 	     ぶんは時計を畳んだままにする (この幅は Minor 2 の指摘の対象外、既存のまま) -->
 	{#if !(guideOn && media.mobile)}<span class="num muted">{hm(now)}</span>{/if}
-	{#if guideOn}
+	{#if guideOn && !counting}
 		<!-- 仕様 11.3 の案内。段階が進んでも入れ物は作り直さず、中の文字だけが変わる
 		     (island.md「動きの時間と緩急」の「既存の要素を保ったまま動かす」)。
 		     ピルの幅の変化は .header.glass の transition が 300ms で追う -->
@@ -158,8 +182,16 @@
 			</button>
 		</PillPanel>
 	{/if}
+	{#if counting}
+		<!-- id で key し、猶予が改めて始まるたびに輪の CSS アニメーションを最初から動かす -->
+		{#key ui.toast?.id}
+			<div class="pill-countdown" role="status" aria-live="polite" style:--dur="{ui.toast?.seconds}s">
+				<ToastCountdown />
+			</div>
+		{/key}
+	{/if}
 	<div class="row" style="margin-left: auto; gap: var(--sp-3)">
-		{#if !media.mobile && !guideOn}<span class="muted">{db.user.name}</span>{/if}
+		{#if !media.mobile && !guideOn && !counting}<span class="muted">{db.user.name}</span>{/if}
 		{@render tools()}
 	</div>
 {/snippet}
@@ -175,5 +207,7 @@
 	<!-- Task 10n — 画面幅いっぱいの帯をやめ、右上に浮く小さなピルにする (island.md の結論、
 	     ユーザー裁定 2026-09-16: 中央ではなく右上)。高さは操作領域の下限を割らない 52px の
 	     まま保ち、取り戻すのは帯が確保していた本文の上の余白のほう -->
-	<header class="header glass">{@render bar()}</header>
+	<header class="header glass" style:width={pillW ? `calc(${pillW}px + var(--sp-4) * 2)` : undefined}>
+		<div class="hdr-inner" bind:this={inner}>{@render bar()}</div>
+	</header>
 {/if}

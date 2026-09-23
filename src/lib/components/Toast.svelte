@@ -1,8 +1,15 @@
 <script lang="ts">
-	import { ui, dismissToast } from '$lib/ui.svelte';
+	import { ui } from '$lib/ui.svelte';
+	import { media } from '$lib/media.svelte';
+	import ToastCountdown from './ToastCountdown.svelte';
+
+	/* 取り消しの猶予を持つトーストは、デスクトップでは上部バーのピルの中に出す (Header.svelte、
+	   island.md)。同じ内容を 2 か所に出さない。モバイルの上部バーは画面幅いっぱいの帯で
+	   伸ばす余地が無いので、今までどおりここに出す */
+	const hideForIsland = $derived(!media.mobile && !!ui.toast?.island);
 </script>
 
-{#if ui.toast}
+{#if ui.toast && !hideForIsland}
 	<!-- id で key し、取り消し猶予が改めて始まるたびに CSS アニメーションを最初から動かす -->
 	{#key ui.toast.id}
 		<div
@@ -12,19 +19,7 @@
 			aria-live="polite"
 			style={ui.toast.seconds ? `--dur:${ui.toast.seconds}s` : undefined}
 		>
-			{#if ui.toast.secondsLeft !== undefined}
-				<span class="toast-ring num" aria-hidden="true">{ui.toast.secondsLeft}</span>
-			{/if}
-			<span class="toast-msg">{ui.toast.msg}</span>
-			{#if ui.toast.undo}
-				<button
-					class="toast-undo"
-					onclick={() => {
-						ui.toast?.undo?.();
-						dismissToast();
-					}}>取り消す</button
-				>
-			{/if}
+			<ToastCountdown />
 		</div>
 	{/key}
 {/if}

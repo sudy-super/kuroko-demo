@@ -6,6 +6,9 @@ export type Toast = {
 	/** 取り消しの猶予秒数。CSS アニメーションの長さに使うので、カウントダウン中も変えない */
 	seconds?: number;
 	secondsLeft?: number;
+	/** 取り消しの猶予を持って始まったトースト。猶予が切れたあとも立てたままにし、
+	    デスクトップでは上部バーのピルの中で本文を出し続ける (Header.svelte) */
+	island?: boolean;
 	leaving?: boolean;
 };
 
@@ -65,7 +68,7 @@ function closeToast(id: number) {
  */
 export function toast(msg: string, opts: { undo?: () => void; seconds?: number } = {}) {
 	if (timer) clearInterval(timer);
-	const t: Toast = { id: ++seq, msg, undo: opts.undo, seconds: opts.seconds, secondsLeft: opts.seconds };
+	const t: Toast = { id: ++seq, msg, undo: opts.undo, seconds: opts.seconds, secondsLeft: opts.seconds, island: !!opts.seconds };
 	ui.toast = t;
 	if (!opts.seconds) return;
 	let left = opts.seconds;
@@ -78,7 +81,11 @@ export function toast(msg: string, opts: { undo?: () => void; seconds?: number }
 		if (left <= 0) {
 			clearInterval(timer!);
 			// 取り消しボタンとゲージだけを引っ込める。本文は消さない (components 3.7)
-			ui.toast = { id: t.id, msg: t.msg };
+			ui.toast = { id: t.id, msg: t.msg, island: true };
+			/* 本文は取り消しなしのトーストの表示時間 (components 3.7 の 4000ms) だけ残して閉じる。
+			   閉じないとデスクトップのピルが伸びたまま戻らない。取り消しは作業履歴からできるので、
+			   消えても時間制限にはならない (同 3.7、WCAG 2.2.1) */
+			setTimeout(() => closeToast(t.id), 4000);
 		} else {
 			ui.toast.secondsLeft = left;
 		}
