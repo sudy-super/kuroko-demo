@@ -23,7 +23,9 @@
 	);
 </script>
 
-<Drawer open={ui.approvalDrawer} title="承認待ち" onclose={() => (ui.approvalDrawer = false)}>
+<!-- 画面中央寄りの固定パネル (右からのドロワーではなく)。上部バーのピルと重ならないようにするため
+     (docs/research/card-expand.md「周囲の扱い」)。作業履歴の Drawer は既定 (side) のまま変えない -->
+<Drawer open={ui.approvalDrawer} title="承認待ち" onclose={() => (ui.approvalDrawer = false)} variant="center">
 	{#if sendingCount}
 		<p class="ap-count" aria-live="polite">承認待ち {pendingCount} 件 ・ 送信中 {sendingCount} 件</p>
 	{/if}

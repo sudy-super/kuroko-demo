@@ -11,13 +11,17 @@
 		title,
 		onclose,
 		children,
-		footer
+		footer,
+		variant = 'side'
 	}: {
 		open: boolean;
 		title: string;
 		onclose: () => void;
 		children: Snippet;
 		footer?: Snippet;
+		/** 'side' は右からのドロワー (既定、ActivityDrawer が使う)。'center' は画面中央寄りの
+		    固定パネル (ApprovalDrawer だけが使う。docs/research/card-expand.md「拡大後の大きさ」) */
+		variant?: 'side' | 'center';
 	} = $props();
 
 	/** app.css の --d-exit。退場の 200 ミリ秒を見せてから中身を外す */
@@ -95,7 +99,11 @@
 		<Dialog.Content forceMount>
 			{#snippet child({ props })}
 				{#if render}
-					<div {...props} class={media.mobile ? 'sheet' : 'drawer'} class:leave={leaving}>
+					<div
+						{...props}
+						class={media.mobile ? 'sheet' : variant === 'center' ? 'panel-center' : 'drawer'}
+						class:leave={leaving}
+					>
 						{#if media.mobile}<div class="sheet-handle"></div>{/if}
 						<div class="row" style="justify-content: space-between; margin-bottom: var(--sp-4)">
 							<Dialog.Title>

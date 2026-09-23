@@ -192,7 +192,9 @@ export const chromeGlass = (node: Element) =>
    targets に残るよう幅 0 の印を混ぜておく。幅 0 なので描画の対象からは
    (buildElements 側の `width > 0 && height > 0` の絞り込みで) 除かれる */
 const OVERLAY_TIERS = {
-	'.drawer, .sheet, .modal, .pill-panel, .demo-menu': SHEET.tint as number,
+	/* .panel-center — 承認待ちの中央寄り固定パネル (ApprovalDrawer だけが使う variant="center")。
+	   .modal と同じ SHEET の塗り・ぼかしをそのまま使う */
+	'.drawer, .sheet, .modal, .panel-center, .pill-panel, .demo-menu': SHEET.tint as number,
 	/* Task 10w 修正ラウンド 2 (review-glass-batch.md I1) — トーストはここに入れない。
 	   .select-menu と同じ理由で、この層の canvas はトースト (z-index 90)より後ろに来るうえ、
 	   トースト自身が濃紺の塗りを持つので、canvas が描いた絵は一度も画面に出ない

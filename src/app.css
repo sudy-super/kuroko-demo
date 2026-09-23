@@ -1535,6 +1535,34 @@ svg.i {
 		transform: translateX(100%);
 	}
 }
+/* 承認待ちだけの中央寄り固定パネル (docs/research/card-expand.md「拡大後の大きさ」「周囲の扱い」)。
+   .modal と同じく中央に浮くが、幅は承認カードの内容に合わせて広め (560〜720px)。
+   max-height は --bar-clear (右上のピルの下端 + 8px) を天井から引き、ピルの領域と絶対に
+   重ならないようにする。M3 Transitions「その場に浮かぶ Dialog は高さ方向のスライドを使わず
+   短いフェードで済ませる」に沿い、drawer-in/out のスライドではなく modal-in/out と同じ
+   フェード + scale を使う (.modal のアニメーションを流用、名前は付け替えない) */
+.panel-center {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 75;
+	display: flex;
+	flex-direction: column;
+	width: min(680px, calc(100vw - 32px));
+	max-height: calc(100dvh - var(--bar-clear) * 2);
+	padding: var(--sp-6);
+	border-radius: var(--r-l);
+	background: var(--glass-sheet);
+	-webkit-backdrop-filter: var(--blur-sheet);
+	backdrop-filter: var(--blur-sheet);
+	box-shadow: var(--rim), var(--e3);
+	overflow-y: auto;
+	animation: modal-in var(--d-enter) var(--ease-enter) both;
+}
+.panel-center.leave {
+	animation: modal-out var(--d-exit) var(--ease-exit) both;
+}
 .sheet {
 	position: fixed;
 	left: 0;
@@ -1848,6 +1876,7 @@ svg.i {
 	.drawer,
 	.sheet,
 	.modal,
+	.panel-center,
 	.pill-panel,
 	.demo-menu,
 	.select-menu,
@@ -2000,6 +2029,7 @@ svg.i {
 	.drawer,
 	.sheet,
 	.modal,
+	.panel-center,
 	.scrim {
 		animation: fade-in 120ms linear both !important;
 	}
@@ -2007,6 +2037,7 @@ svg.i {
 	.drawer.leave,
 	.sheet.leave,
 	.modal.leave,
+	.panel-center.leave,
 	.scrim.leave {
 		animation: fade-out 120ms linear both !important;
 	}
@@ -3189,6 +3220,7 @@ section.tc .list-row:not(label):not(a):hover {
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .sheet,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .modal,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .panel-center,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .pill-panel,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu {
 	background: none;
@@ -3214,6 +3246,7 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu {
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer::before,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .sheet::before,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .modal::before,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .panel-center::before,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .pill-panel::before,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu::before,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .today-done .card::before {
@@ -3254,6 +3287,7 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .today-done .card::before
 .drawer::after,
 .sheet::after,
 .modal::after,
+.panel-center::after,
 .pill-panel::after,
 .demo-menu::after,
 .select-menu::after,
@@ -3281,6 +3315,7 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .today-done .card::before
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer::after,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .sheet::after,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .modal::after,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .panel-center::after,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .pill-panel::after,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .demo-menu::after {
 	z-index: -1;
