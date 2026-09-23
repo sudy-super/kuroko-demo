@@ -38,6 +38,7 @@ import { ASK_PERSON, reply, route } from './kuroko/route';
 import { handleMention } from './kuroko/line';
 import { goto } from '$app/navigation';
 import { integrations } from './integrations';
+import { resetLayout } from './todayLayout.svelte';
 
 export const SEND_DELAY_MS = 5000;
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -581,6 +582,8 @@ export function resetDemo() {
 	for (const t of timers.values()) clearTimeout(t);
 	timers.clear();
 	resetDb();
+	// Today のカードの配置はデモのデータとは別の鍵に置いているので、ここで一緒に消す (docs/research/card-drag.md)
+	resetLayout();
 }
 // 接続直後は案内を出さない。案内は上部バーの「デモの操作」のメニューか ⌘K から始める
 export function markStarted() {

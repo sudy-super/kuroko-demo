@@ -36,7 +36,10 @@ export const ui = $state({
 	/** デモをリセットの確かめ。上部バーのメニューと ⌘K の両方から立てる (Task 10m) */
 	demoReset: false,
 	context: null as ContextChip | null,
-	voice: false
+	voice: false,
+	/** Today の環状配置が出ている間だけ立つ。立っている間の音声は全画面の覆いを出さず、
+	    Today の上でカードを退かせて聞く (today/+page.svelte、docs/research/voice-orb.md) */
+	voiceHere: false
 });
 
 /* 上部バーの板 (PillPanel) と「デモの操作」のメニュー (DemoMenu) は 1 つずつしか開かない。

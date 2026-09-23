@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { MediaQuery } from 'svelte/reactivity';
+	import { untrack } from 'svelte';
+	import { Spring } from 'svelte/motion';
 	import { innerWidth } from 'svelte/reactivity/window';
 	import { fluid } from '$lib/fluid';
 	import { db } from '$lib/store.svelte';
@@ -26,6 +28,26 @@
 	import RiskIcon from '$lib/components/RiskIcon.svelte';
 	import DoneScreen from '$lib/components/DoneScreen.svelte';
 	import { glass, CARD, orbBackdrop } from '$lib/glass';
+	import Icon from '$lib/components/Icon.svelte';
+	import {
+		hearing,
+		openMeter,
+		smoothLevel,
+		ORB_GROW,
+		ORB_PULSE_MIN,
+		ORB_PULSE_MAX
+	} from '$lib/voice.svelte';
+	import {
+		layout,
+		saveLayout,
+		resetLayout,
+		orbPush,
+		rubber,
+		settle,
+		shift,
+		type Box,
+		type Pt
+	} from '$lib/todayLayout.svelte';
 
 	const count = $derived(todayCount(db));
 	const items = $derived(todayItems(db));
@@ -74,20 +96,268 @@
 	   同じ理由で 'auto' backdrop から除外される) */
 	let doneOrbCanvas: HTMLCanvasElement | null = $state(null);
 
+	/* 1101px 以上は環状配置 (app.css)。音声をその場で聞くのとカードのドラッグはこの幅だけ */
+	const ring = new MediaQuery('(min-width: 1101px)');
+	const reduced = new MediaQuery('(prefers-reduced-motion: reduce)');
+	const here = $derived(ring.current && !narrow.current && count > 0);
+
+	/* ---- 音声 (docs/research/voice-orb.md) ----
+	   環状配置の Today では全画面の覆い (VoiceOverlay) を出さず、カードを画面外へ退かせ、
+	   オーブを大きくしてその場で聞く。操作は依頼バーの位置に出る (KurokoBar.svelte) */
+	$effect(() => {
+		ui.voiceHere = here;
+		// 環状配置でなくなったら (窓を狭めた、Today を離れた) その場の聞き取りは閉じる
+		return () => {
+			if (ui.voiceHere) ui.voice = false;
+			ui.voiceHere = false;
+		};
+	});
+	const voicing = $derived(ui.voice && here);
+
+	/* 描く大きさは聞いている間の最大 (基準 1.3 x 声 1.08) にしておき、外側の箱の scale を
+	   1 以下で使う。canvas を 1 より大きく引き伸ばすとぼやけるため (voice-orb.md の実装の注意) */
+	const drawSize = $derived(orbSize * ORB_GROW * ORB_PULSE_MAX);
+	const baseScale = $derived(orbSize / drawSize);
+	/** 声の大きさ (0〜1、平滑化済み) */
+	let level = $state(0);
+	/** 画面外へ退くときの各カードの移動量 */
+	let leave: Record<string, Pt> = $state({});
+	/** 状態の文言を置く横の位置 (オーブの中心) */
+	let voiceX = $state(0);
+
+	$effect(() => {
+		if (!voicing) return;
+		untrack(() => {
+			hearing.start();
+			leave = retreat();
+		});
+		let meter: Awaited<ReturnType<typeof openMeter>> = null;
+		let dead = false;
+		// 許可が無い・取れないときは null のまま。文字が増えるたびに脈打つ形で代える
+		openMeter().then((m) => (dead ? m?.close() : (meter = m)));
+		let last = performance.now();
+		let seen = 0;
+		let v = 0;
+		let raf = requestAnimationFrame(function tick(now) {
+			let target = 0;
+			if (hearing.live && meter) target = meter.read();
+			else if (hearing.heard.length > seen) v = Math.max(v, 0.6);
+			seen = hearing.heard.length;
+			v = smoothLevel(v, target, now - last);
+			last = now;
+			level = v;
+			raf = requestAnimationFrame(tick);
+		});
+		return () => {
+			dead = true;
+			cancelAnimationFrame(raf);
+			meter?.close();
+			hearing.stop();
+			level = 0;
+		};
+	});
+
+	/* 各カードを「オーブの中心 → カードの中心」の向きに、画面の外へ出るまで動かす量 */
+	function retreat() {
+		const o = bento!.getBoundingClientRect();
+		const cx = o.left + o.width / 2;
+		const cy = o.top + o.height / 2;
+		voiceX = cx;
+		const out: Record<string, Pt> = {};
+		for (const c of bento!.querySelectorAll<HTMLElement>(':scope > .card')) {
+			const b = c.getBoundingClientRect();
+			const d = Math.hypot(b.left + b.width / 2 - cx, b.top + b.height / 2 - cy) || 1;
+			const dx = (b.left + b.width / 2 - cx) / d;
+			const dy = (b.top + b.height / 2 - cy) / d;
+			// 横か縦のどちらかで画面の外に出れば足りる。影のぶん 32px 余分に出す
+			const need = (lo: number, hi: number, dir: number, max: number) =>
+				dir > 0 ? (max - lo + 32) / dir : dir < 0 ? (-hi - 32) / dir : Infinity;
+			const t = Math.min(
+				need(b.left, b.right, dx, window.innerWidth),
+				need(b.top, b.bottom, dy, window.innerHeight)
+			);
+			out[c.dataset.card!] = { x: dx * t, y: dy * t };
+		}
+		return out;
+	}
+
+	function onKey(e: KeyboardEvent) {
+		if (voicing && e.key === 'Escape') ui.voice = false;
+	}
+
+	/* ---- カードのドラッグ (docs/research/card-drag.md) ----
+	   キーボードでの代わりの操作はデモでは作らない。WCAG 2.2 の 2.5.7 (AA、ドラッグしない
+	   1 点の操作での代わり) は満たさない判断。既定の配置で情報も機能も失われないため */
+	let bento: HTMLDivElement | undefined = $state();
+	const CARDS = ['approvals', 'reply', 'meeting', 'events', 'tasks', 'sent'];
+	const ZERO: Pt = { x: 0, y: 0 };
+	/* SwiftUI の spring() の既定 (response 0.5 秒、減衰比 0.825) を Svelte の Spring に換算した値 */
+	const springs = Object.fromEntries(
+		CARDS.map((k) => [k, new Spring<Pt>(ZERO, { stiffness: 0.044, damping: 0.35 })])
+	);
+	/** 8px 動くまでは記録だけ (started: false)。押した扱いと区別する */
+	let drag: {
+		card: string;
+		el: HTMLElement;
+		id: number;
+		sx: number;
+		sy: number;
+		from: Pt;
+		raw: Pt;
+		started: boolean;
+	} | null = $state(null);
+	/** ドラッグ中に見せる位置 (ラバーバンド込み) */
+	let shown: Pt | null = $state(null);
+
+	/* .bento の左上を原点にした、カードの既定の矩形 (translate は offset* に効かない) と制約 */
+	function field(card: string) {
+		const b = bento!;
+		const bases: Record<string, Box> = {};
+		for (const c of b.querySelectorAll<HTMLElement>(':scope > .card'))
+			bases[c.dataset.card!] = { x: c.offsetLeft, y: c.offsetTop, w: c.offsetWidth, h: c.offsetHeight };
+		return {
+			base: bases[card],
+			f: {
+				orb: { x: b.clientWidth / 2, y: b.clientHeight / 2 },
+				// 球の直径は箱の 48% (shader.ts の R0)
+				r: (orbSize * 0.48) / 2,
+				box: { x: 0, y: 0, w: b.clientWidth, h: b.clientHeight },
+				others: Object.entries(bases)
+					.filter(([k]) => k !== card)
+					.map(([k, box]) => shift(box, springs[k].target))
+			}
+		};
+	}
+
+	/* 保存したずれは書き換えず、表示のたびに制約をかけ直す (窓の大きさが変わったときも) */
+	function relayout(animate = false) {
+		if (!bento || !here) return;
+		for (const k of CARDS) {
+			const want = layout[k];
+			const { base, f } = field(k);
+			const to = want && base ? (settle(base, want, f) ?? ZERO) : ZERO;
+			springs[k].set(to, { instant: !animate || reduced.current });
+		}
+	}
+	/* 窓の大きさ、カードの出入りと高さの変化で既定の位置が変わる */
+	function watchLayout(node: HTMLElement) {
+		const ro = new ResizeObserver(() => relayout());
+		ro.observe(node);
+		const mo = new MutationObserver(() => {
+			for (const c of node.querySelectorAll(':scope > .card')) ro.observe(c);
+		});
+		mo.observe(node, { childList: true });
+		for (const c of node.querySelectorAll(':scope > .card')) ro.observe(c);
+		return () => {
+			ro.disconnect();
+			mo.disconnect();
+		};
+	}
+
+	function onDown(e: PointerEvent) {
+		const el = (e.target as Element).closest<HTMLElement>('.bento > .card');
+		if (!el || !here || voicing || e.button !== 0) return;
+		const from = springs[el.dataset.card!].target;
+		drag = { card: el.dataset.card!, el, id: e.pointerId, sx: e.clientX, sy: e.clientY, from, raw: from, started: false };
+	}
+	function onMove(e: PointerEvent) {
+		if (!drag || e.pointerId !== drag.id) return;
+		const dx = e.clientX - drag.sx;
+		const dy = e.clientY - drag.sy;
+		if (!drag.started) {
+			if (Math.hypot(dx, dy) < 8) return;
+			drag.started = true;
+			drag.el.setPointerCapture(drag.id);
+		}
+		// つかんだ点を保ったままポインタに 1 対 1 で付け、球の禁止域の中だけ抵抗を付ける
+		drag.raw = { x: drag.from.x + dx, y: drag.from.y + dy };
+		const { base, f } = field(drag.card);
+		const p = rubber(shift(base, drag.raw), f.orb, f.r);
+		shown = { x: drag.raw.x + p.x, y: drag.raw.y + p.y };
+	}
+	function onUp(e: PointerEvent) {
+		if (!drag || e.pointerId !== drag.id) return;
+		const d = drag;
+		drag = null;
+		if (!d.started) return;
+		if (e.type === 'pointerup') {
+			// ドラッグの直後の click (承認パネルを開く、リンクへ移る、ToDo を切り替える) を 1 回だけ止める
+			const stop = (ev: Event) => {
+				ev.preventDefault();
+				ev.stopPropagation();
+			};
+			d.el.addEventListener('click', stop, { capture: true, once: true });
+			// click が来ないまま (カードの外で離した) 残ると、次の本物の押下を食べてしまう
+			setTimeout(() => d.el.removeEventListener('click', stop, { capture: true }));
+		}
+		const { base, f } = field(d.card);
+		const to = settle(base, d.raw, f) ?? d.from;
+		if (Math.hypot(to.x, to.y) < 0.5) delete layout[d.card];
+		else layout[d.card] = to;
+		saveLayout();
+		const sp = springs[d.card];
+		sp.set(shown ?? d.from, { instant: true });
+		shown = null;
+		// 動きを減らす設定では、押し戻しだけ即座に置く (追従は利用者自身の操作の表示なので残す)
+		sp.set(to, { instant: reduced.current });
+	}
+	/* ばねで戻る途中も球を避ける。置き場所が球の向こう側だと、まっすぐ戻る道が球の上を
+	   横切るため、途中の位置も球の縁の外へ押し出す (止まった位置では押し出す量は 0) */
+	function repel(k: string, o: Pt): Pt {
+		if (!bento || (o.x === 0 && o.y === 0)) return o;
+		const { base, f } = field(k);
+		if (!base) return o;
+		const p = orbPush(shift(base, o), f.orb, f.r);
+		return { x: o.x + p.x, y: o.y + p.y };
+	}
+	const lifted = (k: string) => !!drag?.started && drag.card === k;
+	/* ドラッグのずれは translate、音声で退く分は transform に分けて持つ。transform の
+	   transition だけが退き・戻りの動きになり、利用者が置いた位置はそのまま残る */
+	const cardAttrs = (k: string) => {
+		// 環状配置でない幅ではずれを当てない (段組みの中で置いた位置は意味を持たない)
+		const o = !here ? ZERO : lifted(k) && shown ? shown : repel(k, springs[k].current);
+		const away = voicing && !reduced.current ? leave[k] : undefined;
+		return {
+			inert: voicing,
+			// class は TodayCard 自身の "card tc" を上書きしてしまうので、状態は data 属性で渡す
+			'data-lifted': lifted(k) || undefined,
+			'data-away': voicing || undefined,
+			style: `translate: ${o.x}px ${o.y}px;${away ? ` transform: translate(${away.x}px, ${away.y}px);` : ''}`
+		};
+	};
+	const moved = $derived(Object.keys(layout).length > 0);
+
 	const meetingHead = (m: NonNullable<typeof nm>) =>
 		`次の会議 ${rel(parse(m.event.date))} ${m.event.start} ${m.meeting.title}`;
 </script>
 
 <svelte:head><title>Today — KUROKO AI</title></svelte:head>
+<svelte:window onkeydown={onKey} />
 
 <div class="today">
 	<!-- Task 10m — この画面にボタンは 1 つも置かない。「予定」「ToDo」の追加は ⌘K パレットと
 	     各画面の追加ボタンへ、「KUROKO に頼む」は下端の依頼バーそのもの、デモの操作
 	     (開始 / 他のシナリオ / リセット) は上部バー右端のメニューと ⌘K へ移した (仕様 5.1 の裁定) -->
-	<header class="today-head">
+	<header class="today-head" inert={voicing}>
 		<h1 class="today-count">
 			<a href="#items">今日やること <span class="num">{count}</span> 件</a>
 		</h1>
+		<!-- ずれているカードが 1 枚でもあるときだけ出す (docs/research/card-drag.md)。
+		     記号で表せるので文字は aria-label に置く -->
+		{#if moved && here}
+			<button
+				type="button"
+				class="btn text sm layout-reset"
+				title="配置を元に戻す"
+				aria-label="配置を元に戻す"
+				onclick={() => {
+					resetLayout();
+					relayout(true);
+				}}
+			>
+				<Icon name="ic-undo" size={20} />
+			</button>
+		{/if}
 	</header>
 
 	<div class="today-items" id="items">
@@ -116,8 +386,18 @@
 			     ようにした。重みは 2 枚目の上の余白をいちばん広く取ることで付ける
 			     (app.css の .today .bento > .card[data-card]、Task 10t 修正ラウンド 2 で
 			     :nth-child から data-card に変えた) -->
+			<!-- ドラッグの押下はカードごとではなく入れ物でまとめて受ける (押下の役割は各カード自身が持つ) -->
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div
 				class="bento"
+				class:voicing
+				style="--orb: {orbSize}px"
+				bind:this={bento}
+				onpointerdown={onDown}
+				onpointermove={onMove}
+				onpointerup={onUp}
+				onpointercancel={onUp}
+				{@attach watchLayout}
 				{@attach glass({
 					...CARD,
 					targets: '.card',
@@ -127,6 +407,7 @@
 				{#if ap.length}
 					<TodayCard
 						card="approvals"
+						{...cardAttrs('approvals')}
 						title="承認待ち {ap.length} 件"
 						icon="ic-check-c"
 						onclick={(e) => {
@@ -154,6 +435,7 @@
 
 				<TodayCard
 					card="reply"
+						{...cardAttrs('reply')}
 					title="返信が必要な連絡 {rp.length} 件"
 					icon="ic-mail"
 					href={rp[0] ? `/inbox?t=${rp[0].id}` : '/inbox'}
@@ -176,12 +458,14 @@
 				</TodayCard>
 
 				{#if nm}
-					<TodayCard card="meeting" title={meetingHead(nm)} icon="ic-bell" href="/meetings/{nm.meeting.id}">
+					<TodayCard card="meeting"
+						{...cardAttrs('meeting')} title={meetingHead(nm)} icon="ic-bell" href="/meetings/{nm.meeting.id}">
 						<p>{nm.meeting.briefRead ? 'Brief 確認済み' : 'Brief が届いています'}</p>
 					</TodayCard>
 				{/if}
 
-				<TodayCard card="events" title="今日の予定 {events.length} 件" icon="ic-cal" href="/calendar">
+				<TodayCard card="events"
+						{...cardAttrs('events')} title="今日の予定 {events.length} 件" icon="ic-cal" href="/calendar">
 					{#each events.slice(0, 3) as e (e.id)}
 						<div class="list-row">
 							<span class="num">{e.start}</span>
@@ -192,7 +476,8 @@
 					{#if !events.length}<p class="muted">今日の予定はありません</p>{/if}
 				</TodayCard>
 
-				<TodayCard card="tasks" title="今日の ToDo {tasks.length} 件" icon="ic-todo">
+				<TodayCard card="tasks"
+						{...cardAttrs('tasks')} title="今日の ToDo {tasks.length} 件" icon="ic-todo">
 					{#each tasks.slice(0, taskRows) as t (t.id)}
 						<label class="list-row">
 							<!-- todayTasks は未完了だけを返すので checked は常に false。式にしない -->
@@ -218,6 +503,7 @@
 					     ので削る。題名にすでに件数があるので情報は減らない -->
 					<TodayCard
 						card="sent"
+						{...cardAttrs('sent')}
 						title="日程調整の返信待ち {sent.length} 件"
 						icon="ic-clock"
 						href="/schedule/{sent[0].token}"
@@ -239,8 +525,35 @@
 				<!-- オーブは左右の列の間に置く。カードより後ろの層 (z-index -2)なので、
 				     カードのガラスの縁が破片を曲げる -->
 				{#if !narrow.current}
-					<div class="hole" aria-hidden="true">
-						<Orb size={orbSize} onCanvas={(c) => (holeOrbCanvas = c)} />
+					<!-- 大きさは外側 2 段の scale で変える。.hole は基準 (普段と聞いている間)、.voice-pulse は声。
+					     Orb の size を毎フレーム変えると描画面を作り直すため (voice-orb.md の実装の注意) -->
+					<div
+						class="hole"
+						aria-hidden="true"
+						style:scale={voicing && !reduced.current ? baseScale * ORB_GROW : baseScale}
+					>
+						<div
+							class="voice-pulse"
+							style:scale={voicing && !reduced.current && !hearing.thinking
+								? ORB_PULSE_MIN + (ORB_PULSE_MAX - ORB_PULSE_MIN) * level
+								: 1}
+							style:opacity={voicing && reduced.current ? 0.85 + 0.15 * level : 1}
+						>
+							<Orb size={drawSize} onCanvas={(c) => (holeOrbCanvas = c)} />
+						</div>
+					</div>
+				{/if}
+				{#if voicing}
+					<!-- 途中の聞き取り結果は読み上げに流さない。状態の文言と、聞き取りが終わった時点の
+					     文字だけを role="status" で伝える (voice-orb.md の読み上げとキーボード) -->
+					<div class="voice-here" style:left="{voiceX}px">
+						<p class="voice-state" role="status">
+							{hearing.thinking ? '考えています…' : hearing.live ? '聞いています…' : '聞き取りました'}
+							{#if !hearing.live && !hearing.thinking}<span class="sr-only">{hearing.heard}</span>{/if}
+						</p>
+						<p class="voice-heard" aria-hidden="true">{hearing.heard}</p>
+						<!-- 仕様 5.14 — 実行の前に必ず確認するという約束をこの画面でも出す -->
+						<p class="voice-note">送信・予約・請求は、実行の前に確認します</p>
 					</div>
 				{/if}
 			</div>

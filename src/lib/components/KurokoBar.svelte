@@ -1,12 +1,27 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { ui, type ContextChip } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 	import { barGlass } from '$lib/glass';
+	import { hearing } from '$lib/voice.svelte';
 
 	let { context = null }: { context?: ContextChip | null } = $props();
 
 	let text = $state('');
+	let mic: HTMLButtonElement | undefined = $state();
+	let acts: HTMLDivElement | undefined = $state();
+
+	/* Today の環状配置では、音声の操作をこのバーの位置に代わりに出す (docs/research/voice-orb.md の
+	   「操作の置き場所」)。出したら操作へ、閉じたらマイクのボタンへ焦点を移す */
+	const voicing = $derived(ui.voice && ui.voiceHere);
+	$effect(() => {
+		if (!voicing) return;
+		// 聞き取る前は「KUROKO に送る」が押せないので、押せる最初の操作へ
+		acts?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+		// マイクのボタンは閉じたあとに作り直されるので、描き終わりを待ってから移す
+		return () => tick().then(() => mic?.focus());
+	});
 
 	function send() {
 		const q = text.trim();
@@ -31,7 +46,22 @@
 		send();
 	}}
 >
-	{#if context}
+	{#if voicing}
+		<div class="voice-bar" bind:this={acts}>
+			<button
+				type="button"
+				class="btn pri"
+				onclick={() => hearing.send(400)}
+				disabled={!hearing.heard.trim() || hearing.thinking}
+			>
+				<Icon name="ic-send" size={20} />KUROKO に送る
+			</button>
+			<button type="button" class="btn sec" onclick={() => hearing.start()} disabled={hearing.thinking}>
+				やり直す
+			</button>
+			<button type="button" class="btn text" onclick={() => (ui.voice = false)}>閉じる</button>
+		</div>
+	{:else if context}
 		<button
 			type="button"
 			class="chip"
@@ -43,19 +73,22 @@
 			<Icon name="ic-x" size={16} />
 		</button>
 	{/if}
-	<input name="q" bind:value={text} placeholder="KUROKO に話しかける" aria-label="KUROKO への依頼" />
-	<button
-		type="button"
-		class="iconbtn"
-		title="音声で依頼"
-		aria-label="音声で依頼"
-		onclick={() => (ui.voice = true)}
-	>
-		<Icon name="ic-mic" size={20} />
-	</button>
-	<button type="submit" class="send" aria-label="依頼" disabled={!text.trim()}>
-		<Icon name="ic-send" size={20} />
-	</button>
+	{#if !voicing}
+		<input name="q" bind:value={text} placeholder="KUROKO に話しかける" aria-label="KUROKO への依頼" />
+		<button
+			type="button"
+			class="iconbtn"
+			title="音声で依頼"
+			aria-label="音声で依頼"
+			bind:this={mic}
+			onclick={() => (ui.voice = true)}
+		>
+			<Icon name="ic-mic" size={20} />
+		</button>
+		<button type="submit" class="send" aria-label="依頼" disabled={!text.trim()}>
+			<Icon name="ic-send" size={20} />
+		</button>
+	{/if}
 </form>
 
 <style>
