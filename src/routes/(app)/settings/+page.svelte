@@ -90,6 +90,17 @@
 
 </script>
 
+{#snippet pairs(rows: [string, string][])}
+	<dl class="card set-group">
+		{#each rows as [what, how] (what)}
+			<div class="list-row set-row">
+				<dt>{what}</dt>
+				<dd>{how}</dd>
+			</div>
+		{/each}
+	</dl>
+{/snippet}
+
 <svelte:head><title>設定 — KUROKO AI</title></svelte:head>
 
 <div class="settings">
@@ -126,14 +137,7 @@
 			<section aria-labelledby="set-truth-head">
 				<h2 class="set-group-head" id="set-truth-head">データの保存先</h2>
 				<!-- iOS の設定の「項目名 … 値」の行。値は行の右端に二次的な文字で置く -->
-				<dl class="card set-group">
-					{#each SOURCE_OF_TRUTH as [what, where] (what)}
-						<div class="list-row set-row">
-							<dt>{what}</dt>
-							<dd>{where}</dd>
-						</div>
-					{/each}
-				</dl>
+				{@render pairs(SOURCE_OF_TRUTH)}
 				<p class="set-group-foot">
 					予定とメールは各サービスに保存されたままです。KUROKO は読み書きするだけで、勝手に持ち出しません。
 				</p>
@@ -188,14 +192,7 @@
 		<!-- このタブは表示のみ。押せる要素を置かない。形は連携タブと同じ grouped -->
 		<section class="set-data" aria-labelledby="set-data-head">
 			<h2 class="set-group-head" id="set-data-head">セキュリティとデータ</h2>
-			<dl class="card set-group">
-				{#each DATA as [what, how] (what)}
-					<div class="list-row set-row">
-						<dt>{what}</dt>
-						<dd>{how}</dd>
-					</div>
-				{/each}
-			</dl>
+			{@render pairs(DATA)}
 		</section>
 	{/if}
 
@@ -220,21 +217,19 @@
 	<div class="set-diff">
 		<section aria-labelledby="set-diff-a">
 			<h4 id="set-diff-a">{flips ? '変わる操作' : '変わらない操作 (社内)'}</h4>
-			{#if flips}
-				<ul>
-					{#each CHANGING as c (c)}
-						<li><span class="tc-text">{c}</span><span class="badge warn">{arrow}</span></li>
-					{/each}
-				</ul>
-			{:else}
+			<ul>
+				{#each CHANGING as c (c)}
+					<li>
+						<span class="tc-text">{c}</span><span class={['badge', flips && 'warn']}
+							>{flips ? arrow : `今のまま ${arrow}`}</span
+						>
+					</li>
+				{/each}
+			</ul>
+			{#if !flips}
 				<!-- 社外以外を自動で進める点は「社内は自動」と「ほぼ任せる」で同じなので、
 				     ここは実際に変わらない (actions.ts の autoExecutes)。空欄にせず、
 				     何がそのままなのかを書く -->
-				<ul>
-					{#each CHANGING as c (c)}
-						<li><span class="tc-text">{c}</span><span class="badge">今のまま {arrow}</span></li>
-					{/each}
-				</ul>
 				<p class="muted">
 					この操作は今も同じ扱いです。社外へ出るものは、どの設定でも必ず確認します。
 				</p>
