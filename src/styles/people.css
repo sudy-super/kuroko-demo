@@ -1,0 +1,223 @@
+/* ==========================================================================
+   people (Task 13) — 一覧 (人物 / 会社 / 案件)、人物・会社・案件の詳細、人物パネル
+   ========================================================================== */
+.people {
+	max-width: 880px;
+}
+.people-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--sp-5);
+	padding: 0 var(--sp-5) var(--sp-5);
+}
+/* 戻る先は見出しの上の行に置く。幅いっぱいを取らせて必ず折り返させる */
+.people-back {
+	flex: 1 0 100%;
+	justify-content: flex-start;
+	padding-inline: 0;
+}
+.people-title {
+	flex: 1;
+	min-width: 0;
+}
+.people-title h1 {
+	margin: 0;
+}
+.people-bar {
+	flex-wrap: wrap;
+	gap: var(--sp-3);
+	padding: 0 var(--sp-5) var(--sp-5);
+}
+.people-add {
+	margin-left: auto;
+	color: var(--accent);
+}
+@media (max-width: 960px) and (max-height: 480px) {
+	.people-head {
+		padding-bottom: var(--sp-2);
+	}
+	.people-bar {
+		padding-bottom: var(--sp-2);
+	}
+	.list-head {
+		height: 24px;
+	}
+}
+/* カードを並べる段の基準。Task 10w で内容の層からガラスを外したので
+   (HIG Materials「コンテンツ層に Liquid Glass を使わない」)、ここに canvas は無い */
+.people-cards {
+	position: relative;
+	isolation: isolate;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	gap: var(--sp-5);
+	padding: 0 var(--sp-5);
+	align-items: start;
+}
+.people-sec h2 {
+	margin: 0 0 var(--sp-3);
+	font-size: 18px;
+}
+/* 会議の詳細のまとまりの見出し (meeting-detail.md — HIG Lists and tables の grouped の見出し)。
+   記号は付けず、KUROKO が作った中身のまとまりにだけ星を添える (HIG Generative AI
+   "Clearly identify when and where you use AI"。5 つのまとまりで同じ形にそろえる) */
+.meet-head,
+.people-sec h2.meet-head {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-1);
+	margin: 0 0 var(--sp-3);
+	color: var(--ink-2);
+	font-size: 14px;
+	font-weight: 700;
+}
+.meet-head .i {
+	color: var(--accent);
+}
+/* カードの余白の中に行を置くので、行の左右の詰めと区切り線は端までにする */
+.people-sec .list-row,
+.person-panel .list-row {
+	padding-inline: 0;
+}
+.people-sec .list-row::after,
+.person-panel .list-row::after {
+	left: 0;
+	right: 0;
+}
+.people-sec p {
+	margin: 0;
+}
+.people-tagrow {
+	flex-wrap: wrap;
+	gap: var(--sp-2);
+	margin-top: var(--sp-3);
+}
+.people-stat {
+	margin-bottom: var(--sp-2);
+	color: var(--ink-2);
+	font-size: 14px;
+}
+.people-missing {
+	padding: 0 var(--sp-5);
+	color: var(--ink-2);
+}
+.people-memo-foot {
+	gap: var(--sp-3);
+	margin-top: var(--sp-3);
+}
+
+/* 見出しと値の 2 列。値が長いときだけ折り返す */
+.kv {
+	display: grid;
+	grid-template-columns: max-content minmax(0, 1fr);
+	gap: var(--sp-2) var(--sp-4);
+	margin: 0;
+}
+.kv dt {
+	color: var(--ink-3);
+	font-size: 14px;
+	line-height: 1.7;
+}
+.kv dd {
+	margin: 0;
+	line-height: 1.7;
+}
+/* Task 11r (監査 11) — 会社名のリンクは地の文の高さ (23px)のまま。.iconbtn::after / .btn.sm::after
+   と同じ仕掛けで、見た目を変えずに当たり判定だけ 44px にする */
+.kv dd a {
+	position: relative;
+	display: inline-block;
+}
+.kv dd a::after {
+	content: '';
+	position: absolute;
+	inset: -11px -8px;
+}
+
+/* 一覧の行。名前を伸ばして、右端のバッジを行の末尾に寄せる */
+.people-col {
+	display: flex;
+	flex: 1;
+	min-width: 0;
+	flex-direction: column;
+	justify-content: center;
+}
+.people-name,
+.people-col .sub,
+.people-ident {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.people-ident {
+	flex: 1;
+	min-width: 0;
+}
+.people-amount {
+	font-size: 14px;
+}
+/* 携帯の幅では案件名の欄が 128px まで詰まり、長い名前の後半が読めなくなる。
+   金額を落として名前に回す (会社名と状態は残るので案件は見分けられる)。
+   境目は段組みが 1 列になる幅に合わせた (上の @media を見よ) */
+@media (max-width: 700px) {
+	.people-amount {
+		display: none;
+	}
+}
+.people-list {
+	padding-inline: var(--sp-5);
+	padding-block: var(--sp-2);
+}
+
+/* PersonPanel — メールの差出人のパネル (inbox/+page.svelte の Drawer) の中身 */
+.person-panel {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--sp-2);
+}
+.person-panel .list-row,
+.pp-stats {
+	width: 100%;
+}
+.pp-name {
+	margin: 0;
+	font-size: 20px;
+}
+.person-panel p {
+	margin: 0;
+}
+.pp-mail {
+	color: var(--ink-2);
+	font-size: 14px;
+}
+.pp-stats {
+	margin-top: var(--sp-2);
+}
+/* メモは改行をそのまま見せる */
+.pp-memo {
+	white-space: pre-wrap;
+	color: var(--ink-2);
+	font-size: 14px;
+}
+.person-panel .btn {
+	margin-top: var(--sp-2);
+}
+
+/* components 3.3 — 600px 以下は 1 列に畳み、左右の余白をモバイルの 16px にする */
+@media (max-width: 600px) {
+	.people-head,
+	.people-bar,
+	.people-cards,
+	.people-missing {
+		padding-inline: var(--sp-4);
+	}
+	.people-cards {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	/* 名前を詰めると 2 行に折れるので、操作は見出しの下の行へ落とす */
+	.people-title {
+		flex: 1 0 100%;
+	}
+}

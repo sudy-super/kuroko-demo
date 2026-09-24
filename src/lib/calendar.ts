@@ -30,7 +30,7 @@ export function travelWarning(db: Db, i: Slot): { prev: CalendarEvent; gapMin: n
 	return gapMin <= 30 ? { prev, gapMin } : null;
 }
 
-/* 週表示の目盛り。app.css の .week-hour / .week-col の高さと同じ値で、片方だけ動かすと
+/* 週表示の目盛り。styles/calendar.css の .week-hour / .week-col の高さと同じ値で、片方だけ動かすと
    格子と予定の位置がずれる。WEEK_HOUR_PX が 48 (components 3.12 の既定) ではない理由は
    WeekView.svelte の PX の注記を見よ */
 export const WEEK_HOUR_PX = 88;

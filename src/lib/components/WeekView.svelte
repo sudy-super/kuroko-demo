@@ -18,9 +18,9 @@
 	/* 1 分あたりの高さ。components 3.12 の既定は 48px/時 だが、それだと 30 分の予定が 24px にしか
 	   ならず、当たり判定が Apple HIG / WCAG 2.5.8 の下限 44px に届かない。疑似要素での継ぎ足しは
 	   親の overflow: hidden に切られるので、目盛りそのものを上げて 30 分の予定の実寸を 44px にした
-	   (値は calendar.ts の WEEK_HOUR_PX、app.css の .week-hour / .week-col と同じ)。
+	   (値は calendar.ts の WEEK_HOUR_PX、styles/calendar.css の .week-hour / .week-col と同じ)。
 	   格子は 0:00〜24:00 の全部を持つ。8:00〜20:00 だけを持つと、20:00 より後に作った予定が
-	   どこにも出なくなる。見える高さで切って縦に送るのは app.css の .week */
+	   どこにも出なくなる。見える高さで切って縦に送るのは styles/calendar.css の .week */
 	const PX = WEEK_HOUR_PX / 60;
 	const HOURS = Array.from({ length: 24 }, (_, i) => i);
 	const OPEN = 8 * 60 * PX; // 開いた直後に見せる位置 (8:00)
@@ -87,7 +87,7 @@
 			.join(' ');
 </script>
 
-<!-- 横 (格子の最小幅) と縦 (24 時間分) の送りはこの箱 1 つが持つ (app.css .week 参照)。
+<!-- 横 (格子の最小幅) と縦 (24 時間分) の送りはこの箱 1 つが持つ (styles/calendar.css の .week 参照)。
      曜日の行 (.week-head) はこの箱の中で position: sticky にできるので、送っても見えたままになる
      (sticky は送れない祖先を基準にできないため、送りを分けると効かない)。
      予定が 1 つもない週では中に押せるものが無く、キーボードだけではここへ来られないので、

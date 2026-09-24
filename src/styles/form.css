@@ -1,0 +1,78 @@
+/* ==========================================================================
+   form の共有部品 (Task 12) — bits-ui の Select と、フォームで使う小さな部品。
+   Task 11 で TaskForm に置いた選ぶ欄の見た目を、EventForm と共用するためここへ移した
+   ========================================================================== */
+
+/* 期限と時刻、前後のバッファのように 2 つ並べる組。片方だけ広げず、同じ幅で割る */
+.form-pair {
+	gap: var(--sp-4);
+	align-items: flex-start;
+}
+.form-pair > .field {
+	flex: 1;
+	min-width: 0;
+}
+/* 選ぶ欄は入力欄と同じ見た目にし、中身を両端に寄せる */
+.select-trigger {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--sp-2);
+	text-align: left;
+	cursor: pointer;
+}
+.select-trigger > span {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+/* ic-chev は右向き。開く向きに合わせて下を向かせる */
+.select-trigger .i {
+	transform: rotate(90deg);
+	flex: none;
+}
+/* 覆いの上に出すので、モーダル (z-index 75) より上に置く。
+   Task 10w (glass-scope.md 5 節) — メニューは Adopting Liquid Glass がガラスを持つと明記する
+   ので regular 変種を採る。メニューがモーダルの上に出るのはシステムの標準の重なりなので、
+   ガラスの上にガラスを重ねない規則には反しない (glass-scope.md 3 節)。
+   描く層が受け持つ 5 面 (drawer/sheet/modal/pill-panel/demo-menu)と違い、この面は
+   overlay-chrome の canvas を使わず、この CSS の backdrop-filter をそのまま常に使う
+   (同じ理由で層から外したトーストについてはliquid-glass.css の .toast の注記を見よ)。
+   WebGL2 が使える環境でも下ろさない (src/lib/glass.ts の OVERLAY_TIERS の注記を見よ)。
+   SelectField は常にモーダルの中のフォームで使うので、一覧はモーダルの上に開く。
+   canvas 方式だと、モーダルの背景も透明にしてあるため一覧の「すぐ後ろ」がモーダル自身の
+   実体 (文字など)になってしまい、canvas の塗りが画面に出ない。backdrop-filter は自分の
+   真後ろを直接ぼかすので、この重なりでも正しく効く。
+   box-shadow は --e3 のみ (--rim は使わない)。他の面の --rim は WebGL 経路で 0 に
+   下ろされて縁の白い反射が消えるが (liquid-glass.css)、この面はその仕組みを
+   使わないので、--rim を書くと常に反射が出てしまう。縁の輪郭は ::after の暗線
+   (liquid-glass.css の .select-menu::after) だけで足りる */
+.select-menu {
+	z-index: 80;
+	width: var(--bits-select-anchor-width);
+	max-height: 280px;
+	overflow-y: auto;
+	padding: var(--sp-2);
+	border-radius: var(--r-m);
+	background: var(--glass-sheet);
+	-webkit-backdrop-filter: var(--blur-sheet);
+	backdrop-filter: var(--blur-sheet);
+	box-shadow: var(--e3);
+}
+.select-menu:focus-visible {
+	outline: none;
+}
+.select-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--sp-3);
+	min-height: 44px;
+	padding: 0 var(--sp-4);
+	border-radius: var(--r-s);
+	font-size: 16px;
+	cursor: pointer;
+}
+.select-item[data-highlighted] {
+	background: var(--sel-soft);
+}

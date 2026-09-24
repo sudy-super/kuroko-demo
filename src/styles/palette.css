@@ -1,0 +1,132 @@
+/* ==========================================================================
+   components 3.10 — ⌘K コマンドパレット。幅・上端・行の高さ・文字の大きさは
+   同節の表 (cmdk の 4 テーマから採った値) に従う。表に無い色と余白は :root の目盛り
+   ========================================================================== */
+/* 表: 幅 640px / 上端 15vh (最小 96px) / 角丸 18px / 内側 padding 8px。
+   .modal の中央寄せ (top: 50% + translate) を上端寄せに差し替える。
+   狭い幅では画面からはみ出さないよう、既存のモーダルと同じ 16px の余白を残す */
+.modal.palette {
+	top: max(15vh, 96px);
+	/* レビュー I2 — .panel-center と同じ理由。left/transform は .modal の中央寄せを
+	   継いでおり、ここでは幅の上限だけ枠のぶん詰める */
+	width: min(640px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));
+	max-height: calc(100dvh - max(15vh, 96px) - 24px);
+	padding: var(--sp-2);
+	border-radius: var(--r-m);
+	transform: translate(-50%, 0);
+}
+@keyframes palette-in {
+	from {
+		opacity: 0;
+		transform: translate(-50%, 0) scale(0.96);
+	}
+}
+@keyframes palette-out {
+	to {
+		opacity: 0;
+		transform: translate(-50%, 0) scale(0.96);
+	}
+}
+.modal.palette {
+	animation: palette-in var(--d-enter) var(--ease-enter) both;
+}
+.modal.palette.leave {
+	animation: palette-out var(--d-exit) var(--ease-exit) both;
+}
+/* .modal-body の送り箱は一覧が自分で巻き取るので使わない */
+.modal.palette .modal-body {
+	display: contents;
+}
+.pal {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-height: 0;
+}
+/* 表: 入力欄の高さ 56px、区切りは 1px --line */
+.pal-head {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-3);
+	flex: none;
+	height: 56px;
+	padding: 0 var(--sp-3);
+	border-bottom: 1px solid var(--line);
+	color: var(--ink-2);
+}
+/* 表: 入力欄の文字 20px / 400。枠も塗りも持たない (箱そのものが入力欄に見える) */
+.pal-input {
+	flex: 1;
+	min-width: 0;
+	border: 0;
+	background: none;
+	color: var(--ink);
+	font-size: 20px;
+	font-weight: 400;
+	line-height: 1.4;
+}
+.pal-input:focus {
+	outline: none;
+}
+.pal-input::placeholder {
+	color: var(--ink-3);
+}
+/* 表: 一覧の最大高さ 400px */
+.pal-list {
+	min-height: 0;
+	max-height: 400px;
+	overflow-y: auto;
+	padding-top: var(--sp-2);
+}
+/* 表: 群の見出し 12px / 500。色は表の #646f8a に対し、ガラスの上でも 4.5:1 を保つ
+   --ink-2 を使う (.pal-src と同じ理由、app.css の Task 10w の注記を見よ) */
+.pal-group {
+	padding: var(--sp-2) var(--sp-4) var(--sp-1);
+	color: var(--ink-2);
+	font-size: 12px;
+	font-weight: 500;
+}
+/* 表: 行の高さ 48px (.list-row の既定と同じ)、左右 16px (同)、角丸 12px、
+   見出し 16px / 500、補足 12px / 400、記号 20px と文字の間隔 12px (.list-row の gap) */
+.pal-row {
+	border-radius: var(--r-s);
+}
+.pal-row::after {
+	display: none;
+}
+/* 表の「選択中」— ホバーと同じ塗りに、左端 3px の縦バーを足してキーボードの位置を区別する */
+.pal-row[data-selected] {
+	background: var(--sel-soft);
+	box-shadow: inset 3px 0 0 var(--accent);
+}
+/* 行の高さは 48px 固定なので、長い文言は折り返さず省略する
+   (折り返すと隣の行に重なる) */
+.pal-label {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	font-weight: 500;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+.pal-label .sub {
+	margin-left: var(--sp-2);
+	color: var(--ink-2);
+	font-size: 12px;
+	font-weight: 400;
+}
+/* 出所ラベル (仕様 5.14)。行の右端に寄せる。
+   Task 10w 修正ラウンド 2 (review-glass-batch.md I2) — ⌘K は Today のオーブの上に開くので、
+   --ink-3 のままだと実測 4.59:1 と下限の余裕が 0.09 しかない (札の位置が少し変わると割る)。
+   背景側の白をこれ以上濃くすると下が透ける見え方を削るので、文字色を --ink-2 へ一段濃くする
+   (同じ条件で 6.2:1)。出所の札は本文より弱く見せたいだけなので、12px と右寄せで十分区別が付く */
+.pal-src {
+	flex: none;
+	color: var(--ink-2);
+	font-size: 12px;
+}
+/* 8 シナリオは文言が長い。番号と出所の札を残して本文だけ詰める */
+.pal-row.scenario .pal-label {
+	font-size: 14px;
+	font-weight: 400;
+}

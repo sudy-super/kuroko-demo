@@ -59,7 +59,7 @@ export function focusChatbar() {
 
 let overlays = 0;
 
-/** app.css の body[data-overlay='on'] を生かす。ドロワーとモーダルが 1 枚でも出ている間だけ立てる。
+/** styles/liquid-glass.css の body[data-overlay='on'] を生かす。ドロワーとモーダルが 1 枚でも出ている間だけ立てる。
     Drawer/Modal は枠 (上部バー・サイドナビ・連携の列) を押せるよう trapFocus を外したので、
     本文と依頼バー・ボトムナビは覆いが開いている間 inert にして Tab を通さない
     (レビュー I3 — 外さないと覆いの後ろ・真下の要素に焦点が入り、見えないまま操作できてしまう) */

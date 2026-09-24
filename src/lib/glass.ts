@@ -60,7 +60,7 @@ export const BAR: LiquidGlassElementOptions = {
    Task 10w 修正ラウンド 1 (review-task-10w.md C1) — tint 1.1 では、Today のオーブ (濃い青) の
    上に開いた ⌘K のモーダルで `--ink-3` (薄い補助文字) やリンクの青が実測 3.2〜3.9:1 まで
    落ちる。ライブラリの目盛りの上限 1.5 まで塗りを上げても、最も濃い背景 (オーブの塊の直上)
-   では届かない場合がある (app.css の `.palette-src` の注記を見よ。文字色を一段濃くして
+   では届かない場合がある (styles/palette.css の `.pal-src` の注記を見よ。文字色を一段濃くして
    余裕を作った) */
 export const SHEET: LiquidGlassElementOptions = {
 	tint: 1.5,
@@ -228,7 +228,7 @@ export const chromeGlass = (node: Element) =>
    なり、canvas の塗りが画面に出ない (readPixels で canvas 自体は正しく塗り変わっている一方、
    スクリーンショットは変わらないことを確認した。task-10w-report.md)。.select-menu だけは
    この canvas 方式を使わず、CSS の backdrop-filter で自分の真後ろを直接ぼかす
-   (app.css 側 .select-menu の注記を見よ) */
+   (styles/liquid-glass.css 側 .select-menu の注記を見よ) */
 /* .overlay-chrome-anchor — 常駐する幅・高さ 0 の印。ライブラリは targets が空配列だと
    「targets を使っていない」ときと同じ扱いに倒し、host (画面いっぱいの .overlay-chrome) を
    丸ごと 1 枚のガラスとして描いてしまう (apple-liquid-glass-webgl の dom.js buildElements、
@@ -305,7 +305,7 @@ function mount(
 		});
 		watcher?.observe(scope, { childList: true });
 		/* 覆いが開いている間は、カードのガラス (Today の .bento、完了画面) を CSS で隠している
-		   (app.css の body[data-overlay='on'] ... [data-liquid-glass-layer])。隠しても live: true の
+		   (styles/liquid-glass.css の body[data-overlay='on'] ... [data-liquid-glass-layer])。隠しても live: true の
 		   描き直しは毎フレーム続き、背後の絵の明るさを GPU から読み戻す処理 (1 回 7〜70ms) が
 		   承認パネルの広がる・縮む動きを 1 秒に数フレームまで落としていた (実測: パネルを
 		   開いている 1 秒のうち 942ms がこの面の描き直し。ユーザー指摘 2026-09-24)。
