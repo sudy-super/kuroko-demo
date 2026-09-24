@@ -61,12 +61,9 @@
 		});
 	});
 
-	// side-collapse.md — 格納の状態を localStorage へ。SSR では localStorage が無いので囲む
-	// (src/lib/todayLayout.svelte.ts の hasStorage と同じ書き方)
+	// side-collapse.md — 格納の状態を localStorage へ ($effect はブラウザでしか走らない)
 	$effect(() => {
-		const hidden = ui.sideHidden;
-		if (typeof localStorage !== 'undefined')
-			localStorage.setItem('kuroko-side-hidden', hidden ? '1' : '0');
+		localStorage.setItem('kuroko-side-hidden', ui.sideHidden ? '1' : '0');
 	});
 </script>
 
