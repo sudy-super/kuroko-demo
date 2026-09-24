@@ -1,7 +1,5 @@
-/* public (Task 9c) — Welcome と /connect。アプリの骨格 (.app) は使わない。
-   iPhone の初期設定と同じく、ビューポート全体を 1 本の縦の列にする。上から図案 (オーブ) →
-   見出し → 説明、主ボタンと副操作は下端に寄せる。パネルにまとめない (カードにまとめる構成
-   そのものが典型的な SaaS の見た目を作っていた)。オーブの上に文字は載せない (visual 2.8) */
+/* public — Welcome と /connect。iPhone の初期設定と同じく、ビューポート全体を 1 本の縦の列にする
+   (オーブ → 見出し → 説明、主ボタンは下端)。パネルにまとめない。オーブの上に文字は載せない (visual 2.8) */
 .public {
 	position: relative;
 	z-index: 1;
@@ -11,9 +9,8 @@
 	   オーブを下限まで縮めても入りきらない窓 (e.g. 横向きの電話) だけここがスクロールする */
 	height: 100dvh;
 	overflow-y: auto;
-	/* 下端の余白はここに持たない。器の padding-bottom は、中身が入りきらない窓で
-	   スクロール範囲の外に出る (844x390 の /connect で「スキップして開く」がホーム
-	   インジケーターに重なっていた)。下端の余白は最後の要素 .public-foot が持つ */
+	/* 下端の余白は器ではなく最後の .public-foot が持つ。器の padding-bottom は、入りきらない窓で
+	   スクロール範囲の外に出る */
 	padding: var(--sp-6) var(--sp-6) 0;
 	/* オーブのキャンバスは球の直径の約 2 倍の光彩と破片を含むので、狭い画面では横にはみ出す */
 	overflow-x: clip;
@@ -27,10 +24,7 @@
 	max-width: 560px;
 	text-align: center;
 }
-/* 携帯を横向きにした高さでは、オーブを下限の 120px まで縮めても上の余白 (24px) と
-   要素の間隔 (20px x 2) で主ボタンが画面の外に出る。器の余白と間隔をここで詰めて、
-   最初の画面に主ボタンが入るようにする (responsive-policy.md 3「最初の画面で主要な
-   情報が見えること」)。app.css の他の低い窓の規則と同じ条件 */
+/* 携帯の横向きでは器の余白と間隔を詰め、最初の画面に主ボタンを入れる (responsive-policy.md 3) */
 @media (max-width: 960px) and (max-height: 480px) {
 	.public {
 		padding-top: var(--sp-2);
@@ -41,10 +35,7 @@
 }
 /* オーブと本文の塊は上下の空きを等分した位置に、操作群は下端に置く (下の margin-top: auto と対) */
 .public-col > .orb {
-	/* 縮む余地を持つのはオーブだけ。窓が低ければ他の要素の実寸のぶんだけ自動で縮む。
-	   「オーブの下に要る高さ」を定数で持つと、「続きから (Today へ)」の有無や文字の
-	   折り返しで実際の値が変わったときに合わなくなる (レビュー Important 1)。
-	   下限は 120px。これ以上は縮めず、入らなければ .public 側がスクロールする */
+	/* 縮む余地を持つのはオーブだけ (下限 120px)。下に要る高さを定数で持つと、中身の有無や折り返しで合わなくなる */
 	flex: 0 1 auto;
 	min-height: 120px;
 	margin-top: auto;
@@ -59,8 +50,7 @@
 .public-main {
 	display: flex;
 	flex-direction: column;
-	/* Task 18 — 文字は text-align で中央に来るが、アイコンのような幅を持つ要素は
-	   align-items が無いと左端に寄る (確定のチェック印で発覚) */
+	/* アイコンのような幅を持つ要素は align-items が無いと左端に寄る */
 	align-items: center;
 	gap: var(--sp-3);
 	width: 100%;
@@ -87,8 +77,7 @@
 	word-break: auto-phrase;
 }
 
-/* Task 9d — サービスの画面 (/connect/<id>)。一覧をやめ、1 画面 1 サービスにした
-   (ユーザー判定 2026-09-16)。ガラスは使わない (下に曲げる内容がない。ボタンは塗り) */
+/* サービスの画面 (/connect/<id>)。1 画面 1 サービス。ガラスは使わない (下に曲げる内容がない) */
 
 /* HIG Onboarding の page control 相当。今いる段階だけ塗り、残りは線の色で置く。
    order で列の先頭 (オーブより上)へ出す */
@@ -113,9 +102,8 @@
 	align-self: center;
 	margin-bottom: var(--sp-2);
 }
-/* 裁定 4 — 「接続中…」「接続済み」の間も塗りは --accent のまま変えない。
-   .btn[aria-disabled] の灰色にすると、状態の違いが色の変化として読まれてしまう。
-   状態はラベル (NN/g State-Switch Controls)とチェックの形で示す */
+/* 「接続中…」「接続済み」の間も塗りは --accent のまま。灰色にすると状態の違いが色の変化として読まれる。
+   状態はラベルとチェックの形で示す (NN/g State-Switch Controls) */
 .btn.connect-cta[aria-disabled='true'] {
 	background: var(--accent);
 	color: #fff;
@@ -154,12 +142,10 @@
 	gap: var(--sp-3);
 	width: 100%;
 	margin-top: auto;
-	/* 画面の下端の余白。器 (.public) ではなく最後の要素が持つ。縦に入りきらない窓では
-	   .public-col の中身が列の枠からはみ出して器がスクロールするので、余白が器や列に
-	   付いているとスクロールの終点より外に出てしまう */
+	/* 画面の下端の余白は最後の要素が持つ。器や列に付けると、入りきらない窓でスクロールの終点より外に出る */
 	padding-bottom: max(var(--sp-6), env(safe-area-inset-bottom));
 }
-/* 裁定 — ボタンにはガラスを当てない (文字のコントラストが持たない)。--accent の平らな塗り */
+/* ボタンにはガラスを当てない (文字のコントラストが持たない)。--accent の平らな塗り */
 .btn.pri.public-cta {
 	width: 100%;
 	max-width: 360px;
@@ -175,9 +161,7 @@
 	line-height: 1.6;
 }
 
-/* Task 18 (/schedule/[token]) — 相手が開く画面はオーブを出さない ((public)/+layout.svelte)。
-   オーブが縦の余りを吸っていた (上の .public-col > .orb の margin-top: auto)ので、
-   その役を本文の塊に移して上下の中央にそろえる。操作群は今までどおり下端 (.public-foot) */
+/* 相手が開く画面 (/schedule/[token]) はオーブを出さないので、縦の余りを本文の塊が吸って中央にそろえる */
 .public-col:not(:has(> .orb)) > .public-main {
 	margin-top: auto;
 }
@@ -186,9 +170,8 @@
 .public-col:not(:has(> .orb)):not(:has(> .public-foot)) > .public-main {
 	margin-bottom: auto;
 }
-/* Task 18 (/schedule/[token]) — 相手が開く画面。「日時を変更する」「キャンセルする」は
-   主ボタンと同じ 1 画面 1 個の並びに置くので、.public-cta の幅・高さだけ揃えて塗りは
-   .btn.sec / .btn.danger のまま (裁定どおり主ボタンは 1 個、副操作は塗りを弱める) */
+/* /schedule/[token] の「日時を変更する」「キャンセルする」は .public-cta の寸法だけそろえ、塗りは
+   .btn.sec / .btn.danger のまま (主ボタンは 1 個) */
 .btn.sec.public-cta,
 .btn.danger.public-cta {
 	width: 100%;
@@ -203,10 +186,7 @@
 .sched-summary {
 	display: flex;
 	flex-direction: column;
-	/* Task 18 修正ラウンド 1 (review-task-18.md C1) — 親 (.public-col)が縦の flex なので、
-	   既定の flex-shrink: 1 のままだと低い窓 (844x390)で縮み、候補の行が 33px (44px 未満)に、
-	   確定のまとめは高さ 0 + overflow: hidden で中身が消える (Task 11r の .sheet .list-row と
-	   同じ症状)。縮ませず、入らないぶんは .public 側がスクロールする */
+	/* 親が縦の flex なので、既定の flex-shrink: 1 だと低い窓で行が 44px 未満に潰れる。縮ませず .public がスクロールする */
 	flex: none;
 	width: 100%;
 	border-radius: var(--r-m);

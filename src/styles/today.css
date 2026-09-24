@@ -1,20 +1,15 @@
-/* today (Task 10) — 仕様 5.1 / visual 2.7・2.8・4.5。既存のトークンだけで組む */
-/* Task 10h — 見出しの段を Bento より上に置く。.bento は position: relative なので、
-   その中のオーブ (z-index -2) ごとこの段の上に描かれていた。破片が文字の上に直接乗ると
-   文字 (--accent) が行単位で 2.87:1 まで落ちる。段を上げると面に遮られる。
-   Task 10m — この段に置くのは件数のピルだけ。デモの操作は上部バー右端のメニューへ移した */
+/* today — 仕様 5.1 / visual 2.7・2.8・4.5 */
+/* 見出しの段を Bento より上に置く。オーブの破片が文字に直接乗ると --accent が 2.87:1 まで落ちる */
 .today-head {
 	position: relative;
 	z-index: 1;
 	display: flex;
 	justify-content: center;
 	padding: 0 var(--sp-6);
-	/* Task 10l — 下の空きは padding ではなく margin。この段は本文の幅いっぱいの箱で
-	   z-index: 1 を持つので、padding のままだと段の下 16px の帯がカードの上端の押下を
-	   横取りする (カードが上へ漂うと上端がこの帯に入る) */
+	/* 下の空きは margin。この段は幅いっぱいで z-index: 1 なので、padding だと下の帯がカードの上端の押下を横取りする */
 	margin-bottom: var(--sp-4);
 }
-/* 見出しは h1 のまま。オーブの破片が上端まで届くので、面は不透明にする (Task 10h と同じ理由) */
+/* 見出しは h1。オーブの破片が上端まで届くので面は不透明にする */
 .today-count {
 	font-size: 16px;
 	font-weight: 500;
@@ -64,8 +59,7 @@ section.card:active {
 		0 8px 24px rgba(30, 42, 71, 0.08);
 	cursor: default;
 }
-/* 4 — 押せないタイルの中の行も押せない。ToDo の label は中のチェックボックスが、
-   送信済みの a (Task 10t 修正ラウンド 4、相手の画面を開くリンク)は行そのものが押せる */
+/* 押せないタイルの中の行も押せない。ToDo の label はチェックボックスが、送信済みの a は行そのものが押せる */
 section.tc .list-row:not(label):not(a),
 section.tc .list-row:not(label):not(a):hover {
 	background: none;
@@ -81,12 +75,8 @@ section.tc .list-row:not(label):not(a):hover {
 	font-size: 18px;
 	color: var(--ink);
 }
-/* Task 10t 修正ラウンド 8 (rereview-task-10t-fix7.md) — 送信済みカードの題名は
-   「日程調整の返信待ち N 件」と長く、幅 1101〜1117px で 2 行に折れてカードが 25px 伸び、
-   ToDo の「残り N 件」に重なって押せなくなる。この題名だけ折り返さず、入り切らない分は
-   省略記号にする。幅 1101〜1108px では末尾の件数が省略記号に食われて
-   「日程調整の返信待ち …」になる (「返信待ち」までは全幅で残るので、何のカードかは分かる。
-   件数は読み上げ名とカードの中身に残る) */
+/* 送信済みカードの題名は長く、1101〜1117px で 2 行に折れて ToDo に重なる。折り返さず省略記号にする
+   (件数は読み上げ名とカードの中身に残る) */
 .today .bento > .card[data-card='sent'] .tc-head h2 {
 	white-space: nowrap;
 	overflow: hidden;
@@ -104,10 +94,8 @@ section.tc .list-row:not(label):not(a):hover {
 	left: 0;
 	right: 0;
 }
-/* 一覧行のチェック。Today のタイル、ToDo 一覧 (TaskRow)、提案カードで同じ形にする。
-   iOS のリマインダーと同じ丸いチェック (tasks-reminders.md 1 節 — 四角のチェックボックスは
-   HIG では macOS の部品)。未完了は細い輪、完了は塗りの丸に白い印。
-   margin を 0 にするのは、既定の余白があると 2 行目に落とした期限と題名の左端がずれるため */
+/* 一覧行のチェック。iOS のリマインダーと同じ丸 (四角は HIG では macOS の部品、tasks-reminders.md)。
+   margin 0 は 2 行目の期限と題名の左端をそろえるため */
 .list-row input[type='checkbox'] {
 	appearance: none;
 	flex: none;
@@ -161,18 +149,10 @@ section.tc .list-row:not(label):not(a):hover {
 	margin-top: var(--sp-3);
 }
 
-/* Task 10l 修正 — 1100px 以下は段組みのまま。カードごとに上の余白を変えて縦位置をずらし、
-   左右の段の上端がそろわないようにする。値は 24〜56px の不揃いな並びで、等間隔の階段に
-   ならないようにしてある。段組みは段の先頭に来たカードの margin-top を切り捨てるので、
-   右の段の先頭 (4 枚目)の 44px は効かない。
-   2 枚目 (返信)の上を 56px といちばん広く取ってあるのは、その上の承認待ちを余白で
-   重く見せるため (eye.md 2.2、Task 10j から引き継ぎ) */
+/* 1100px 以下は段組み。カードごとに上の余白を不揃いに変え、左右の段の上端をそろえない。
+   返信の上を最も広くして承認待ちを重く見せる (eye.md 2.2)。段の先頭の margin-top は切り捨てられる */
 @media (max-width: 1100px) {
-	/* Task 10t 修正ラウンド 3 (review task-10t-fix2 M2) — :nth-child(n) から data-card
-	   (カードの種類)に変えた。承認待ち・次の会議・送信済みは出入りするので、位置 (段の何番目か)
-	   で余白を決めると、承認待ちが消えたときに返信が 1 番目の余白 (36px)を受け取ってしまい、
-	   「承認待ちの下をいちばん広く空ける」という重みの意図 (eye.md 2.2、Task 10j)がずれていた。
-	   種類に結び付けるとカードの有無に関わらず自分の余白のまま留まる */
+	/* 位置ではなく data-card (種類) で決める。カードが出入りしても自分の余白のまま留まる */
 	.today .bento > .card[data-card='approvals'] {
 		margin-top: 36px;
 	}
@@ -190,10 +170,7 @@ section.tc .list-row:not(label):not(a):hover {
 		margin-top: 48px;
 	}
 }
-/* Task 10l — カードを一回り小さくする。内側の余白を 1 段下げ、押せない行の高さを 48 → 36px
-   (2 段の行は 72 → 56px)に詰める。行は減らさない。
-   Task 10l 修正 — 環状の配置は 2 列とも画面の高さいっぱいを使うので、5 枚が 1280x800 に
-   収まるところまで詰め直した (左の列 408px / 右の列 406px、使える高さ 450px) */
+/* カードを一回り小さくし、5 枚が 1280x800 に収まるところまで詰める */
 .today .bento .tc {
 	gap: var(--sp-2);
 }
@@ -206,9 +183,7 @@ section.tc .list-row:not(label):not(a):hover {
 .today .bento .list-row.xl {
 	height: 56px;
 }
-/* Task 10t 修正ラウンド 5 (review task-10t-fix4 M3) — 1101px で「田中 太郎様に候補を送信済み」が
-   「…送信」で切れていた。名前だけを縮める (flex-shrink) 側にし、「に候補を送信済み」は
-   常に全文を残す (flex-shrink: 0)。名前が長くても状態文は必ず読める */
+/* 狭い幅で状態文が切れないよう、名前だけを縮め「に候補を送信済み」は常に全文を残す */
 .today .bento .list-row .sent-name {
 	flex: 0 1 auto;
 	min-width: 0;
@@ -224,23 +199,17 @@ section.tc .list-row:not(label):not(a):hover {
 	padding: var(--sp-4) var(--sp-4) var(--sp-3);
 }
 
-/* Task 10l 修正 — 1101px 以上はオーブを取り巻く環状の配置 (ユーザーが選んだモックの構図)。
-   カードを絶対配置にし、球の中心からの距離がほぼ一定になる位置に置く。左右の寄せは
-   球の輪郭に沿わせた値で、上下の真ん中のカードがいちばん外、上端と下端のカードは内側に寄る。
-   上端も左右もそろえない。DOM の順序 (要件定義 p.11 の重み順)は変えないので、
-   読み上げの順序は承認待ち → 返信 → 次の会議 → 今日の予定 → ToDo のまま (eye.md 3.2)。
-   入れ物の高さは flex で決まり、カードの高さは高さに加算されない。つまりカードが伸びても
-   本文が縦に伸びず、1440x900 と 1280x800 のどちらでも縦の送りが出ない。
-   min-height は「これ以上縮めるとカードが重なる」下限で、これを割る高さの窓では送りが出る */
+/* 1101px 以上はオーブを取り巻く環状の配置。カードは絶対配置で、球の中心からの距離がほぼ一定。
+   DOM の順序 (要件定義 p.11 の重み順) は変えないので読み上げ順も保つ (eye.md 3.2)。
+   カードの高さは入れ物の高さに加算されない。min-height はカードが重なる下限 */
 @media (min-width: 1101px) {
 	.today .today-items {
 		display: flex;
 		flex-direction: column;
 	}
 	.today .bento {
-		/* 伸び縮みの下限 (430px)を flex-basis にも置くのが肝。本文の高さの見積もりは
-		   flex-basis で決まるので、ここに仕上がりの高さ (470px)を書くと、その値で本文が
-		   縦に伸びて 1280x800 に 20px の送りが出る */
+		/* 下限 (430px) を flex-basis にも置くのが肝。高さの見積もりは flex-basis で決まり、
+		   仕上がりの 470px を書くと 1280x800 に送りが出る */
 		flex: 1 1 430px;
 		min-height: 430px;
 		max-height: 470px;
@@ -254,38 +223,14 @@ section.tc .list-row:not(label):not(a):hover {
 	.today .bento > .card {
 		position: absolute;
 		margin: 0;
-		/* 列の間 (球の通り道)は、幅の式自体は 256px 分を確保する式のまま
-		   (min(280px, (100% - 256px) / 2))。Task 10t 修正で球を隠さない保証は
-		   left/right の寄せ側 (下の clamp())に移した。寄せが 0 まで縮む狭い画面では、
-		   この式どおり通り道 256px が戻る */
+		/* 列の間は 256px 分を確保する式。球を隠さない保証は下の left/right の clamp() が持つ */
 		width: min(280px, calc((100% - 256px) / 2));
 	}
-	/* Task 10t — 内側の縁 (球に近い側の角) を球の中心へさらに寄せ、破片の散る外周に重ねる。
-	   Task 10t 修正ラウンド 1 — 寄せの値を bento の幅 (以下 W)に応じて縮める clamp() にした。
-	   固定 px の寄せのままだと、幅の式 (100% - 256px) / 2 が W の縮小に合わせてカードを
-	   細くする一方で寄せは縮まないため、狭い画面 (1101〜1200px 実測)で球の本体 (半径 107.5px)
-	   がカードの下に入っていた (レビュー task-10t C1)。
-	   clamp(0px, calc(50% - Kpx), 現行px) の K は「W = 880px (bento の最大幅、画面幅 1216px 以上で
-	   到達)のとき現行px に一致する」よう K = 440 - 現行px で逆算した値。W が 880px を下回ると
-	   寄せは線形に浅くなり、W ≦ 2K の狭い画面では寄せ 0 (Task 10l 以前の位置相当、通り道 256px
-	   の保証が満額戻る安全側)まで戻る。5 枚とも 1101/1160/1200/1240/1280/1440/1920px で
-	   球の中心からカードの最短距離 (矩形と円の距離、角とは限らない)が半径 107.5px を
-	   1 画素も割らないことを実測した (scratchpad/10t-fix/measure.mjs)。
-	   top/bottom の値 (環状のばらつき)は Task 10l 修正のまま動かしていない。
-
-	   Task 10t 修正ラウンド 2 — 位置の割り当てを :nth-child(n) から data-card (カードの種類、
-	   TodayCard の card prop) に変えた。承認待ち (ap.length)・次の会議 (nm)・送信済み
-	   (sent.length) は +page.svelte の {#if} で出入りするため、:nth-child だと承認待ちを
-	   処理し終えた 4 枚の状態などで後続カードの列の割り当てがずれ、球の円盤 (99 画素)とカード
-	   同士 (236x20px)の両方を覆っていた (レビュー task-10t-fix I1)。data-card は種類ごとに
-	   固定なので、他のカードの有無に関わらず自分の位置に留まる。抜けた枠は単に空くだけで、
-	   残ったカードの詰め直しはしない (環状の配置じたいは変えない方針)。 */
+	/* 内側の縁を球の中心へ寄せ、破片の散る外周に重ねる。寄せは clamp(0px, calc(50% - Kpx), 現行px) で
+	   bento の幅 W に応じて縮める。K = 440 - 現行px (W = 880px で現行px に一致)。狭い画面では 0 まで戻り、
+	   球 (半径 107.5px) にカードが掛からない。位置は data-card で決め、カードが欠けても詰め直さない */
 	.today .bento > .card[data-card='approvals'] {
-		/* Task 10t 修正ラウンド 2 (M1) — 高さ下限 430px では top: 0 だと承認待ちカードの矩形が
-		   球の円盤に 1.47px 食い込み、角丸 18px に頼って画素としては 0 になっていた
-		   (レビュー task-10t-fix M1、余裕 4px)。top を負にしてカードを上へ逃がし、角丸なしの
-		   矩形でも下限の高さで球の円盤を割らないようにした
-		   (scratchpad/10t-fix2/measure.mjs で確認) */
+		/* 高さ下限 430px で角丸なしの矩形でも球の円盤に食い込まないよう、top を負にする */
 		top: -8px;
 		left: clamp(0px, calc(50% - 379px), 61px);
 	}
@@ -306,69 +251,37 @@ section.tc .list-row:not(label):not(a):hover {
 		bottom: 0;
 		right: clamp(0px, calc(50% - 395px), 45px);
 	}
-	/* 送信済み (日程調整の返信待ち)が出る場面だけ、右を 3 枚にして入れ物を縦に伸ばす。
-	   :has() の的を data-card にしたので、承認待ちなどが欠けて送信済みが 6 枚目にならない
-	   (例: 5 枚中の 1 枚)状態でも同じ規則が効く。
-	   Task 10t 修正ラウンド 3 (review task-10t-fix2 I1) — 640px 固定だと 1280x800 (使える高さ
-	   実測 551px)で 89px の縦の送りが出ていた。5 枚の bento (上の .today .bento の flex: 1 1 430px)と同じ
-	   「下限を flex-basis に置く」形にし、640 は上限 (1440x900 で伸びる、使える高さ実測 650px)
-	   に格下げした。下限 550px は 1280x800 の実測 (551px)から 1px の余裕を取った値。
-	   送信済みカードの行を 1 行に詰めた (+page.svelte、約 44px 減)ので、550px でも
-	   予定・ToDo・送信済みの 3 枚を重ねずに収められる */
+	/* 送信済みが出る場面だけ右を 3 枚にして入れ物を縦に伸ばす。下限 550px を flex-basis に置き
+	   (1280x800 の使える高さ 551px)、640px は上限 */
 	.today .bento:has(> .card[data-card='sent']) {
 		flex-basis: 550px;
 		min-height: 550px;
 		max-height: 640px;
 	}
-	/* 34% (640px 基準の固定割合)だと、入れ物が 550px まで縮んだときに今日の予定の下端と
-	   4.8px 重なる (予定の高さは入れ物の高さに依存しない実測 169.2px の固定値なので、
-	   割合で置くと入れ物が縮むほど間が詰まる)。4% (今日の予定の top と同じ割合)からの
-	   固定 px 上乗せに変えると、入れ物の高さによらず今日の予定との間が一定 (実測 11.8px)になる。
-	   181px は 550px のときに今日の予定・送信済みの両方との間がほぼ均等 (12〜13px)になるよう
-	   逆算した値 (scratchpad/10t-fix3/measure.mjs) */
+	/* 4% からの固定 px 上乗せにして、入れ物の高さによらず今日の予定との間を一定にする
+	   (割合だと入れ物が縮むほど詰まって重なる) */
 	.today .bento:has(> .card[data-card='sent']) > .card[data-card='tasks'] {
 		top: calc(4% + 181px);
 		bottom: auto;
 	}
-	/* Task 10t 修正ラウンド 5 (review task-10t-fix4 I3) — 低い窓 (1440x700 / 1280x680)では
-	   本文に使える高さが実測 516px しかなく、下限 550px との差がそのままページの送りになって、
-	   送信済みカードが依頼バーの裏へ深く入っていた (案内の手順 3 が押せない)。ToDo の 3 行目を
-	   畳んで入れ物を 460px まで下げる (行 44px 分)。題名に件数が出ているので情報は減らず、
-	   残りは「ToDo をすべて見る」からたどれる。
-	   1440x700 / 1280x680 は responsive-policy の条件 3 で縦の送りを許す寸法なので、残る
-	   9px の送りは受け入れる。条件 6 (主要な操作が固定要素に潜らない)は、送信済みカードの
-	   下端が依頼バーの上端より上に出ることで満たす (実測)。
-	   ToDo と送信済みが 31px 重なるのは、ToDo の高さ (2 行でも実測 193px)が入れ物の下限から
-	   逆算した位置に収まらないため。左の列へ移す案は次の会議と 114px 重なり球も覆うので却下した。
-	   重なるのはカードの下端の余白どうしで、文字は重ならない (実測) */
+	/* 低い窓 (1440x700 / 1280x680) では ToDo の 3 行目を畳んで入れ物を 460px まで下げ、送信済みカードを
+	   依頼バーの上に出す。ToDo と送信済みはカードの下端の余白どうしだけが重なる */
 	@media (max-height: 760px) {
 		.today .bento:has(> .card[data-card='sent']) {
 			flex-basis: 475px;
 			min-height: 475px;
 		}
-		/* Task 10t 修正ラウンド 6 (review task-10t-fix5 I1) — 行を CSS で伏せると題名の件数と
-		   行数が食い違ったまま説明が消えるので、出す行数は today/+page.svelte 側 (taskRows)で
-		   減らし、差は「残り N 件」で説明する (2 行 + 残りの 1 行 = 実測 176px)。
-		   入れ物は 475px。3 枚 (予定 169px・ToDo 176px・送信済み 97px)を 12px ずつ空けて
-		   並べるには 485px 要るので 10px 足りないが、重なるのはカードの下端の余白どうしで
-		   文字は重ならない (実測)。
-		   上限が 475px なのは、478px を超えると 1280x680 で次の会議カードの
-		   「Brief が届いています」が依頼バーの下に入って読めなくなるため
-		   (rereview-task-10t-fix7.md、実測の境目は 478px) */
+		/* 出す行数は today/+page.svelte の taskRows で減らす (CSS で伏せると題名の件数と食い違う)。
+		   上限 475px は、478px を超えると 1280x680 で次の会議カードの文字が依頼バーの下に入るため */
 	}
 	.today .bento > .card[data-card='sent'] {
 		bottom: 0;
-		/* Task 10t 修正ラウンド 2 (M4) — 他の 5 枚と同じ clamp(0px, calc(50% - Kpx), 現行px) の
-		   書き方にそろえた。K = 440 - 20 = 420 */
+		/* K = 440 - 20 = 420 */
 		right: clamp(0px, calc(50% - 420px), 20px);
 	}
 }
-/* Task 10c — オーブはガラスが屈折させる対象なので、ガラスの canvas より下に置く。
-   canvas は要素の z-index: -1 の子なので、穴は -2 にする。0 のままだと canvas の上に出て、
-   オーブが屈折もぼかしも受けずに鮮明に載る。
-   Task 10e — -2 を閉じ込めているのは .bento の isolation: isolate。.bento が積み重ねの
-   文脈になるので、-2 は .bento の中で止まり、背景の色の塊 (.bg、根の z-index 0) より
-   下へは抜けない */
+/* オーブはガラスが屈折させる対象なので canvas (z-index: -1) より下の -2 に置く。
+   .bento の isolation: isolate で -2 がその中に閉じ込められる */
 .today .bento .hole {
 	position: absolute;
 	inset: 0;
@@ -381,10 +294,8 @@ section.tc .list-row:not(label):not(a):hover {
 	left: 50%;
 	translate: -50% -50%;
 }
-/* Task 10l — 球は左右の列の間の中央に置く。箱は一辺 448px、球の直径はその 48%
-   (shader.ts の R0 = 0.48)なので 215px。列の間は入れ物の幅の 30%、入れ物は本文の 80% なので
-   1440px (レールなし)で 265px、1280px (レールあり)で 205px。球の外周と光彩がカードの縁に
-   掛かり、そこでカードのガラスの縁が破片を曲げる (visual 2.8 の 6) */
+/* 球は左右の列の間の中央。箱 448px、球の直径はその 48% (shader.ts の R0) で 215px。
+   外周と光彩がカードの縁に掛かる (visual 2.8) */
 .today .bento .hole .orb {
 	position: absolute;
 	top: 50%;
@@ -451,10 +362,7 @@ section.tc .list-row:not(label):not(a):hover {
 	overflow: hidden;
 }
 
-/* Task 10m — 本文の下に空ける高さ。環状に置いたカードの下端がこの帯に入ると
-   依頼バーの裏に回る。値は :root の --content-bottom-clear (Task 11r で統合、.main の
-   既定の padding-bottom と同じ式) をそのまま使う。960px 以下の式の切り替えもそちらで
-   一括して面倒を見るので、ここに専用の変数は要らない */
+/* 本文の下に空ける高さ。環状のカードの下端が依頼バーの裏に回らないよう --content-bottom-clear を使う */
 .main:has(.today) {
 	display: flex;
 	flex-direction: column;

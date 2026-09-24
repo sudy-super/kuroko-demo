@@ -1,54 +1,27 @@
-/* ==========================================================================
-   KUROKO AI — グローバル CSS
-   値の出典は各ブロック先頭のコメントに書く。
-   visual N   = docs/research/visual.md 第 N 節
-   components N = docs/research/components.md 第 N 節
-   ruling     = 設計仕様 12.3 の裁定 (visual / components より優先)
-   ========================================================================== */
+/* KUROKO AI — グローバル CSS
+   visual N = docs/research/visual.md 第 N 節、components N = docs/research/components.md 第 N 節、
+   ruling = 設計仕様 12.3 の裁定 (visual / components より優先) */
 
-/* visual 4.1 — トークン (Task 10b: ガラスの塗り・彩度・縁・鏡面は実測で決め直した) */
+/* visual 4.1 — トークン */
 :root {
 	/* 地の色 */
 	--bg: #f4f7fc;
 
 	/* 文字と線 */
-	/* Task 10f — 壁紙の色の塊を消して地を無彩色に近い階調 1 枚に戻したので、文字の背後は
-	   ほぼ白 (カードは rgba(255,255,255,.88)、地は #f4f6fa〜#eef1f7) に戻った。
-	   ただし --ink-2 / --ink-3 / --accent は塊を置く前の値には戻せていない (下を見よ)。
-	   測り方は Task 10e と同じ: 文字を透明にした画面とそのままの画面の差分で文字の乗る
-	   画素だけを取り出し、その背後の輝度の下位 5% 分位で比を出す。
-	   最悪値は task-10f-report.md に載せた。--ink → --ink-2 → --ink-3 の順に薄くなる約束は保つ */
+	/* --ink → --ink-2 → --ink-3 の順に薄くなる。値はガラス越しでも 4.5:1 を保つよう実測で決めた */
 	--ink: #1e2a47;
 	--ink-2: #545d76;
-	/* Task 10f 修正ラウンド 4 — 壁紙の光彩を撤去したので、この 3 色 (--ink-2 / --ink-3 /
-	   --accent) を Task 10c 以前の #5a6785 / #616b85 / #1b62d6 へ戻せるか測り直した。
-	   戻せなかった。最悪の位置はサイドナビではなく /inbox を 200px スクロールした状態で、
-	   上部バーの下を本文がくぐり、一覧の選択中の行がガラスの面ごと沈む。そこで戻した値は
-	   4.38:1 / 4.12:1 / 4.32:1 と 4.5:1 を割る。この値のままなら 5.07:1 / 4.65:1 / 4.63:1。
-	   光彩の撤去で余裕自体は増えた (ラウンド 3 は 4.97 / 4.55 / 4.54) が、一段戻すには届かない。
-	   階段は task-10f-report.md の修正ラウンド 4 に載せた。
-	   --ink-2 より薄いという順序は保つ */
+	/* 上部バーの下をくぐる /inbox の選択中の行が最悪の位置。これより薄くすると 4.5:1 を割る */
 	--ink-3: #5a6379;
 	--line: rgba(140, 160, 200, 0.18);
 	--line-2: rgba(140, 160, 200, 0.3);
 
 	/* アクセント */
-	/* Task 10f 修正ラウンド 2 — サイドナビの下に置いた青い光彩の上で 4.30:1 まで落ちたので、
-	   Task 10c 以前の #1b62d6 から一段濃くした。
-	   第 2 段階の修正波 — 色ごとに測り直したところ、/today の副ボタンの列 (ガラス、下はオーブ)で
-	   #1a5ecb の実測が 4.11:1 と 4.5:1 を割った。明度だけ 44.9% → 40.9% に落とし、同じ場所で
-	   4.86:1 になった。この場所の背後はオーブの破片で、どの瞬間を測るかで値が動くので
-	   余裕を多めに取ってある。塗り (--accent-soft など)は触っていない。
-	   Task 10h — その後この列はガラスをやめて不透明な白い面に戻したので、背後に破片は来ない。
-	   実測は 6.61:1 で、この色を選んだ理由はもう /today の列には無い (残る根拠は他の画面) */
+	/* ガラス越しでも 4.5:1 を保つよう、明度を実測で下げてある */
 	--accent: #1856b9;
-	/* Task 10f 修正ラウンド 3 — バッジと差出人の印もこの塗りを使う。カードがガラスになり、
-	   塗りが下の面ごと沈むようになったので、0.16 の別枠 (--accent-soft-2) をやめて 0.10 の
-	   これ 1 つにまとめた。0.16 だと上に載る --accent の実測が 4.24:1 と 4.5:1 を割る */
+	/* バッジと差出人の印もこの塗り。0.16 だと上に載る --accent が 4.5:1 を割る */
 	--accent-soft: rgba(26, 94, 203, 0.1);
-	/* Task 10k — 主ボタンと送信ボタンの落ち影 (--accent-top / --accent-shadow と合わせて) は
-	   docs/research/buttons.md 観点 A により廃止した。残るのはナビの案内の脈動 (.pulse) だけ。
-	   26,94,203 は --accent を濃くする前の値で、--accent の 24,86,185 とは一致しない */
+	/* ナビの案内の脈動 (.pulse) だけで使う。26,94,203 は --accent と一致しない */
 	--accent-glow: rgba(26, 94, 203, 0.28);
 
 	/* ruling — 合否の色と入力欄の枠、選択中の塗り */
@@ -57,18 +30,12 @@
 	--warn: #c62129;
 	--warn-soft: #fdecec;
 	--border: #8593b0;
-	/* Task 10f 修正ラウンド 4 — カレンダーの予定を指したときの塗り。使うのはここだけ。
-	   既定の塗りは下の --sel-soft (0.58) なので、指したときはそれより濃くないと
-	   「指すと薄くなる」逆向きの反応になる。同じ青系のまま濃くする */
+	/* カレンダーの予定を指したときの塗り。--sel-soft より濃くしないと、指すと薄くなる */
 	--sel-strong: rgba(196, 216, 250, 0.92);
 	/* components 3.2 / 3.11 — 一覧行、コマンドパレットの選択中の塗り */
-	/* Task 10f 修正ラウンド 3 — カードがガラスになり、この塗りが下の面ごと沈むようになった。
-	   0.75 のままだと、選択中の行に載る --ink-3 と --accent の実測が 4.25:1 と 4.5:1 を割る。
-	   0.58 まで薄くすると 4.6:1 台に戻る。選択中は太字と aria-current でも伝わる */
+	/* 0.75 だと選択中の行の --ink-3 と --accent が 4.5:1 を割る。選択中は太字と aria-current でも伝わる */
 	--sel-soft: rgba(214, 228, 252, 0.58);
-	/* Task 10u — サイドナビ・ボトムナビの現在地だけの塗り (一覧行・パレットは --sel-soft の
-	   まま、対象外)。参考画像の選択中タブは青ではなく灰色のピル。--ink の濃い文字を乗せる分
-	   だけ暗くしてよいので --sel-soft より濃い */
+	/* サイドナビ・ボトムナビの現在地の灰色のピル。--ink を乗せるので --sel-soft より濃い */
 	--sel-gray: rgba(30, 42, 71, 0.14);
 
 	/* ruling — 状態レイヤー (ホバー 8% / フォーカス 10% / 押下 10%) */
@@ -81,37 +48,22 @@
 	--disabled-ink: rgba(30, 42, 71, 0.38);
 	--disabled-soft: rgba(30, 42, 71, 0.04);
 
-	/* ガラスの塗り。Task 10v — Task 10u (iOS のタブバー参考画像に合わせた白っぽい塗り)を
-	   やめ、Apple の Liquid Glass のように面の中で背後の色がはっきり透ける Task 10s 以前の
-	   値に戻す。4.5:1 の実測が許す下限まで薄くしてある (--glass-1 は載る文字がほぼ --ink
-	   なので最も薄く、--ink-3 が載るサイドナビと依頼バーは実測に合わせて --glass-panel を
-	   少し上げてある) */
+	/* ガラスの塗り。4.5:1 の実測が許す下限まで薄くしてある (--ink-3 が載るナビと依頼バーは少し濃い) */
 	--glass-1: rgba(255, 255, 255, 0.48);
 	--glass-2: rgba(255, 255, 255, 0.6);
 	--glass-panel: rgba(255, 255, 255, 0.58);
-	/* Task 10w (glass-scope.md 5 節) — ドロワー・シート・モーダル・ポップオーバー・メニューの
-	   regular 変種。
-	   ナビ層 (--glass-panel) より文字が多いので、フォールバック (backdrop-filter) 経路でも
-	   ナビ層より濃くする。WebGL 経路の実際の塗りは src/lib/glass.ts の SHEET (tint 1.5) */
+	/* ドロワー・シート・モーダル・ポップオーバー・メニューの regular 変種。文字が多いのでナビ層より濃い。
+	   WebGL 経路の塗りは src/lib/glass.ts の SHEET */
 	--glass-sheet: rgba(255, 255, 255, 0.82);
 	--solid: rgba(255, 255, 255, 0.92);
-	/* 覆いが出ている間のカードの塗り。ガラスを 2 枚重ねないために面を不透明へ戻す。
-	   代替の経路 (backdrop-filter)と WebGL の経路の 2 か所で使うので、値はここ 1 つにまとめる */
+	/* 覆いが出ている間のカードの塗り。ガラスを 2 枚重ねないために不透明へ戻す */
 	--overlay-card: rgba(255, 255, 255, 0.9);
 
-	/* ぼかしは 12px と 16px のまま。Liquid Glass のぼかしはごく弱く、強くすると
-	   すりガラスになって「厚みのある透明な板」に見えなくなる。背景をぼかして見せる役は
-	   ぼかし量ではなく、下の屈折 (変位写像) と縁のレンズの帯が担う。Task 10v — Task 10u の
-	   すりガラス (28px) から Task 10s 以前の値に戻す。
-	   彩度と明度で背後の色を拾う (visual 4.2) */
+	/* Liquid Glass のぼかしはごく弱い。強くするとすりガラスになる。背景を見せる役は屈折と縁の帯が担う */
 	--blur-m: blur(16px) saturate(190%) brightness(1.05);
-	/* Task 10w — regular 変種 (上の --glass-sheet と対) のフォールバックぼかし。文字が多い面
-	   なので少し強くする。WebGL 経路の実際のぼかしは SHEET.material.backdropBlur (22) */
+	/* regular 変種のフォールバックのぼかし。WebGL 経路は SHEET.material.backdropBlur */
 	--blur-sheet: blur(22px) saturate(190%) brightness(1.05);
-	/* 縁の光 (visual 3.2 の 1px の白い縁、4.2)。WebGL2 が無い環境の代替経路
-	   (backdrop-filter)だけで使う。WebGL 経路ではこの変数はゼロになり、::after が
-	   反射を抜いた縁を描き直す (下の Liquid Glass の節)。Task 10v —
-	   Task 10u の「太く明るい縁」から Task 10s 以前の値に戻す */
+	/* 縁の光 (visual 4.2)。backdrop-filter の代替経路だけで使い、WebGL 経路では 0 になって ::after が縁を描く */
 	--rim:
 		inset 0 0 0 1px rgba(255, 255, 255, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.95),
 		inset 0 0 8px rgba(255, 255, 255, 0.5), inset 0 0 24px rgba(255, 255, 255, 0.35),
@@ -125,10 +77,8 @@
 	--e3:
 		0 2px 6px hsl(220 40% 35% / 0.08), 0 12px 32px hsl(220 40% 35% / 0.12),
 		0 32px 72px hsl(220 40% 35% / 0.16);
-	/* Task 10f — ナビ層のガラスが地から浮いて見えるための落ち影。地が無彩色に近いので、
-	   ガラスの面と地の明るさの差はほとんどない。板が浮いていることを伝えるのは影と縁だけになる。
-	   --e2 (最も濃い層で 0.08) では足りず、参考画像と同じく面のすぐ下に濃い影を置く。
-	   ライブラリは影を描かないので、これは CSS 側の役 (外側の影のみ) */
+	/* ナビ層のガラスの落ち影。地が無彩色に近く、板が浮いて見えるのは影と縁だけで伝わる。
+	   ライブラリは影を描かないので CSS 側で持つ */
 	--e-glass:
 		0 2px 6px hsl(220 40% 35% / 0.1), 0 10px 28px hsl(220 40% 35% / 0.14),
 		0 28px 64px hsl(220 40% 35% / 0.1);
@@ -166,42 +116,29 @@
 	/* 骨格の寸法 (ruling: サイドナビ 256) */
 	--side-w: 256px;
 	--rail-w: 56px;
-	/* side-collapse.md — 本文・依頼バー・覆いが左に空ける幅。格納時は .app.side-hidden が
-	   切り替えボタン 1 個ぶんに上書きする (:root:has(.app.side-hidden) が覆い側も追従させる。
-	   下の :root:has(.app.side-hidden) を見よ) */
+	/* 本文・依頼バー・覆いが左に空ける幅。格納時は下の :root:has(.app.side-hidden) で上書きする */
 	--side-space: calc(var(--side-w) + 32px);
-	/* 格納時の --side-space。.app の中の上書きは :root で定義した --frame-left に届かないので
-	   (カスタムプロパティはスコープごとに解決される)、値をここに 1 つだけ置いて両側から見る */
+	/* .app の中の上書きは :root の --frame-left に届かない (カスタムプロパティはスコープごとに解決される) ので、
+	   格納時の値をここに置いて両側から見る */
 	--side-space-hidden: calc(var(--sp-4) + 44px + var(--sp-2) + var(--sp-4));
-	/* レビュー I2 — 枠 (サイドナビ・連携の列、段 76) が覆い (段 75) より前にあるので、
-	   覆いは枠の内側の帯に隠れないよう、この 2 つの間に中央寄せ・右寄せする */
+	/* 覆い (段 75) は枠 (段 76) の内側の帯に隠れないよう、この 2 つの間に中央寄せ・右寄せする */
 	--frame-left: var(--side-space);
 	--frame-right: var(--sp-4);
-	/* Task 10n — 上部バーは帯をやめて中央に浮くピルになった。高さは操作領域の下限 (44px)を
-	   割らないところまでで、island.md「普段の形と寸法」の 48〜52px の上端を取る */
+	/* 上部バーのピルの高さ。操作領域の下限 44px を割らない (docs/research/island.md) */
 	--header-h: 52px;
-	/* ピルの下端 (上の余白 16 + 高さ)＋ 8px。本文の先頭をここより下から始めれば、
-	   浮かぶピルに隠れない。960px 以下はピルではなく上端に貼り付く不透明な帯なので式が変わる */
+	/* ピルの下端 + 8px。960px 以下はピルではなく上端の帯なので式が変わる */
 	--bar-clear: calc(var(--sp-4) + var(--header-h) + var(--sp-2));
 	--chatbar-h: 60px;
 	--bottomnav-h: 72px;
 	/* チップの高さ (下の .chip)。依頼バーの折り返し行の角丸がここから同心に決まるので変数にする */
 	--chip-h: 40px;
-	/* Task 11r — 本文の下端の余白を 1 つの仕組みに統合する。固定要素 (依頼バー、
-	   960px 以下はボトムナビも)の実際の高さ (上の 2 つの変数、.chatbar / .bottomnav の
-	   height と同じ)から、それが浮く分の隙間と読みやすい間 (--sp-8) を足して組み立てる。
-	   .main の padding-bottom と .main:has(.today) の下端は両方ここを見るので、
-	   画面ごとに別の calc を書かない (今まではここが 108〜196px の間でばらばらだった)。
-	   置き場所が .app なのは、依頼バーを出さない画面が .app.no-bar で --chatbar-h を
-	   0 に差し替えるため。:root に置くとその差し替えより先に解決され、0 が効かない */
+	/* 本文の下端の余白。固定要素 (依頼バー、960px 以下はボトムナビも) の高さ + 隙間 + --sp-8。
+	   .app に置くのは .app.no-bar の --chatbar-h: 0 を効かせるため (:root だと先に解決される) */
 }
 .app {
 	--content-bottom-clear: calc(var(--chatbar-h) + var(--sp-4) + var(--sp-8));
 }
-/* side-collapse.md — サイドナビを格納中は、本文・依頼バーの左余白を切り替えボタン 1 個ぶんに
-   詰める (ボタンの位置は左上 var(--sp-4) + 8px、直径 44px の操作領域 + 読みやすい間 --sp-4)。
-   960px 以下はサイドナビ自体が無いので、この上書きも要らない (下の @media (max-width: 960px)
-   の --frame-left: 0px と同じく詳細度で勝つ必要が無い幅) */
+/* サイドナビを格納中は、左余白を切り替えボタン 1 個ぶん (左上 --sp-4 + 8px、44px、間 --sp-4) に詰める */
 @media (min-width: 961px) {
 	.app.side-hidden {
 		--side-space: var(--side-space-hidden);
@@ -300,11 +237,7 @@ svg.i {
 	outline-offset: 2px;
 }
 
-/* visual 4.3 — 背景 (Task 10f)。Apple の Liquid Glass の参考画像は、無彩色に近い明るい地の上に
-   透明なガラスが載る構図で、色を持つのは地ではなくガラスの縁と下を通る内容だった。
-   Task 10d〜10e で置いた色の塊 5 個は、地そのものを虹色にしてしまい
-   「ガラスの板が虹の上に載っている」だけの画面になった (ユーザー判定 2026-09-16)。塊は全部消し、
-   階調 1 枚に戻す。色を持つのはオーブだけ (オーブの光彩は .orb 側で持つ) */
+/* visual 4.3 — 背景。無彩色に近い明るい階調 1 枚。色を持つのはオーブだけ */
 .bg {
 	position: fixed;
 	inset: 0;
@@ -330,9 +263,7 @@ svg.i {
 	/* 球とハローはシェーダーが透明の上に描く。箱の形を出す背景や影は付けない */
 	background: transparent;
 }
-/* 描画面を手放している間 (隠れたタブ)と失った直後は canvas を隠す。
-   Task 10x — CSS の代替表示は廃止したので、この間はオーブの場所が空く
-   (Orb.svelte のコメントを見よ) */
+/* 描画面を手放している間 (隠れたタブ) と失った直後は canvas を隠す (Orb.svelte を見よ) */
 .orb canvas.off {
 	visibility: hidden;
 }
@@ -350,46 +281,30 @@ svg.i {
 .app {
 	position: relative;
 	min-height: 100dvh;
-	/* 上部バーとサイドナビを覆い (Portal で <body> 直下、段 75) より前に出すため、
-	   ここで積み重ねの文脈を作らない (ユーザー指示 2026-09-23)。
-	   Task 11r (監査 8) — カードのガラス (glass()。bleed は材質から決まり、今の値では 47px)が
-	   窓の右端に近いカードでは画面幅より外へはみ出し、横スクロールを生んでいた
-	   (当時は Inbox や人物の一覧にもガラスがあった。Task 10w で内容の層から外したので
-	   今 glass() を使うのは Today の 2 か所だけだが、切る指定は残す。canvas 自体は
-	   pointer-events: none なので押し間違いにはならない)。.public と同じ手 (overflow-x: clip)
-	   をこの層にも掛ける。固定要素 (.chrome、サイドナビ、依頼バー、ボトムナビ)は
-	   position: fixed で .app の子でも視点 (viewport) 基準に描かれるので、ここでは切られない。
-	   overflow-y は visible のまま明示し、片方だけ hidden/auto と違って overflow-x: clip との
-	   組でも文書の縦スクロールを .app 自身の内部スクロールに変えない (仕様上の例外) */
+	/* 上部バーとサイドナビを覆い (Portal、段 75) より前に出すため、ここで積み重ねの文脈を作らない。
+	   overflow-x: clip は窓の右端に近いカードのガラスが横スクロールを生むのを切る。
+	   overflow-y を visible と明示すると、縦スクロールが .app の内部スクロールにならない */
 	overflow-x: clip;
 	overflow-y: visible;
 }
-/* Task 10i — 枠のガラスをまとめて描くための空の層。中身はガラスの canvas 1 枚だけ。
-   本文 (段を持たない)より後、覆い (75) より前、枠の面と同じ段に敷く。枠の面は DOM 順が
-   後なので canvas の上に乗る。画面いっぱいに広げるので、
-   pointer-events を切らないと画面全体が押せなくなる */
+/* 枠のガラスをまとめて描く空の層 (canvas 1 枚)。枠の面は DOM 順が後なので canvas の上に乗る。
+   画面いっぱいなので pointer-events を切らないと全体が押せなくなる */
 .chrome {
 	position: fixed;
 	inset: 0;
 	z-index: 76;
 	pointer-events: none;
 }
-/* Task 10w (glass-scope.md 1〜3 節) — ドロワー・シート・モーダル・ポップオーバー・メニューを
-   まとめて描く空の層 (トーストは修正ラウンド 2 で外した。下の .toast を見よ)。
-   .chrome と同じ作り (中身は canvas 1 枚、pointer-events なし)
-   だが、bits-ui の Portal で <body> の直接の子として足す ((app)/+layout.svelte) ので、
-   ここでは通常の入れ物としての見た目だけを持たせる。
-   z-index 71 — scrim (70) より上、この層が受け持つ覆いの面 (75)より下。.pill-panel/.demo-menu は
-   枠 (76) から開くので枠より前の 77 に上げてあり (下を見よ)、この層は Portal で常駐する分、
-   DOM 順で必ず面より先に入るので、tie でも面が上に乗る (.chrome と .sidebar の関係と同じ) */
+/* ドロワー・シート・モーダル・ポップオーバー・メニューのガラスをまとめて描く空の層。
+   Portal で <body> 直下に足す ((app)/+layout.svelte)。z-index 71 は scrim (70) と面 (75) の間。
+   常駐するので DOM 順で必ず面より先に入り、同じ段でも面が上に乗る */
 .overlay-chrome {
 	position: fixed;
 	inset: 0;
 	z-index: 71;
 	pointer-events: none;
 }
-/* src/lib/glass.ts の OVERLAY_TIERS 冒頭のコメントを見よ。display: none で
-   getBoundingClientRect() が幅・高さ 0 になり、ライブラリの描画対象からも外れる */
+/* display: none で getBoundingClientRect() が 0 になり、ライブラリの描画対象からも外れる */
 .overlay-chrome-anchor {
 	display: none;
 }
@@ -398,9 +313,7 @@ svg.i {
 	transition: margin-left var(--d-enter) var(--ease-out);
 	padding: var(--bar-clear) var(--sp-6) var(--content-bottom-clear);
 }
-/* 依頼バーを出さない画面 (自前の入力欄を持つ /integrations — (app)/+layout.svelte)。
-   下に空ける高さは --chatbar-h から組み立てられているので (:root の
-   --content-bottom-clear)、バーの高さを 0 にすれば広い幅も 960px 以下も一度に詰まる */
+/* 依頼バーを出さない画面 (/integrations)。--chatbar-h を 0 にすれば下の余白も一緒に詰まる */
 .app.no-bar {
 	--chatbar-h: 0px;
 }
@@ -416,12 +329,8 @@ svg.i {
 	flex-direction: column;
 	gap: var(--sp-1);
 	width: var(--side-w);
-	/* ユーザー指示 2026-09-24 — 格納ボタンの分の上詰め (44px + var(--sp-2)) は廃止。
-	   ロゴ行 (44px、.nav-logo)をボタンと横に並べたので、サイドナビの上padding は
-	   ボタンの top (var(--sp-4) + 8px) とサイドナビの top (var(--sp-4)) の差である
-	   8px = var(--sp-2) だけでよく、四辺とも var(--sp-2) になる。
-	   overflow-y: auto は項目の高さを詰める方式 (.nav-item の height を見よ) に替えたので廃止
-	   (窓が非常に低いときの保険は下の @media (max-height: 600px) に置く) */
+	/* 上 padding 8px は、ロゴ行と横に並ぶ格納ボタンの top (--sp-4 + 8px) との差。
+	   窓が非常に低いときのスクロールは下の @media (max-height: 600px) */
 	padding: var(--sp-2);
 	border-radius: var(--r-l);
 	background: var(--glass-panel);
@@ -432,9 +341,7 @@ svg.i {
 	   閉じるときだけ .app.side-hidden .sidebar 側で遅延させる */
 	transition: transform var(--d-enter) var(--ease-out), opacity var(--d-enter) var(--ease-out);
 }
-/* side-collapse.md — 961px 以上で格納中は画面の外へ滑らせる。opacity/visibility も落とし、
-   閉じ終わったら Tab と読み上げからも外す (visibility の遷移だけ 300ms 遅らせて、
-   アニメーションが終わってから最後に切り替える) */
+/* 961px 以上で格納中は画面の外へ滑らせる。visibility だけ 300ms 遅らせ、閉じ終わってから Tab と読み上げから外す */
 @media (min-width: 961px) {
 	.app.side-hidden .sidebar {
 		transform: translateX(calc(-100% - var(--sp-4) * 2));
@@ -447,9 +354,7 @@ svg.i {
 			visibility 0s linear var(--d-enter);
 	}
 }
-/* side-collapse.md — サイドナビの格納の切り替え。開いているときはサイドナビの上端に重ねて見せ、
-   閉じても同じ位置に残る (ボタン自身は動かさない)。.sidebar より前面に出るよう段を 1 つ上げる
-   (76 のままだと DOM 順で先に来た場合にサイドナビの不透明な地に隠れてしまう) */
+/* 格納の切り替えボタン。閉じても同じ位置に残る。76 のままだと DOM 順でサイドナビの不透明な地に隠れるので 1 段上げる */
 .side-toggle {
 	position: fixed;
 	left: calc(var(--sp-4) + 8px);
@@ -477,11 +382,8 @@ svg.i {
 .side-toggle:active {
 	background: var(--press);
 }
-/* ユーザー指示 2026-09-24 — サイドナビ上端、格納ボタンの横に並ぶロゴ行。ボタン (幅44px、
-   left: var(--sp-4) + 8px)の右端 + 12px にロゴの左端を置く。ロゴの行は .sidebar の最初の
-   子で高さ44px なので、サイドナビの上 padding (var(--sp-2)) と合わせるとボタンと縦の中心が揃う。
-   padding-left の 56px は (ボタンの +8px オフセット − サイドナビの padding var(--sp-2)=8px が
-   相殺し) ボタン幅 44px + 隙間 12px の単純な和になる */
+/* ロゴ行。格納ボタン (44px、左 --sp-4 + 8px) の右 12px に置く。padding-left 56px = 44 + 12
+   (ボタンの +8px とサイドナビの padding 8px が相殺する) */
 .nav-logo {
 	display: flex;
 	align-items: center;
@@ -497,12 +399,8 @@ svg.i {
 .nav-logo:focus-visible {
 	outline-offset: -2px;
 }
-/* ユーザー指示 2026-09-24 — ロゴは小さいオーブ。sparks を切るのは 28px では破片が点の雑音に
-   なるため。球の直径は箱の48% (shader.ts の R0)なので、直径28pxにするにはオーブの箱を
-   28 / 0.48 ≈ 58px で描く必要がある。ロゴ行 (44px)からはみ出すため、この入れ物は見た目の
-   直径28pxに保ち、中の .orb (58px)だけ中央に重ねてはみ出させる。光彩が行の外に出るのは
-   構わない (overflow: visible)。描画面 (WebGL context)は1つ増えるが、Todayでも6つで
-   ブラウザの上限 (1ページおよそ16)に余裕がある */
+/* ロゴは小さいオーブ。28px では破片が点の雑音になるので sparks を切る。球の直径は箱の 48%
+   (shader.ts の R0) なので、箱 28 / 0.48 ≈ 58px の .orb を中央に重ねてはみ出させる */
 .nav-logo-orb {
 	position: relative;
 	width: 28px;
@@ -523,13 +421,8 @@ svg.i {
 	align-items: center;
 	gap: var(--sp-4);
 	flex: none;
-	/* ユーザー指示 2026-09-24 — サイドナビ内をスクロールさせないため、11項目 (PRIMARY 10 +
-	   UTILITY 1) + ロゴ行が窓の高さに収まるよう項目の高さを詰める。
-	   固定分 = サイドナビの上下padding (var(--sp-2)×2=16px) + ロゴ行 (44px) + 区切り線
-	   (1px、marginは.nav-sepの gap: 0 で持たせない) + .sidebar の gap (var(--sp-1)=4px) が
-	   ロゴ・区切り線・10項目・下端の項目の間 (12箇所) に入る分 (4px×12=48px) = 16+44+1+48 = 109px。
-	   残りの高さ (100dvh − 上下の固定 var(--sp-4)×2=32px − 109px) を11項目で割り、
-	   Apple HIG の操作領域の下限 36px 〜 元の高さ 48px の間に収める */
+	/* 11 項目 + ロゴ行を窓の高さに収め、サイドナビをスクロールさせない。固定分 109px =
+	   上下 padding 16 + ロゴ行 44 + 区切り線 1 + gap 4 x 12。項目の高さは 36px (HIG の下限) 〜 48px */
 	height: clamp(36px, calc((100dvh - 32px - 109px) / 11), 48px);
 	padding: 0 var(--sp-4);
 	border-radius: 16px; /* 同心: 24 − 8 */
@@ -552,10 +445,7 @@ svg.i {
 .nav-item:focus-visible {
 	outline-offset: -2px;
 }
-/* Task 10u — 参考画像 (iOS のタブバー)の選択中タブは、青ではなく灰色の塗りのピルで、
-   アイコンと文字はそのまま濃い色 (地の文字色と同じ)。indicators.md 1「現在地は面で示す」
-   にも沿う。色だけに頼らないという WCAG 1.4.1 の要件は、面 (塗り)・文字の 700・アイコンの
-   線の太さの 3 つで満たす (下の Task 10g の注記のとおり、色の差を頼りにしない) */
+/* 現在地は灰色の塗りのピル。色だけに頼らず、塗り・文字の 700・アイコンの線の太さで示す (WCAG 1.4.1) */
 .nav-item.on {
 	background: var(--sel-gray);
 	color: var(--ink);
@@ -563,16 +453,13 @@ svg.i {
 }
 .nav-item.on .i {
 	color: var(--ink);
-	/* Task 10g (調査 indicators.md「サイドナビの現在地表示」) — 左端の縦バーは Apple HIG の
-	   Sidebars にも M3 の Navigation rail にも無い作法なので廃止した。現在地は行の塗り (面)、
-	   文字の 700、アイコンの線の太さの 3 つで示す。色だけに頼らない (WCAG 1.4.1) */
+	/* 左端の縦バーは HIG Sidebars にも M3 Navigation rail にも無い作法なので使わない */
 	stroke-width: 2.3;
 }
 .nav-item .badge {
 	margin-left: auto;
 }
-/* ユーザー指示 2026-09-24 — ロゴ行の下の区切り線のみに縮小 (旧: 「その他」見出しの上下にも
-   置いていたが見出しごと廃止)。間隔は .sidebar の gap (var(--sp-1)) に任せ、margin は持たない */
+/* ロゴ行の下の区切り線。間隔は .sidebar の gap に任せる */
 .nav-sep {
 	flex: none;
 	height: 1px;
@@ -580,8 +467,7 @@ svg.i {
 	border: 0;
 	background: var(--line);
 }
-/* Task 10p (参考の良い点 1) — 設定は下端に固定する。ユーザー指示 2026-09-24 で区切り線と
-   専用スペーサー (.nav-spacer) は廃止し、margin-top: auto だけで押し出す */
+/* 設定は margin-top: auto で下端に押し出す */
 .nav-bottom {
 	margin-top: auto;
 }
@@ -615,12 +501,7 @@ svg.i {
 	padding: 0 var(--sp-4);
 	z-index: 50;
 }
-/* Task 10n/10q — 帯ではなく右上に浮くピル (island.md の結論 + ユーザー裁定 2026-09-16、
-   中央ではなく右上。さらにユーザー裁定 2026-09-16 追補「右上のバーは一番右まで
-   やっていい」で、右の位置を .rail と同じ --sp-4 に揃えた。レールがある画面でも
-   ピルだけは右端に寄せ、本文と依頼バーの回避幅 (下の calc(--rail-w + 32px))
-   は付けない。列は縦中央に浮くので、ピルの高さ (52px)と重ならないことを検証幅ごとに
-   実測して確認済み (task-10q-report.md)。
+/* 右上に浮くピル。右の位置は .rail と同じ --sp-4 で、本文と依頼バーの回避幅は付けない。
    幅の上限 560px は案内が出ているときのいちばん長い並びに合わせてある */
 .header.glass {
 	position: fixed;
@@ -630,26 +511,23 @@ svg.i {
 	pointer-events: auto;
 	max-width: calc(100vw - var(--sp-4) * 2);
 	border-radius: var(--r-pill);
-	/* 幅は Header.svelte が中身 (.hdr-inner) の自然な幅を測って px で渡す。
-	   max-content と interpolate-size では、中身が入れ替わったときに幅が跳んだ
-	   (指定値が変わらないので transition が走らない。実測で 486→725px が 0ms) */
+	/* 幅は Header.svelte が中身の自然な幅を測って px で渡す。max-content や interpolate-size では
+	   中身が入れ替わっても指定値が変わらず、transition が走らずに幅が跳ぶ */
 	transition: width var(--d-enter) var(--ease-out);
 	background: var(--glass-panel);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e-glass);
 }
-/* 上限 560px に当たったとき、日付だけ縮めて丸い枠の外へ他の要素を押し出さない
-   (review-task-10n.md Minor 4)。flex の既定 min-width: auto を外さないと縮まない */
+/* 上限 560px に当たったら日付だけ縮める。flex の既定 min-width: auto を外さないと縮まない */
 .hdr-date {
 	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
-/* 取り消し猶予の間、ピルの中に出す輪 + 文言 + 取り消す (ToastCountdown.svelte、
-   Toast.svelte と中身は共通)。.toast-msg 等は .toast に閉じたセレクタではないのでそのまま効くが、
-   .header は高さ固定 (52px) なので折り返すと欠ける。ここだけ 1 行に留める */
+/* 取り消し猶予の間、ピルの中に出す輪 + 文言 + 取り消す (中身は Toast.svelte と共通)。
+   .header は高さ固定 (52px) なので 1 行に留める */
 .pill-live {
 	display: contents;
 }
@@ -662,10 +540,8 @@ svg.i {
 .pill-countdown .toast-msg {
 	white-space: nowrap;
 }
-/* ピルの中身。これの幅を Header.svelte が測ってピルに渡す。ピルが遷移の途中で狭くても
-   中身は縮まない (flex: none) ので、測った値は常に伸び切ったときの幅になる。
-   max-width はピルの上限 560px から左右の余白を引いた値。当たったら .hdr-date が縮む。
-   ピル自身の max-width は画面からはみ出さないための安全柵でしかない */
+/* ピルの中身。flex: none で縮まないので、Header.svelte が測る値は常に伸び切った幅になる。
+   max-width は上限 560px から左右の余白を引いた値 */
 .hdr-inner {
 	display: flex;
 	flex: none;
@@ -673,18 +549,12 @@ svg.i {
 	gap: var(--sp-3);
 	max-width: calc(560px - var(--sp-4) * 2);
 }
-/* 上限の 560px は案内の並びに合わせた値で、文言が入るとアイコンの下へはみ出す。
-   猶予の間だけ上限を外し、ピルを左へ伸ばす (island.md「広がったときの中身」)。
-   上限はピルではなく中身に持たせる。ピルに持たせると、猶予が終わった瞬間に上限が
-   戻って幅が transition を経ずに跳ぶ */
-/* レビュー M3 — 猶予の間はピルが左へ伸びるため、サイドナビ (--frame-left)と重なる。
-   回避幅を --frame-left に差し替える。右はピル自身の左右の余白 (--sp-4 x 2)と右端の余白
-   (--sp-4) */
+/* 猶予の間だけ上限を外してピルを左へ伸ばす。上限をピルに持たせると、猶予が終わった瞬間に
+   幅が transition を経ずに跳ぶ。伸びた分がサイドナビと重ならないよう回避幅を --frame-left にする */
 .header.glass:has(.pill-countdown) .hdr-inner {
 	max-width: calc(100vw - var(--frame-left) - var(--sp-4) * 3);
 }
-/* Task 10w (glass-scope.md 1 節) — 携帯の上部バーは HIG Toolbars がガラスを持つと明記する
-   部品。src/lib/glass.ts の CHROME_TIERS に加えたので、下は .header.glass と同じ扱いにする */
+/* 携帯の上部バーもガラス (HIG Toolbars)。src/lib/glass.ts の CHROME_TIERS に入っている */
 .header.solid {
 	display: none;
 	position: fixed;
@@ -698,12 +568,8 @@ svg.i {
 	box-shadow: var(--rim), var(--e-glass);
 }
 
-/* visual 4.5 — 浮くカード (Task 10f: ガラスをやめた)。
-   iOS 26 でガラスになるのはナビ層 (バー、ボタン、ツールバー) だけで、文字が並ぶ内容は
-   白に近い普通の面に載る。カードをガラスにすると、面の数だけ屈折と鏡面が増えて
-   画面全体がすりガラスの板の集まりになり、ナビ層のガラスが目立たなくなる。
-   枠線は border ではなく内側の影で描く。border を足すと 1px ぶん箱が育ち、
-   Bento の列の高さがそろわなくなる。見た目は同じ */
+/* visual 4.5 — 浮くカード。iOS 26 でガラスになるのはナビ層だけで、内容は白に近い普通の面に載る。
+   枠線は border ではなく内側の影で描く (border だと 1px 箱が育ち、Bento の列の高さがずれる) */
 .card {
 	position: relative;
 	border-radius: var(--r-m);
@@ -714,9 +580,7 @@ svg.i {
 		0 8px 24px rgba(30, 42, 71, 0.08);
 	transition: box-shadow var(--d-base) var(--ease-out);
 }
-/* buttons.md 観点 A 原則 1 — 状態は浮き (elevation) ではなく塗りの濃淡で示す。ボタンの
-   .btn.sec / .btn.pri と同じ考え方で、カード自身の背景に重ねる分の不透明度を足す
-   (押せる面の共通トークン --hover / --press、:root の rgba(30, 42, 71, ...)) */
+/* 状態は浮きではなく塗りの濃淡で示す (docs/research/buttons.md 観点 A) */
 .card:hover {
 	box-shadow:
 		inset 0 0 0 1px rgba(30, 42, 71, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9),
@@ -732,14 +596,8 @@ svg.i {
 	box-shadow: inset 0 0 0 2px var(--accent), 0 8px 24px rgba(30, 42, 71, 0.08);
 }
 
-/* visual 2.7 / 2.8 — Task 10j でモックの構図に戻した。カードは左右 2 列に分かれ、
-   その間を広く空けてオーブを見せる。1100px 以下で格子 (grid)ではなく段組み (multi-column)を
-   使うのは、格子だと行の高さが左右の高いほうにそろい、5 枚で 3 行ぶんの高さになるため。
-   段組みはブラウザが左右の高さが釣り合うところで折り返すので、DOM の順序
-   (要件定義 p.11 の重み順)を保ったまま高さが 3 割縮む */
-/* Task 10l 修正 — 段組み (multi-column)を使うのは 1100px 以下だけになった。1101px 以上は
-   カードを絶対配置で球の周りに置く (Today の節の「環状の配置」を見よ)。位置の基準は
-   どちらの組み方でもこの要素なので、position: relative はここに置いたままにする */
+/* visual 2.7 / 2.8 — カードは左右 2 列、間を空けてオーブを見せる。1100px 以下は段組み
+   (multi-column)。格子だと行の高さが高いほうにそろって 3 行ぶんになる。1101px 以上は絶対配置 */
 .bento {
 	position: relative;
 	max-width: 80%;
@@ -787,14 +645,8 @@ svg.i {
 	box-shadow: var(--rim), var(--e-glass);
 }
 
-/* Task 11r (監査 7) — .chip は既定で white-space: nowrap のみで縮む指定が無いので、狭い
-   依頼バーでは入力欄だけが 4px まで潰れていた。ここで縮ませ、文言は省略記号に落とす。
-   入力欄には最低 120px を渡す (幅が足りない携帯でも 1 文字は必ず打てる)。
-   修正ラウンド 1 (Important 2) — min-width が 32px しかなく、390 幅では潰れる先が入力欄から
-   文言側に移って「AB…」の 34px しか出なくなり、どのスレッドと結び付いているか読めなかった。
-   パディング (32px)・アイコンとの間隔 (8px)・X アイコン (16px) の内訳 56px に、文言が読める
-   目安の 96px を足した 152px を下限にする。390 幅ではこの下限と入力欄の 120px が同時には
-   収まらない (下の @media (max-width: 460px) でチップを入力欄の上の行に折り返す) */
+/* .chip は既定で縮まず、狭い依頼バーで入力欄が潰れていた。下限 152px = 余白 32 + 間 8 + X 16 +
+   文言が読める 96。入力欄には 120px を残す */
 .chatbar .chip {
 	flex-shrink: 1;
 	min-width: 152px;
@@ -817,31 +669,15 @@ svg.i {
 .chatbar input::placeholder {
 	color: var(--ink-3);
 }
-/* Task 11r 修正ラウンド 1 (Important 2) — 依頼バーの内寸から、縮まないマイク・送信ボタン
-   (40px+42px)と 3 つの隙間 (--sp-3 x 3 = 36px)、依頼バー自身の余白 (28px)を引くと、390 幅
-   では文言つきのチップ下限 152px と入力欄の下限 120px が同時には収まらない (合計 272px に対し
-   残りは約 212px、約 60px 足りない)。460px は余裕を見た閾値 (計算上の境目は 450px)。
-   修正ラウンド 2 (再レビュー 新規 5) — ここから先はチップを文言なしのアイコンに落としていたが、
-   残る絵が「結び付けを外す」の ✕ だけになり、何に結び付いているかを示す絵が画面上に 1 つも
-   残らなかった。title はホバーでしか出ずタッチ端末では出ない (NN/g Icon Usability、
-   indicators.md 3 節「アイコンだけで意味を伝える条件」)。文言を消さず、チップを入力欄の
-   1 行上に折り返す (ブリーフが認めるもう 1 つの選択肢)。
-   チップは丸ごと 1 個の「結び付けを外す」ボタン (KurokoBar.svelte の onclick 参照)なので、
-   全幅の行になっても機能は変わらない。--chatbar-h をこの行の高さ (8 + チップ 40 + 隙間 12 +
-   入力欄の行 44 + 8 = 112px)に差し替えるだけで、.chatbar の height と --content-bottom-clear
-   (960px 以下では --chatbar-bottom 経由)の両方が計算し直される。Task 11r が --content-bottom-clear
-   を「1 つの仕組みに統合する」(:root の --chatbar-h 直後のコメント参照)と決めた狙いどおり、
-   ここでも新しい変数を増やさずに済む */
+/* 390 幅ではチップの下限 152px と入力欄の下限 120px が同時に収まらない (境目は約 450px)。
+   チップを入力欄の 1 行上に折り返し、--chatbar-h を 112px (8 + 40 + 12 + 44 + 8) に差し替える。
+   アイコンだけに落とすと、title はタッチ端末で出ず何に結び付いたか分からない (NN/g Icon Usability) */
 @media (max-width: 460px) {
 	:root:has(.chatbar .chip) {
 		--chatbar-h: 112px;
 	}
-	/* border-radius: var(--r-pill) のままだと、112px の高さでは角の半径が 56px になり、
-	   この折り返し行の中身 (チップの右上、送信ボタンの右下)が丸い輪郭からはみ出す。
-	   visual.md 3.7「内側の角丸 = 外側の角丸 − 間隔」を解くと 外側 = 内側 + 間隔。
-	   中身のうち輪郭にいちばん近いのはチップ (capsule なので半径は自身の高さの半分)で、
-	   間隔はこの行で最も狭い padding (top/right/bottom = --sp-2。left だけ --sp-5 と広い)。
-	   チップの高さは下の .chip を見よ */
+	/* --r-pill のままだと半径 56px で中身が輪郭からはみ出す。外側の角丸 = 内側 + 間隔
+	   (visual.md 3.7)。内側はチップ (高さの半分)、間隔は --sp-2 */
 	.chatbar:has(.chip) {
 		flex-wrap: wrap;
 		padding-top: var(--sp-2);
@@ -855,11 +691,8 @@ svg.i {
 		height: 44px;
 	}
 }
-/* ruling (2026-09-16) — 入力欄そのものに輪郭を出すと、ガラスのピルの中に白い箱が
-   もう 1 枚現れて見える。焦点はバー全体に出し、入力欄の輪郭は消す。
-   文字入力の欄はマウスで押したときも :focus-visible が立つ (Chrome 152 で確認) ので、
-   :focus-visible だけでは押したのか Tab で来たのか分からない。押して入力するときは
-   輪郭を出さず (ユーザー指示 2026-09-25)、Tab で来たときだけ出す (WCAG 2.4.7)。
+/* 焦点はバー全体に出し、ガラスの中に白い箱が現れないよう入力欄の輪郭は消す。
+   文字入力の欄は押しても :focus-visible が立つので、Tab で来たときだけ出す (WCAG 2.4.7)。
    どちらで来たかは KurokoBar.svelte が data-keyboard で渡す */
 .chatbar input:focus-visible {
 	outline: none;
@@ -876,8 +709,7 @@ svg.i {
 	height: 42px;
 	border: 0;
 	border-radius: 50%;
-	/* Task 10k — 主ボタンと同じ扱い (buttons.md 観点 A 原則 1)。階調と落ち影をやめ、
-	   状態は塗りの明度だけで示す */
+	/* 主ボタンと同じく、状態は塗りの明度だけで示す (buttons.md 観点 A) */
 	background: var(--accent);
 	color: #fff;
 	cursor: pointer;
@@ -895,12 +727,8 @@ svg.i {
 	cursor: default;
 }
 
-/* visual 4.8 + components 3.4 — ボタン。
-   Task 10k — 意匠の根拠は docs/research/buttons.md 観点 A。階調・落ち影・内側の白い線を
-   裏付ける一次資料が 5 体系のいずれにも無かったので全部外し、--accent の単色塗りにした。
-   角丸は同節の結論 (8px 前後が中庸) に最も近い既存トークン --r-xs。
-   高さ 44px は Baymard / Apple HIG の強化基準 (44x44) をそのまま満たすので触らない。
-   主と副の差は色と形で付け、大きさでは付けない (同節 原則 4) ので、寸法は 3 種で共通 */
+/* visual 4.8 + components 3.4 — ボタン。--accent の単色塗り、角丸 --r-xs (docs/research/buttons.md 観点 A)。
+   高さ 44px (HIG / Baymard)。主と副の差は色と形で付け、大きさでは付けない */
 .btn {
 	position: relative;
 	display: inline-flex;
@@ -925,8 +753,7 @@ svg.i {
 	width: 18px;
 	height: 18px;
 }
-/* buttons.md 観点 A 原則 1 — 状態は浮きや影ではなく塗りの明度で示す。混ぜる割合は
-   白い文字との比が hover 8.09:1 / pressed 9.40:1 になるところ (基準は 4.5:1) */
+/* 状態は塗りの明度で示す。混ぜる割合は白い文字との比 hover 8.09:1 / pressed 9.40:1 */
 .btn.pri {
 	background: var(--accent);
 	color: #fff;
@@ -937,12 +764,7 @@ svg.i {
 .btn.pri:active {
 	background: color-mix(in srgb, var(--accent) 78%, #000);
 }
-/* components 3.4: 副ボタンの枠は 1px 実線の --accent (白地に 6.84:1)。
-   Task 10h — Today の見出しの列もここと同じ不透明な白にした。ガラスにしていた頃は
-   オーブの破片が動いて文字 (--accent) が最悪 2.87:1 まで落ち、塗り (tint) を上げても
-   直らなかった。Today の屈折は Bento のカードと依頼バーで見せる。
-   Task 10k — 落ち影 (--e1) は buttons.md 観点 A 原則 1 により外した (M3 outlined /
-   Carbon tertiary のどちらも影を持たない) */
+/* components 3.4 — 副ボタンの枠は 1px 実線の --accent (白地に 6.84:1)。影は持たない (M3 outlined / Carbon tertiary) */
 .btn.sec {
 	background: #fff;
 	color: var(--accent);
@@ -978,9 +800,7 @@ svg.i {
 .btn.tint:active {
 	background: rgba(26, 94, 203, 0.2);
 }
-/* 破壊的な操作。Carbon の danger は primary / tertiary / ghost の 3 種があり、これは
-   tertiary (枠だけ) に当たる。主ボタンと同じ塗りにしないのが要点 (buttons.md 観点 A 原則 6)。
-   文言は「削除」「キャンセルする」のような具体的な動詞にする (同原則、資料 16) */
+/* 破壊的な操作 (Carbon danger tertiary)。主ボタンと同じ塗りにしない。文言は具体的な動詞にする (buttons.md 観点 A) */
 .btn.danger {
 	background: #fff;
 	color: var(--warn);
@@ -989,9 +809,7 @@ svg.i {
 .btn.danger:hover {
 	background: var(--warn-soft);
 }
-/* Task 10k 修正ラウンド 1 — 88% だと塗りが rgb(246,212,213) まで濃くなり、上に載る --warn が
-   4.19:1 で buttons.md 資料 14 の 4.5:1 を割っていた。WCAG 1.4.3 が比の対象から外すのは
-   disabled だけで、押下中は外れない。94% なら rgb(250,224,224) で 4.60:1 */
+/* 88% だと上に載る --warn が 4.19:1 で 4.5:1 を割る。WCAG 1.4.3 は押下中を比の対象から外さない */
 .btn.danger:active {
 	background: color-mix(in srgb, var(--warn-soft) 94%, var(--warn));
 }
@@ -1026,9 +844,8 @@ svg.i {
 	box-shadow: none;
 	cursor: default;
 }
-/* 上の打ち消し (0,2,0) は .btn.pri:hover / :active (0,3,0) に負けるので、押せない間も
-   指を載せると塗りが変わっていた。同じ詳細度で置き直す。塗りを --accent のまま保つ
-   .btn.connect-cta[aria-disabled='true'] は詳細度が同じで後ろにあるのでそちらが勝つ */
+/* 上の打ち消し (0,2,0) は .btn.pri:hover / :active (0,3,0) に負け、押せない間も塗りが変わる。
+   同じ詳細度で置き直す */
 .btn:disabled:hover,
 .btn[aria-disabled='true']:hover,
 .btn:disabled:active,
@@ -1181,24 +998,16 @@ svg.i {
 .chip:active {
 	background: var(--press-accent);
 }
-/* 選択は塗りの反転 (白の地に青の文字 → 青の地に白の文字) で示す。
-   1 つだけを選ぶ切り替え (設定・ToDo・人物・LINE / Slack・予定の追加) には印を付けない
-   (docs/research/chip-select.md、ユーザー裁定 2026-09-24 の案 B)。印を付けると、選択を
-   切り替えるたびに文字が動くか、選んでいないチップの文字が右に寄るかのどちらかになった。
-   Apple HIG の Segmented control、Carbon の Content switcher、GitHub Primer の
-   SegmentedControl も印を使わない。塗りと画面の地のコントラストは 6.0:1 で、
-   WCAG 1.4.11 (3:1) を満たす。塗りつぶしの有無と文字色の反転で、色以外にも差が出る (1.4.1)。
-   複数を組み合わせて選ぶ絞り込み (作業履歴) だけは M3 のフィルターチップに倣って
-   印を付ける (下の .chip-check) */
+/* 1 つだけ選ぶ切り替えは塗りの反転だけで示し、印を付けない (HIG Segmented control、Carbon Content switcher)。
+   印を付けると選択のたびに文字が動く。地との比 6.0:1 (WCAG 1.4.11)。複数を選ぶ絞り込みだけ印を付ける
+   (docs/research/chip-select.md) */
 .chip.on {
 	background: var(--accent);
 	color: #fff;
 	box-shadow: none;
 }
-/* 絞り込みのチップの印。印が入ると文字が 26px (印 18px + 間 8px) 右へ動き、チップも
-   その分だけ広がる。印の幅と後ろの間を 0 から広げて、文字とチップの幅の変化を動きで追わせる
-   (M3 の Segmented button の実装も、印の出入りに合わせて文字の位置を動きで移す)。
-   間はチップの gap ではなく印の margin で持つ (gap だと非選択でも 8px 残る) */
+/* 絞り込みのチップの印。印の幅と後ろの間を 0 から広げ、文字とチップの幅の変化を動きで追わせる (M3 Segmented button)。
+   間は gap ではなく margin で持つ (gap だと非選択でも 8px 残る) */
 .chip .chip-check {
 	width: 18px;
 	margin-right: calc(var(--sp-2) * -1);
@@ -1233,22 +1042,9 @@ svg.i {
 	background: var(--disabled-soft);
 }
 
-/* components 3.6 — バッジ (押せない表示専用。ruling: 文字は 12px まで)。
-   Task 10k — 寸法は IBM Carbon の Tag の medium に合わせた (高さ 24px、文字 12px、左右 8px)。
-   角丸の 16px も Carbon の規定値で、Tag: Style の Structure の表が lg / md / sm の 3 段すべてに
-   16px を指定している (高さの半分ではない)。トークンに 16px は無いので直値。なお高さ 24px では
-   CSS の角丸の縮み規則が働き、16px は 12px に縮むので、999px / 16px / 12px のどれを書いても
-   描画は同一になる。ここで 16px と書くのは出所を Carbon の表に合わせるためで、形の違いではない。
-   構造 (薄い塗り + 同系色の 1px の枠) は Atlassian の Lozenge の形を採る。Carbon の Tag の枠は
-   selectable / operational だけの「押せる」印なので、枠の出所は Atlassian だけで、Carbon ではない。
-   枠を置く理由は、色を外しても輪郭が残ること (docs/research/buttons.md 観点 B 原則 2 の
-   「記号・形・色・文字のうち 3 要素」のうち、文字と色に形を足して 3 つにする)。枠の色は薄い色では
-   なく役割の色そのもので、面との比が 3:1 を下回らないようにしてある (同 資料 14)。
-   Task 10k 修正ラウンド 1 — 既定を「外部送信」の赤にしていたが、修飾子の付かないバッジが黙って
-   危険の色になるのは向きが逆なので、既定は中立の灰にした。危険や注意を出す場所は修飾子を明示する。
-   この灰は元は .badge.src と .badge.neutral が別々に持っていた同じ 3 行で、既定に上げて 1 つにした。
-   塗りが半透明でなく不透明なのは Task 10c の理由で、ガラスの上ではオーブが透けて 12px の文字が
-   実測 2.5:1 まで落ちたため。白地での見え方は rgba(120, 140, 180, .12) を白に重ねた色と同じ */
+/* components 3.6 — バッジ (押せない表示専用、文字は 12px まで)。寸法は Carbon Tag medium
+   (高さ 24、文字 12、左右 8、角丸 16)。薄い塗り + 同系色の 1px の枠は Atlassian Lozenge で、色を外しても形が残る。
+   既定は中立の灰。塗りが不透明なのは、ガラスの上でオーブが透けて 12px の文字が 2.5:1 まで落ちたため */
 .badge {
 	display: inline-flex;
 	align-items: center;
@@ -1269,37 +1065,21 @@ svg.i {
 	width: 12px;
 	height: 12px;
 }
-/* Task 10k — 承認の区分のうち「外部送信」。Carbon の Status indicator は赤 (high attention)を
-   「system irregularity, malfunction, or potentially destructive action」に限っており、区分が何かを
-   述べているだけのこの札は当たらない。同パターンの Status color palette が「orange represents a
-   serious warning」とする橙を採る。色は同じ表の Orange 60 (#ba4e00、outline 用)と Orange 10
-   (#fff2e8)で、Carbon がこの 2 つを「added contrast accessibility」のために用意している組。
-   修飾子名は Carbon の色の役割そのままに warn とする (橙 = warning、赤 = danger or error)。
-   Carbon の表で橙の状態に付いている名前は "Caution major" だが、下の .badge.danger (赤、失注)や
-   既にある .btn.danger と語彙を揃えるため採らない。attention も使わない。同パターンで attention は
-   赤・橙・黄をまたぐ強さの軸の呼び名 (high / medium / low attention)で、退けたはずの赤
-   (high attention)を指して読めるため。文字は 4.58:1、枠は面 (白)に対して 5.03:1 (資料 14 の下限は
-   4.5:1 と 3:1) */
+/* 「外部送信」の区分。赤は Carbon では異常・破壊的操作に限るので、serious warning の橙
+   (Orange 60 #ba4e00 / Orange 10 #fff2e8) を採る。文字 4.58:1、枠 5.03:1 */
 .badge.warn {
 	background: #fff2e8;
 	color: #ba4e00;
 	box-shadow: inset 0 0 0 1px #ba4e00;
 }
-/* audit 4 — 人物のタグは Atlassian の Tag (分類のための控えめなラベル)。状態を示す Lozenge
-   (.badge の色付き) と役割が違うので、塗りを外して枠線だけにし、主張を一段落とす。
-   Task 10h 修正ラウンド 1 — 枠が --border (#8593b0)のままだと、このタグが載る人物カードの面で
-   3:1 を割っていた。--border と同じ色相のまま 1 割暗い #78849e にする。--border 自体は
-   入力欄の枠でも使うので触らない。
-   Task 10w で人物カードからガラスを外したあと計算し直すと、面は rgb(251,252,253) で、
-   枠 (#78849e)は 3.66:1、文字 (--ink-2)は 6.38:1。枠は下限の 3:1 を満たす */
+/* 人物のタグは Atlassian Tag (分類のラベル) で、状態を示す Lozenge と役割が違うので枠線だけにする。
+   枠 #78849e は人物カードの面で 3.66:1 (--border だと 3:1 を割る) */
 .badge.tag {
 	background: none;
 	color: var(--ink-2);
 	box-shadow: inset 0 0 0 1px #78849e;
 }
-/* Task 10k — 案件が進行中であることを示す色。Atlassian の Lozenge の "inprogress"
-   (青) に当たり、Carbon の Status indicator の「青 = 受動的な通知」とも一致する
-   (buttons.md 資料 10、13)。割り当ては derived.ts の projectStatusClass */
+/* 進行中の案件。Lozenge の inprogress、Carbon の「青 = 受動的な通知」。割り当ては derived.ts の projectStatusClass */
 .badge.info {
 	background: var(--accent-soft);
 	color: var(--accent);
@@ -1317,9 +1097,7 @@ svg.i {
 	color: var(--ok);
 	box-shadow: inset 0 0 0 1px var(--ok);
 }
-/* 件数カウンタ。M3 の large badge (buttons.md 観点 B 原則 4) で、上の区分ラベルとは
-   別の部品。文字数の上限 4 は derived.ts の badgeCount が守る。ここでは塗りだけの
-   円形に戻す (Lozenge の枠は持たない) */
+/* 件数カウンタ (M3 large badge)。上限 4 文字は derived.ts の badgeCount が守る。Lozenge の枠は持たない */
 .badge.count {
 	justify-content: center;
 	height: 20px;
@@ -1360,9 +1138,7 @@ svg.i {
 .list-row.xl {
 	height: 72px;
 }
-/* 文言のタグ 1 行分が消えたので 2 段。高さの指定はここだけに置く */
-/* Task 10p (参考の良い点 6、7) — 2 段の文字は縦積みのまま、右端に担当者の丸を置けるよう
-   行自体は横並びに戻す (縦積みは中の .inbox-lines が受け持つ) */
+/* 2 段の文字は .inbox-lines が縦に積み、行自体は右端に担当者の丸を置くため横並び */
 .list-row.inbox {
 	height: 72px;
 }
@@ -1412,9 +1188,7 @@ svg.i {
 	line-height: 1.6;
 }
 
-/* Task 10p (参考の良い点 4) — 一覧の小見出し。アイコン + 文言 + 件数の塊
-   (参考: 知人の Web システムの「自分の担当 1」「閲覧中 29」)。件数は --ink-3 の小さな数字で、
-   .badge.count (塗りつぶしの件数バッジ) とは役割が違うので流用しない */
+/* 一覧の小見出し (アイコン + 文言 + 件数)。.badge.count とは役割が違うので流用しない */
 .list-head {
 	display: flex;
 	align-items: center;
@@ -1433,9 +1207,7 @@ svg.i {
 	color: var(--ink-3);
 }
 
-/* Task 10p (参考の良い点 7) — 関係する人物の頭文字の丸。画像は無いので頭文字 + 単色の背景で
-   作る。色は既存の --accent-soft / --accent のみを使い、新しい色相は増やさない (Tag の「同じ色を
-   複数のラベルに使い回すな」との整合のため、これは状態ではなく人物を指す専用の塗りにする) */
+/* 関係する人物の頭文字の丸。新しい色相は増やさず --accent-soft / --accent だけを使う */
 .avatars {
 	display: inline-flex;
 	flex: none;
@@ -1458,8 +1230,7 @@ svg.i {
 .avatar:first-child {
 	margin-left: 0;
 }
-/* Task 10p 修正ラウンド 1 (Minor 6) — 白い縁は丸同士が重なる境目を作るためのものなので、
-   重ならない先頭の丸には付けない (人数 1 のときに縁だけ浮いて見えるのを防ぐ) */
+/* 白い縁は丸同士の境目なので、重ならない先頭の丸には付けない */
 .avatar + .avatar {
 	box-shadow: 0 0 0 2px #fff;
 }
@@ -1469,10 +1240,8 @@ svg.i {
 	font-size: 10px;
 }
 
-/* 複数から 1 つを選ぶ表示の切り替え (Segmented.svelte)。iOS 26 のセグメンテッドコントロールに
-   合わせ、薄い灰色のカプセルの中で、選んだ項目の下に白いつまみを敷く。項目の幅は文字に合わせる
-   (件数の数字が入る項目があり、等幅にすると短い項目の余白が間延びする)。高さ 44px は
-   タップ領域の下限 (WCAG 2.5.5 / Apple HIG)。つまみの内側に 4px の余白を取る */
+/* 表示の切り替え (Segmented.svelte)。iOS 26 に合わせ、灰色のカプセルの中で選んだ項目の下に白いつまみを敷く。
+   項目の幅は文字に合わせる (等幅だと短い項目が間延びする)。高さ 44px (WCAG 2.5.5 / HIG) */
 .seg {
 	position: relative;
 	display: inline-flex;
@@ -1557,9 +1326,7 @@ svg.i {
 	background: var(--warn);
 	color: #fff;
 }
-/* 携帯の幅では、横に並ぶ「+」などを除いた残りいっぱいに広げ、余りを項目に配る。等分にすると
-   「期限超過」のような長い項目がはみ出すので、文字の長さを基準にする。項目の中の余白と件数との
-   間を詰め、ToDo の 4 項目と「+」が 358px に収まるようにする */
+/* 携帯の幅では残りいっぱいに広げ、余りを文字の長さに応じて配る (等分だと長い項目がはみ出す) */
 @media (max-width: 600px) {
 	.seg {
 		flex: 1 1 0;
@@ -1582,12 +1349,8 @@ svg.i {
 	}
 }
 
-/* components 3.7 / ユーザー指摘 2026-09-23 (指摘 1) — 他の面 (.sheet 等) と同じ regular 変種の
-   ガラスに揃える。旧版は「描く層 (.overlay-chrome) の canvas が濃紺の塗りに隠れて無駄」という
-   理由で不透明にしていたが (glass.ts の OVERLAY_TIERS 注記)、layer を使わない点はそのままに
-   .sheet と同じ var(--glass-sheet) + var(--blur-sheet) の自前 backdrop-filter に変えるだけで
-   無駄な canvas を増やさず見た目だけ揃う。地が明るくなったので文字色・縁を他の面と揃え直す
-   (実測: 4.5:1 の下限は下の各色で満たす。fix-toast-report.md 参照) */
+/* components 3.7 — トースト。他の面と同じ regular 変種のガラスを自前の backdrop-filter で描く
+   (描く層の canvas は増やさない) */
 .toast {
 	position: fixed;
 	top: var(--sp-6);
@@ -1643,9 +1406,8 @@ svg.i {
 	line-height: 1.4;
 	color: var(--ink);
 }
-/* 指摘 4 — 旧版は setInterval が 1 秒ごとに --p を書き換えていたためカクついた。
-   --p を @property で登録し、CSS アニメーションだけで滑らかに減らす。JS 側 (ui.svelte.ts)
-   は数字の描画だけを担う。--dur は Toast.svelte がトーストの猶予秒数をインラインで渡す */
+/* --p を @property で登録し、CSS アニメーションだけで滑らかに減らす (setInterval で書き換えるとカクつく)。
+   --dur は Toast.svelte が渡す */
 @property --p {
 	syntax: '<number>';
 	inherits: false;
@@ -1696,10 +1458,7 @@ svg.i {
 }
 
 /* visual 4.11 + components 3.8〜3.9 — 覆い、ドロワー、ボトムシート、モーダル。
-   Task 10w (glass-scope.md 2 節) — ドロワー・シート・モーダルは Adopting Liquid Glass が
-   ガラスを持つと明記するので、下の 3 つ (.drawer/.sheet/.modal) は --glass-sheet /
-   --blur-sheet (regular 変種、src/lib/glass.ts の SHEET) をまとう。scrim (覆いの暗さ) は
-   コンテンツ層の一部なので変えない */
+   3 つの面は regular 変種のガラス (Adopting Liquid Glass)。scrim はコンテンツ層なので変えない */
 .scrim {
 	position: fixed;
 	inset: 0;
@@ -1713,8 +1472,7 @@ svg.i {
 .drawer {
 	position: fixed;
 	top: var(--bar-clear);
-	/* レビュー I2 — 連携の列 (段 76) が覆い (75) より前にあるので、右端をそのぶん空ける。
-	   960px 以下は --frame-right が 0 になり、元の右端いっぱいに戻る */
+	/* 連携の列 (段 76) が覆い (75) より前にあるので、右端をそのぶん空ける */
 	right: var(--frame-right);
 	bottom: var(--sp-4);
 	z-index: 75;
@@ -1722,15 +1480,13 @@ svg.i {
 	flex-direction: column;
 	width: min(400px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));
 	padding: var(--sp-6);
-	/* レビュー I2 — 右端から浮くようになったので、右側も角を丸める */
+	/* 右端から浮くので右側も角を丸める */
 	border-radius: var(--r-m);
 	background: var(--glass-sheet);
 	-webkit-backdrop-filter: var(--blur-sheet);
 	backdrop-filter: var(--blur-sheet);
 	box-shadow: var(--rim), var(--e3);
-	/* レビュー M9 — 送り箱は中の .modal-body (下) が受け持つので、本体は縮ませず隠す。
-	   以前はここが overflow-y: auto で、後ろの .panel-center, .drawer { overflow: hidden }
-	   に上書きされる打ち消し合いになっていた */
+	/* 送り箱は中の .modal-body が受け持つので、本体は縮ませず隠す */
 	overflow: hidden;
 	animation: drawer-in var(--d-enter) var(--ease-enter) both;
 }
@@ -1747,18 +1503,12 @@ svg.i {
 		transform: translateX(100%);
 	}
 }
-/* 承認待ちだけの中央寄り固定パネル (docs/research/card-expand.md「拡大後の大きさ」「周囲の扱い」)。
-   .modal と同じく中央に浮くが、幅は承認カードの内容に合わせて広め (560〜720px)。
-   max-height は --bar-clear (右上のピルの下端 + 8px) を天井から引き、ピルの領域と絶対に
-   重ならないようにする。M3 Transitions「その場に浮かぶ Dialog は高さ方向のスライドを使わず
-   短いフェードで済ませる」に沿い、drawer-in/out のスライドではなく modal-in/out と同じ
-   フェード + scale を使う (.modal のアニメーションを流用、名前は付け替えない) */
+/* 承認待ちの中央寄り固定パネル (docs/research/card-expand.md)。max-height は --bar-clear を引き、
+   右上のピルと重ならない。その場に浮くので、スライドではなく .modal と同じフェード + scale (M3 Transitions) */
 .panel-center {
 	position: fixed;
 	top: 50%;
-	/* レビュー I2 — 枠 (段 76) が覆い (75) より前にあるので、覆いは枠の間 (--frame-left
-	   〜 100vw - --frame-right) の中央に置く。960px 以下は 2 変数とも 0 になり、元の
-	   画面中央 (50%)と同じ式に戻る */
+	/* 覆いは枠の間 (--frame-left 〜 100vw - --frame-right) の中央に置く */
 	left: calc((var(--frame-left) + 100vw - var(--frame-right)) / 2);
 	transform: translate(-50%, -50%);
 	z-index: 75;
@@ -1772,17 +1522,14 @@ svg.i {
 	-webkit-backdrop-filter: var(--blur-sheet);
 	backdrop-filter: var(--blur-sheet);
 	box-shadow: var(--rim), var(--e3);
-	/* レビュー M9 — .drawer と同じ理由 (上のコメントを見よ) */
+	/* .drawer と同じ理由 */
 	overflow: hidden;
 	animation: modal-in var(--d-enter) var(--ease-enter) both;
 }
 .panel-center.leave {
 	animation: modal-out var(--d-exit) var(--ease-exit) both;
 }
-/* カードから広がる/縮む間は Drawer.svelte 側の WAAPI が top/left/width/height を
-   直接動かすので、この scale アニメーションと競合させない (docs/research/card-expand.md)。
-   レビュー M9 — .morph.leave 用の宣言は、詳細度が同じこの .morph の animation: none で
-   既に打ち消されており効いていなかったので消した */
+/* カードから広がる/縮む間は Drawer.svelte の WAAPI が位置と寸法を直接動かすので、scale アニメーションと競合させない */
 .panel-center.morph {
 	animation: none;
 }
@@ -1811,10 +1558,7 @@ svg.i {
 	-webkit-backdrop-filter: var(--blur-sheet);
 	backdrop-filter: var(--blur-sheet);
 	box-shadow: var(--rim), var(--e3);
-	/* レビュー M9 — 下の .sheet .modal-body が送り箱としてスクロールを持つので、本体は
-	   縮ませず隠す (.drawer/.panel-center と同じ形。以前はここが overflow-y: auto だったが、
-	   .list-row に flex: none を付けても .modal-body が block のままだと縮み止めが効かず、
-	   実質は本体のスクロールで支えていた) */
+	/* 下の .sheet .modal-body が送り箱なので、本体は縮ませず隠す */
 	overflow: hidden;
 	animation: sheet-in var(--d-enter) var(--ease-enter) both;
 }
@@ -1831,14 +1575,8 @@ svg.i {
 		transform: translateY(100%);
 	}
 }
-/* 中央の承認パネル・右のドロワー・下のシートは、題の行 (とつまみ)を留めて中身 (.modal-body)
-   だけを送る。枠ごと送っていたときは、承認カードが 2 枚でパネルの上限の高さを超えると、
-   flex の既定の縮みで実行済みの行が 22px に潰れて重なり、枠の高さで描かれる縁の線が中身と
-   一緒に流れて途中に出ていた (1440x900 で実測、ユーザー指摘 2026-09-23)。
-   送り箱の中は縮ませず、はみ出した分は送る。
-   レビュー M9 — Task 11r で .sheet .list-row に付けていた flex: none は、行が
-   .modal-body (block) の子でありこの箱の flex item ではないため効いていなかった。
-   .sheet も他の 2 面と同じ送り箱の形にまとめ、.modal-body > * の縮み止めに寄せる */
+/* 題の行 (とつまみ) を留めて中身 (.modal-body) だけを送る。枠ごと送ると、中身が上限を超えたとき
+   flex の既定の縮みで行が潰れて重なる。送り箱の中は縮ませない */
 .panel-center .modal-body,
 .drawer .modal-body,
 .sheet .modal-body {
@@ -1851,9 +1589,7 @@ svg.i {
 .sheet .modal-body > * {
 	flex: none;
 }
-/* Task 16 — 携帯を横向きにした高さでは 50dvh が 195px しかなく、つまみと見出しで埋まって
-   中身が 1 行も見えない (844x390 で実測)。この高さだけ画面をもっと使う。上端には
-   上部バーの分を残す (max-height はそのまま効く) */
+/* 携帯の横向きでは 50dvh だとつまみと見出しで埋まる。この高さだけ画面をもっと使う */
 @media (max-width: 960px) and (max-height: 480px) {
 	.sheet {
 		height: calc(100dvh - 72px);
@@ -1871,7 +1607,7 @@ svg.i {
 .modal {
 	position: fixed;
 	top: 50%;
-	/* レビュー I2 — .panel-center と同じ理由 (上のコメントを見よ) */
+	/* .panel-center と同じ理由 */
 	left: calc((var(--frame-left) + 100vw - var(--frame-right)) / 2);
 	transform: translate(-50%, -50%);
 	z-index: 75;
@@ -1891,12 +1627,8 @@ svg.i {
 .modal.sm {
 	width: min(400px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));
 }
-/* 中身だけスクロールさせる。題と操作の行は箱に留めるので、行数が増えても
-   主ボタンが画面外へ出ない (仕様 5.14)。Task 10m 修正で一時的に Modal.svelte の
-   <style> に置いていたが、app.css が空くこの Task 10n の節へ戻した */
-/* 送り箱の内側に 4px の余白を持たせ、外側へ -4px 縮めて元の位置に戻す。中の入力欄は
-   width: 100% で余白なく箱いっぱいに広がるため、この余白が無いと :focus-visible の
-   輪郭 (2px + outline-offset 2px = 4px) が送り箱の外周で切れる */
+/* 中身だけスクロールさせ、行数が増えても主ボタンが画面外へ出ないようにする (仕様 5.14)。
+   内側 4px の余白を -4px で相殺する。無いと中の入力欄の :focus-visible の輪郭 (計 4px) が切れる */
 .modal-body {
 	min-height: 0;
 	overflow-y: auto;
@@ -1929,9 +1661,7 @@ svg.i {
 	}
 }
 
-/* components 3.2 — ボトムナビ。Task 10w (glass-scope.md 1 節) — HIG Tab bars がガラスを
-   持つと明記する部品。src/lib/glass.ts の CHROME_TIERS に加えたので、下は .header.glass /
-   .chatbar と同じ扱いにする */
+/* components 3.2 — ボトムナビ。ガラス (HIG Tab bars)、src/lib/glass.ts の CHROME_TIERS */
 .bottomnav {
 	display: none;
 	position: fixed;
@@ -1980,7 +1710,7 @@ svg.i {
 .bottomnav-item:active::before {
 	background: var(--press);
 }
-/* Task 10u — サイドナビと同じ裁定 (灰色のピル + 濃い文字色、上の .nav-item.on の注記参照) */
+/* サイドナビと同じく灰色のピル + 濃い文字色 */
 .bottomnav-item.on {
 	color: var(--ink);
 	font-weight: 700;
@@ -1988,8 +1718,7 @@ svg.i {
 .bottomnav-item.on::before {
 	background: var(--sel-gray);
 }
-/* Task 10g — ピル形の面に加えてアイコンの線も太くする (M3 の active indicator は面と
-   アイコンの塗り替えの二重表現。色の違いだけにしない) */
+/* 面に加えてアイコンの線も太くし、色の違いだけにしない (M3 active indicator) */
 .bottomnav-item.on .i {
 	stroke-width: 2.3;
 }
@@ -2001,14 +1730,9 @@ svg.i {
 	outline-offset: -2px;
 }
 
-/* Task 10n — ピルの中のボタンを押したときだけ開く板 (PillPanel.svelte)。
-   出す中身は直近の数件と全件への導線だけ (island.md「広がったときの中身」)。
-   Task 10w (glass-scope.md 5 節) — ポップオーバーは Adopting Liquid Glass がガラスを持つと
-   明記するので regular 変種を採る。枠 (.header.glass、76) から開くので枠より前の 77 に出す。
-   レビュー I5 — 板は覆いの面 (drawer/sheet/modal 75) より前の 77 なので、.overlay-chrome の
-   canvas (71) は板より後ろに回り、板の地には映らない。.select-menu と同じく overlayGlass の
-   tiers (src/lib/glass.ts の OVERLAY_TIERS) から外し、下の background/backdrop-filter で
-   自分の真後ろを直接ぼかす */
+/* ピルのボタンから開く板 (PillPanel.svelte)。ポップオーバーは regular 変種のガラス。
+   枠 (76) から開くので 77 に出す。覆いの層の canvas (71) は板より後ろになるので映らない。
+   OVERLAY_TIERS から外し、自前の backdrop-filter で真後ろをぼかす */
 .pill-panel {
 	z-index: 77;
 	display: flex;
@@ -2025,8 +1749,7 @@ svg.i {
 	/* 開いた直後は板自身に焦点が当たる。枠は中のボタン側で示す */
 	outline: none;
 }
-/* island.md「動きの時間と緩急」— 300〜400ms の ease-out。動きを減らす設定では、
-   下の @media (prefers-reduced-motion) が全要素の animation-duration を落として即時になる */
+/* 300〜400ms の ease-out (island.md) */
 .pill-panel[data-state='open'] {
 	animation: pill-in var(--d-enter) var(--ease-out) both;
 }
@@ -2086,8 +1809,7 @@ svg.i {
 	white-space: nowrap;
 	cursor: pointer;
 }
-/* .iconbtn::after (inset -2px、40→44px)と同じ仕掛け。見た目の高さ 32px のまま
-   タップ領域だけ 44px にする (brief の下限、review-task-10n.md Important 3) */
+/* .iconbtn::after と同じ仕掛け。見た目 32px のまま操作領域を 44px にする */
 .pill-guide::after {
 	content: '';
 	position: absolute;
@@ -2110,8 +1832,7 @@ svg.i {
 	}
 }
 
-/* visual 4.2 — ぼかしが使えない環境では不透明に倒す。トーストも指摘 1 の修正で .sheet と
-   同じ regular 変種のガラスになったので、他の面と同じ扱いに入れる (旧版の濃紺塗りは撤去) */
+/* visual 4.2 — ぼかしが使えない環境では不透明に倒す */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 	.glass,
 	.card,
@@ -2134,10 +1855,8 @@ svg.i {
 	}
 }
 
-/* 本文と依頼バーの右は、連携の列 (.rail) のぶんを常に空けておく。列があるときだけ空けると、
-   設定で連携を切り替えるたびに本文の幅が変わって画面が揺れた (ユーザー指摘 2026-09-25)。
-   ピル (.header.glass)は Task 10q で列と同じ右端 (--sp-4)に揃えると決まったので、
-   この回避幅からは外す。960px 以下では列が消えるので幅で囲う */
+/* 本文と依頼バーの右は連携の列 (.rail) のぶんを常に空ける。列の有無で空けると、切り替えるたびに
+   本文の幅が変わって揺れる。ピル (.header.glass) は列と同じ右端なので外す */
 @media (min-width: 961px) {
 	.app .main {
 		margin-right: calc(var(--rail-w) + 32px);
@@ -2149,9 +1868,7 @@ svg.i {
 	:root {
 		--frame-right: calc(var(--rail-w) + 32px);
 	}
-	/* side-collapse.md — .app.side-hidden の --side-space 上書きは .app のスコープにとどまり、
-	   :root で定義した --frame-left (覆いの位置の計算) には届かない。:has() で同じ状態を
-	   <html> から見て、覆いの左の枠幅も切り替えボタンぶんに詰める */
+	/* .app.side-hidden の --side-space 上書きは :root の --frame-left に届かないので、:has() で <html> から見る */
 	:root:has(.app.side-hidden) {
 		--frame-left: var(--side-space-hidden);
 	}
@@ -2159,23 +1876,18 @@ svg.i {
 
 /* components 2.2 — 960px: サイドナビをボトムナビに替える */
 @media (max-width: 960px) {
-	/* レビュー C1 — .chrome (枠のガラスの canvas) を 76 に上げたのは幅が広い側の話で、
-	   モバイルでは .header.solid/.bottomnav が段を上げていないため、canvas が面より前に
-	   出て文字とアイコンの上にぼかしが乗ってしまう。「モバイルは変えない」に合わせて
-	   元の重なり (50) に戻す */
+	/* モバイルでは .header.solid / .bottomnav が段を上げていないので、canvas を 76 にすると
+	   文字の上にぼかしが乗る。元の 50 に戻す */
 	.chrome {
 		z-index: 50;
 	}
 	:root {
-		/* レビュー I2 — モバイルはサイドナビ・連携の列が消えて枠が横に無いので、覆いを
-		   避ける幅も要らない */
+		/* サイドナビ・連携の列が無いので覆いを避ける幅も要らない */
 		--frame-left: 0px;
 		--frame-right: 0px;
 		/* 上端に貼り付く不透明な帯なので、浮かせるぶんの 16px が要らない */
 		--bar-clear: calc(var(--header-h) + var(--sp-4));
-		/* Task 11r 修正ラウンド 1 (Minor 1) — 「依頼バーの底」の式 (ボトムナビの高さ + セーフ
-		   エリア + 浮かせる 2 つの --sp-2)を、下の .chatbar { bottom: ... } と 2 か所に書き写して
-		   いた。1 つの変数にして両方から参照する (依頼バーの浮かせ方を変えても 1 か所で済む) */
+		/* 依頼バーの底 (ボトムナビの高さ + セーフエリア + --sp-2 x 2)。.chatbar の bottom と共有する */
 		--chatbar-bottom: calc(
 			var(--bottomnav-h) + env(safe-area-inset-bottom) + var(--sp-2) + var(--sp-2)
 		);
@@ -2216,9 +1928,7 @@ svg.i {
 		transform: none;
 		bottom: var(--chatbar-bottom);
 	}
-	/* レビュー M10 — .modal の max-height は --bar-clear (浮くピルの下端)を天井から 2 回
-	   引く式だが、モバイルの --bar-clear は帯の高さでピルの下端ではないため、天井が上へ
-	   ずれて縮みすぎていた。元の固定値 (帯の高さ 52px + 上下の余白 44px)に戻す */
+	/* モバイルの --bar-clear はピルの下端ではないので、固定値 (帯 52px + 上下の余白 44px) にする */
 	.modal {
 		max-height: calc(100dvh - 96px);
 	}
@@ -2253,11 +1963,8 @@ svg.i {
 	}
 }
 
-/* ユーザー指示 2026-09-24 — .nav-item は clamp() で窓の高さに応じて自動的に 48px 〜 36px に
-   詰まるが (.nav-item の height を見よ)、36px は Apple HIG の操作領域の下限なのでそれ以上は
-   詰めない。clamp の下限に当たる境目は (100dvh − 32px − 109px) / 11 = 36px を解くと
-   100dvh = 537px。それを下回る窓では 11 項目 + ロゴが収まりきらないので、
-   最後の手段としてサイドナビ自身をスクロールさせる (安全側に 600px で切る) */
+/* .nav-item の clamp が下限 36px (HIG) に当たる境目は 100dvh = 537px。それより低い窓では
+   サイドナビ自身をスクロールさせる (安全側に 600px) */
 @media (max-height: 600px) {
 	.sidebar {
 		overflow-y: auto;
@@ -2300,20 +2007,16 @@ svg.i {
 	.scrim.leave {
 		animation: fade-out 120ms linear both !important;
 	}
-	/* Task 9c — 公開画面の時間差の入場、チェックマークの拡大、画面遷移の横スライドから
-	   translateY / scale / translateX を落とし、opacity の変化だけ残す */
+	/* 公開画面の時間差の入場、チェックマークの拡大、画面遷移の横スライドは opacity の変化だけ残す */
 	.public .in,
 	.connect-cta .i {
 		animation: fade-in 120ms linear both !important;
 	}
-	/* 音声で聞く間、カードは動かさずその場で 200ms で消す (voice-orb.md の動きを減らす設定)。
-	   上の全体の transition-duration: 0.01ms を、不透明度だけこの長さに戻す */
+	/* 音声で聞く間、カードはその場で 200ms で消す (voice-orb.md)。不透明度だけこの長さに戻す */
 	.today .bento > .card {
 		transition: opacity 200ms linear !important;
 	}
-	/* side-collapse.md — .sidebar の visibility は transition-delay (300ms) で遅らせているので、
-	   上の全体の transition-duration: 0.01ms だけでは遅延が残る (duration と delay は別)。
-	   transition ごと切って即座に切り替える */
+	/* .sidebar の visibility の transition-delay は duration を縮めても残るので、transition ごと切る */
 	.sidebar {
 		transition: none !important;
 	}
@@ -2356,11 +2059,8 @@ svg.i {
 		box-shadow: none;
 		background: #fff;
 	}
-	/* Task 10c — ガラスの canvas も落とす。display はライブラリがインラインの style で
-	   書き込むので !important でしか下ろせない。canvas を消すだけだと塗りが none のままで
-	   カードが透明になるので、不透明な塗りも対で戻す。
-	   この @media print は下の Liquid Glass の節より前にあり、詳細度が同じだと後ろが勝つ。
-	   :root [data-liquid-glass='webgl'] .card (0,4,0) に勝たせるため body を足している */
+	/* ガラスの canvas も落とす。display はライブラリがインラインで書くので !important でしか下ろせない。
+	   塗りも不透明に戻す。body を足すのは後ろの :root [data-liquid-glass='webgl'] .card (0,4,0) に勝つため */
 	[data-liquid-glass-layer] {
 		display: none !important;
 	}

@@ -1,6 +1,4 @@
-/* ==========================================================================
-   calendar (Task 12) — 仕様 5.2、components 3.12
-   ========================================================================== */
+/* calendar — 仕様 5.2、components 3.12 */
 
 /* 3 つから 1 つ選ぶ欄。素の radio に .chip の見た目を当てるので、
    枠と余白は fieldset 側で消し、焦点の輪郭は中の radio から借りる */
@@ -117,20 +115,9 @@
 
 /* --- 週表示 (components 3.12) ------------------------------------------- */
 
-/* .week は横 (狭い携帯幅で格子 64+7x72=568px が潰れないための送り)と縦 (24 時間分の送り)を
-   1 つの箱にまとめて持つ。この箱自身が送れるので、.week-head をこの箱の中で
-   position: sticky にでき、曜日の行は送っても見えたまま留まる (sticky は送れない祖先を
-   基準にはできない)。
-   高さは、画面の中でヘッダーの下端から依頼バーの上端までに使える分 (100dvh から
-   --bar-clear と --content-bottom-clear を引いた残り)を渡す。見出し・切り替え行の高さは
-   引かない (幅や高さごとに実測して差し引く定数を持たない)。その分だけページを送れば、
-   曜日の行と格子を同時に使える状態になる。
-   ただし .week とページの下端の間には .cal-panel の余白 (calendar/+page.svelte、16px) が
-   あるので、最後まで送ったときの .week の上端は「--bar-clear − その余白」に来る。
-   ヘッダーの下端とそろうのは、--bar-clear のうちヘッダーの下に置いた隙間がこの余白と
-   等しいときだけで、960px 以下 (隙間 --sp-4 = 16px) は一致し、960px 超 (隙間 --sp-2 = 8px)
-   では曜日の行の上 8px がピルの下に入る (1440x900 で実測 7.9px)。
-   曜日の文字は読めるうえ押せる要素でもないので、隙間の差を式に持ち込んでまでは合わせない */
+/* .week は横 (狭い携帯で格子 568px が潰れないため) と縦 (24 時間分) の送りを 1 つの箱で持つ。
+   送れる祖先が 1 つだけなので .week-head の position: sticky が効く。高さは 100dvh から
+   --bar-clear と --content-bottom-clear を引いた残り */
 .week {
 	overflow: auto;
 	max-height: calc(100dvh - var(--bar-clear) - var(--content-bottom-clear));
@@ -194,9 +181,7 @@
 	background: var(--accent);
 	color: #fff;
 }
-/* .week-body (.week-cols と合わせて格子の実体)は 0:00〜24:00 の全部を持つ。高さ・送りは
-   上の .week に一本化したので、このクラス自身は overflow も max-height も持たない
-   (ここに持たせると曜日の行の sticky が送れない箱を基準にしてしまい効かなくなる) */
+/* 高さと送りは .week が持つ。ここに overflow を持たせると曜日の行の sticky が効かなくなる */
 .week-axis {
 	position: relative;
 }
@@ -218,9 +203,8 @@
 	);
 	border-left: 1px solid var(--line);
 }
-/* calendar-block.md「塗りと文字」「左線の可否」— Apple カレンダー / Outlook の系統。
-   薄い塗り + 左端の細いバー (3px) + 塗りと同じ色相の濃い文字 (白文字にしない)。
-   隣り合う予定の塗りが触れないよう、幅と高さから 1px ずつ引いて隙間を作る (JS 側) */
+/* calendar-block.md — 薄い塗り + 左端の 3px のバー + 同じ色相の濃い文字 (Apple カレンダー / Outlook)。
+   隣り合う予定の塗りが触れないよう 1px の隙間を作る */
 .week-ev {
 	position: absolute;
 	display: flex;
@@ -228,9 +212,7 @@
 	overflow: hidden;
 	padding: 4px 8px 4px var(--sp-3);
 	border: 0;
-	/* 上下に隣り合う予定の塗りを離す 1px。高さから引くと 30 分の予定が下限の 24px
-	   (WCAG 2.2 SC 2.5.8) を割るので、押せる大きさは残したまま塗りだけを 1px 縮める。
-	   これでどの長さの予定も同じ隙間になる */
+	/* 高さから 1px 引くと 30 分の予定が 24px (WCAG 2.5.8) を割るので、押せる大きさは残して塗りだけ縮める */
 	border-bottom: 1px solid transparent;
 	border-radius: var(--r-xs);
 	background: var(--sel-soft);
@@ -241,12 +223,6 @@
 	   面は最大 1080px で頭打ちになり、左の帯の分だけ狭まり、重なると列数で割られるため */
 	container: weekev / inline-size;
 }
-/* Task 11r 修正ラウンド 1 (Important 1、監査 9) — 前回はここに ::before (inset: -4px)を足して
-   当たり判定だけ広げようとしたが、親の .week-ev 自身が overflow: hidden なので ::before の
-   はみ出し分はそのまま切り落とされ、実測は 24px のまま 1px も広がっていなかった (死んだ
-   コード)。当たり判定を疑似要素で継ぎ足すのではなく、上の .week-col / .week-hour と同じ
-   88px/時 (旧 48px/時)にしたことで 30 分の予定の実寸そのものが 44px になったので、この
-   ブロックは削除した。上下・左右の隣接予定の間隔も同じ倍率で広がるため重なりは生まれない */
 /* 角丸の縁に沿わせる内側の影だと、30 分の予定では括弧のように曲がって見える。
    独立した 3px のバーにすれば、どの高さでも真っ直ぐ立つ */
 .week-ev-bar {
@@ -274,8 +250,7 @@
 	white-space: nowrap;
 	text-overflow: ellipsis;
 }
-/* 2 行目の時刻。題名より小さく軽い。--ink-3 は指したときの濃い塗りの上で 4.5:1 を
-   割るので、階調の隣にある --ink-2 を使う (task-12b-report.md に実測) */
+/* 2 行目の時刻。--ink-3 は指したときの濃い塗りの上で 4.5:1 を割るので --ink-2 */
 .week-ev-time {
 	overflow: hidden;
 	font-size: 12px;
@@ -285,10 +260,8 @@
 	text-overflow: ellipsis;
 	color: var(--ink-2);
 }
-/* 仮押さえは色を変えず枠線を点線にする (calendar-block.md「属性の示し方」)。
-   outline で描くと詳細度 (0,2,0) が共通の :focus-visible (0,1,0) を上書きし、Tab で焦点が
-   移っても輪郭が変わらなくなる (WCAG 2.4.7)。枠は疑似要素に持たせて outline を空けておく。
-   inset: 0 は padding box の縁なので、塗り (background-clip: padding-box) にちょうど重なる */
+/* 仮押さえは枠線を点線にする (calendar-block.md)。outline だと共通の :focus-visible を上書きし
+   Tab の輪郭が出なくなる (WCAG 2.4.7) ので、疑似要素に持たせる */
 .week-ev.tentative::after,
 .month-ev.tentative::after {
 	content: '';
@@ -350,17 +323,14 @@
 .month-cell:nth-last-child(-n + 7) {
 	border-bottom: 1px solid var(--line);
 }
-/* 当月以外。日付の数字を薄くすると 12px では 4.5:1 を割るので、不透明度は掛けず
-   --ink-3 のままにし、当月との違いはセルの地の色で示す。暗い色を敷くと文字の
-   コントラストを食うので、白を薄く重ねて面を白ませる (文字は逆に読みやすくなる)。
-   押せる状態は変えない */
+/* 当月以外。数字を薄くすると 12px で 4.5:1 を割るので、白を薄く重ねてセルの地で違いを示す */
 .month-cell.out {
 	background: var(--hover-light);
 }
 .month-cell.out .month-day {
 	color: var(--ink-3);
 }
-/* 日付はマスの中央上に置く (Google カレンダーの月表示、ユーザー指示 2026-09-25) */
+/* 日付はマスの中央上 (Google カレンダーの月表示) */
 .month-day {
 	align-self: center;
 	border: 0;
@@ -457,13 +427,8 @@
 	background: var(--accent);
 }
 
-/* ブロックが狭くなるほど中身を落とす。@container が見るのは左右の余白 20px を除いた
-   内側の幅なので、境目はどれも中身の実測値で書く。落とした分は題名の title 属性と
-   button の aria-label に残るので、情報は消えない。
-   アイコンは内側 92px (ブロックの幅で 112px) 未満で落とす。2 個で 16px x 2 + 間隔 4px を
-   占め、狭い列では題名の幅を食い尽くして 1440px の重なりで題名が 1 文字になっていた。
-   Task 10h 修正ラウンド 1 — 境目が 100px だと 1440px での内側の幅 102.4px との差が 2.4px しか
-   なく、縦の帯が場所を取る環境 (Windows)では 100px 前後まで縮んでアイコンが消える。8px 下げた */
+/* ブロックが狭くなるほど中身を落とす。境目は左右の余白 20px を除いた内側の幅の実測値。落とした分は
+   title と aria-label に残る。アイコンは内側 92px 未満で落とす (Windows の縦の帯で縮む分の余裕込み) */
 @container weekev (max-width: 92px) {
 	/* Svelte の部品側の .tip-at は class 2 つ分の詳細度を持ち、app.css より後に入るので、
 	   ここは class 3 つ分にしないと負ける */

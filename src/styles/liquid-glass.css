@@ -1,30 +1,10 @@
-/* ==========================================================================
-   Liquid Glass (Task 10c) — ガラスの面は apple-liquid-glass-webgl が WebGL2 で描く。
-   ライブラリは要素の背後のページを自分で描き直し、角丸長方形の符号付き距離場で縁だけを
-   曲げる。塗り (tint)、背景の下ぼかし (backdropBlur)、縁の光と鏡面 (rim / highlight /
-   hairline) もその中で描かれるので、CSS 側の同じ役の指定は二重になる。下ろす。
-   ガラスの canvas は z-index -1 の子要素で、要素自身の background より上に描かれる。
-   塗りを残すと canvas の下に白い板が残り、背後が透けなくなる。
-   WebGL2 が無い環境では data-liquid-glass="fallback" が付いてこの指定は当たらず、
-   これまでどおり backdrop-filter のすりガラスになる。
-   ========================================================================== */
-/* 枠の 5 面 (サイドナビ、上部バー、連携の列、ボトムナビ、携帯の上部バー) は .chrome の
-   canvas にまとめて描かれるので、属性は入れ物の .chrome に付く。面はその層の子ではなく
-   きょうだいなので、塗りを下ろす指定も ~ で書く。依頼バーは自分が host なので、上の
-   :root [data-liquid-glass='webgl'] のほうで拾う (src/lib/glass.ts の barGlass)。
-
-   Task 10w (glass-scope.md 2〜3 節) — ドロワー・シート・モーダル・ポップオーバー・メニューは
-   overlay-chrome の canvas にまとめて描かれる。この 5 面は <body> の直接の子 (drawer/sheet/
-   modal) か、floating-ui の位置決め用の入れ物 div を 1 枚挟んだ孫 (pill-panel/demo-menu)
-   のどちらかで、深さが揃わないので ~ の兄弟結合子が使えない。:has() で overlay-chrome が
-   <body> の直接の子にいることを確かめたうえで、子孫として塗りを下ろす。
-
-   .select-menu と .toast はここに含めない (src/lib/glass.ts の OVERLAY_TIERS の注記を見よ)。
-   SelectField は常にモーダルの中で使うため、一覧は「このガラス化で透明にしたモーダル」の
-   上に開き、canvas は一覧のさらに後ろ (モーダルの向こう側) に隠れて画面に出ない。
-   .select-menu だけは自分の CSS の backdrop-filter を持ち続ける (下の .select-menu を見よ)。
-   .pill-panel と .demo-menu も同じ理由でここに含めない (レビュー I5、src/lib/glass.ts の
-   OVERLAY_TIERS の注記を見よ) */
+/* Liquid Glass — ガラスの面は apple-liquid-glass-webgl が WebGL2 で描く。塗り・ぼかし・縁の光も
+   ライブラリが描くので、CSS 側の同じ役の指定は下ろす (canvas は z-index -1 の子で、塗りを残すと
+   白い板が残る)。WebGL2 が無い環境は data-liquid-glass="fallback" で backdrop-filter のまま */
+/* 枠の 5 面は .chrome の canvas にまとめて描かれ、面は .chrome のきょうだいなので ~ で書く。
+   依頼バーは自分が host (glass.ts の barGlass)。ドロワー・シート・モーダルは <body> の子、
+   ポップオーバー・メニューは孫と深さが揃わないので、:has() で overlay-chrome を確かめて子孫として下ろす。
+   .select-menu・.toast・.pill-panel・.demo-menu は含めない (glass.ts の OVERLAY_TIERS を見よ) */
 :root [data-liquid-glass='webgl'],
 :root [data-liquid-glass='webgl'] .card,
 .chrome[data-liquid-glass='webgl'] ~ .sidebar,
@@ -40,23 +20,15 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .panel-center {
 	background: none;
 	-webkit-backdrop-filter: none;
 	backdrop-filter: none;
-	/* 10f 再レビュー — 下の ::after の z-index: -1 は、ガラスの面自身が積み重ねの文脈を作らないと
-	   外の祖先まで抜けて canvas の裏に回り、縁の鏡面と暗線が消える。ここで閉じ込める */
+	/* 下の ::after の z-index: -1 は、面が積み重ねの文脈を作らないと canvas の裏に回って消える */
 	isolation: isolate;
 	/* --rim は要素自身の box-shadow なので、canvas (z-index -1 の子)の下に隠れて描いても
 	   見えない。下の ::after が同じ形をもう一度描くので、要素自身の分は消す */
 	--rim: 0 0 rgba(0, 0, 0, 0);
 }
 
-/* Task 10w 修正ラウンド 1 (review-task-10w.md C1) — ガラスの塗りはライブラリの目盛りの
-   上限 (tint 1.5) まで上げても、Today のオーブの塊の直上では薄い補助文字 (--ink-3) が
-   3.84:1 までしか出ず、4.5:1 に届かない (実測: 覆いの面の文字の矩形の中の背景で測定)。
-   文字が多い面は可読性を優先するという HIG Materials の regular 変種の考え方に沿って、
-   canvas の上に薄い白を 1 枚重ねて下限を持ち上げる。ぼかしと屈折は canvas 側でそのまま
-   効くので、下が透けてぼやける見え方は保たれる。トーストはこの WebGL 層 (.overlay-chrome)
-   自体を使わないので対象外 (glass.ts の OVERLAY_TIERS の注記、下の .toast の注記を見よ)。
-   完了画面のカード (.today-done .card) も同じ扱い。見出しがオーブの塊の直上に来ると
-   背景のいちばん濃い点で 2.74:1 まで落ち、legibility.md 2.2 の下限 (4.5:1)を割る (実測) */
+/* 文字が多い面は、塗りを上限 (tint 1.5) まで上げてもオーブの直上で --ink-3 が 4.5:1 に届かない。
+   canvas の上に薄い白を 1 枚重ねて下限を持ち上げる (HIG Materials の regular 変種)。完了画面のカードも同じ */
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer::before,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .sheet::before,
 body:has(> .overlay-chrome[data-liquid-glass='webgl']) .modal::before,
@@ -71,25 +43,11 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .today-done .card::before
 	background: rgba(255, 255, 255, 0.42);
 }
 
-/* Task 10w 修正ラウンド 2 (review-glass-batch.md I1) — トーストは .select-menu と同じ理由で
-   canvas の層を使わない。トースト (z-index 90)は描く層 (.overlay-chrome、71)の子孫ではなく
-   <body> の別の枝にあるので、トーストの位置から見て canvas は自分より後ろに来る。トーストは
-   濃紺の塗りを持つため、後ろの canvas はその塗りに隠れて一度も画面に出ない (実測: 下に縞を
-   敷いてもまったくぼけない)。自分の backdrop-filter なら真後ろを直接ぼかせる。
-   --rim (白い縁の反射)は濃い地に合わないので付けない */
+/* トーストは canvas の層の後ろになるので使わず、自前の backdrop-filter で真後ろをぼかす。
+   --rim は濃い地に合わないので付けない */
 
-/* Task 10v — ユーザー裁定「反射を無くした liquid glass」を受け、上縁の白い鏡面の線と
-   左縁の白い線 (斜め上から光が当たって見える、向きの付いた面取り) を外した。残すのは
-   下縁・右縁の極薄い暗線だけで、面の境目が完全に消えないための最小限の輪郭。
-   ライブラリの縁の光 (rim)は src/lib/glass.ts 側で 0 にした (背景を縁に薄く映し返す反射)。
-   輪郭線 (hairline)は残す (背景の明暗に応じて白 or 黒を選ぶだけの適応線で、光を映し込む
-   ものではない)。
-   ガラスの canvas は要素の z-index: -1 の子なので、z-index を持たないこの疑似要素は
-   canvas より上に描かれる。inset の影を要素自身に付けると canvas の下に隠れて見えない。
-
-   Task 10w — ドロワー・シート・モーダル・ポップオーバー・メニューにも同じ縁を足す。
-   トースト (濃い地)
-   は縁がほぼ見えず効果がないので対象外にした */
+/* 反射の無い Liquid Glass。上縁の鏡面と左縁の白い線は付けず、下縁・右縁の極薄い暗線だけを残す。
+   canvas は要素の z-index: -1 の子なので、inset の影は canvas の下に隠れる。疑似要素で描く */
 .sidebar::after,
 .side-toggle::after,
 .rail::after,
@@ -113,11 +71,8 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .today-done .card::before
 	box-shadow:
 		inset 0 -1px 0 rgba(30, 42, 71, 0.18), inset -1px 0 0 rgba(30, 42, 71, 0.12);
 }
-/* Task 10f 修正ラウンド 4 — canvas と同じ -1 に置く。疑似要素は要素の内容の最後に来るので、
-   同じ段では canvas より後に描かれ、要素自身の背景 → canvas → この縁 → 内容 の順になる。
-   z-index を持たないままだと内容より上にも描かれ、上のコメントの意図より広く効く。
-   WebGL2 が無い経路には付けない。canvas が無いうえ積み重ねの文脈も作られないので、
-   負の段に置くと副ボタンの白い塗りの裏へ回って縁が消える */
+/* canvas と同じ -1 に置き、背景 → canvas → この縁 → 内容 の順にする。WebGL2 が無い経路では
+   積み重ねの文脈が無く、負の段だと副ボタンの塗りの裏へ回るので付けない */
 :root [data-liquid-glass='webgl']::after,
 :root [data-liquid-glass='webgl'] .card::after,
 .chrome[data-liquid-glass='webgl'] ~ .sidebar::after,
@@ -133,32 +88,19 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .panel-center::after {
 	z-index: -1;
 }
 
-/* 描画面を失うと canvas には何も描かれない。属性が fallback に変わったら canvas を下ろし、
-   要素自身の backdrop-filter に戻す (Task 10i)。display はライブラリがインラインの style で
-   書き込むので !important でしか下ろせない */
+/* 描画面を失ったら canvas を下ろし backdrop-filter に戻す。display はライブラリがインラインで書くので !important */
 [data-liquid-glass='fallback'] > [data-liquid-glass-layer] {
 	display: none !important;
 }
 
-/* ガラスの canvas は bleed の分だけ要素の外へ出る。位置の基準になる親が要る。
-   Task 10e — isolation: isolate も CSS で持つ。ライブラリは mountCanvas でこれをインラインに
-   書き込むが (dom.js:189)、WebGL2 が使えない環境では mountCanvas 自体が呼ばれない
-   (dom.js:144-146)。そのとき .bento が積み重ねの文脈にならないと、app.css の .hole の z-index: -2 が
-   .bento の外へ抜けて、塗りを持つ祖先の裏に回った瞬間にオーブが消える
-   (position: relative は app.css の .bento の定義にある) */
+/* canvas は bleed の分だけ要素の外へ出るので基準の親が要る。isolation: isolate はライブラリも書くが、
+   WebGL2 が無いと書かれず、.hole の z-index: -2 が .bento の外へ抜けてオーブが消える */
 .bento {
 	isolation: isolate;
 }
 
-/* visual 4.11 — ガラスを 2 枚重ねない。覆い (ドロワー / モーダル)が出ている間はカードの
-   ガラスを落とし、同時に塗りを不透明に戻す。この 2 つは必ず対で当てる。canvas だけ消すと
-   カードが完全に透明になり、文字が背景の上に直接浮く。
-   !important が要る理由: ライブラリは canvas を作るときに display: block をインラインの
-   style として書き込む (dom.js の mountCanvas)。インラインの style はスタイルシートの
-   宣言より強いので、これを下ろす手段が !important しかない。
-   Task 10w — Inbox の .panes と People/Companies/Projects の .people-cards、カレンダーの
-   .cal-panel はガラスを外してコンテンツ層の普通の面に戻したので、この一覧から削った
-   (glass-scope.md 6 節)。.today-done (完了画面) は Today の .bento と同じ扱いを追加した */
+/* visual 4.11 — ガラスを 2 枚重ねない。覆いが出ている間はカードの canvas を落とし、塗りを不透明に戻す
+   (必ず対で当てる)。ライブラリが display: block をインラインで書くので !important */
 body[data-overlay='on'] .bento > [data-liquid-glass-layer],
 body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
 	display: none !important;
