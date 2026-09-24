@@ -110,8 +110,9 @@
 					{#each db.settings.connections as c (c.id)}
 						<!-- 接続はスイッチにする (ユーザー裁定 2026-09-25)。本来はオンにすると各サービスの
 						     許可の画面へ移り、許可をやめたらオフに戻る。デモでは押した瞬間に切り替わる。
-						     HIG Toggles「switch は一覧の行の中で使う」。見た目は Liquid Glass (GlassSwitch) -->
-						<div class="list-row set-row has-logo">
+						     HIG Toggles「switch は一覧の行の中で使う」。押している間だけつまみがガラスになる
+						     (GlassSwitch)。行全体を押し先にする -->
+						<label class="list-row set-row has-logo">
 							<Icon name="b-{c.id}" size={24} />
 							<span class="set-name">{CONNECT_NAME[c.id]}</span>
 							<GlassSwitch
@@ -119,7 +120,7 @@
 								label="{CONNECT_NAME[c.id]}との連携"
 								onchange={() => toggleConnection(c.id)}
 							/>
-						</div>
+						</label>
 					{/each}
 				</div>
 				<p class="set-group-foot">接続したサービスの予定とメールを、KUROKO が自動で読み込みます。</p>
@@ -307,6 +308,9 @@
 	div.set-row:hover,
 	dl .set-row:hover {
 		background: none;
+	}
+	label.set-row {
+		cursor: pointer;
 	}
 	.set-name {
 		flex: 1;

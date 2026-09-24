@@ -91,10 +91,33 @@ export const THUMB: LiquidGlassElementOptions = {
 	material: { ...LENS, backdropBlur: 0, hairline: 0.92 }
 };
 
-/** 押している間だけ使う描画面。握りっぱなしにしないので whileVisible は通さない */
-export function pressGlass(node: HTMLElement) {
-	const instance = new LiquidGlass(node, { live: true, respectReducedTransparency: false, ...THUMB });
-	return () => instance.destroy();
+/** 押している間だけつまみをガラスにする。描画面は押すたびに取り、離して動きが収まったら
+    手放す (常駐させると 1 ページの上限 約 16 を食うので whileVisible は通さない)。
+    離してもすぐには戻さず settleMs だけガラスのまま残す。選択は離したときの click で変わるので、
+    すぐ戻すとつまみが次の位置へ動く間はもう普通の塗りになっている。
+    onchange には押している間かどうかを渡す (つまみを膨らませる class の出し入れに使う) */
+export function pressGlass(onchange: (pressed: boolean) => void, settleMs = 360) {
+	let instance: LiquidGlass | null = null;
+	let settle: ReturnType<typeof setTimeout> | undefined;
+	const release = () => {
+		clearTimeout(settle);
+		instance?.destroy();
+		instance = null;
+		onchange(false);
+	};
+	return {
+		press(node: HTMLElement) {
+			clearTimeout(settle);
+			instance ??= new LiquidGlass(node, { live: true, respectReducedTransparency: false, ...THUMB });
+			onchange(true);
+		},
+		lift() {
+			if (!instance) return;
+			clearTimeout(settle);
+			settle = setTimeout(release, settleMs);
+		},
+		release
+	};
 }
 
 /* Task 10r — カードのガラスの背後にオーブを届ける描き手。
