@@ -41,8 +41,8 @@
 	// 読み上げ利用者にも待機中 → 提案完了を伝える常設の live region (ConnectStep.svelte と同じ
 	// 作り。要素ごと出し入れすると読まれない — review-task-15.md I4)
 	let liveText = $state('');
-	// mail.createDraft は throw する (Db に下書きの置き場が無いため fail-close、task-6-report.md 気になっている点 4)。
-	// この Task では置き場を新設しないので、押しても未実装の案内だけ出す
+	// 下書きの置き場は Db に無い (task-6-report.md 気になっている点 4)。
+	// 置き場を新設しないので、押しても未実装の案内だけ出す
 	let draftNotice = $state(false);
 	const id = $props.id();
 	let bodyEl: HTMLTextAreaElement | undefined = $state();

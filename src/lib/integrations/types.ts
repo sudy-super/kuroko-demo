@@ -11,16 +11,11 @@ import type {
 
 // 外部サービスとの境界。デモでは mock/ が実装を持ち、実接続時はここだけ差し替える
 export interface MailProvider {
-	listThreads(db: Db): MessageThread[];
 	sendMessage(thread: MessageThread, body: string): Message;
-	createDraft(thread: MessageThread, body: string): Message;
 }
 export interface CalendarProvider {
-	listEvents(db: Db, from: string, to: string): CalendarEvent[];
 	createEvent(db: Db, e: CalendarEvent): CalendarEvent;
-	updateEvent(db: Db, e: CalendarEvent): CalendarEvent;
 	deleteEvent(db: Db, id: string): void;
-	findFreeSlots(db: Db, date: string, duration: number): { start: string; end: string }[];
 }
 export interface ChatProvider {
 	post(channel: 'slack' | 'line', text: string, card?: LineMessage['card']): void;

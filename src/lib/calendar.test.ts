@@ -10,7 +10,6 @@ import {
 	weekOf,
 	monthGrid,
 	eventsOn,
-	eventsIn,
 	WEEK_HOUR_PX,
 	WEEK_MIN_EVENT_PX,
 	WEEK_MIN_DURATION_MIN
@@ -175,17 +174,6 @@ describe('eventsOn', () => {
 			'ev-shibuya',
 			'ev-sato-call'
 		]);
-	});
-});
-
-describe('eventsIn', () => {
-	it('開始と終了の日を含む範囲を返す', () => {
-		const d = seed(BASE);
-		const ids = eventsIn(d, '2026-09-15', '2026-09-15').map((e) => e.id);
-		expect([...ids].sort()).toEqual([...eventsOn(d, '2026-09-15').map((e) => e.id)].sort());
-		// 2 日にまたがる範囲と、始まりが終わりより後の範囲
-		expect(eventsIn(d, '2026-09-15', '2026-09-16').length).toBeGreaterThan(ids.length);
-		expect(eventsIn(d, '2026-09-15', '2026-09-14')).toEqual([]);
 	});
 });
 

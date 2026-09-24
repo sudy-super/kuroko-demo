@@ -92,7 +92,3 @@ export function monthGrid(d: Date): Date[] {
 
 export const eventsOn = (db: Db, dateKey: string) =>
 	db.events.filter((e) => e.date === dateKey).sort((a, b) => minutes(a.start) - minutes(b.start));
-
-/* 'YYYY-MM-DD' は辞書順が日付順と一致するので、Date に直さず文字列のまま比べる */
-export const eventsIn = (db: Db, from: string, to: string) =>
-	db.events.filter((e) => e.date >= from && e.date <= to);
