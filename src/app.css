@@ -391,7 +391,11 @@ svg.i {
 	overflow: visible;
 	pointer-events: none;
 }
-.nav-logo-orb .orb {
+/* オーブは入れ物の中央に重ねる。Today の球は左右の列の間の中央で、箱 448px、
+   球の直径はその 48% (shader.ts の R0) で 215px。外周と光彩がカードの縁に掛かる (visual 2.8) */
+.nav-logo-orb .orb,
+.orb-slot .orb,
+.hole .orb {
 	position: absolute;
 	left: 50%;
 	top: 50%;

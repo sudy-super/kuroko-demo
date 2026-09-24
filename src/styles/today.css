@@ -279,43 +279,9 @@ section.tc .list-row:not(label):not(a):hover {
 		/* K = 440 - 20 = 420 */
 		right: clamp(0px, calc(50% - 420px), 20px);
 	}
-}
-/* オーブはガラスが屈折させる対象なので canvas (z-index: -1) より下の -2 に置く。
-   .bento の isolation: isolate で -2 がその中に閉じ込められる */
-.today .bento .hole {
-	position: absolute;
-	inset: 0;
-	z-index: -2;
-	pointer-events: none;
-}
-.orb-slot .orb {
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	translate: -50% -50%;
-}
-/* 球は左右の列の間の中央。箱 448px、球の直径はその 48% (shader.ts の R0) で 215px。
-   外周と光彩がカードの縁に掛かる (visual 2.8) */
-.today .bento .hole .orb {
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	translate: -50% -50%;
-}
-/* 音声 (docs/research/voice-orb.md) — オーブは基準の大きさの 1.08 倍で描き、ここで縮めて使う
-   (today/+page.svelte の drawSize)。.hole の scale は普段と聞いている間の基準、.voice-pulse は声で
-   毎フレーム変わるので遷移を付けない。大きくなるのはカードが退くのと同じ 400ms */
-.today .bento .hole {
-	transition: scale 400ms var(--ease-out);
-}
-.today .bento .hole .voice-pulse {
-	position: absolute;
-	inset: 0;
-}
-/* カードが退く・戻る (voice-orb.md の「カードを退かせる」)。退くのは 400ms、戻るのは 500ms で、
-   どちらも両端で止まる曲線。途中で閉じればその位置から戻る。ドラッグのずれは translate に
-   持つので、ここでは transform だけを動かす (戻ると利用者の置いた位置に戻る) */
-@media (min-width: 1101px) {
+	/* カードが退く・戻る (voice-orb.md の「カードを退かせる」)。退くのは 400ms、戻るのは 500ms で、
+	   どちらも両端で止まる曲線。途中で閉じればその位置から戻る。ドラッグのずれは translate に
+	   持つので、ここでは transform だけを動かす (戻ると利用者の置いた位置に戻る) */
 	.today .bento > .card {
 		transition:
 			box-shadow var(--d-base) var(--ease-out),
@@ -337,6 +303,22 @@ section.tc .list-row:not(label):not(a):hover {
 		box-shadow:
 			inset 0 0 0 1px rgba(30, 42, 71, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9), var(--e3);
 	}
+}
+/* オーブはガラスが屈折させる対象なので canvas (z-index: -1) より下の -2 に置く。
+   .bento の isolation: isolate で -2 がその中に閉じ込められる */
+.today .bento .hole {
+	position: absolute;
+	inset: 0;
+	z-index: -2;
+	pointer-events: none;
+	/* 音声 (docs/research/voice-orb.md) — オーブは基準の大きさの 1.08 倍で描き、ここで縮めて使う
+	   (today/+page.svelte の drawSize)。.hole の scale は普段と聞いている間の基準、.voice-pulse は声で
+	   毎フレーム変わるので遷移を付けない。大きくなるのはカードが退くのと同じ 400ms */
+	transition: scale 400ms var(--ease-out);
+}
+.today .bento .hole .voice-pulse {
+	position: absolute;
+	inset: 0;
 }
 /* 聞いている間の聞き取った文字 (状態の文言は sr-only で読み上げのみ)。オーブの破片の上に
    文字を載せない (visual 2.8) ため、球の下ではなく依頼バーのすぐ上に置く。
