@@ -1564,8 +1564,8 @@ svg.i {
 	.seg-btn {
 		flex: 1 1 auto;
 		min-width: 0;
-		gap: 2px;
-		padding: 0 2px;
+		gap: var(--sp-1);
+		padding: 0 var(--sp-1);
 		font-size: 13px;
 	}
 }

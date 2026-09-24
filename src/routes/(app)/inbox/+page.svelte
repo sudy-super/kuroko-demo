@@ -7,7 +7,7 @@
 	import { ui, toast } from '$lib/ui.svelte';
 	import { media } from '$lib/media.svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import Modal from '$lib/components/Modal.svelte';
+	import Segmented from '$lib/components/Segmented.svelte';
 	import Drawer from '$lib/components/Drawer.svelte';
 	import ThreadRow from '$lib/components/ThreadRow.svelte';
 	import ThreadView from '$lib/components/ThreadView.svelte';
@@ -16,14 +16,11 @@
 	const q = $derived(queue(db));
 	// ?t= が指すスレッド。無ければキューの先頭 (対応済みにした直後もここに落ちる)
 	const thread = $derived(db.threads.find((t) => t.id === page.url.searchParams.get('t')) ?? q[0]);
-	const total = $derived(db.threads.length);
 	const allMail = $derived([...db.threads].sort((a, b) => b.lastAt.localeCompare(a.lastAt)));
-	// Task 10p (参考の良い点 4) — 「すべての受信メールを見る」の一覧を要対応とそれ以外に分ける
-	const qIds = $derived(new Set(q.map((t) => t.id)));
-	const allNeeds = $derived(allMail.filter((t) => qIds.has(t.id)));
-	const allOthers = $derived(allMail.filter((t) => !qIds.has(t.id)));
-
-	let allOpen = $state(false);
+	/* 要対応とすべての受信メールは、同じ一覧の表示の切り替えにする (ユーザー指示 2026-09-25)。
+	   以前は「すべて」を件名だけのモーダルで出していて、そこから本文を開けなかった */
+	let list = $state<'queue' | 'all'>('queue');
+	const rows = $derived(list === 'queue' ? q : allMail);
 	let showRight = $state(false);
 	let sheet = $state(false);
 	// 960px 以下は一覧 → 本文の 2 段階にする (仕様 5.3)。
@@ -100,21 +97,27 @@
 	<!-- Task 10w — HIG 上ガラスを持たないコンテンツ層なので、Task 10c のガラス (glass()) を外して
 	     普通のカードの面 (.card) に戻した (glass-scope.md 6 節) -->
 	<div class="panes">
-		<section class="card pane pane-list" aria-labelledby="inbox-queue-head">
-			<h2 class="list-head" id="inbox-queue-head">
-				<Icon name="ic-alert" size={16} />要対応<span class="num">{q.length}</span>
-			</h2>
-			{#if q.length === 0}
+		<section class="card pane pane-list" aria-label="メールの一覧">
+			<div class="inbox-switch">
+				<Segmented
+					label="一覧の切り替え"
+					items={[
+						{ key: 'queue', label: '要対応' },
+						{ key: 'all', label: 'すべて' }
+					]}
+					value={list}
+					onchange={(k) => (list = k)}
+				>
+					{#snippet extra(k)}<span class="badge count">{k === 'queue' ? q.length : allMail.length}</span>{/snippet}
+				</Segmented>
+			</div>
+			{#if rows.length === 0}
 				<p class="empty">要対応のメールはありません</p>
 			{:else}
-				{#each q as t (t.id)}
+				{#each rows as t (t.id)}
 					<ThreadRow thread={t} on={t.id === thread?.id} onselect={select} />
 				{/each}
 			{/if}
-			<!-- 見出しの行が無くなったので、一覧の続きとして末尾に置く -->
-			<button class="btn text sm inbox-all" onclick={() => (allOpen = true)}>
-				すべての受信メールを見る ({total} 件)
-			</button>
 		</section>
 
 		<section class="pane pane-thread">
@@ -143,35 +146,6 @@
 	</div>
 </div>
 
-<Modal
-	open={allOpen}
-	title="すべての受信メール ({total} 件)"
-	description="件名だけの一覧です。要対応と判断しなかったメールもここに含まれます。"
-	onclose={() => (allOpen = false)}
->
-	<!-- Task 10p (参考の良い点 4) — 要対応とそれ以外を小見出しで分ける。
-	     モーダルの題名 (Modal.svelte の h3) の下なので h4 にする -->
-	<h4 class="list-head">
-		<Icon name="ic-alert" size={16} />要対応<span class="num">{allNeeds.length}</span>
-	</h4>
-	<ul class="all-mail">
-		{#each allNeeds as t (t.id)}
-			<li>{t.subject}</li>
-		{/each}
-	</ul>
-	<h4 class="list-head">
-		<Icon name="ic-check-c" size={16} />それ以外<span class="num">{allOthers.length}</span>
-	</h4>
-	<ul class="all-mail">
-		{#each allOthers as t (t.id)}
-			<li>{t.subject}</li>
-		{/each}
-	</ul>
-	{#snippet actions()}
-		<button class="btn pri" onclick={() => (allOpen = false)}>閉じる</button>
-	{/snippet}
-</Modal>
-
 <Drawer open={sheet} title="差出人" onclose={() => (sheet = false)}>
 	<!-- Drawer の題名 (Drawer.svelte の h3) の下なので、PersonPanel の人物名は h4 にする
 	     (rereview-task-10p.md 新規 1、Modal の h4 と同じ考え方) -->
@@ -196,8 +170,10 @@
 		padding-inline: 0;
 		padding-block: var(--sp-2);
 	}
-	.inbox-all {
-		margin: var(--sp-1) var(--sp-4) 0;
+	/* 切り替えは一覧のカードの先頭。行と同じ左右の余白にそろえる */
+	.inbox-switch {
+		display: flex;
+		padding: var(--sp-2) var(--sp-4) var(--sp-3);
 	}
 	.pane-thread {
 		display: flex;
@@ -210,17 +186,6 @@
 	.empty {
 		padding: var(--sp-5);
 		color: var(--ink-2);
-	}
-	/* 要対応 / それ以外 の 2 つに分けたので、1 つあたりの高さは半分にする */
-	.all-mail {
-		max-height: 25vh;
-		margin: 0 0 var(--sp-2);
-		padding-inline-start: var(--sp-5);
-		overflow: auto;
-		color: var(--ink);
-	}
-	.all-mail li {
-		padding-block: var(--sp-1);
 	}
 	/* 1600px 以上は 3 列。畳む操作は要らない。1440px (会議室の投影、MacBook Pro 16) では
 	   本文が 392px しかなく、全角 35〜40 字の目安 (legibility.md 76 行目) に対して

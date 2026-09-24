@@ -3,8 +3,9 @@ import { key, bizDay, addDays, nextWeekday, fmtMD } from './dates';
 import { FILLER_SUBJECTS, DOC_TEMPLATES } from './kuroko/samples';
 
 /* 2 — 承認の kind から 'share' / 'schedule' / 'document' をなくした (何で送るかだけにした)。
-   古い保存を読むと記号が引けないので、版を上げて初期状態から作り直させる */
-export const DB_VERSION = 2;
+   古い保存を読むと記号が引けないので、版を上げて初期状態から作り直させる。
+   4 — 件名だけだったメールに本文と差出人のアドレスを足した */
+export const DB_VERSION = 4;
 
 export function seed(base: Date = new Date()): Db {
 	const b = new Date(base);
@@ -170,7 +171,7 @@ export function seed(base: Date = new Date()): Db {
 		source: 'gmail' as const,
 		subject: f.subject,
 		sender: f.from,
-		identityId: 'id-filler',
+		identityId: `id-f-${i + 1}`,
 		reasons: [],
 		needsReply: false,
 		done: false,
@@ -256,7 +257,15 @@ export function seed(base: Date = new Date()): Db {
 			from: 'them',
 			body: '佐々木様\n\n株式会社サンライズの鈴木です。\n本日はデモのお時間をいただきありがとうございました。',
 			at: at(key(addDays(-35, b)), '11:25')
-		}
+		},
+		// 件名だけだったメールにも本文を 1 通ずつ持たせる (一覧の「すべて」から開けるため)
+		...fillerThreads.map((t, i) => ({
+			id: `mg-f-${i + 1}`,
+			threadId: t.id,
+			from: 'them' as const,
+			body: FILLER_SUBJECTS[i].body,
+			at: t.lastAt
+		}))
 	];
 
 	const documents: Document[] = [
@@ -393,7 +402,7 @@ export function seed(base: Date = new Date()): Db {
 			{ id: 'id-abc-keiri', kind: 'email', value: 'keiri@abc.co.jp', label: 'Gmail' },
 			{ id: 'id-sunrise', kind: 'email', value: 'suzuki@sunrise.co.jp', label: 'Gmail' },
 			{ id: 'id-soumu', kind: 'email', value: 'soumu@kuroko.co.jp', label: 'Gmail' },
-			{ id: 'id-filler', kind: 'email', value: '(件名のみのメール)', label: 'Gmail' }
+			...FILLER_SUBJECTS.map((f, i) => ({ id: `id-f-${i + 1}`, kind: 'email' as const, value: f.mail, label: 'Gmail' }))
 		],
 		projects: [
 			{
