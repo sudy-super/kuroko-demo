@@ -152,13 +152,15 @@
 
 {#snippet bar()}
 	{#if !counting}
+		<!-- 日付・時刻・名前は同じ色と書体でそろえる。以前は時刻と名前だけ薄い色で、名前だけ和文の
+		     書体だったので、並べると色が混ざり、名前の文字の高さも 1 行ずれて見えた (ユーザー指摘 2026-09-25) -->
 		<span class="num hdr-date">{shortDate ? fmtMDW(now) : fmtYMDW(now)}</span>
 	{/if}
 	<!-- island.md「常時見せる情報」で時計は畳む対象に無い (brief 3 項も時刻を常時表示に挙げる)。
 	     デスクトップは案内中も時計を残し、代わりに利用者名を畳む (review-task-10n.md Minor 2)。
 	     モバイルは 390px 幅にハンバーガー・アイコン 3 個まで並ぶので、案内中に段階の札を出す
 	     ぶんは時計を畳んだままにする (この幅は Minor 2 の指摘の対象外、既存のまま) -->
-	{#if !(guideOn && media.mobile)}<span class="num muted">{hm(now)}</span>{/if}
+	{#if !(guideOn && media.mobile)}<span class="num">{hm(now)}</span>{/if}
 	{#if guideOn && !counting}
 		<!-- 仕様 11.3 の案内。段階が進んでも入れ物は作り直さず、中の文字だけが変わる
 		     (island.md「動きの時間と緩急」の「既存の要素を保ったまま動かす」)。
@@ -196,7 +198,7 @@
 		{/if}
 	</div>
 	<div class="row" style="margin-left: auto; gap: var(--sp-3)">
-		{#if !media.mobile && !guideOn && !counting}<span class="muted">{db.user.name}</span>{/if}
+		{#if !media.mobile && !guideOn && !counting}<span class="num">{db.user.name}</span>{/if}
 		{@render tools()}
 	</div>
 {/snippet}
