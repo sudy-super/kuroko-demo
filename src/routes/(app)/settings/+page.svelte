@@ -7,6 +7,7 @@
 	import type { Automation } from '$lib/types';
 	import Icon from '$lib/components/Icon.svelte';
 	import Segmented from '$lib/components/Segmented.svelte';
+	import GlassSwitch from '$lib/components/GlassSwitch.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 
 	// /people /tasks と同じ表示の切り替え (Segmented.svelte)
@@ -109,19 +110,16 @@
 					{#each db.settings.connections as c (c.id)}
 						<!-- 接続はスイッチにする (ユーザー裁定 2026-09-25)。本来はオンにすると各サービスの
 						     許可の画面へ移り、許可をやめたらオフに戻る。デモでは押した瞬間に切り替わる。
-						     HIG Toggles「switch は一覧の行の中で使う」。状態はつまみの位置と色の 2 つで示し、
-						     読み上げには role="switch" の checked が届く。行全体を押し先にする -->
-						<label class="list-row set-row has-logo">
+						     HIG Toggles「switch は一覧の行の中で使う」。見た目は Liquid Glass (GlassSwitch) -->
+						<div class="list-row set-row has-logo">
 							<Icon name="b-{c.id}" size={24} />
 							<span class="set-name">{CONNECT_NAME[c.id]}</span>
-							<input
-								type="checkbox"
-								role="switch"
-								class="switch"
+							<GlassSwitch
 								checked={c.connected}
+								label="{CONNECT_NAME[c.id]}との連携"
 								onchange={() => toggleConnection(c.id)}
 							/>
-						</label>
+						</div>
 					{/each}
 				</div>
 				<p class="set-group-foot">接続したサービスの予定とメールを、KUROKO が自動で読み込みます。</p>
@@ -309,10 +307,6 @@
 	div.set-row:hover,
 	dl .set-row:hover {
 		background: none;
-	}
-	/* スイッチの行は行全体が押し先 */
-	label.set-row {
-		cursor: pointer;
 	}
 	.set-name {
 		flex: 1;

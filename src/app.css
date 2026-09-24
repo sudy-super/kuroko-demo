@@ -620,7 +620,7 @@ svg.i {
 /* Task 10n/10q — 帯ではなく右上に浮くピル (island.md の結論 + ユーザー裁定 2026-09-16、
    中央ではなく右上。さらにユーザー裁定 2026-09-16 追補「右上のバーは一番右まで
    やっていい」で、右の位置を .rail と同じ --sp-4 に揃えた。レールがある画面でも
-   ピルだけは右端に寄せ、本文と依頼バーの回避幅 (has-rail 側、下の calc(--rail-w + 32px))
+   ピルだけは右端に寄せ、本文と依頼バーの回避幅 (下の calc(--rail-w + 32px))
    は付けない。列は縦中央に浮くので、ピルの高さ (52px)と重ならないことを検証幅ごとに
    実測して確認済み (task-10q-report.md)。
    幅の上限 560px は案内が出ているときのいちばん長い並びに合わせてある */
@@ -2154,20 +2154,19 @@ svg.i {
 	}
 }
 
-/* レールがある画面は本文と依頼バーの右をレールのぶん空ける。ピル (.header.glass)は
-   Task 10q で列と同じ右端 (--sp-4)に揃えると決まったので、この回避幅からは外す
-   (上の .header.glass のコメント参照)。960px 以下ではレールが消えるので、
-   2 クラスの詳細度が下の上書きに勝たないよう幅で囲う */
+/* 本文と依頼バーの右は、連携の列 (.rail) のぶんを常に空けておく。列があるときだけ空けると、
+   設定で連携を切り替えるたびに本文の幅が変わって画面が揺れた (ユーザー指摘 2026-09-25)。
+   ピル (.header.glass)は Task 10q で列と同じ右端 (--sp-4)に揃えると決まったので、
+   この回避幅からは外す。960px 以下では列が消えるので幅で囲う */
 @media (min-width: 961px) {
-	.app.has-rail .main {
+	.app .main {
 		margin-right: calc(var(--rail-w) + 32px);
 	}
-	.app.has-rail .chatbar {
+	.app .chatbar {
 		right: calc(var(--rail-w) + 32px);
 	}
-	/* レビュー I2 — 覆いは Portal で <body> 直下に出るため .app.has-rail の子孫ではないが、
-	   :has() で連携の列の有無を <html> から見て、覆いの右の枠幅を連携の列のぶんに広げる */
-	:root:has(.app.has-rail) {
+	/* 覆いは Portal で <body> 直下に出るので、右の枠幅も同じく常に列のぶんを空ける */
+	:root {
 		--frame-right: calc(var(--rail-w) + 32px);
 	}
 	/* side-collapse.md — .app.side-hidden の --side-space 上書きは .app のスコープにとどまり、
@@ -2370,7 +2369,8 @@ svg.i {
 	.scrim {
 		display: none !important;
 	}
-	.main {
+	/* 画面用の .app .main (連携の列のぶんの右の余白) に勝たせる */
+	.app .main {
 		margin: 0;
 		padding: 0;
 	}
@@ -2770,7 +2770,7 @@ section.tc .list-row:not(label):not(a):hover {
 }
 /* 一覧行のチェックボックス。Today のタイル、ToDo 一覧 (TaskRow)、提案カードで同じ寸法にする。
    .tc に閉じていたので TaskRow が同じ値を持ち直していた (Task 11 再レビューの minor) */
-.list-row input[type='checkbox']:not(.switch) {
+.list-row input[type='checkbox'] {
 	flex: none;
 	/* 既定の余白 (左 4px / 右 3px) を落とす。これがあると行の中の文字の左端が 20px + gap から
 	   7px ずれ、狭い画面で 2 行目に落とした期限やアイコンと題名の左端がそろわない */
@@ -3853,16 +3853,14 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
 	outline: 2px solid var(--accent);
 	outline-offset: 2px;
 }
-/* ON-OFF の切り替え (スイッチ)。つまみは 20px、操作領域は 44px の行全体。
-   予定の入力の .cal-switch と設定の連携 (input.switch) で同じ形を使う */
+/* ON-OFF の切り替え。つまみは 20px、操作領域は 44px の行全体 */
 .cal-switch {
 	gap: var(--sp-3);
 	align-items: flex-start;
 	min-height: 44px;
 	cursor: pointer;
 }
-.cal-switch input[type='checkbox'],
-input.switch {
+.cal-switch input[type='checkbox'] {
 	appearance: none;
 	flex: none;
 	position: relative;
@@ -3874,8 +3872,7 @@ input.switch {
 	cursor: pointer;
 	transition: background var(--d-fast) var(--ease-out);
 }
-.cal-switch input[type='checkbox']::after,
-input.switch::after {
+.cal-switch input[type='checkbox']::after {
 	content: '';
 	position: absolute;
 	top: 2px;
@@ -3887,16 +3884,31 @@ input.switch::after {
 	box-shadow: var(--e1);
 	transition: transform var(--d-fast) var(--ease-out);
 }
-.cal-switch input[type='checkbox']:checked,
-input.switch:checked {
+.cal-switch input[type='checkbox']:checked {
 	background: var(--accent);
 }
-.cal-switch input[type='checkbox']:checked::after,
-input.switch:checked::after {
+.cal-switch input[type='checkbox']:checked::after {
 	transform: translateX(20px);
 }
 .cal-switch .help {
 	display: block;
+}
+/* Liquid Glass のスイッチ (GlassSwitch.svelte)。ライブラリは溝を幅 3 : 高さ 1 で描くので
+   (controls.js の SWITCH_TRACK_ASPECT)、箱も同じ比にして溝を箱いっぱいに収める。
+   押している間はつまみが箱の外へ膨らむので overflow は見せたままにする。
+   押せる範囲は行の高さ (52px) の中で 44px 以上を取る */
+.glass-switch {
+	position: relative;
+	display: inline-block;
+	flex: none;
+	width: 66px;
+	height: 22px;
+	cursor: pointer;
+}
+.glass-switch::before {
+	content: '';
+	position: absolute;
+	inset: -11px -4px;
 }
 
 /* --- 週表示 (components 3.12) ------------------------------------------- */

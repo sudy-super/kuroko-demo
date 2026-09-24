@@ -70,7 +70,7 @@
 	});
 </script>
 
-<div class="app" class:has-rail={connected.length > 0} class:no-bar={!hasBar} class:side-hidden={ui.sideHidden}>
+<div class="app" class:no-bar={!hasBar} class:side-hidden={ui.sideHidden}>
 	<!-- 枠のガラスのうち 5 面 (サイドナビ、上部バー、連携の列、携帯のボトムナビ・上部バー)は、
 	     この空の層に 1 枚の canvas でまとめて描く。面ごとに描画面 (WebGL context)を取ると、
 	     タブを 3 枚開いただけでブラウザの上限に届き、全面が backdrop-filter の経路に落ちる。
