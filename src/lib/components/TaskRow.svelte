@@ -17,9 +17,15 @@
 	// 完了を取り消せるのは、この完了で積まれたログが残っている間だけ
 	const doneLog = $derived(done ? doneLogOf(db, task.id) : undefined);
 
-	/* indicators.md「ToDo 一覧の優先度」(Todoist の旗) — 高は塗り、中は線、低は出さない。
-	   色は高だけ赤にする。塗りと線で形が違うので色だけに頼っていない */
-	const PRI: Partial<Record<Task['priority'], string>> = { high: '優先度 高', normal: '優先度 中' };
+	/* tasks-reminders.md 5 節 — Apple のリマインダーと同じく、優先度は題名の前の感嘆符で示す
+	   ("one for low, two for medium, and three for high")。旗は Apple では優先度とは別の目印なので
+	   使わない。リマインダーの既定は「なし」で、印は優先度を付けた項目にだけ出る。KUROKO の既定は
+	   normal (actions.ts の addTask) なので、normal を「なし」に当てて何も出さず、
+	   low を 1 個、high を 3 個にする */
+	const PRI: Partial<Record<Task['priority'], [string, string]>> = {
+		low: ['!', '優先度 低'],
+		high: ['!!!', '優先度 高']
+	};
 
 	const originLabel = $derived(`${ORIGIN_LABEL[task.origin]}から登録`);
 </script>
@@ -33,19 +39,19 @@
 		aria-labelledby={titleId}
 		onchange={() => toggleTask(task.id, origin)}
 	/>
-	<span class="task-title" id={titleId}>{task.title}</span>
+	<span class="task-title" id={titleId}
+		>{#if !done && PRI[task.priority]}{@const [mark, name] = PRI[task.priority]!}<span
+				class="task-pri"
+				class:p-high={task.priority === 'high'}
+				title={name}><span aria-hidden="true">{mark}</span><span class="sr-only">{name}</span></span
+			>{/if}{task.title}</span
+	>
 	<span class="task-meta">
 		{#if task.due}
 			<span class="num task-due" class:overdue>
 				{#if overdue}<Icon name="ic-alert" size={16} label="期限超過" class="task-od" />{/if}
 				{rel(parse(task.due), parse(db.seededOn))}{task.time ? ` ${task.time}` : ''}
 			</span>
-		{/if}
-		{#if !done && PRI[task.priority]}
-			{@const t = PRI[task.priority]!}
-			<Tip text={t}>
-				<Icon name="ic-flag" size={18} label={t} class="task-flag p-{task.priority}" />
-			</Tip>
 		{/if}
 		<Tip text={originLabel}>
 			<Icon name={ORIGIN_ICON[task.origin]} size={16} label={originLabel} class="task-origin" />
@@ -79,9 +85,18 @@
 		align-items: center;
 		gap: var(--sp-3);
 	}
+	/* 完了した行は取り消し線ではなく薄くする (tasks-reminders.md 1 節、Apple の "dimmed") */
 	.task-row.done .task-title {
 		color: var(--ink-3);
-		text-decoration: line-through;
+	}
+	/* 感嘆符は題名と同じ行の頭に、アクセントの色で置く。高だけ赤 (数と色の 2 つで示す) */
+	.task-pri {
+		margin-right: var(--sp-1);
+		color: var(--accent);
+		font-weight: 700;
+	}
+	.task-pri.p-high {
+		color: var(--warn);
 	}
 	.task-due {
 		display: inline-flex;
@@ -96,13 +111,6 @@
 		font-weight: 700;
 	}
 	.task-row :global(.task-od) {
-		color: var(--warn);
-	}
-	.task-row :global(.task-flag) {
-		color: var(--ink-3);
-	}
-	.task-row :global(.task-flag.p-high) {
-		fill: currentColor;
 		color: var(--warn);
 	}
 	.task-row :global(.task-origin) {

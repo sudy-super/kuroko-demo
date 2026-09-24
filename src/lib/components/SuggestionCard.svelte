@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { SvelteSet } from 'svelte/reactivity';
 	import type { Suggestion } from '$lib/types';
 	import Icon from './Icon.svelte';
 
@@ -15,14 +14,6 @@
 		title: string;
 	} = $props();
 
-	const picked = new SvelteSet<string>();
-	// 消えた候補の分を数に残さないよう、今ある候補側から数える
-	const chosen = $derived(suggestions.filter((s) => picked.has(s.id)).map((s) => s.id));
-
-	function toggle(id: string) {
-		if (picked.has(id)) picked.delete(id);
-		else picked.add(id);
-	}
 
 	/* 候補が出た直後、この行が依頼バーの裏に入って 1 回目の押下がバーに取られることがある
 	   (議事録の作成直後で実測)。ReplyBox の .proposal-foot と同じ形で視界へ運ぶ。
@@ -41,30 +32,31 @@
 	}
 </script>
 
-<!-- 仕様 5 — 提案には必ず「なぜこれを出したか」の 1 行を付ける -->
+<!-- 仕様 5 — 提案には必ず「なぜこれを出したか」の 1 行を付ける。
+     tasks-reminders.md 6 節 — Apple Intelligence のリマインダーの提案と同じく、行ごとの「+」で
+     1 件ずつ登録し、下の「すべて登録」でまとめて登録する (Add / Include All)。以前は行に
+     チェックを付けてから「選択した N 件を登録」を押す 2 段階だった -->
 <section class="card sg" aria-label={title}>
 	<div class="tc-head sg-head">
 		<Icon name="ic-spark" size={20} />
 		<h2>{title}</h2>
 	</div>
 	{#each suggestions as s (s.id)}
-		<label class="list-row lg sg-row">
-			<input type="checkbox" checked={picked.has(s.id)} onchange={() => toggle(s.id)} />
+		<div class="list-row lg sg-row">
 			<span class="tc-col">
 				<span>{label(s)}</span>
 				<span class="sub">{s.reason}</span>
 			</span>
-		</label>
+			<button class="iconbtn sg-add" aria-label="「{label(s)}」を登録" title="登録" onclick={() => onaccept([s.id])}>
+				<Icon name="ic-plus" size={20} />
+			</button>
+		</div>
 	{/each}
-	<!-- この札は ToDo の一覧の上に並ぶ補助の知らせなので、3 つとも塗りなしで枠と文字だけで段を付ける -->
+	<!-- 「破棄」は Apple の提案には無い (追加しなければ消える) が、この札は画面に残り続けるので
+	     片付ける手段として置く (tasks-reminders.md 6 節)。承認カードと同じ、塗りと薄い塗りの組み -->
 	<div class="row tc-foot sg-foot" use:scrollIntoView>
-		<button class="btn sec" disabled={chosen.length === 0} onclick={() => onaccept(chosen)}>
-			選択した {chosen.length} 件を登録
-		</button>
-		<button class="btn text" onclick={() => onaccept(suggestions.map((s) => s.id))}>
-			すべて登録
-		</button>
-		<button class="btn text" onclick={onreject}>破棄</button>
+		<button class="btn pri sm" onclick={() => onaccept(suggestions.map((s) => s.id))}>すべて登録</button>
+		<button class="btn tint sm" onclick={onreject}>破棄</button>
 	</div>
 </section>
 
@@ -82,15 +74,24 @@
 		padding-bottom: var(--sp-3);
 	}
 	.sg-row {
-		align-items: flex-start;
 		height: auto;
 		padding-block: var(--sp-3);
+		cursor: default;
 	}
-	/* 3 つで 360px の幅を超えるので折り返す。.row にも .tc-foot にも高さの指定が無いので
-	   (app.css)、折り返した分だけ行が伸びる。固定の高さを解く必要は無い */
+	.sg-row:hover {
+		background: none;
+	}
+	.sg-row .tc-col {
+		flex: 1;
+		min-width: 0;
+	}
+	.sg-add {
+		color: var(--accent);
+	}
+	/* 狭い幅では折り返す。.row にも .tc-foot にも高さの指定が無いので、折り返した分だけ伸びる */
 	.sg-foot {
 		flex-wrap: wrap;
-		gap: var(--sp-4);
+		gap: var(--sp-2);
 		/* 視界へ運ぶとき、下端に重なる依頼バーとボトムナビの分だけ手前で止める
 		   (app.css の --content-bottom-clear。ReplyBox の .send-row と同じ) */
 		scroll-margin-bottom: var(--content-bottom-clear);

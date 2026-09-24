@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { db } from '$lib/store.svelte';
 	import type { TaskFilter } from '$lib/derived';
+	import type { Task } from '$lib/types';
 	import { badgeCount, filterTasks, openTaskCount } from '$lib/derived';
 	import { acceptTaskSuggestions, rejectSuggestions } from '$lib/actions';
 	import { toast } from '$lib/ui.svelte';
@@ -23,10 +24,21 @@
 
 	let filter = $state<TaskFilter>('today');
 	const current = $derived(FILTERS.find((f) => f.key === filter)!);
-	// 完了は見出しを挙げて分ける。「…はありません」と完了の行が並んでも矛盾しない
+	/* tasks-reminders.md 7 節 — Apple のリマインダーと同じく、完了した ToDo は既定で隠し、
+	   「完了を表示」で出す ("Completed items are hidden on your list … tap Show Completed")。
+	   ただしこの画面を開いている間に完了にしたものは、その場に薄く残す。すぐ消すと押した行が
+	   目の前から消えて、何が起きたか分からず「元に戻す」も押せない */
 	const tasks = $derived(filterTasks(db, filter));
-	const open = $derived(tasks.filter((t) => t.status !== 'done'));
-	const closed = $derived(tasks.filter((t) => t.status === 'done'));
+	const doneBefore = new Set(db.tasks.filter((t) => t.status === 'done').map((t) => t.id));
+	/* 一覧の並びは期限順のまま。filterTasks は完了を末尾へ送るので、この画面で完了にした行が
+	   押した瞬間に一番下へ飛ぶ。ここでは期限と時刻だけで並べ直して、行をその場に留める */
+	const byDue = (a: Task, b: Task) =>
+		(a.due ?? '9999').localeCompare(b.due ?? '9999') || (a.time ?? '99:99').localeCompare(b.time ?? '99:99');
+	const open = $derived(tasks.filter((t) => t.status !== 'done' || !doneBefore.has(t.id)).sort(byDue));
+	const closed = $derived(tasks.filter((t) => t.status === 'done' && doneBefore.has(t.id)));
+	// 見出しの件数は、まだ済んでいないものだけを数える (切り替えの件数と同じ)
+	const left = $derived(open.filter((t) => t.status !== 'done').length);
+	let showDone = $state(false);
 
 	// 会議やチャットが出した ToDo 候補。KUROKO が勝手に登録することはない (仕様 5.4)
 	const suggestions = $derived(
@@ -75,7 +87,7 @@
 
 	<section class="card tasks-list" aria-labelledby="tasks-open-head">
 		<h2 class="list-head" id="tasks-open-head">
-			<Icon name={current.icon} size={16} />{current.label}<span class="num">{open.length}</span>
+			<Icon name={current.icon} size={16} />{current.label}<span class="num">{left}</span>
 		</h2>
 		{#if open.length === 0}
 			<p class="muted tasks-empty">{current.empty}</p>
@@ -84,12 +96,14 @@
 			<TaskRow task={t} />
 		{/each}
 		{#if closed.length}
-			<h2 class="list-head tasks-sub">
-				<Icon name="ic-check-c" size={16} />完了<span class="num">{closed.length}</span>
-			</h2>
-			{#each closed as t (t.id)}
-				<TaskRow task={t} />
-			{/each}
+			<button class="btn text sm tasks-done-toggle" aria-expanded={showDone} onclick={() => (showDone = !showDone)}>
+				{showDone ? '完了を隠す' : `完了を表示 (${closed.length})`}
+			</button>
+			{#if showDone}
+				{#each closed as t (t.id)}
+					<TaskRow task={t} />
+				{/each}
+			{/if}
 		{/if}
 	</section>
 </div>
@@ -116,8 +130,7 @@
 	.tasks-empty {
 		padding: var(--sp-5);
 	}
-	/* list-head の高さ・色・文字は共通。完了の小見出しだけ、直前の行と分ける余白を足す */
-	.tasks-sub {
-		margin-top: var(--sp-2);
+	.tasks-done-toggle {
+		margin: var(--sp-1) var(--sp-4);
 	}
 </style>

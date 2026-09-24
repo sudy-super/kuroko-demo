@@ -2768,16 +2768,46 @@ section.tc .list-row:not(label):not(a):hover {
 	left: 0;
 	right: 0;
 }
-/* 一覧行のチェックボックス。Today のタイル、ToDo 一覧 (TaskRow)、提案カードで同じ寸法にする。
-   .tc に閉じていたので TaskRow が同じ値を持ち直していた (Task 11 再レビューの minor) */
+/* 一覧行のチェック。Today のタイル、ToDo 一覧 (TaskRow)、提案カードで同じ形にする。
+   iOS のリマインダーと同じ丸いチェック (tasks-reminders.md 1 節 — 四角のチェックボックスは
+   HIG では macOS の部品)。未完了は細い輪、完了は塗りの丸に白い印。
+   margin を 0 にするのは、既定の余白があると 2 行目に落とした期限と題名の左端がずれるため */
 .list-row input[type='checkbox'] {
+	appearance: none;
 	flex: none;
-	/* 既定の余白 (左 4px / 右 3px) を落とす。これがあると行の中の文字の左端が 20px + gap から
-	   7px ずれ、狭い画面で 2 行目に落とした期限やアイコンと題名の左端がそろわない */
+	display: grid;
+	place-items: center;
 	margin: 0;
-	width: 20px;
-	height: 20px;
-	accent-color: var(--accent);
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	box-shadow: inset 0 0 0 1.5px var(--ink-3);
+	cursor: pointer;
+	transition:
+		background var(--d-fast) var(--ease-out),
+		box-shadow var(--d-fast) var(--ease-out);
+}
+.list-row input[type='checkbox']::after {
+	content: '';
+	width: 10px;
+	height: 6px;
+	margin-top: -2px;
+	border: solid #fff;
+	border-width: 0 0 2px 2px;
+	rotate: -45deg;
+	scale: 0;
+	transition: scale var(--d-fast) var(--ease-out);
+}
+.list-row input[type='checkbox']:checked {
+	background: var(--accent);
+	box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.list-row input[type='checkbox']:checked::after {
+	scale: 1;
+}
+.list-row input[type='checkbox']:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
 }
 .tc-text {
 	overflow: hidden;
