@@ -80,13 +80,18 @@
 	}
 
 	/* ---- 並べ替え (task-reorder.md) ----
-	   取っ手を押して動かす。落とす位置は行の間の線で示し、ほかの行はよけない (Atlassian)。
+	   行のどこを押しても始められる (ユーザー指示 2026-09-25)。行は押すと完了になるので、
+	   マウスは 5px 動かした時点で並べ替えに切り替え、そのあとの click は捨てる。
+	   指は画面を送る動きとぶつかるので、リマインダーと同じく長押し (400ms) で持ち上げる。
+	   落とす位置は行の間の線で示し、ほかの行はよけない (Atlassian)。
 	   並べるのは未完了の行だけ。完了した行は並べ替えの対象にしない */
 	const movable = $derived(open.filter((t) => t.status !== 'done'));
 	const ids = $derived(movable.map((t) => t.id));
 	let listEl: HTMLElement | undefined = $state();
 	let drag = $state<{ id: string; y: number; dy: number; to: number } | null>(null);
 	let said = $state('');
+	const SLOP = 5;
+	const HOLD_MS = 400;
 
 	function move(id: string, to: number) {
 		const t = db.tasks.find((x) => x.id === id);
@@ -96,10 +101,24 @@
 	}
 
 	function grab(id: string, e: PointerEvent) {
-		if (e.button !== 0) return;
-		e.preventDefault();
-		drag = { id, y: e.clientY, dy: 0, to: ids.indexOf(id) };
+		// 星・メニュー・元に戻すは押す操作のまま。完了した行は並べ替えない
+		if (e.button !== 0 || !ids.includes(id) || (e.target as Element).closest('button')) return;
+		const x0 = e.clientX;
+		const y0 = e.clientY;
+		const touch = e.pointerType !== 'mouse';
+		let active = false;
+		const begin = () => {
+			active = true;
+			drag = { id, y: y0, dy: 0, to: ids.indexOf(id) };
+		};
+		const hold = touch ? setTimeout(begin, HOLD_MS) : undefined;
 		const onMove = (ev: PointerEvent) => {
+			if (!active) {
+				if (Math.hypot(ev.clientX - x0, ev.clientY - y0) < SLOP) return;
+				// 指は長押しの前に動いたら画面を送る動きなので、並べ替えにしない
+				if (touch) return end();
+				begin();
+			}
 			if (!drag || !listEl) return;
 			drag.dy = ev.clientY - drag.y;
 			// 行の中心より上か下かで、落とす位置 (何番目の前か) を決める
@@ -116,16 +135,33 @@
 			}
 			drag.to = to;
 		};
-		const onUp = () => {
+		// 持ち上げている間は、指の動きで画面が送られないようにする
+		const noScroll = (ev: TouchEvent) => active && ev.preventDefault();
+		// 動かしたあとの click (行の完了) を 1 回だけ捨てる
+		const swallow = (ev: MouseEvent) => {
+			ev.preventDefault();
+			ev.stopPropagation();
+		};
+		const end = () => {
+			clearTimeout(hold);
 			window.removeEventListener('pointermove', onMove);
 			window.removeEventListener('pointerup', onUp);
-			window.removeEventListener('pointercancel', onUp);
-			if (drag && drag.to !== ids.indexOf(drag.id)) move(drag.id, drag.to);
+			window.removeEventListener('pointercancel', end);
+			window.removeEventListener('touchmove', noScroll);
 			drag = null;
+		};
+		const onUp = () => {
+			if (active) {
+				window.addEventListener('click', swallow, { capture: true });
+				setTimeout(() => window.removeEventListener('click', swallow, { capture: true }));
+				if (drag && drag.to !== ids.indexOf(drag.id)) move(drag.id, drag.to);
+			}
+			end();
 		};
 		window.addEventListener('pointermove', onMove);
 		window.addEventListener('pointerup', onUp);
-		window.addEventListener('pointercancel', onUp);
+		window.addEventListener('pointercancel', end);
+		window.addEventListener('touchmove', noScroll, { passive: false });
 	}
 	/* 線を引く位置。つかんだ行を除いた並びで to 番目の行の上端 (末尾なら最後の行の下端) */
 	const lineIndex = $derived(drag ? drag.to : -1);
@@ -191,7 +227,7 @@
 		{#if open.length === 0}
 			<p class="muted tasks-empty">{current.empty}</p>
 		{/if}
-		<div class="tasks-rows" class:dragging={!!drag} bind:this={listEl}>
+		<div class="tasks-rows" class:dragging={!!drag} role="list" bind:this={listEl}>
 			{#each open as t (t.id)}
 				{@const i = ids.indexOf(t.id)}
 				{@const others = ids.filter((x) => x !== drag?.id)}
@@ -219,9 +255,11 @@
 				{showDone ? '完了を隠す' : `完了を表示 (${closed.length})`}
 			</button>
 			{#if showDone}
-				{#each closed as t (t.id)}
-					<TaskRow task={t} index={-1} count={0} onmove={() => {}} ongrab={() => {}} />
-				{/each}
+				<div role="list" aria-label="完了した ToDo">
+					{#each closed as t (t.id)}
+						<TaskRow task={t} index={-1} count={0} onmove={() => {}} ongrab={() => {}} />
+					{/each}
+				</div>
 			{/if}
 		{/if}
 	</section>

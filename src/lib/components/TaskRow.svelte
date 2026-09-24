@@ -23,7 +23,7 @@
 		index: number;
 		count: number;
 		onmove: (to: number) => void;
-		/** 取っ手を押し始めた。ドラッグそのものは一覧 (tasks/+page.svelte) が受け持つ */
+		/** 行を押し始めた。押しただけか動かしたかの見分けとドラッグは一覧 (tasks/+page.svelte) が受け持つ */
 		ongrab: (e: PointerEvent) => void;
 	} = $props();
 
@@ -43,11 +43,10 @@
 
 <!-- 行の中に押せるものが 4 つ (取っ手・チェック・星・メニュー) あるので、行全体を label にはしない。
      チェックと題名だけを label で包み、題名を押しても完了にできるようにする -->
-<div class="list-row lg task-row" class:done>
-	<!-- task-reorder.md — 行の中にほかの操作があるので、つかむ場所は左端の取っ手に限る
-	     (Atlassian Pragmatic drag and drop)。取っ手は指を載せた行にだけ出す。キーボードと
-	     1 回押しの代わりはメニューの「上へ」「下へ」(WCAG 2.2 2.5.7) なので、取っ手は焦点に入れない -->
-	<span class="task-grip" aria-hidden="true" onpointerdown={ongrab}><Icon name="ic-grip" size={18} /></span>
+<!-- 行のどこをつかんでも並べ替えられる (ユーザー指示 2026-09-25)。押して離しただけなら
+     今までどおり完了になり、動かしたときだけ並べ替えになる (見分けは tasks/+page.svelte の grab)。
+     キーボードと 1 回押しの代わりはメニューの「上へ」「下へ」(WCAG 2.2 2.5.7) -->
+<div class="list-row lg task-row" class:done={done} role="listitem" onpointerdown={ongrab}>
 	<label class="task-main">
 		<input type="checkbox" checked={done} aria-labelledby={titleId} onchange={() => toggleTask(task.id, origin)} />
 		<span class="task-text">
@@ -116,36 +115,17 @@
 </div>
 
 <style>
+	/* 文字を選ぶ動きとドラッグがぶつからないよう、行の文字は選べなくする。長押しで出る
+	   iOS の吹き出しも止める (指の長押しは並べ替えの始まりに使う) */
 	.task-row {
-		gap: var(--sp-2);
-		padding-left: var(--sp-1);
+		gap: var(--sp-3);
 		cursor: default;
+		user-select: none;
+		-webkit-user-select: none;
+		-webkit-touch-callout: none;
 	}
 	.task-row:hover {
 		background: none;
-	}
-	/* 取っ手は指を載せた行と、つかんでいる行にだけ出す (見えない間も場所は取る) */
-	.task-grip {
-		display: grid;
-		place-items: center;
-		flex: none;
-		width: 20px;
-		height: 44px;
-		color: var(--ink-3);
-		opacity: 0;
-		cursor: grab;
-		touch-action: none;
-		transition: opacity var(--d-fast) var(--ease-out);
-	}
-	.task-row:hover .task-grip,
-	:global(.task-lifted) .task-grip {
-		opacity: 1;
-	}
-	/* 触る操作の端末には指を載せる状態が無いので、常に出す */
-	@media (hover: none) {
-		.task-grip {
-			opacity: 1;
-		}
 	}
 	.task-main {
 		display: flex;
