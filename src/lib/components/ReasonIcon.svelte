@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Reason } from '$lib/types';
 	import { REASON_LABEL } from '$lib/types';
-	import Icon from './Icon.svelte';
 	import Tip from './Tip.svelte';
 
 	/* indicators.md「メール一覧の要対応の理由」と 5 節 — 理由ごとに形の違うアイコンを当て、
@@ -19,14 +18,7 @@
 	};
 </script>
 
-<Tip text={REASON_LABEL[reason]}>
-	<Icon
-		name={SHAPE[reason]}
-		size={18}
-		label={REASON_LABEL[reason]}
-		class="reason-icon {reason === 'overdue' ? 'sev' : ''}"
-	/>
-</Tip>
+<Tip text={REASON_LABEL[reason]} name={SHAPE[reason]} size={18} class="reason-icon {reason === 'overdue' ? 'sev' : ''}" />
 
 <style>
 	:global(.reason-icon) {

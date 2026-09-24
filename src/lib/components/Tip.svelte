@@ -1,10 +1,15 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
 	import { Tooltip } from 'bits-ui';
+	import Icon from './Icon.svelte';
 
 	/* indicators.md「アイコンだけで意味を伝える条件」— 行内はアイコンだけにするかわりに、
-	   文言はホバーで読めるようにする。キーボードと読み上げには中のアイコンの aria-label が届く */
-	let { text, children }: { text: string; children: Snippet } = $props();
+	   文言はホバーで読めるようにする。キーボードと読み上げには、同じ文言をアイコンの aria-label で渡す */
+	let {
+		text,
+		name,
+		size,
+		class: cls
+	}: { text: string; name: string; size?: number; class?: string } = $props();
 </script>
 
 <Tooltip.Provider delayDuration={300}>
@@ -16,7 +21,7 @@
 				     bits-ui は button 向けの type を必ず渡してくるので span からは外し、
 				     aria-describedby も外す (中のアイコンが同じ文言を名前として持つため) -->
 				{@const { type: _t, tabindex: _i, 'aria-describedby': _d, ...rest } = props}
-				<span {...rest} class="tip-at">{@render children()}</span>
+				<span {...rest} class="tip-at"><Icon {name} {size} label={text} class={cls} /></span>
 			{/snippet}
 		</Tooltip.Trigger>
 		<Tooltip.Portal>

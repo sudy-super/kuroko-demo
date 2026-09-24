@@ -11,7 +11,6 @@
 		WEEK_MIN_DURATION_MIN
 	} from '$lib/calendar';
 	import { clock } from '$lib/clock.svelte';
-	import Icon from './Icon.svelte';
 	import Tip from './Tip.svelte';
 
 	let { cursor, onopen }: { cursor: Date; onopen: (e: CalendarEvent) => void } = $props();
@@ -128,9 +127,7 @@
 						<span class="week-ev-bar"></span>
 						<span class="week-ev-t">
 							{#each a as x (x.name)}
-								<Tip text={x.label}>
-									<Icon name={x.name} size={16} label={x.label} />
-								</Tip>
+								<Tip text={x.label} name={x.name} size={16} />
 							{/each}
 							<!-- 題名は列の幅で切れるので、全文と属性をホバーでも読めるようにする。
 							     アイコンのツールチップと重ならないよう、button ではなく題名に付ける -->

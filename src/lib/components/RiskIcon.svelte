@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { RISK_LABEL, type RiskLevel } from '$lib/types';
-	import Icon from './Icon.svelte';
 	import Tip from './Tip.svelte';
 
 	/* ApprovalIcon / ProjectStatusIcon と同じ作り。ApprovalIcon は「何で送るか」(サービスのロゴ)、
@@ -21,9 +20,7 @@
 	};
 </script>
 
-<Tip text={RISK_LABEL[risk]}>
-	<Icon name={MARK[risk]} {size} label={RISK_LABEL[risk]} class="rk-icon {risk}" />
-</Tip>
+<Tip text={RISK_LABEL[risk]} name={MARK[risk]} {size} class="rk-icon {risk}" />
 
 <style>
 	:global(.rk-icon.external_send) {

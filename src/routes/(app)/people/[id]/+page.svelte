@@ -122,9 +122,7 @@
 						{#if found}
 							<!-- indicators.md 結論 2 — 出所はブランドの記号 1 個と aria-label にとどめ、
 							     同じ意味の文字バッジを右端に重ねない (audit 5) -->
-							<Tip text="{ch.label} の連絡先">
-								<Icon name={ch.icon} size={20} label="{ch.label} の連絡先" />
-							</Tip>
+							<Tip text="{ch.label} の連絡先" name={ch.icon} size={20} />
 							<!-- メール以外は内部の ID を出さない (derived.ts の contactOf) -->
 							<span class="people-ident">{contactOf(found)}</span>
 						{:else}
@@ -154,9 +152,7 @@
 				<p class="people-stat">メール {stats?.mails} 通 / 会議 {stats?.meetings} 件</p>
 				{#each shown(history, 'history') as h (h.href + h.at)}
 					<a class="list-row" href={h.href}>
-						<Tip text={h.label}>
-							<Icon name={HISTORY_ICON[h.kind]} size={20} label={h.label} class="ph-history-icon" />
-						</Tip>
+						<Tip text={h.label} name={HISTORY_ICON[h.kind]} size={20} class="ph-history-icon" />
 						<span class="people-ident">{h.title}</span>
 						<span class="num muted">{day(h.at)}</span>
 					</a>

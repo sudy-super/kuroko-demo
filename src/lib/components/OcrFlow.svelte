@@ -194,9 +194,7 @@
 						<!-- 軸 2: 確信度の低い項目だけ。色だけに頼らないようアクセシブルな名前を付けた記号にする
 						     (WCAG 1.4.1)。検証の失敗ではないので aria-invalid は使わない (ARIA21) -->
 						{#if low(f.key)}
-							<Tip text="要確認">
-								<Icon name="ic-alert" size={16} label="要確認" class="ocr-req-icon" />
-							</Tip>
+							<Tip text="要確認" name="ic-alert" size={16} class="ocr-req-icon" />
 						{/if}
 					</label>
 					<input

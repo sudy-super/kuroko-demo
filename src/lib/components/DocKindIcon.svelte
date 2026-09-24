@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Document } from '$lib/types';
-	import Icon from './Icon.svelte';
 	import Tip from './Tip.svelte';
 
 	/* ApprovalIcon / ProjectStatusIcon と同じ作り。資料の種別 (提案書 / 見積書 / 報告書) */
@@ -13,9 +12,7 @@
 	};
 </script>
 
-<Tip text={kind}>
-	<Icon name={MARK[kind]} {size} label={kind} class="dk-icon" />
-</Tip>
+<Tip text={kind} name={MARK[kind]} {size} class="dk-icon" />
 
 <style>
 	:global(.dk-icon) {

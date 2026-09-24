@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { ProjectStatus } from '$lib/types';
 	import { projectStatusClass } from '$lib/derived';
-	import Icon from './Icon.svelte';
 	import Tip from './Tip.svelte';
 
 	/* ApprovalIcon と同じ作り。色は projectStatusClass (受注=緑/失注=赤/他=青)のまま、
@@ -18,9 +17,7 @@
 	};
 </script>
 
-<Tip text={status}>
-	<Icon name={MARK[status]} size={16} label={status} class="ps-icon {projectStatusClass(status)}" />
-</Tip>
+<Tip text={status} name={MARK[status]} size={16} class="ps-icon {projectStatusClass(status)}" />
 
 <style>
 	:global(.ps-icon.info) {

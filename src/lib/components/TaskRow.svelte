@@ -64,9 +64,7 @@
 				{rel(parse(task.due), parse(db.seededOn))}{task.time ? ` ${task.time}` : ''}
 			</span>
 		{/if}
-		<Tip text={originLabel}>
-			<Icon name={ORIGIN_ICON[task.origin]} size={16} label={originLabel} class="task-origin" />
-		</Tip>
+		<Tip text={originLabel} name={ORIGIN_ICON[task.origin]} size={16} class="task-origin" />
 		{#if doneLog}
 			<button class="btn text sm" onclick={() => undo(doneLog.id)}>
 				<Icon name="ic-undo" size={18} />元に戻す

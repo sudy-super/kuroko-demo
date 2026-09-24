@@ -28,29 +28,21 @@
 	{@const ku = l.actor === 'KUROKO'}
 	<div class="list-row lg activity-row" class:compact style="cursor: default">
 		<span class="num sub activity-at">{when(l.at)}</span>
-		<Tip text={actorLabel(l.actor)}>
-			<!-- indicators.md 93、99 行目 — 色だけにも形だけにも頼らないよう、記号と色の両方を変える -->
-			<Icon name={ku ? 'ic-spark' : 'ic-user'} size={16} label={actorLabel(l.actor)} class="activity-actor {ku ? 'by-kuroko' : ''}" />
-		</Tip>
+		<!-- indicators.md 93、99 行目 — 色だけにも形だけにも頼らないよう、記号と色の両方を変える -->
+		<Tip text={actorLabel(l.actor)} name={ku ? 'ic-spark' : 'ic-user'} size={16} class="activity-actor {ku ? 'by-kuroko' : ''}" />
 		<span class="activity-text" class:undone={l.undone}>{l.text}</span>
 		{#if l.undone}
 			<!-- 取り消した記録は取り消し線を引かず (ユーザー指示 2026-09-25)、薄い文字と元に戻すの
 			     記号で示す。色だけに頼らない (WCAG 1.4.1) -->
-			<Tip text="取り消し済み">
-				<Icon name="ic-undo" size={16} label="取り消し済み" class="activity-undone" />
-			</Tip>
+			<Tip text="取り消し済み" name="ic-undo" size={16} class="activity-undone" />
 		{/if}
 		{#if !compact}
 			<!-- ドロワーの直近 5 件は場所が狭いので、実行元の記号を落として 1 行に収める -->
-			<Tip text={`${ORIGIN_LABEL[l.origin]}から`}>
-				<Icon name={ORIGIN_ICON[l.origin]} size={16} label={`${ORIGIN_LABEL[l.origin]}から`} class="activity-origin" />
-			</Tip>
+			<Tip text="{ORIGIN_LABEL[l.origin]}から" name={ORIGIN_ICON[l.origin]} size={16} class="activity-origin" />
 		{/if}
 		{#if l.approved}
 			<!-- 「承認あり」は真偽だけの印で、種類の記号と混ざる相手がここには無いので ic-check-c 1 個で足りる -->
-			<Tip text="承認あり">
-				<Icon name="ic-check-c" size={16} label="承認あり" class="activity-approved" />
-			</Tip>
+			<Tip text="承認あり" name="ic-check-c" size={16} class="activity-approved" />
 		{/if}
 		{#if l.undo && !l.undone}
 			<button class="btn text sm activity-undo" onclick={() => onUndo(l)}>

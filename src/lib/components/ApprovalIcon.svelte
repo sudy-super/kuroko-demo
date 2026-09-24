@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { ApprovalKind } from '$lib/types';
-	import Icon from './Icon.svelte';
 	import Tip from './Tip.svelte';
 
 	/* indicators.md「メール一覧の出所」の考え方を承認の行にも当てる。記号は「何で送るか」
@@ -24,9 +23,7 @@
 	};
 </script>
 
-<Tip text={LABEL[kind]}>
-	<Icon name={MARK[kind]} {size} label={LABEL[kind]} class="ap-icon" />
-</Tip>
+<Tip text={LABEL[kind]} name={MARK[kind]} {size} class="ap-icon" />
 
 <style>
 	:global(.ap-icon) {

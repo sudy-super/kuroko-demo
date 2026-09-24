@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Source } from '$lib/types';
-	import Icon from './Icon.svelte';
 	import Tip from './Tip.svelte';
 
 	/* indicators.md「メール一覧の出所」— 出所は文言のタグではなくブランドの記号 1 個。
@@ -26,9 +25,7 @@
 	};
 </script>
 
-<Tip text={LABEL[source]}>
-	<Icon name={MARK[source]} {size} label={LABEL[source]} class="src-icon" />
-</Tip>
+<Tip text={LABEL[source]} name={MARK[source]} {size} class="src-icon" />
 
 <style>
 	:global(.src-icon) {
