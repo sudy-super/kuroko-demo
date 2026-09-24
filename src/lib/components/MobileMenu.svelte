@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { PRIMARY, SECONDARY, UTILITY, isActive } from '$lib/nav';
+	import { PRIMARY, UTILITY, isActive } from '$lib/nav';
 	import { ui } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 	import Drawer from './Drawer.svelte';
 
 	// Task 10p — サイドナビの下端固定 (UTILITY) はこのメニューにも出す。省くと設定に辿り着けなくなる
-	const items = [...PRIMARY, ...SECONDARY, ...UTILITY];
+	const items = [...PRIMARY, ...UTILITY];
 </script>
 
 <Drawer open={ui.mobileMenu} title="画面を選ぶ" onclose={() => (ui.mobileMenu = false)}>

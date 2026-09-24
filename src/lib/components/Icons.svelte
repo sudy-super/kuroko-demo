@@ -63,6 +63,10 @@
 		<!-- side-collapse.md — サイドナビの格納の切り替え。Apple sidebar.left に合わせ、
 		     角の丸い四角の枠と左寄りの縦線 1 本だけで表す -->
 		<symbol id="ic-sidebar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9.5 4v16"/></symbol>
+		<!-- ユーザー指示 2026-09-24 — サイドナビ上端のロゴ。オーブ (青い球、src/lib/orb/)を
+		     単純化し、円 1 つ + 中心の白い核だけで表す (オーブ本体の陰影や縁光は描かない、
+		     `mem:orb-is-not-a-circle` はオーブ本体の話でロゴには及ばない) -->
+		<symbol id="ic-kuroko" stroke="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="var(--accent)"/><circle cx="12" cy="12" r="3.5" fill="#fff"/></symbol>
 		<!-- brand marks -->
 		<symbol id="b-gcal" stroke="none" viewBox="0 0 30 30"><rect x="2" y="2" width="26" height="26" rx="4" fill="#fff"/><path d="M2 6a4 4 0 0 1 4-4h18a4 4 0 0 1 4 4v2H2z" fill="#4285F4"/><path d="M2 8h6v14H2z" fill="#4285F4"/><path d="M22 8h6v14h-6z" fill="#FBBC04"/><path d="M8 22h14v6H8z" fill="#34A853"/><path d="M22 22h6v2a4 4 0 0 1-4 4h-2z" fill="#EA4335"/><path d="M2 22h6v6H6a4 4 0 0 1-4-4z" fill="#188038"/><rect x="8" y="8" width="14" height="14" fill="#fff"/><text x="15" y="19" text-anchor="middle" font-family="Inter, Arial" font-weight="700" font-size="10" fill="#4285F4">31</text></symbol>
 		<symbol id="b-gmail" stroke="none" viewBox="0 0 30 30"><path d="M3 9v14a2 2 0 0 0 2 2h4V13l-6-4z" fill="#4285F4"/><path d="M27 9v14a2 2 0 0 1-2 2h-4V13l6-4z" fill="#34A853"/><path d="M9 13l6 4.5 6-4.5V8l-6 4.5L9 8z" fill="#EA4335"/><path d="M3 9a2 2 0 0 1 3.2-1.6L9 9v4L3 9z" fill="#C5221F"/><path d="M27 9a2 2 0 0 0-3.2-1.6L21 9v4l6-4z" fill="#FBBC04"/></symbol>

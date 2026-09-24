@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
 	import { badgeCount, queue } from '$lib/derived';
-	import { PRIMARY, SECONDARY, UTILITY, isActive, guideTarget, type NavItem } from '$lib/nav';
+	import { PRIMARY, UTILITY, isActive, guideTarget, type NavItem } from '$lib/nav';
 	import Icon from './Icon.svelte';
 
 	const inbox = $derived(queue(db).length);
@@ -28,11 +28,18 @@
 {/snippet}
 
 <nav class="sidebar" id="side-nav" aria-label="画面の切り替え">
+	<!-- ユーザー指示 2026-09-24 — 格納ボタン (.app 直下の .side-toggle) の右に並ぶロゴ行。
+	     サイドナビの子として一緒に格納される。Today への近道を兼ねる -->
+	<a class="nav-logo" href="/today" aria-label="KUROKO AI (Today へ)">
+		<Icon name="ic-kuroko" size={24} />
+		<span>KUROKO AI</span>
+	</a>
+	<hr class="nav-sep" />
+	<!-- ユーザー指示 2026-09-24 — 見出し「その他」・区切り線・隙間を廃止し、主要と補助を
+	     分けず 1 本の列にする (旧: Task 10p の見出し区分、要件定義 p.9 の主要 6 + 補助 5)。
+	     PRIMARY は nav.ts で統合済み。設定 (UTILITY) だけ下端に固定する -->
 	{#each PRIMARY as nav (nav.href)}{@render item(nav)}{/each}
-	<hr class="nav-sep" />
-	<div class="nav-head">その他</div>
-	{#each SECONDARY as nav (nav.href)}{@render item(nav)}{/each}
-	<div class="nav-spacer"></div>
-	<hr class="nav-sep" />
-	{#each UTILITY as nav (nav.href)}{@render item(nav)}{/each}
+	<div class="nav-bottom">
+		{#each UTILITY as nav (nav.href)}{@render item(nav)}{/each}
+	</div>
 </nav>

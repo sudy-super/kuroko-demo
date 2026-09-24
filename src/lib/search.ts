@@ -1,6 +1,6 @@
 import type { Db } from './types';
 import { personOf, companyOf, projectOf, threadSenderMeta } from './derived';
-import { PRIMARY, SECONDARY, UTILITY } from './nav';
+import { PRIMARY, UTILITY } from './nav';
 import { parse, fmtMDW } from './dates';
 
 export type Group = '人物' | '会社' | '案件' | 'メール' | '予定' | '資料' | 'ToDo';
@@ -137,7 +137,7 @@ export function search(db: Db, q: string): Hit[] {
 	return out;
 }
 
-const SCREENS = [...PRIMARY, ...SECONDARY, ...UTILITY];
+const SCREENS = [...PRIMARY, ...UTILITY];
 
 /* 画面の名前。詳細の画面は実体の名前を出す (「会社・人物・案件」より「田中 太郎」のほうが
    最近開いたものとして分かる)。名前が引けない道は出さない */

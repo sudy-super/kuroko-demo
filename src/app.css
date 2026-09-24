@@ -451,11 +451,14 @@ svg.i {
 	display: flex;
 	flex-direction: column;
 	gap: var(--sp-1);
-	overflow-y: auto;
 	width: var(--side-w);
-	/* side-collapse.md — 上だけ切り替えボタン (直径 44px、上に --sp-2 の間) のぶん空け、
-	   開いているときにボタンが 1 項目目「Today」に重ならないようにする */
-	padding: calc(44px + var(--sp-2)) var(--sp-2) var(--sp-2);
+	/* ユーザー指示 2026-09-24 — 格納ボタンの分の上詰め (44px + var(--sp-2)) は廃止。
+	   ロゴ行 (44px、.nav-logo)をボタンと横に並べたので、サイドナビの上padding は
+	   ボタンの top (var(--sp-4) + 8px) とサイドナビの top (var(--sp-4)) の差である
+	   8px = var(--sp-2) だけでよく、四辺とも var(--sp-2) になる。
+	   overflow-y: auto は項目の高さを詰める方式 (.nav-item の height を見よ) に替えたので廃止
+	   (窓が非常に低いときの保険は下の @media (max-height: 600px) に置く) */
+	padding: var(--sp-2);
 	border-radius: var(--r-l);
 	background: var(--glass-panel);
 	-webkit-backdrop-filter: var(--blur-m);
@@ -510,13 +513,40 @@ svg.i {
 .side-toggle:active {
 	background: var(--press);
 }
+/* ユーザー指示 2026-09-24 — サイドナビ上端、格納ボタンの横に並ぶロゴ行。ボタン (幅44px、
+   left: var(--sp-4) + 8px)の右端 + 12px にロゴの左端を置く。ロゴの行は .sidebar の最初の
+   子で高さ44px なので、サイドナビの上 padding (var(--sp-2)) と合わせるとボタンと縦の中心が揃う。
+   padding-left の 56px は (ボタンの +8px オフセット − サイドナビの padding var(--sp-2)=8px が
+   相殺し) ボタン幅 44px + 隙間 12px の単純な和になる */
+.nav-logo {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-2);
+	flex: none;
+	height: 44px;
+	padding-left: 56px;
+	color: var(--ink);
+	font-size: 16px;
+	font-weight: 700;
+	text-decoration: none;
+}
+.nav-logo:focus-visible {
+	outline-offset: -2px;
+}
 .nav-item {
 	position: relative;
 	display: flex;
 	align-items: center;
 	gap: var(--sp-4);
 	flex: none;
-	height: 48px;
+	/* ユーザー指示 2026-09-24 — サイドナビ内をスクロールさせないため、11項目 (PRIMARY 10 +
+	   UTILITY 1) + ロゴ行が窓の高さに収まるよう項目の高さを詰める。
+	   固定分 = サイドナビの上下padding (var(--sp-2)×2=16px) + ロゴ行 (44px) + 区切り線
+	   (1px、marginは.nav-sepの gap: 0 で持たせない) + .sidebar の gap (var(--sp-1)=4px) が
+	   ロゴ・区切り線・10項目・下端の項目の間 (12箇所) に入る分 (4px×12=48px) = 16+44+1+48 = 109px。
+	   残りの高さ (100dvh − 上下の固定 var(--sp-4)×2=32px − 109px) を11項目で割り、
+	   Apple HIG の操作領域の下限 36px 〜 元の高さ 48px の間に収める */
+	height: clamp(36px, calc((100dvh - 32px - 109px) / 11), 48px);
 	padding: 0 var(--sp-4);
 	border-radius: 16px; /* 同心: 24 − 8 */
 	color: var(--ink);
@@ -557,27 +587,19 @@ svg.i {
 .nav-item .badge {
 	margin-left: auto;
 }
+/* ユーザー指示 2026-09-24 — ロゴ行の下の区切り線のみに縮小 (旧: 「その他」見出しの上下にも
+   置いていたが見出しごと廃止)。間隔は .sidebar の gap (var(--sp-1)) に任せ、margin は持たない */
 .nav-sep {
 	flex: none;
 	height: 1px;
-	margin: var(--sp-6) 0;
+	margin: 0; /* hr の既定 margin-block (0.5em) を消す。残すと固定分の計算 (109px) が崩れる */
 	border: 0;
 	background: var(--line);
 }
-/* Task 10p (参考の良い点 1) — 設定などの補助中の補助をサイドナビの下端に押し出す。
-   .sidebar は top/bottom 固定で高さを持つので、このスペーサーだけで下端に固定できる */
-.nav-spacer {
-	flex: 1;
-}
-.nav-head {
-	flex: none;
-	display: flex;
-	align-items: center;
-	height: 32px;
-	padding: 0 var(--sp-4);
-	color: var(--ink-3);
-	font-size: 12px;
-	font-weight: 500;
+/* Task 10p (参考の良い点 1) — 設定は下端に固定する。ユーザー指示 2026-09-24 で区切り線と
+   専用スペーサー (.nav-spacer) は廃止し、margin-top: auto だけで押し出す */
+.nav-bottom {
+	margin-top: auto;
 }
 
 /* components 3.1 — 折りたたみ時の縦並びボタン列 (visual 4.13: capsule) */
@@ -2191,15 +2213,14 @@ svg.i {
 	}
 }
 
-/* 縦が短い窓でサイドナビの最後の項目が隠れるのを防ぐ。
-   11 項目を 48px で並べると窓の高さが 657px 必要になるため、44px (Apple HIG の操作領域の下限)
-   まで詰めて 597px までは全項目を出す。それより短い窓は overflow-y: auto で送る */
-@media (max-height: 720px) {
-	.nav-item {
-		height: 44px;
-	}
-	.nav-sep {
-		margin: var(--sp-3) 0;
+/* ユーザー指示 2026-09-24 — .nav-item は clamp() で窓の高さに応じて自動的に 48px 〜 36px に
+   詰まるが (.nav-item の height を見よ)、36px は Apple HIG の操作領域の下限なのでそれ以上は
+   詰めない。clamp の下限に当たる境目は (100dvh − 32px − 109px) / 11 = 36px を解くと
+   100dvh = 537px。それを下回る窓では 11 項目 + ロゴが収まりきらないので、
+   最後の手段としてサイドナビ自身をスクロールさせる (安全側に 600px で切る) */
+@media (max-height: 600px) {
+	.sidebar {
+		overflow-y: auto;
 	}
 }
 
