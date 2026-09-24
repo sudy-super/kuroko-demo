@@ -1,5 +1,5 @@
 import type { Origin, UndoPayload, CalendarEvent } from '../types';
-import { db, save } from '../store.svelte';
+import { db } from '../store.svelte';
 import { minutes, toHm } from '../dates';
 import { eventOf } from '../derived';
 import { uid } from '../kuroko/generate';
@@ -24,7 +24,6 @@ export function createEvent(
 		origin,
 		undo: { kind: 'event_add', eventId: ev.id }
 	});
-	save();
 	return ev;
 }
 
@@ -42,7 +41,6 @@ export function deleteEvent(id: string, origin: Origin = 'calendar') {
 	// 予定と一緒に作った会議も残さない
 	db.meetings = db.meetings.filter((m) => m.eventId !== id);
 	const l = log(`予定「${e.title}」を削除しました`, 'other', { actor: 'user', origin, undo: undoPayload });
-	save();
 	// 呼び出し側が取り消しを組み立てるので、積んだログを返す (db.logs[0] を読ませない)
 	return l;
 }
@@ -54,5 +52,4 @@ export function addBuffer(eventId: string, min: number) {
 	e.bufferBefore = min;
 	e.start = toHm(minutes(e.start) + min);
 	e.end = toHm(minutes(e.end) + min);
-	save();
 }

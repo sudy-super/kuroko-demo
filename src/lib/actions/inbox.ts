@@ -1,5 +1,5 @@
 import type { Approval, Origin, SchedulingRequest, CalendarEvent } from '../types';
-import { db, save } from '../store.svelte';
+import { db } from '../store.svelte';
 import { parse, fmtMDW } from '../dates';
 import { addressOf, personOf, companyOf, identityOf, threadOf } from '../derived';
 import { slotsFor, slotsText, uid } from '../kuroko/generate';
@@ -36,7 +36,6 @@ export function insertSlots(threadId: string): SchedulingRequest {
 	};
 	const out = pushed(db.scheduling, s);
 	log('日程候補 3 件を提案しました', 'draft', { origin: 'inbox' });
-	save();
 	return out;
 }
 
@@ -56,7 +55,6 @@ export function dropSlotsDraft(threadId: string) {
 	);
 	if (held) return;
 	db.scheduling.splice(db.scheduling.indexOf(draft), 1);
-	save();
 }
 
 export function sendReply(threadId: string, body: string, origin: Origin = 'inbox'): Approval {
@@ -85,7 +83,6 @@ export function markDone(threadId: string) {
 	if (!th) return;
 	closeThread(th);
 	log(`「${th.subject}」を対応済みにしました`, 'other', { actor: 'user', origin: 'inbox' });
-	save();
 }
 
 export function confirmSlot(token: string, slotId: string) {
@@ -127,7 +124,6 @@ export function confirmSlot(token: string, slotId: string) {
 		origin: 'schedule',
 		approved: true
 	});
-	save();
 	return out;
 }
 
@@ -138,7 +134,6 @@ export function changeSlot(token: string) {
 	s.status = 'sent';
 	s.chosenSlotId = s.eventId = s.meetingId = undefined;
 	db.demo.stats.confirmed = Math.max(0, db.demo.stats.confirmed - 1);
-	save();
 }
 
 export function cancelScheduling(token: string) {
@@ -147,5 +142,4 @@ export function cancelScheduling(token: string) {
 	dropBooking(s);
 	s.status = 'cancelled';
 	log(`${personOf(db, s.personId)?.name}様との打ち合わせがキャンセルされました`, 'other', { origin: 'schedule' });
-	save();
 }

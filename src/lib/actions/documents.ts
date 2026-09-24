@@ -1,5 +1,5 @@
 import type { Approval, Origin, Document } from '../types';
-import { db, save } from '../store.svelte';
+import { db } from '../store.svelte';
 import { companyOf, documentOf, projectOf, personMailTargetOf } from '../derived';
 import { integrations } from '../integrations';
 import { log, must, unshifted } from './core';
@@ -22,7 +22,6 @@ export function generateDocument(
 	// 案件の資料一覧 (/projects/[id]) と Brief の関連資料から辿れるようにする
 	if (project) project.documentIds.unshift(d.id);
 	log(`${d.title}を作成しました`, 'draft', { origin });
-	save();
 	return out;
 }
 

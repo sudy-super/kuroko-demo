@@ -21,9 +21,25 @@ export function loadFromStorage(): Db | null {
 
 export const db: Db = $state(loadFromStorage() ?? seed());
 
+const serialize = () => JSON.stringify($state.snapshot(db));
+// 最後に localStorage と揃えた中身。同じ中身は書き戻さない (書き戻すと、キーの並びの違いだけで
+// 2 つのタブが storage イベントを投げ合い続ける)
+let synced = '';
+
 export function save() {
 	if (!hasStorage()) return;
-	localStorage.setItem(STORAGE_KEY, JSON.stringify($state.snapshot(db)));
+	localStorage.setItem(STORAGE_KEY, (synced = serialize()));
+}
+
+// ブラウザでは db の変化を 1 か所で見て保存する。1 回の操作での書き込みは $effect が 1 回にまとめる
+if (hasStorage()) {
+	synced = serialize();
+	$effect.root(() => {
+		$effect(() => {
+			const s = serialize();
+			if (s !== synced) localStorage.setItem(STORAGE_KEY, (synced = s));
+		});
+	});
 }
 
 // db の束縛は差し替えられないため、キーごとに中身を移す
@@ -42,7 +58,9 @@ export function installStorageSync(): () => void {
 	const h = (e: StorageEvent) => {
 		if (e.key !== STORAGE_KEY) return;
 		const next = loadFromStorage();
-		if (next) replaceDb(next);
+		if (!next) return;
+		replaceDb(next);
+		synced = serialize();
 	};
 	window.addEventListener('storage', h);
 	return () => window.removeEventListener('storage', h);

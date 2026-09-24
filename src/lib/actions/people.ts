@@ -1,5 +1,5 @@
 import type { Origin, Person, CardFields, Project } from '../types';
-import { db, save } from '../store.svelte';
+import { db } from '../store.svelte';
 import { personOf, identityOf } from '../derived';
 import { uid } from '../kuroko/generate';
 import { log, must, pushed } from './core';
@@ -10,7 +10,6 @@ export function updatePersonMemo(personId: string, memo: string): Person | undef
 	if (!p || p.memo === memo) return p;
 	p.memo = memo;
 	log(`${p.name}様のメモを更新しました`, 'other', { actor: 'user', origin: 'people' });
-	save();
 	return p;
 }
 
@@ -42,7 +41,6 @@ export function addPerson(fields: CardFields, origin: Origin): Person {
 	if (!db.identities.some((i) => i.kind === 'email' && i.value === fields.email))
 		db.identities.push({ id: uid('id'), personId: p.id, kind: 'email', value: fields.email, label: 'Gmail' });
 	log(`人物「${p.name}」を登録しました`, 'register', { actor: 'user', origin });
-	save();
 	return p;
 }
 
@@ -61,7 +59,6 @@ export function linkIdentity(identityId: string, personId: string) {
 		origin: 'people',
 		undo: { kind: 'link_identity', identityId }
 	});
-	save();
 }
 
 /** 人物の会社の案件を作り、人物に紐付ける。商談はこれから始まるので状態は「商談前」 */
@@ -79,6 +76,5 @@ export function createProjectFor(personId: string, name: string): Project {
 	});
 	p!.projectIds.push(pj.id);
 	log(`案件「${pj.name}」を作成しました`, 'register', { actor: 'user', origin: 'people' });
-	save();
 	return pj;
 }

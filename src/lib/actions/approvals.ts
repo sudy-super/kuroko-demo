@@ -1,5 +1,5 @@
 import type { Approval, Origin, UndoPayload, Automation } from '../types';
-import { db, save } from '../store.svelte';
+import { db } from '../store.svelte';
 import { toast, dismissToast } from '../ui.svelte';
 import { nowIso } from '../dates';
 import { meetingOf, threadOf, approvalOf } from '../derived';
@@ -14,10 +14,7 @@ const autoExecutes = (risk: Approval['risk'], level: Automation) => risk !== 'ex
 
 export function addApproval(input: Omit<Approval, 'id' | 'status' | 'createdAt'>): Approval {
 	const a = unshifted(db.approvals, { ...input, id: uid('ap'), status: 'pending', createdAt: nowIso() });
-	if (autoExecutes(a.risk, db.settings.automation)) {
-		executeApproval(a.id, true);
-	}
-	save();
+	if (autoExecutes(a.risk, db.settings.automation)) executeApproval(a.id, true);
 	return a;
 }
 
@@ -45,7 +42,6 @@ export function approve(id: string, origin: Origin = 'approval') {
 		const l = db.logs[0];
 		toast('実行しました', l?.undo ? { undo: () => undo(l.id) } : {});
 	}
-	save();
 }
 
 /**
@@ -64,7 +60,6 @@ export function undoApproval(id: string) {
 	stopTimer(id);
 	a.status = 'pending';
 	a.sendingAt = undefined;
-	save();
 	// この承認の送信のトーストだけを閉じる。別の送信が表示中なら閉じない
 	dismissToast(id);
 }
@@ -75,7 +70,6 @@ export function editApproval(id: string, body: string) {
 	a.body = body;
 	// reply 以外の payload は本文を持たないので、種類ごとに更新先を分ける
 	if (a.payload.type === 'reply') a.payload.body = body;
-	save();
 }
 
 export function reject(id: string, origin: Origin = 'approval') {
@@ -87,7 +81,6 @@ export function reject(id: string, origin: Origin = 'approval') {
 	a.sendingAt = undefined;
 	log(`${a.title}を却下しました`, 'other', { actor: 'user', origin });
 	toast('却下しました');
-	save();
 }
 
 // 送信待ちのままタブが閉じられた分は、起動時に承認待ちへ戻す
@@ -97,7 +90,6 @@ export function restoreStaleSending() {
 			a.status = 'pending';
 			a.sendingAt = undefined;
 		}
-	save();
 }
 
 export function executeApproval(id: string, auto = false) {
@@ -147,5 +139,4 @@ export function executeApproval(id: string, auto = false) {
 		db.logs[0].text += ' (自動化レベルにより承認を省略)';
 	}
 	if (ext && !auto) db.demo.stats.approved++;
-	save();
 }

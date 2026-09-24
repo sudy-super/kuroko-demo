@@ -1,5 +1,5 @@
 import type { Origin, Task, Suggestion } from '../types';
-import { db, save } from '../store.svelte';
+import { db } from '../store.svelte';
 import { nowIso } from '../dates';
 import { doneLogOf, orderTasks, taskOf, suggestionOf } from '../derived';
 import { uid } from '../kuroko/generate';
@@ -9,10 +9,7 @@ import { log, undo, unshifted } from './core';
     (期限順のときは期限の位置に入る)。Google ToDo リストの「タスクを追加」と同じ */
 export function addTaskOnTop(title: string, due: string | undefined): Task {
 	const t = addTask({ title, due }, 'tasks');
-	if (db.taskOrder) {
-		db.taskOrder = [t.id, ...db.taskOrder];
-		save();
-	}
+	if (db.taskOrder) db.taskOrder = [t.id, ...db.taskOrder];
 	return t;
 }
 
@@ -37,7 +34,6 @@ export function addTask(
 		origin,
 		undo: { kind: 'task_add', taskId: t.id }
 	});
-	save();
 	return t;
 }
 
@@ -53,13 +49,11 @@ export function moveTask(visible: string[], id: string, to: number) {
 	const seen = new Set(visible);
 	let k = 0;
 	db.taskOrder = base.map((x) => (seen.has(x) ? next[k++] : x));
-	save();
 }
 
 /** 自分で並べた順を捨てて期限順に戻す */
 export function sortTasksByDue() {
 	db.taskOrder = undefined;
-	save();
 }
 
 /** 星 (Google ToDo リストと同じ)。付けると優先度を高、外すと既定の中にする */
@@ -67,7 +61,6 @@ export function toggleStar(id: string) {
 	const t = taskOf(db, id);
 	if (!t) return;
 	t.priority = t.priority === 'high' ? 'normal' : 'high';
-	save();
 }
 
 export function toggleTask(id: string, origin: Origin = 'tasks') {
@@ -79,7 +72,6 @@ export function toggleTask(id: string, origin: Origin = 'tasks') {
 		if (l) return undo(l.id);
 		// 初期データの完了済みなど、この画面で完了にしたのではないものは実績を減らさない
 		t.status = 'todo';
-		save();
 		return;
 	}
 	t.status = 'done';
@@ -89,7 +81,6 @@ export function toggleTask(id: string, origin: Origin = 'tasks') {
 		origin,
 		undo: { kind: 'task_done', taskId: t.id }
 	});
-	save();
 }
 
 // 候補の出所をそのまま登録経路にする (ToDo の行に出る)
@@ -110,11 +101,9 @@ export function acceptTaskSuggestions(ids: string[]): Task[] {
 		out.push(addTask(input, SUGGESTION_ORIGIN[s.source]));
 		s.status = 'accepted';
 	}
-	save();
 	return out;
 }
 
 export function rejectSuggestions(ids: string[]) {
 	for (const s of db.suggestions) if (ids.includes(s.id) && s.status === 'pending') s.status = 'rejected';
-	save();
 }

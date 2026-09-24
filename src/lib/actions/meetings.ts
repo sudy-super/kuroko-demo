@@ -1,5 +1,5 @@
 import type { Approval, Origin } from '../types';
-import { db, save } from '../store.svelte';
+import { db } from '../store.svelte';
 import { nowIso } from '../dates';
 import { personOf, meetingOf, mailTargetOf } from '../derived';
 import { agendaFor, uid, minutesFor, suggestion } from '../kuroko/generate';
@@ -27,7 +27,6 @@ export function addTranscript(meetingId: string, text: string) {
 		);
 	}
 	log(`議事録と ToDo 候補 ${todos.length} 件を作成しました`, 'draft', { origin: 'meeting' });
-	save();
 	return m.minutes;
 }
 
@@ -51,7 +50,6 @@ export function sendFollowUp(meetingId: string): Approval {
 /** フォローメール案の本文をその場で直す (MinutesView の「編集」)。承認に回す前の案だけが対象 */
 export function editFollowUp(meetingId: string, body: string) {
 	must(meetingOf(db, meetingId)?.minutes?.followUpMail, `フォローメール案がありません: ${meetingId}`).body = body;
-	save();
 }
 
 /** Brief を開いた時点で既読にする。Today の「次の会議の準備」はこの印で消える (derived.ts todayItems) */
@@ -59,20 +57,17 @@ export function markBriefRead(meetingId: string) {
 	const m = meetingMust(meetingId);
 	if (m.briefRead) return;
 	m.briefRead = true;
-	save();
 }
 
 export function generateAgenda(meetingId: string) {
 	const m = meetingMust(meetingId);
 	m.agenda = agendaFor(db, m);
 	log('アジェンダを作成しました', 'draft', { origin: 'meeting' });
-	save();
 }
 
 export function updateAgenda(meetingId: string, items: string[]) {
 	const m = meetingMust(meetingId);
 	m.agenda = items;
-	save();
 }
 
 export function shareAgenda(meetingId: string, origin: Origin = 'meeting'): Approval {

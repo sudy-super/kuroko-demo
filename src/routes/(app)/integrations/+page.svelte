@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { db, save } from '$lib/store.svelte';
+	import { db } from '$lib/store.svelte';
 	import { lineSay, sendReply } from '$lib/actions';
 	import { integrations } from '$lib/integrations';
 	import Icon from '$lib/components/Icon.svelte';
@@ -22,7 +22,6 @@
 
 	const set = <K extends 'lineTab' | 'lineRole'>(k: K, v: (typeof db.demo)[K]) => {
 		db.demo[k] = v;
-		save();
 	};
 
 	onMount(() => {

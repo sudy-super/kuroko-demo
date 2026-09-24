@@ -1,5 +1,5 @@
 import type { ActivityLog, LogKind, Origin, UndoPayload, CalendarEvent, Meeting } from '../types';
-import { db, save } from '../store.svelte';
+import { db } from '../store.svelte';
 import { nowIso } from '../dates';
 import { identityOf, meetingOf, taskOf } from '../derived';
 import { uid } from '../kuroko/generate';
@@ -103,5 +103,4 @@ export function undo(logId: string) {
 		}
 	}
 	l.undone = true;
-	save();
 }

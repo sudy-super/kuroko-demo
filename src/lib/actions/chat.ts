@@ -1,5 +1,5 @@
 import type { ChatMessage } from '../types';
-import { db, save } from '../store.svelte';
+import { db } from '../store.svelte';
 import { toast, type ContextChip } from '../ui.svelte';
 import { nowIso, parse, fmtMDW, hm } from '../dates';
 import { firstFreeStart, suggestionOf } from '../derived';
@@ -16,7 +16,6 @@ import { createEvent } from './calendar';
    段階的開示であって件数の上限ではない */
 function pushChat(m: Omit<ChatMessage, 'id' | 'at'>) {
 	db.chat.push({ id: uid('c'), at: nowIso(), ...m });
-	save();
 }
 
 /**
@@ -49,7 +48,6 @@ export async function lineSay(text: string, role: 'owner' | 'member') {
 	const channel = db.demo.lineTab;
 	const who = role === 'owner' ? db.user.name.split(' ')[0] : '山田';
 	(channel === 'line' ? db.line : db.slack).push({ id: uid('ln'), who, text: q, at: hm(), role });
-	save();
 	const r = handleMention(db, q, role);
 	if (!r) return;
 	await new Promise((res) => setTimeout(res, 800));
@@ -82,7 +80,6 @@ export async function lineSay(text: string, role: 'owner' | 'member') {
 		});
 	}
 	integrations.chat.post(channel, r.reply, r.card);
-	save();
 }
 
 /** カードのボタン。既存の処理へ振り分けるだけで、ここでは何も組み立てない */
@@ -96,7 +93,6 @@ export function chatAct(act: string, arg: string) {
 			const { type, personIds, ...rest } = s.payload;
 			createEvent({ ...rest, personIds, withMeeting: true }, 'chat');
 			s.status = 'accepted';
-			save();
 			toast('予定を登録しました');
 			return;
 		}
