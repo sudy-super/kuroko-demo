@@ -2,7 +2,9 @@ import type { Db, MessageThread, Message, Document, Suggestion } from './types';
 import { key, bizDay, addDays, nextWeekday, fmtMD } from './dates';
 import { FILLER_SUBJECTS, DOC_TEMPLATES } from './kuroko/samples';
 
-export const DB_VERSION = 1;
+/* 2 — 承認の kind から 'share' / 'schedule' / 'document' をなくした (何で送るかだけにした)。
+   古い保存を読むと記号が引けないので、版を上げて初期状態から作り直させる */
+export const DB_VERSION = 2;
 
 export function seed(base: Date = new Date()): Db {
 	const b = new Date(base);
@@ -605,7 +607,7 @@ export function seed(base: Date = new Date()): Db {
 				id: 'ap-abc-minutes',
 				title: 'ABC 社 田中様への前回議事録の共有',
 				risk: 'external_send',
-				kind: 'share',
+				kind: 'mail',
 				to: '田中 太郎 <tanaka@abc.co.jp>',
 				body: `前回商談 (${md(-21)}) の議事録を Google ドライブのリンクで共有します。`,
 				effectLine: '承認すると、田中太郎様 <tanaka@abc.co.jp> に議事録の閲覧リンクが送信されます',
@@ -636,7 +638,7 @@ export function seed(base: Date = new Date()): Db {
 				id: 'ap-standup-doc',
 				title: '社内定例の資料のたたき台の共有',
 				risk: 'internal_low',
-				kind: 'document',
+				kind: 'slack',
 				to: '山田 健二 (Slack)',
 				subject: '社内定例 資料のたたき台',
 				body: '前回の決定事項と今週の進捗をまとめたたたき台です。',

@@ -82,7 +82,7 @@ describe('approval', () => {
 			const a = addApproval({
 				title: 't',
 				risk: risk as any,
-				kind: 'share',
+				kind: 'mail',
 				to: 'x',
 				body: '',
 				effectLine: '',

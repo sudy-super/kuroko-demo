@@ -41,7 +41,7 @@ describe('sendDocument', () => {
 		const a = sendDocument(d.id, d.personId!);
 
 		expect(a.risk).toBe('external_send');
-		expect(a.kind).toBe('document');
+		expect(a.kind).toBe('mail');
 		expect(a.status).toBe('pending');
 		expect(a.to).toContain('tanaka@abc.co.jp');
 		expect(a.subject).toBe(d.title);

@@ -40,7 +40,9 @@ export interface Meeting { id: string; eventId: string; title: string; personIds
 export interface Transcript { id: string; meetingId: string; text: string; addedAt: string }
 export interface Task { id: string; title: string; due?: string; time?: string; priority: 'high' | 'normal' | 'low'; personId?: string; companyId?: string; projectId?: string; meetingId?: string; memo?: string; status: 'todo' | 'doing' | 'done'; origin: Origin; createdAt: string }
 export interface Document { id: string; kind: '提案書' | '見積書' | '報告書'; title: string; projectId?: string; personId?: string; createdBy: 'KUROKO' | 'user'; createdAt: string; sections: { heading: string; body: string }[] }
-export type ApprovalKind = 'mail' | 'line' | 'slack' | 'share' | 'schedule' | 'document';
+/** 何で送るか (送り先のサービス)。何をするか (共有・送付など) は title に書く。行の記号は
+    このサービスのロゴで出す (ユーザー指摘 2026-09-24: 共有の記号は何で送るかを表していなかった) */
+export type ApprovalKind = 'mail' | 'line' | 'slack';
 export interface Approval { id: string; title: string; risk: RiskLevel; kind: ApprovalKind; to: string; subject?: string; body: string; effectLine: string; status: 'pending' | 'sending' | 'executed' | 'rejected'; createdAt: string; sendingAt?: string; executedAt?: string; payload: ApprovalPayload; origin: Origin }
 export type ApprovalPayload =
   | { type: 'reply'; threadId: string; body: string; schedulingId?: string }

@@ -701,7 +701,7 @@ export function shareAgenda(meetingId: string, origin: Origin = 'meeting'): Appr
 	return addApproval({
 		title: `${p.name.split(' ')[0]}様へのアジェンダ共有`,
 		risk: 'external_send',
-		kind: 'share',
+		kind: 'mail',
 		to,
 		body: m.agenda.join('\n'),
 		effectLine: `承認すると、${p.name.replace(' ', '')}様 ${addressOf(idn)} にアジェンダが共有されます`,
@@ -856,7 +856,7 @@ export function sendDocument(docId: string, personId: string, origin: Origin = '
 	return addApproval({
 		title: `${person.name.split(' ')[0]}様への${d.kind}の送付`,
 		risk: 'external_send',
-		kind: 'document',
+		kind: 'mail',
 		to,
 		subject: d.title,
 		body: `添付: ${d.title}.pdf`,
