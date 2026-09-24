@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { Dialog } from 'bits-ui';
 	import { markOverlay, keepOpenOnFrame } from '$lib/ui.svelte';
-	import Icon from './Icon.svelte';
+	import { scrim, head } from './DialogParts.svelte';
 
 	let {
 		open,
@@ -73,11 +73,7 @@
 	}}
 >
 	<Dialog.Portal>
-		<Dialog.Overlay forceMount>
-			{#snippet child({ props })}
-				{#if render}<div {...props} class="scrim" class:leave={leaving}></div>{/if}
-			{/snippet}
-		</Dialog.Overlay>
+		{@render scrim(render, leaving)}
 		<Dialog.Content
 			forceMount
 			trapFocus={!framed}
@@ -108,14 +104,7 @@
 								{/snippet}
 							</Dialog.Title>
 						{:else}
-							<div class="row" style="justify-content: space-between; margin-bottom: var(--sp-3)">
-								<Dialog.Title>
-									{#snippet child({ props: titleProps })}<h3 {...titleProps}>{title}</h3>{/snippet}
-								</Dialog.Title>
-								<Dialog.Close class="iconbtn" aria-label="閉じる">
-									<Icon name="ic-x" size={20} />
-								</Dialog.Close>
-							</div>
+							{@render head(title, 'var(--sp-3)')}
 						{/if}
 						<!-- 中身だけスクロールさせ、主ボタンが画面外へ出ないようにする (仕様 5.14)。children が無くても
 						     description が送れるよう常に描く -->
