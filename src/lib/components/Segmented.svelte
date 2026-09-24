@@ -63,7 +63,13 @@
 			class="seg-btn"
 			aria-pressed={value === it.key}
 			onpointerdown={() => thumbEl && glassy.press(thumbEl)}
-			onclick={() => onchange(it.key)}
+			onclick={() => {
+				onchange(it.key);
+				// キーボードで選んだときは pointerdown が来ないので、選んだ時点でもガラスにして
+				// つまみが滑る間だけ残す
+				if (thumbEl) glassy.press(thumbEl);
+				glassy.lift();
+			}}
 		>
 			{it.label}{@render extra?.(it.key)}
 		</button>

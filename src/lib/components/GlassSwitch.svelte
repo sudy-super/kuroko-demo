@@ -24,7 +24,13 @@
 		role="switch"
 		aria-label={label}
 		{checked}
-		onchange={() => onchange()}
+		onchange={() => {
+			onchange();
+			// 行の文字を押したときやキーボードでは pointerdown がこの input に来ないので、
+			// 切り替わった時点でもガラスにして、つまみが動く間だけ残す
+			if (knob) glassy.press(knob);
+			glassy.lift();
+		}}
 		onpointerdown={() => knob && glassy.press(knob)}
 	/>
 	<span class="switch-knob" class:pressed bind:this={knob}></span>
