@@ -3541,6 +3541,11 @@ section.tc .list-row:not(label):not(a):hover {
 .demo-item[data-highlighted] {
 	background: var(--sel-soft);
 }
+/* 押せない項目 (ToDo の並べ替えで、先頭の行の「上へ」など) */
+.demo-item[data-disabled] {
+	color: var(--disabled-ink);
+	cursor: default;
+}
 .demo-n {
 	color: var(--accent);
 	font-weight: 700;

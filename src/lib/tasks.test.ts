@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { seed } from './seed';
 import type { Suggestion } from './types';
 import { filterTasks, openTaskCount, doneLogOf, todayTasks, overdueTasks, weekTasks } from './derived';
-import { addTask, toggleTask, undo, acceptTaskSuggestions, rejectSuggestions } from './actions';
+import { addTask, toggleTask, undo, acceptTaskSuggestions, rejectSuggestions, moveTask, sortTasksByDue } from './actions';
 import { replaceDb, db } from './store.svelte';
 
 const BASE = new Date(2026, 8, 15); // 火曜。シードの相対日付がこの日を基準になる
@@ -147,5 +147,21 @@ describe('ToDo 候補', () => {
 		rejectSuggestions(['sg-1']);
 		expect(db.suggestions.find((s) => s.id === 'sg-1')!.status).toBe('rejected');
 		expect(db.tasks).toHaveLength(before);
+	});
+});
+
+describe('moveTask', () => {
+	it('絞り込みで見えている分だけを並べ替え、見えていない ToDo の位置は変えない', () => {
+		replaceDb(seed(BASE));
+		const all = filterTasks(db, 'all').map((t) => t.id);
+		const today = filterTasks(db, 'today').map((t) => t.id);
+		// 今日の 3 件のうち先頭を末尾へ
+		moveTask(today, today[0], 2);
+		expect(filterTasks(db, 'today').map((t) => t.id)).toEqual([today[1], today[2], today[0]]);
+		// 今日に入らない ToDo は、元の並びの位置のまま
+		const rest = (ids: string[]) => ids.filter((id) => !today.includes(id));
+		expect(rest(filterTasks(db, 'all').map((t) => t.id))).toEqual(rest(all));
+		sortTasksByDue();
+		expect(filterTasks(db, 'all').map((t) => t.id)).toEqual(all);
 	});
 });

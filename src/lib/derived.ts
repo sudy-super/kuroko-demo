@@ -112,16 +112,26 @@ export const overdueTasks = (db: Db) =>
 	db.tasks.filter((t) => inTaskFilter(db, t, 'overdue') && open(t));
 export const weekTasks = (db: Db) => db.tasks.filter((t) => inTaskFilter(db, t, 'week') && open(t));
 
-/** 一覧用。未完了が先、その中は期限の早い順 (期限なしは末尾)、同じ日は時刻の早い順 */
+/** 期限の早い順 (期限なしは末尾)、同じ日は時刻の早い順 */
+export const byDue = (a: Task, b: Task) =>
+	(a.due ?? '9999').localeCompare(b.due ?? '9999') || (a.time ?? '99:99').localeCompare(b.time ?? '99:99');
+
+/** 自分で並べた順があればその順、無ければ期限順。並べた後に増えた ToDo (順に無いもの) は
+    期限順で末尾に付ける */
+export function orderTasks(db: Db, list: Task[]): Task[] {
+	const order = db.taskOrder;
+	if (!order) return [...list].sort(byDue);
+	const at = new Map(order.map((id, i) => [id, i]));
+	return [...list].sort(
+		(a, b) => (at.get(a.id) ?? Infinity) - (at.get(b.id) ?? Infinity) || byDue(a, b)
+	);
+}
+
+/** 一覧用。未完了が先、その中は orderTasks の順 */
 export const filterTasks = (db: Db, f: TaskFilter) =>
-	db.tasks
-		.filter((t) => inTaskFilter(db, t, f))
-		.sort(
-			(a, b) =>
-				Number(!open(a)) - Number(!open(b)) ||
-				(a.due ?? '9999').localeCompare(b.due ?? '9999') ||
-				(a.time ?? '99:99').localeCompare(b.time ?? '99:99')
-		);
+	orderTasks(db, db.tasks.filter((t) => inTaskFilter(db, t, f))).sort(
+		(a, b) => Number(!open(a)) - Number(!open(b))
+	);
 
 /** チップの件数バッジ。残っている件数を出したいので完了は数えない */
 export const openTaskCount = (db: Db, f: TaskFilter) =>

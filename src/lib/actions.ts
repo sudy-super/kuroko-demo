@@ -31,7 +31,8 @@ import {
 	firstFreeStart,
 	todayCount,
 	mailTargetOf,
-	personMailTargetOf
+	personMailTargetOf,
+	orderTasks
 } from './derived';
 import { agendaFor, slotsFor, slotsText, uid, minutesFor } from './kuroko/generate';
 import { ASK_PERSON, reply, route } from './kuroko/route';
@@ -215,6 +216,17 @@ export function executeApproval(id: string, auto = false) {
 	save();
 }
 
+/** 一覧の先頭の行から足すとき (tasks/+page.svelte)。自分で並べた順になっているなら一番上に置く
+    (期限順のときは期限の位置に入る)。Google ToDo リストの「タスクを追加」と同じ */
+export function addTaskOnTop(title: string, due: string | undefined): Task {
+	const t = addTask({ title, due }, 'tasks');
+	if (db.taskOrder) {
+		db.taskOrder = [t.id, ...db.taskOrder];
+		save();
+	}
+	return t;
+}
+
 export function addTask(
 	input: {
 		title: string;
@@ -239,6 +251,35 @@ export function addTask(
 	});
 	save();
 	return t;
+}
+
+/** 見えている一覧 (ids、上から順) の中で、id を to 番目へ動かす。動かした時点で並び順は
+    「自分で並べた順」になる (Apple のリマインダーと同じ。task-reorder.md)。
+    絞り込みで見えていない ToDo の位置は変えない: 見えている分の枠の並びだけを差し替える */
+export function moveTask(visible: string[], id: string, to: number) {
+	const from = visible.indexOf(id);
+	if (from < 0 || to < 0 || to >= visible.length || from === to) return;
+	const next = [...visible];
+	next.splice(to, 0, ...next.splice(from, 1));
+	const base = orderTasks(db, db.tasks).map((t) => t.id);
+	const seen = new Set(visible);
+	let k = 0;
+	db.taskOrder = base.map((x) => (seen.has(x) ? next[k++] : x));
+	save();
+}
+
+/** 自分で並べた順を捨てて期限順に戻す */
+export function sortTasksByDue() {
+	db.taskOrder = undefined;
+	save();
+}
+
+/** 星 (Google ToDo リストと同じ)。付けると優先度を高、外すと既定の中にする */
+export function toggleStar(id: string) {
+	const t = db.tasks.find((x) => x.id === id);
+	if (!t) return;
+	t.priority = t.priority === 'high' ? 'normal' : 'high';
+	save();
 }
 
 export function toggleTask(id: string, origin: Origin = 'tasks') {

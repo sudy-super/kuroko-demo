@@ -3,9 +3,16 @@
 	import { goto } from '$app/navigation';
 	import { db } from '$lib/store.svelte';
 	import type { TaskFilter } from '$lib/derived';
-	import type { Task } from '$lib/types';
-	import { badgeCount, filterTasks, openTaskCount } from '$lib/derived';
-	import { acceptTaskSuggestions, rejectSuggestions } from '$lib/actions';
+	import { addLogOf, badgeCount, filterTasks, openTaskCount, orderTasks } from '$lib/derived';
+	import {
+		acceptTaskSuggestions,
+		addTaskOnTop,
+		moveTask,
+		rejectSuggestions,
+		sortTasksByDue,
+		undo
+	} from '$lib/actions';
+	import { key, addDays, parse } from '$lib/dates';
 	import { toast } from '$lib/ui.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Segmented from '$lib/components/Segmented.svelte';
@@ -30,11 +37,11 @@
 	   目の前から消えて、何が起きたか分からず「元に戻す」も押せない */
 	const tasks = $derived(filterTasks(db, filter));
 	const doneBefore = new Set(db.tasks.filter((t) => t.status === 'done').map((t) => t.id));
-	/* 一覧の並びは期限順のまま。filterTasks は完了を末尾へ送るので、この画面で完了にした行が
-	   押した瞬間に一番下へ飛ぶ。ここでは期限と時刻だけで並べ直して、行をその場に留める */
-	const byDue = (a: Task, b: Task) =>
-		(a.due ?? '9999').localeCompare(b.due ?? '9999') || (a.time ?? '99:99').localeCompare(b.time ?? '99:99');
-	const open = $derived(tasks.filter((t) => t.status !== 'done' || !doneBefore.has(t.id)).sort(byDue));
+	/* filterTasks は完了を末尾へ送るので、この画面で完了にした行が押した瞬間に一番下へ飛ぶ。
+	   ここでは完了の前後を分けずに元の並び (期限順か自分で並べた順) のまま出し、行をその場に留める */
+	const open = $derived(
+		orderTasks(db, tasks.filter((t) => t.status !== 'done' || !doneBefore.has(t.id)))
+	);
 	const closed = $derived(tasks.filter((t) => t.status === 'done' && doneBefore.has(t.id)));
 	// 見出しの件数は、まだ済んでいないものだけを数える (切り替えの件数と同じ)
 	const left = $derived(open.filter((t) => t.status !== 'done').length);
@@ -51,6 +58,77 @@
 	function accept(ids: string[]) {
 		toast(`ToDo を ${acceptTaskSuggestions(ids).length} 件登録しました`);
 	}
+
+	/* ---- 追加 (Google ToDo リストと同じく、一覧の先頭の行でその場に書く。ユーザー裁定 2026-09-25) ----
+	   期限は今の絞り込みに合わせる (「今日」で足したものが足した瞬間に消えないように)。
+	   日時や関連先まで決めたいときは ⌘K の「新しい ToDo を追加」から入力の画面を開く */
+	let adding = $state(false);
+	let draft = $state('');
+	const dueFor = (f: TaskFilter) =>
+		f === 'today' || f === 'week' ? db.seededOn : f === 'overdue' ? key(addDays(-1, parse(db.seededOn))) : undefined;
+	function add(e: SubmitEvent) {
+		e.preventDefault();
+		const title = draft.trim();
+		if (!title) return;
+		const t = addTaskOnTop(title, dueFor(filter));
+		draft = '';
+		const l = addLogOf(db, t.id)!;
+		toast('ToDo を登録しました', { undo: () => undo(l.id) });
+	}
+	function focusOnMount(node: HTMLInputElement) {
+		node.focus();
+	}
+
+	/* ---- 並べ替え (task-reorder.md) ----
+	   取っ手を押して動かす。落とす位置は行の間の線で示し、ほかの行はよけない (Atlassian)。
+	   並べるのは未完了の行だけ。完了した行は並べ替えの対象にしない */
+	const movable = $derived(open.filter((t) => t.status !== 'done'));
+	const ids = $derived(movable.map((t) => t.id));
+	let listEl: HTMLElement | undefined = $state();
+	let drag = $state<{ id: string; y: number; dy: number; to: number } | null>(null);
+	let said = $state('');
+
+	function move(id: string, to: number) {
+		const t = db.tasks.find((x) => x.id === id);
+		moveTask(ids, id, to);
+		// WCAG 4.1.3 — 何がどこへ動いたかを読み上げに知らせる (Atlassian の live region の作法)
+		said = `「${t?.title}」を ${ids.length} 件中 ${to + 1} 番目に移しました`;
+	}
+
+	function grab(id: string, e: PointerEvent) {
+		if (e.button !== 0) return;
+		e.preventDefault();
+		drag = { id, y: e.clientY, dy: 0, to: ids.indexOf(id) };
+		const onMove = (ev: PointerEvent) => {
+			if (!drag || !listEl) return;
+			drag.dy = ev.clientY - drag.y;
+			// 行の中心より上か下かで、落とす位置 (何番目の前か) を決める
+			const rows = [...listEl.querySelectorAll<HTMLElement>('[data-task]')].filter(
+				(r) => r.dataset.task !== drag!.id
+			);
+			let to = rows.length;
+			for (let i = 0; i < rows.length; i++) {
+				const r = rows[i].getBoundingClientRect();
+				if (ev.clientY < r.top + r.height / 2) {
+					to = i;
+					break;
+				}
+			}
+			drag.to = to;
+		};
+		const onUp = () => {
+			window.removeEventListener('pointermove', onMove);
+			window.removeEventListener('pointerup', onUp);
+			window.removeEventListener('pointercancel', onUp);
+			if (drag && drag.to !== ids.indexOf(drag.id)) move(drag.id, drag.to);
+			drag = null;
+		};
+		window.addEventListener('pointermove', onMove);
+		window.addEventListener('pointerup', onUp);
+		window.addEventListener('pointercancel', onUp);
+	}
+	/* 線を引く位置。つかんだ行を除いた並びで to 番目の行の上端 (末尾なら最後の行の下端) */
+	const lineIndex = $derived(drag ? drag.to : -1);
 
 	function rejectAll() {
 		rejectSuggestions(suggestions.map((s) => s.id));
@@ -70,10 +148,13 @@
 				<span class="badge count" class:danger={k === 'overdue' && n > 0}>{badgeCount(n)}</span>
 			{/snippet}
 		</Segmented>
-		<!-- カレンダーの「予定を追加」と同じ形 (「+」だけのボタンを操作の列の右端に) -->
-		<a class="iconbtn tasks-add" href="/tasks?new=1" title="新しい ToDo を追加" aria-label="新しい ToDo を追加">
-			<Icon name="ic-plus" size={20} />
-		</a>
+		<!-- 自分で並べた順になっているときだけ、期限順に戻す操作を出す (リマインダーの並び替えの
+		     「手動」と「期限」の切り替えに当たる。task-reorder.md) -->
+		{#if db.taskOrder}
+			<button class="btn text sm tasks-sort" onclick={sortTasksByDue}>
+				<Icon name="ic-clock" size={18} />期限順に戻す
+			</button>
+		{/if}
 	</div>
 
 	{#if suggestions.length}
@@ -89,19 +170,57 @@
 		<h2 class="list-head" id="tasks-open-head">
 			<Icon name={current.icon} size={16} />{current.label}<span class="num">{left}</span>
 		</h2>
+		{#if adding}
+			<form class="list-row lg tasks-new" onsubmit={add}>
+				<span class="tasks-new-mark" aria-hidden="true"></span>
+				<input
+					class="tasks-new-input"
+					aria-label="新しい ToDo の題名"
+					placeholder="ToDo を入力して Enter"
+					bind:value={draft}
+					use:focusOnMount
+					onblur={() => !draft.trim() && (adding = false)}
+					onkeydown={(e) => e.key === 'Escape' && ((draft = ''), (adding = false))}
+				/>
+			</form>
+		{:else}
+			<button class="list-row lg tasks-add" onclick={() => (adding = true)}>
+				<Icon name="ic-plus" size={20} />ToDo を追加
+			</button>
+		{/if}
 		{#if open.length === 0}
 			<p class="muted tasks-empty">{current.empty}</p>
 		{/if}
-		{#each open as t (t.id)}
-			<TaskRow task={t} />
-		{/each}
+		<div class="tasks-rows" class:dragging={!!drag} bind:this={listEl}>
+			{#each open as t (t.id)}
+				{@const i = ids.indexOf(t.id)}
+				{@const others = ids.filter((x) => x !== drag?.id)}
+				<div
+					class="tasks-slot"
+					class:task-lifted={drag?.id === t.id}
+					class:line-before={drag && drag.id !== t.id && others.indexOf(t.id) === lineIndex}
+					class:line-after={drag && drag.id !== t.id && lineIndex === others.length && others.indexOf(t.id) === others.length - 1}
+					data-task={i >= 0 ? t.id : undefined}
+					style={drag?.id === t.id ? `transform: translateY(${drag.dy}px)` : undefined}
+				>
+					<TaskRow
+						task={t}
+						index={i}
+						count={ids.length}
+						onmove={(to) => move(t.id, to)}
+						ongrab={(e) => grab(t.id, e)}
+					/>
+				</div>
+			{/each}
+		</div>
+		<p class="sr-only" role="status">{said}</p>
 		{#if closed.length}
 			<button class="btn text sm tasks-done-toggle" aria-expanded={showDone} onclick={() => (showDone = !showDone)}>
 				{showDone ? '完了を隠す' : `完了を表示 (${closed.length})`}
 			</button>
 			{#if showDone}
 				{#each closed as t (t.id)}
-					<TaskRow task={t} />
+					<TaskRow task={t} index={-1} count={0} onmove={() => {}} ongrab={() => {}} />
 				{/each}
 			{/if}
 		{/if}
@@ -119,9 +238,73 @@
 		gap: var(--sp-3);
 		padding: 0 var(--sp-5) var(--sp-5);
 	}
-	.tasks-add {
+	.tasks-sort {
 		margin-left: auto;
+	}
+	/* 一覧の先頭の追加の行。丸いチェックの位置に「+」を置き、文字をアクセントの色にする */
+	.tasks-add {
+		gap: var(--sp-3);
+		padding-left: calc(var(--sp-1) + 20px + var(--sp-2));
 		color: var(--accent);
+		font-weight: 500;
+	}
+	.tasks-new {
+		gap: var(--sp-3);
+		padding-left: calc(var(--sp-1) + 20px + var(--sp-2));
+		cursor: default;
+	}
+	.tasks-new:hover {
+		background: none;
+	}
+	.tasks-new-mark {
+		flex: none;
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		box-shadow: inset 0 0 0 1.5px var(--ink-3);
+	}
+	.tasks-new-input {
+		flex: 1;
+		min-width: 0;
+		height: 100%;
+		border: 0;
+		background: none;
+		color: var(--ink);
+		font: inherit;
+		outline: none;
+	}
+	.tasks-slot {
+		position: relative;
+	}
+	/* つかんだ行は指に付いて浮かせる。HIG Drag and drop は持ち上げた項目を半透明にするとあるが、
+	   一覧の行は下の行と文字が重なって読めなくなるので、不透明な面と影で浮きを示す */
+	.tasks-slot.task-lifted {
+		z-index: 2;
+		border-radius: var(--r-s);
+		background: #fff;
+		box-shadow: 0 8px 24px rgba(30, 42, 71, 0.16);
+	}
+	.tasks-rows.dragging {
+		cursor: grabbing;
+		user-select: none;
+	}
+	/* 落とす位置の線 (Atlassian — 行をよけさせず、線で示す) */
+	.tasks-slot.line-before::before,
+	.tasks-slot.line-after::after {
+		content: '';
+		position: absolute;
+		left: var(--sp-4);
+		right: var(--sp-4);
+		z-index: 3;
+		height: 2px;
+		border-radius: 1px;
+		background: var(--accent);
+	}
+	.tasks-slot.line-before::before {
+		top: -1px;
+	}
+	.tasks-slot.line-after::after {
+		bottom: -1px;
 	}
 	.tasks-list {
 		padding-inline: 0;
