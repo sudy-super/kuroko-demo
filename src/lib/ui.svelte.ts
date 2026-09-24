@@ -10,8 +10,7 @@ export type Toast = {
 	    デスクトップでは上部バーのピルの中で本文を出し続ける (Header.svelte) */
 	island?: boolean;
 	leaving?: boolean;
-	/** どの操作のトーストかを表す識別子 (承認の id など)。dismissToast(key) に渡すと、
-	    今のトーストがその操作のものだったときだけ閉じる (レビュー M2) */
+	/** どの操作のトーストかを表す識別子 (承認の id など)。dismissToast(key) はこれが一致するときだけ閉じる */
 	key?: string;
 };
 
@@ -23,14 +22,13 @@ export const ui = $state({
 	    閉じたら ApprovalDrawer が null に戻す。Today のカード以外 (上部バー・会議の案内など)
 	    から開いたときは null のまま (docs/research/card-expand.md) */
 	approvalFrom: null as DOMRect | null,
-	/** 承認待ちカードを隠す (visibility: hidden) かどうか。approvalFrom は開いた瞬間に
-	    使い切って null に戻すので、縮み終わるまでカードを隠し続けるにはこちらの寿命が要る
-	    (レビュー C2/I1)。Today のカードの onclick で true、Drawer.svelte の後始末で false */
+	/** 承認待ちカードを隠すかどうか。approvalFrom は開いた瞬間に null に戻すので、縮み終わるまで
+	    隠し続けるにはこちらが要る。Today のカードの onclick で true、Drawer.svelte の後始末で false */
 	approvalCardHidden: false,
 	activityDrawer: false,
 	palette: false,
 	mobileMenu: false,
-	/** デモをリセットの確かめ。上部バーのメニューと ⌘K の両方から立てる (Task 10m) */
+	/** デモをリセットの確かめ。上部バーのメニューと ⌘K の両方から立てる */
 	demoReset: false,
 	context: null as ContextChip | null,
 	voice: false,
@@ -47,9 +45,8 @@ export const ui = $state({
    ここで覚え、各 Root の open をこの値から引く。開き直すと他は閉じる */
 export const panels = $state({ open: null as string | null });
 
-/** 音声の聞き取りを止めたときに、依頼バーの入力欄へ渡す文字 (KurokoBar が受け取って空にする)。
-    ChatGPT の音声入力と同じく、止めたら聞き取った文字を入力欄に置き、直してから送れるようにする
-    (ユーザー指摘 2026-09-24) */
+/** 音声の聞き取りを止めたときに依頼バーの入力欄へ渡す文字 (KurokoBar が受け取って空にする)。
+    ChatGPT の音声入力と同じく、聞き取った文字を直してから送れるようにする */
 export const dictated = $state({ text: '' });
 
 /** 依頼バーの入力欄へ焦点を移す。'.chatbar input' の知識をここ 1 か所に閉じる */
@@ -59,10 +56,8 @@ export function focusChatbar() {
 
 let overlays = 0;
 
-/** styles/liquid-glass.css の body[data-overlay='on'] を生かす。ドロワーとモーダルが 1 枚でも出ている間だけ立てる。
-    Drawer/Modal は枠 (上部バー・サイドナビ・連携の列) を押せるよう trapFocus を外したので、
-    本文と依頼バー・ボトムナビは覆いが開いている間 inert にして Tab を通さない
-    (レビュー I3 — 外さないと覆いの後ろ・真下の要素に焦点が入り、見えないまま操作できてしまう) */
+/** styles/liquid-glass.css の body[data-overlay='on'] を生かす。ドロワーとモーダルが出ている間だけ立てる。
+    枠を押せるよう trapFocus を外したので、本文と依頼バー・ボトムナビを inert にして、見えない後ろの要素に焦点を入れない */
 export function markOverlay(open: boolean) {
 	overlays = Math.max(0, overlays + (open ? 1 : -1));
 	if (overlays > 0) document.body.dataset.overlay = 'on';
@@ -72,8 +67,7 @@ export function markOverlay(open: boolean) {
 		.forEach((e) => (e.inert = overlays > 0));
 }
 
-/** 遷移で閉じる覆いの一覧をここ 1 か所に集める (レビュー I4)。新しい覆いを ui に足したら、
-    ここにも足すこと */
+/** 遷移で閉じる覆いの一覧。新しい覆いを ui に足したら、ここにも足すこと */
 export function closeOverlays() {
 	ui.approvalDrawer = false;
 	ui.activityDrawer = false;
@@ -83,9 +77,8 @@ export function closeOverlays() {
 	ui.mobileMenu = false;
 }
 
-/** Drawer/Modal の onInteractOutside で共通に使う判定 (レビュー M7)。枠 (上部バー・
-    サイドナビ・連携の列) と枠から開く板を押しても覆いを閉じない (ユーザー指示 2026-09-23:
-    枠はどの覆いが開いていても触れる)。サイドナビのリンクは遷移するので、覆いは遷移で閉じる */
+/** Drawer/Modal の onInteractOutside の判定。枠 (上部バー・サイドナビ・連携の列) と枠から開く板を
+    押しても覆いを閉じない (枠はどの覆いが開いていても触れる)。サイドナビのリンクは遷移で閉じる */
 export function keepOpenOnFrame(e: Event) {
 	if ((e.target as Element | null)?.closest('.header.glass, .sidebar, .rail, .pill-panel, .demo-menu'))
 		e.preventDefault();
@@ -108,11 +101,8 @@ function closeToast(id: number) {
 }
 
 /**
- * 送信は完了として即座に伝える (Gmail の送信取り消しと同じ順序、指摘 2)。取り消せる間だけ
- * ゲージと残り秒数を出す。ゲージの見た目は CSS アニメーション (app.css の toast-countdown)
- * が受け持ち、ここでは残り秒数の「数字」だけを 1 秒ごとに進める。数字は
- * prefers-reduced-motion でアニメーションが切れても残るので (components 3.7)、
- * 更新自体はやめない
+ * 送信は完了として即座に伝え (Gmail の送信取り消しと同じ順序)、取り消せる間だけゲージと残り秒数を出す。
+ * ゲージは CSS アニメーション、ここは数字だけを 1 秒ごとに進める。数字は動きを減らす設定でも残す (components 3.7)
  */
 export function toast(msg: string, opts: { undo?: () => void; seconds?: number; key?: string } = {}) {
 	if (timer) clearInterval(timer);
@@ -148,9 +138,8 @@ export function toast(msg: string, opts: { undo?: () => void; seconds?: number; 
 	}, 1000);
 }
 
-/** key を渡すと、今のトーストがその key のものだったときだけ閉じる (レビュー M2 —
-    別の送信の取り消しが今表示中のトーストを誤って閉じないようにする)。渡さなければ従来どおり
-    常に今のトーストを閉じる (ToastCountdown の「取り消す」ボタンなど) */
+/** key を渡すと、今のトーストがその key のものだったときだけ閉じる (別の送信の取り消しが誤って閉じないように)。
+    渡さなければ常に今のトーストを閉じる */
 export function dismissToast(key?: string) {
 	if (!ui.toast) return;
 	if (key !== undefined && ui.toast.key !== key) return;

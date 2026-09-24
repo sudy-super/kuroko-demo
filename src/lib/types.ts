@@ -8,8 +8,7 @@ export const ORIGIN_ICON: Record<Origin, string> = { today: 'ic-home', chat: 'ic
 export type Reason = 'overdue' | 'unanswered_3d' | 'question' | 'project' | 'known_contact';
 export const REASON_ORDER: Reason[] = ['overdue', 'unanswered_3d', 'question', 'project', 'known_contact'];
 export const REASON_LABEL: Record<Reason, string> = { overdue: '返信期限超過', unanswered_3d: '3日間未返信', question: '質問が含まれています', project: '案件', known_contact: '登録済みの相手' };
-/* スレッドの詳細で理由を 1 文にするための言い回し。[途中の形, 文末の形] で持ち、
-   読点でつないだときに日本語として続くようにする (audit 6。単語をスラッシュで並べない) */
+/* スレッドの詳細で理由を 1 文にするための言い回し。[途中の形, 文末の形] で持ち、読点でつないで続くようにする */
 export const REASON_SENTENCE: Record<Reason, [string, string]> = {
 	overdue: ['返信期限を過ぎており', '返信期限を過ぎています'],
 	unanswered_3d: ['3 日間返信しておらず', '3 日間返信していません'],
@@ -17,11 +16,8 @@ export const REASON_SENTENCE: Record<Reason, [string, string]> = {
 	project: ['案件に関係し', '案件に関係します'],
 	known_contact: ['登録済みの相手であり', '登録済みの相手です']
 };
-/* 承認の区分を示す文言。仕様 5.11 に日本語で載っているのは種別バッジの例の「外部送信」だけで、
-   残りの 2 つは仕様がキー internal / internal_low としか書いていない。「社内」「低リスク」という
-   日本語は indicators.md「承認センターの区分」の表記に合わせた。同じ節が、判断に直結する属性
-   なので記号ではなく Atlassian の Lozenge (短い文言ラベル)のまま出すと結論している。
-   社内と低リスクは動きが同じなので、利用者に見せる名前も「社内」にまとめた (RiskIcon.svelte) */
+/* 承認の区分を示す文言。判断に直結する属性なので記号ではなく短い文言ラベル (Atlassian Lozenge) で出す
+   (indicators.md「承認センターの区分」)。社内と低リスクは動きが同じなので、見せる名前は「社内」 */
 export const RISK_LABEL: Record<RiskLevel, string> = { external_send: '外部送信', internal: '社内', internal_low: '社内' };
 export type LogKind = 'draft' | 'hold' | 'send' | 'register' | 'other';
 export type Automation = 'draft' | 'internal_auto' | 'trusted';
@@ -41,8 +37,7 @@ export interface Meeting { id: string; eventId: string; title: string; personIds
 export interface Transcript { id: string; meetingId: string; text: string; addedAt: string }
 export interface Task { id: string; title: string; due?: string; time?: string; priority: 'high' | 'normal' | 'low'; personId?: string; companyId?: string; projectId?: string; meetingId?: string; memo?: string; status: 'todo' | 'doing' | 'done'; origin: Origin; createdAt: string }
 export interface Document { id: string; kind: '提案書' | '見積書' | '報告書'; title: string; projectId?: string; personId?: string; createdBy: 'KUROKO' | 'user'; createdAt: string; sections: { heading: string; body: string }[] }
-/** 何で送るか (送り先のサービス)。何をするか (共有・送付など) は title に書く。行の記号は
-    このサービスのロゴで出す (ユーザー指摘 2026-09-24: 共有の記号は何で送るかを表していなかった) */
+/** 何で送るか (送り先のサービス)。何をするか (共有・送付など) は title に書く。行の記号はこのサービスのロゴ */
 export type ApprovalKind = 'mail' | 'line' | 'slack';
 export interface Approval { id: string; title: string; risk: RiskLevel; kind: ApprovalKind; to: string; subject?: string; body: string; status: 'pending' | 'sending' | 'executed' | 'rejected'; createdAt: string; sendingAt?: string; executedAt?: string; payload: ApprovalPayload; origin: Origin }
 export type ApprovalPayload =

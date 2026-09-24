@@ -27,10 +27,8 @@ export const pendingThreadsFor = (db: Db, email: string) =>
 		(t) => !t.personId && identityOf(db, t.identityId)?.value === email
 	);
 
-/* 人物とそのメールアドレス。宛先を組むのも効果文に出すのもここから引く
-   (shareAgenda と generate.ts の mailToOf が同じ 3 行を持っていた)。
-   メールを持たない相手 (社内の人物は slack_id / line_id しか持たない — seed.ts) では
-   undefined。メールを送る操作を出してよいかの判定にも使う */
+/* 人物とそのメールアドレス。宛先を組むのも効果文に出すのもここから引く。メールを持たない相手
+   (社内の人物) では undefined で、メールを送る操作を出してよいかの判定にも使う */
 export function mailTargetFor(db: Db, personId?: string) {
 	const person = personOf(db, personId);
 	const identity = db.identities.find((i) => i.personId === person?.id && i.kind === 'email');
@@ -56,11 +54,8 @@ export function mailTargetOf(db: Db, meetingId: string) {
 	return t;
 }
 
-/* Task 10p 修正ラウンド 1 (Critical) — 差出人 / 会社を組み立てる。thread.sender は
-   人物が未登録の場合は「部署 / 会社」まで含めた表示用の文字列そのものなのでそのまま使い、
-   人物 (personId) と会社 (companyId) の両方が判明している場合だけ、それらの参照から
-   組み立て直す。sender の文字列の形 (区切り文字や、会社名が含まれるかどうか) を一切見ない
-   ため、シードの書式が変わっても二重表示にはならない */
+/* 差出人 / 会社。人物と会社の両方が分かるときだけ参照から組み立て直し、それ以外は sender をそのまま使う。
+   sender の文字列の形は見ないので、会社名が二重に出ない */
 export const threadSenderMeta = (db: Db, thread: MessageThread): string => {
 	const person = personOf(db, thread.personId);
 	const company = companyOf(db, thread.companyId);
@@ -71,10 +66,8 @@ export const queue = (db: Db) =>
 	db.threads.filter((t) => t.inQueue && !t.done).sort((a, b) => b.lastAt.localeCompare(a.lastAt));
 export const replyNeeded = (db: Db) => queue(db).filter((t) => t.needsReply);
 
-/* このスレッドが完了した (対応済みにする、または承認された返信が実行された) ときに移る先。
-   done を !done で先に絞ると、このスレッド自身がもう完了している呼び出し元 (返信の送信は
-   5 秒後の承認実行で非同期に完了する) では自分の位置を見失うため、並び順だけ inQueue 全体
-   から取り、完了済みかどうかは絞り込みの側で見る (review-task-15.md C3 / I2) */
+/* このスレッドが完了したときに移る先。返信は 5 秒後に非同期で完了するので、自分が既に完了していても
+   位置を見失わないよう、並び順は inQueue 全体から取り、完了済みかは絞り込みの側で見る */
 export const nextInQueue = (db: Db, threadId: string): MessageThread | undefined => {
 	const ordered = db.threads.filter((t) => t.inQueue).sort((a, b) => b.lastAt.localeCompare(a.lastAt));
 	const i = ordered.findIndex((t) => t.id === threadId);
@@ -83,11 +76,8 @@ export const nextInQueue = (db: Db, threadId: string): MessageThread | undefined
 };
 export const pendingApprovals = (db: Db) => db.approvals.filter((a) => a.status === 'pending');
 
-/* 案件の状態は Atlassian の Lozenge (ワークフローの状態) にあたるので、一覧・人物詳細・会社・
-   案件のどこでも同じ色で出す。終わった 2 つだけ色を分け、途中の状態は青 (進行中) にする。
-   Task 10k — 途中の状態は .badge の既定 (中立の灰) に任せず info を明示する。既定の灰は
-   分類の札 (「場所」「提案書」など) と、承認の区分のうち注意の要らない 2 つが使う色で、
-   「特に言うことが無い」を意味する。案件の途中の状態はそれとは違う (app.css の .badge を見よ) */
+/* 案件の状態は Atlassian Lozenge なので、どこでも同じ色で出す。終わった 2 つだけ色を分け、途中は青
+   (info) を明示する。既定の灰は「特に言うことが無い」の色で、途中の状態とは違う */
 export const projectStatusClass = (s: ProjectStatus) =>
 	s === '受注' ? 'ok' : s === '失注' ? 'danger' : 'info';
 
@@ -271,7 +261,5 @@ export function todaySummary(db: Db, actor?: ActivityLog['actor']) {
 	return { drafts: c('draft'), holds: c('hold'), sends: c('send'), registers: c('register') };
 }
 
-/* Task 18 修正ラウンド 1 (review-task-18.md I2) — 会議の URL は表示用に scheme を持たない
-   (`meet.google.com/abc-defg-hij`、integrations/mock/conference.ts)。そのまま href に入れると
-   相対パスとして解決され、同じサイトの中へ飛んでしまう。表示は短いまま、リンク先だけ補う */
+/* 会議の URL は表示用に scheme を持たない。そのまま href にすると相対パスになるので、リンク先だけ補う */
 export const linkUrl = (url: string) => (/^https?:\/\//.test(url) ? url : `https://${url}`);

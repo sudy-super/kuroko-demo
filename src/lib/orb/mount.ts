@@ -18,11 +18,8 @@ export function orbLifecycle(host: OrbHost): { acquire: () => void; release: () 
 	let orb: Orb | null = null;
 	let canvas: HTMLCanvasElement | null = null;
 
-	/* 描画・復帰・リサイズのどの失敗も (renderer.ts の fail())、マウントを壊さず canvas ごと
-	   手放す (Task 10x で CSS の代替表示は廃止した)。呼び元 (今日画面の holeOrbCanvas) の参照も
-	   onCanvas?.(null) で外す。ここを release() と非対称にすると、呼び元は死んだ canvas を
-	   握ったままになり、preserveDrawingBuffer で保持された最後のフレームがカードの背後に
-	   焼き付いたまま動かなくなる */
+	/* どの失敗も (renderer.ts の fail()) canvas ごと手放し、呼び元の参照も onCanvas?.(null) で外す。
+	   外さないと preserveDrawingBuffer で残った最後のフレームがカードの背後に焼き付く */
 	const drop = () => {
 		orb = null;
 		canvas?.remove();
@@ -34,11 +31,8 @@ export function orbLifecycle(host: OrbHost): { acquire: () => void; release: () 
 		drop();
 	};
 
-	/* Task 10i — 描画面 (WebGL context)は見えている間だけ握る。隠れたタブが握ったままだと、
-	   手前のタブがガラスとオーブの分を作れずに描けなくなる。
-	   手放すときは canvas ごと捨てる。一度 loseContext した canvas に getContext を呼んでも、
-	   失ったままの同じ context が返るだけで新しい描画面は取れない (実測: 手放して戻ると
-	   isContextLost() が true のまま何も描かれない)。作り直すたびに canvas も作り直す */
+	/* 描画面 (WebGL context) は見えている間だけ握る (隠れたタブが握ると手前のタブが描けない)。
+	   一度 loseContext した canvas は getContext が失ったままの context を返すので、canvas ごと作り直す */
 	const acquire = () => {
 		canvas = host.createCanvas();
 		host.box.prepend(canvas);

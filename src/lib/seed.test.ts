@@ -34,8 +34,7 @@ describe('seed', () => {
 		const db = seed(new Date(2026, 8, 15));
 		expect(db.threads.filter((t) => !t.sender.trim())).toEqual([]);
 	});
-	// Task 10p 修正ラウンド 1 (Critical) — threadSenderMeta が会社名を二重に出さないことの検証。
-	// sender の文字列を見るのではなく、組み立てた結果に会社名が 2 回現れていないかを数える
+	// sender の文字列ではなく、組み立てた結果に会社名が 2 回現れないかを数える
 	it('要対応キューの差出人 / 会社の表示に会社名が二重に出ない', () => {
 		const db = seed(new Date(2026, 8, 15));
 		for (const t of db.threads.filter((t) => t.inQueue)) {

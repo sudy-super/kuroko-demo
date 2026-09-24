@@ -3,7 +3,7 @@
 import { goto } from '$app/navigation';
 import { ui } from './ui.svelte';
 
-/** 音声を受け取れない環境で流す例文と 1 文字あたりの間隔 (計画 Task 23) */
+/** 音声を受け取れない環境で流す例文と 1 文字あたりの間隔 */
 const DEMO_TEXT = '明日の商談の準備、あとで見られるようにしておいて';
 const DEMO_MS = 60;
 
@@ -32,16 +32,14 @@ class Hearing {
 	live = $state(false);
 	/** 送った直後。Today は「考えています」を 1 拍見せてから会話の画面へ移る */
 	thinking = $state(false);
-	/** 聞いている間の声の大きさ (0〜1、平滑化済み)。Today のオーブと VoiceActions の波形が共有する
-	    (元は today/+page.svelte 側にあった。ユーザー指示 2026-09-24 — 2 か所に書かないためここへ移した) */
+	/** 聞いている間の声の大きさ (0〜1、平滑化済み)。Today のオーブと VoiceActions の波形が共有する */
 	level = $state(0);
 	#stop: (() => void) | null = null;
 	#stopLevel: (() => void) | null = null;
 	/** 聞き取りの側が「音が入っている」と知らせている間 (onsoundstart 〜 onsoundend) */
 	#sound = false;
 
-	/* 実物が無ければ疑似再生に落とす。握りつぶしではなく、この画面の代替の入力 (計画 Task 23)。
-	   どちらの道でも heard に文字が積まれ、以降の扱いは変わらない */
+	/* 実物が無ければ疑似再生に落とす (この画面の代替の入力)。どちらの道でも heard に文字が積まれる */
 	start() {
 		this.stop();
 		this.heard = '';
@@ -69,7 +67,7 @@ class Hearing {
 		this.thinking = true;
 		setTimeout(() => {
 			ui.voice = false;
-			// Palette と同じ道。?q= を受けた /chat 側が送る (Task 22 の申し送り)
+			// Palette と同じ道。?q= を受けた /chat 側が送る
 			goto(q ? `/chat?q=${encodeURIComponent(q)}` : '/chat');
 		}, THINK_MS);
 	}
@@ -89,16 +87,12 @@ class Hearing {
 	#recognize(Ctor: new () => Recognizer) {
 		const rec = new Ctor();
 		rec.lang = 'ja-JP';
-		/* 既定 (false) は最終結果を 1 つ返したら終わるので、言葉の区切りの短い間でも聞き取りが
-		   止まっていた (ユーザー指摘 2026-09-24)。Web Speech API の仕様は口述 (dictation) の例に
-		   true を挙げている。止めるのは利用者が「止める」か「閉じる」を押したときだけにする */
+		/* continuous の既定 (false) は最終結果 1 つで終わり、言葉の短い間でも止まる (Web Speech API の仕様は
+		   口述の例に true を挙げる)。止めるのは利用者が「止める」か「閉じる」を押したときだけ */
 		rec.continuous = true;
 		rec.interimResults = true;
-		/* continuous でも Chrome は数秒黙ると (no-speech) 切る (WebAudio/web-speech-api issue 99)。
-		   止める操作をしていなければ聞き直す。聞き直すと results は空から始まるので、それまでの文字の
-		   後ろに足していく。onend の中で間を置かずに start() を呼ぶと、前の接続が閉じ切っておらず
-		   InvalidStateError で失敗することがあり、以前はそこで聞き取りごと止まっていた
-		   (ユーザー指摘 2026-09-24)。少し待って聞き直し、失敗しても諦めずにもう一度待つ */
+		/* continuous でも Chrome は数秒黙ると切る (web-speech-api issue 99) ので聞き直し、文字を後ろに足す。
+		   onend の中ですぐ start() を呼ぶと InvalidStateError になることがあるので、少し待ち、失敗しても待ち直す */
 		let kept = '';
 		let wanted = true;
 		let retry: ReturnType<typeof setTimeout> | undefined;
@@ -138,13 +132,8 @@ class Hearing {
 		};
 	}
 
-	/* 声の大きさ (0〜1) を毎フレーム level へ積む。
-	   以前は getUserMedia でマイクを別に開いて音量を測っていたが、聞き取り
-	   (webkitSpeechRecognition) と同じマイクを取り合い、話している途中で文字起こしが
-	   止まる原因になった (ユーザー指摘 2026-09-24。docs/research/voice-orb.md は Chromium の
-	   報告 41083534 としてこの取り合いを「発表の機材で必ず試すこと」と挙げていた)。
-	   マイクは聞き取りにだけ使い、ここでは聞き取りが知らせる「音が入っている」と、
-	   文字が増えた瞬間で脈打たせる。本物の音量ほど細かくは動かないが、止まるよりよい */
+	/* 声の大きさ (0〜1) を毎フレーム level へ積む。getUserMedia でマイクを別に開くと聞き取りと取り合い、
+	   文字起こしが止まる (Chromium 41083534、voice-orb.md)。聞き取りの「音が入っている」と文字が増えた瞬間で脈打たせる */
 	#meterLevel() {
 		let last = performance.now();
 		let seen = 0;

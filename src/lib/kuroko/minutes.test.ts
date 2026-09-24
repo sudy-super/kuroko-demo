@@ -122,7 +122,7 @@ describe('addTranscript / acceptTaskSuggestions / sendFollowUp', () => {
 		const meetingId = store.events.find((e) => e.id === ev.id)!.meetingId!;
 		expect(meetingMailTargetFor(store, meetingId)).toBeUndefined();
 		expect(() => shareAgenda(meetingId)).toThrow();
-		// 田中様は引けるので今までどおり
+		// 田中様は引ける
 		expect(meetingMailTargetFor(store, 'm-abc')?.to).toContain('tanaka@abc.co.jp');
 	});
 });

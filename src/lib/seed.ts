@@ -2,9 +2,7 @@ import type { Db, MessageThread, Message, Document, Suggestion } from './types';
 import { key, bizDay, addDays, nextWeekday, fmtMD } from './dates';
 import { FILLER_SUBJECTS, DOC_TEMPLATES } from './kuroko/samples';
 
-/* 2 — 承認の kind から 'share' / 'schedule' / 'document' をなくした (何で送るかだけにした)。
-   古い保存を読むと記号が引けないので、版を上げて初期状態から作り直させる。
-   4 — 件名だけだったメールに本文と差出人のアドレスを足した */
+/* 保存の形が変わったら版を上げる。古い保存は読めないので初期状態から作り直させる */
 export const DB_VERSION = 4;
 
 export function seed(base: Date = new Date()): Db {

@@ -20,10 +20,9 @@ export type OrbOptions = {
 	reducedMotion: boolean;
 	mobile: boolean;
 	particles?: boolean;
-	/** 初期化後 (コンテキスト復帰やリサイズ時) に WebGL が失敗したときに呼ぶ。
-	    呼び出し側は canvas を手放す (Task 10x で CSS の代替表示は廃止した) */
+	/** 初期化後 (コンテキスト復帰やリサイズ時) に WebGL が失敗したときに呼ぶ。呼び出し側は canvas を手放す */
 	onFail?: (e: unknown) => void;
-	/** 描画面を失ったら false、戻ったら true。呼び出し側は失っている間 canvas を隠す (Task 10i) */
+	/** 描画面を失ったら false、戻ったら true。呼び出し側は失っている間 canvas を隠す */
 	onLive?: (live: boolean) => void;
 };
 export type Orb = { start(): void; destroy(): void };
@@ -138,15 +137,8 @@ const RING_SEGS = 160;
 const TRAIL_DECAY = 0.9; /* 軌跡: 前のフレームをこの倍率で残す (60fps で約 10 フレーム分の尾) */
 
 export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | null {
-	/* Task 10r — preserveDrawingBuffer: true。カードのガラス (glass.ts の orbBackdrop) が
-	   このオーブの canvas を毎フレーム drawImage() で読みに来るが、この canvas 自身の rAF
-	   (このファイル下部の tick)とガラス側の rAF (frame-loop.js)は別の requestAnimationFrame
-	   購読なので、実行順は登録順に依存する。false (既定)だと、ブラウザがこのフレームを
-	   合成した直後に描画面を透明へ落とすため、ガラス側の読み取りがオーブの再描画より前に
-	   来た回では毎回、空の描画面を読むことになる (実測: 未設定のときは縁の帯にオーブの色が
-	   一度も現れなかった)。README の「A <video> or <canvas> below the glass … Create it with
-	   preserveDrawingBuffer: true, or call LiquidGlass.refreshAll() right after you render」の
-	   前者を採る。合成後も描画面を保持するので、どちらの rAF が先でも安全に読める */
+	/* preserveDrawingBuffer: true。カードのガラス (glass.ts の orbBackdrop) がこの canvas を別の rAF で
+	   読みに来るので、合成後に描画面が消えると、先に読んだ回は空になる (ライブラリの README の推奨) */
 	const attrs = {
 		alpha: true,
 		premultipliedAlpha: true,
@@ -451,7 +443,7 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 		lost = true;
 		halt();
 		scene = halfA = halfB = trailA = trailB = null; /* 失ったコンテキストの資源は削除できないので忘れる */
-		/* 失った canvas は透明になる。知らせないと球が消えた穴がそのまま残る (Task 10i) */
+		/* 失った canvas は透明になる。知らせないと球が消えた穴がそのまま残る */
 		opts.onLive?.(false);
 	};
 	const destroy = () => {

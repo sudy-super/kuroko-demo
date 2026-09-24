@@ -7,8 +7,7 @@ export const CONNECT_NAME: Record<Connection['id'], string> = {
 	line: 'LINE'
 };
 
-/* 裁定 3 — 画面ごとに「つなぐと何が起きるか」を 1 行だけ添える。
-   HIG Onboarding「許可を求める場面で、なぜ要るのかと利点を示す」(onboarding.md 2.1) */
+/* 画面ごとに「つなぐと何が起きるか」を 1 行だけ添える (HIG Onboarding、onboarding.md 2.1) */
 export const CONNECT_BENEFIT: Record<Connection['id'], string> = {
 	gmail: '要対応のメールだけを Today に並べます。',
 	gcal: '予定の重なりと移動時間を KUROKO が見ます。',

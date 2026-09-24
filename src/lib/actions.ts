@@ -91,9 +91,8 @@ export function approve(id: string, origin: Origin = 'approval') {
 			id,
 			setTimeout(() => executeApproval(id), SEND_DELAY_MS)
 		);
-		// Gmail の送信取り消しと同じ順序 (指摘 2) — 「送信しました」を先に出し、5 秒だけ取り消せる。
-		// 5 秒が過ぎても文言は変えない (実行前にすでに完了として出しているため)。
-		// key: id を渡し、別の送信の取り消しがこのトーストを誤って閉じないようにする (レビュー M2)
+		// Gmail の送信取り消しと同じく、「送信しました」を先に出して 5 秒だけ取り消せる。
+		// key: id で、別の送信の取り消しがこのトーストを閉じないようにする
 		toast('送信しました (デモのため実送信していません)', {
 			seconds: SEND_DELAY_MS / 1000,
 			undo: () => undoApproval(id),
@@ -126,7 +125,7 @@ export function undoApproval(id: string) {
 	a.status = 'pending';
 	a.sendingAt = undefined;
 	save();
-	// この承認の送信のトーストだけを閉じる。別の送信が今表示中なら閉じない (レビュー M2)
+	// この承認の送信のトーストだけを閉じる。別の送信が表示中なら閉じない
 	dismissToast(id);
 }
 
@@ -134,7 +133,7 @@ export function editApproval(id: string, body: string) {
 	const a = db.approvals.find((x) => x.id === id);
 	if (!a || a.status !== 'pending') return;
 	a.body = body;
-	// reply 以外の payload は本文を持たないので、種類ごとに更新先を分ける (Task 16 仕様)
+	// reply 以外の payload は本文を持たないので、種類ごとに更新先を分ける
 	if (a.payload.type === 'reply') a.payload.body = body;
 	save();
 }
@@ -373,8 +372,7 @@ export function undo(logId: string) {
 
 export function insertSlots(threadId: string): SchedulingRequest {
 	const th = threadOf(db, threadId)!;
-	// 日程調整は相手の会社・案件に予定を結び付ける機能なので、人物が分からないまま作らない
-	// (fail-close。人物なしで作ると confirmSlot() が落ちる — review-task-15.md C1)
+	// 人物が分からないまま日程調整を作らない (人物なしだと confirmSlot() が落ちる)
 	if (!th.personId) throw new Error(`insertSlots: ${threadId} に personId がありません`);
 	const existing = db.scheduling.find((s) => s.threadId === threadId && s.status === 'draft');
 	if (existing) return existing;
@@ -458,8 +456,7 @@ export function confirmSlot(token: string, slotId: string) {
 		db.events = db.events.filter((e) => e.id !== s.eventId);
 		db.meetings = db.meetings.filter((m) => m.id !== s.meetingId);
 	}
-	// insertSlots() が personId 必須になった後も、古い下書き ('' のまま) が残っていれば
-	// ここで弾く (防御を 1 段足す。review-task-15.md C1)
+	// 古い下書きの personId が '' のままならここで弾く
 	const p = personOf(db, s.personId);
 	if (!p) return null;
 	const event: CalendarEvent = {
@@ -633,10 +630,8 @@ export function markStarted() {
 	save();
 }
 export function startGuide() {
-	// 完了画面 (やること 0 件)からの始め直し。案内する対象が無いので、まず初期状態に戻す。
-	// Welcome へは戻らずその場に留まるため、seed() が未接続に戻した接続は始め直す前の状態に戻す。
-	// 全接続を一律に繋ぐと、「スキップして開く」で未接続のまま使っていた人の画面に
-	// 連携アイコンの列が生えてしまう (「デモをリセット」は Welcome へ戻るので未接続のままでよい)
+	// 完了画面からの始め直し。Welcome へ戻らないので、seed() が未接続に戻した接続を元の状態に戻す
+	// (全部繋ぐと、スキップして未接続で使っていた人の画面に連携アイコンの列が生える)
 	if (todayCount(db) === 0) {
 		const before = new Map(db.settings.connections.map((c) => [c.id, c.connected]));
 		resetDemo();

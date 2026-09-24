@@ -10,7 +10,7 @@ export type Hit = { group: Group; label: string; sub: string; href: string; sour
 /** 群の並び。search の返り値もこの順に積む */
 export const GROUPS: Group[] = ['人物', '会社', '案件', 'メール', '予定', '資料', 'ToDo'];
 
-/** 群ごとの上限 (計画 Task 23) */
+/** 群ごとの上限 */
 const LIMIT = 4;
 
 /* 関連する人物の名前とよみを検索対象に混ぜる。「田中」と打ったときに、本人の行だけでなく

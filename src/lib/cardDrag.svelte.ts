@@ -123,9 +123,8 @@ export function cardDrag(opts: {
 	function onDown(e: PointerEvent) {
 		const el = (e.target as Element).closest<HTMLElement>('.bento > .card');
 		if (!el || !opts.here() || opts.voicing() || e.button !== 0) return;
-		/* 前のドラッグの離しが届かなかった (窓の外で離した、アプリを切り替えた) ときは、
-		   その押下を残したままにしない。残ると onMove が新しい押下を前の押下の続きと
-		   取り違え (pointerId も違うので無視し)、カードが二度と動かなくなる (ユーザー指摘 2026-09-24) */
+		/* 前のドラッグの離しが届かなかった (窓の外で離したなど) ときは、その押下を残さない。残ると
+		   onMove が新しい押下を取り違え、カードが二度と動かなくなる */
 		if (drag) finish(drag, false);
 		const from = springs[el.dataset.card!].target;
 		drag = {
@@ -149,14 +148,12 @@ export function cardDrag(opts: {
 			drag.started = true;
 			drag.el.setPointerCapture(drag.id);
 		}
-		/* つかんだ点を保ったままポインタに 1 対 1 で付ける。球の上も抵抗なく通り抜けられるが、
-		   置くことはできない: 離したときに球の上なら finish の settle が球の外の近い空きへ運ぶ
-		   (ユーザー指示 2026-09-25。以前はドラッグ中から球の縁で押し戻していた) */
+		/* つかんだ点を保ってポインタに 1 対 1 で付ける。球の上も通れるが置けない: 離したとき球の上なら
+		   finish の settle が球の外の近い空きへ運ぶ */
 		drag.raw = { x: drag.from.x + dx, y: drag.from.y + dy };
 		const { base, cards, f } = field(drag.card);
 		shown = drag.raw;
-		/* 重ねられたカードはつるんと退く。調査 (card-drag.md) の結論は「他のカードは動かさない」
-		   だったが、ユーザー指示 2026-09-24 で調査の結論を覆した */
+		/* 重ねられたカードはつるんと退く (card-drag.md の「他のカードは動かさない」とは違う判断) */
 		for (const [k, d] of Object.entries(shove(shift(base, shown), cards, f))) {
 			const sp = springs[k];
 			sp.stiffness = SNAPPY.stiffness;
@@ -197,10 +194,8 @@ export function cardDrag(opts: {
 		const sp = springs[d.card];
 		sp.set(shown ?? d.from, { instant: true });
 		shown = null;
-		/* 球の上で離したときは、球の中から置き場所まで、ばねでつるんと滑り出させる。
-		   repel を当てると、最初の 1 コマで球の縁まで押し出されて瞬間移動に見える
-		   (ユーザー指摘 2026-09-25)。滑り出しの間だけ repel を外し、ほかのカードと同じ
-		   SNAPPY のばねで運ぶ */
+		/* 球の上で離したときは、ばねで球の外へ滑り出させる。repel を当てると最初の 1 コマで縁まで
+		   押し出されて瞬間移動に見えるので、滑り出しの間だけ外す */
 		escaping = d.card;
 		sp.stiffness = SNAPPY.stiffness;
 		sp.damping = SNAPPY.damping;

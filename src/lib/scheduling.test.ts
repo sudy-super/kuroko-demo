@@ -81,8 +81,7 @@ describe('scheduling', () => {
 		expect(s.status).toBe('cancelled');
 		expect(db.events.find((e) => e.id === s.eventId)).toBeUndefined();
 	});
-	// review-task-15.md C1 — 人物未登録のスレッドで日程調整を使うと、相手の画面が
-	// confirmSlot() で TypeError を起こしていた。fail-close で作らせない
+	// 人物がいないと相手の画面の confirmSlot() が落ちるので、作らせない
 	it('人物未登録のスレッドでは insertSlots が throw する', () => {
 		expect(db.threads.find((t) => t.id === 'th-sunrise-interview')?.personId).toBeUndefined();
 		expect(() => insertSlots('th-sunrise-interview')).toThrow();
@@ -94,8 +93,7 @@ describe('scheduling', () => {
 		s.token = 'tok';
 		expect(confirmSlot('tok', s.slots[0].id)).toBeNull();
 	});
-	// review-task-15.md C2 — 破棄や他トーンへの乗り換えでは insertSlots を呼ばないので、
-	// sendReply が拾う draft が残らない
+	// 破棄や他トーンへの乗り換えでは insertSlots を呼ばないので、sendReply が拾う draft が残らない
 	it('insertSlots を呼ばなければ sendReply の schedulingId は付かない', () => {
 		const ap = sendReply('th-tanaka-next', '日程の話は取り下げます。', 'inbox');
 		expect(ap.payload.type).toBe('reply');
