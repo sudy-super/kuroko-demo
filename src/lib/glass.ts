@@ -78,6 +78,25 @@ export const CARD: LiquidGlassElementOptions = {
 	material: { ...LENS, backdropBlur: 2 }
 };
 
+/* 表示の切り替え (Segmented.svelte) のつまみ。押している間だけガラスにする。WWDC25「Build a
+   SwiftUI app with the new design」の "Controls like toggles, segmented pickers, and sliders now
+   transform into liquid glass during interaction"、HIG Materials の「スライダーやトグルのように
+   操作の間だけ現れる部品は内容の層でもガラスにしてよい」に当たる
+   (docs/research/segmented-liquid-glass.md)。塗りは薄く、下の文字と地が透けて見える程度 */
+export const THUMB: LiquidGlassElementOptions = {
+	tint: 0.1,
+	tintTone: 'light',
+	/* 下は平らな灰色の地で屈折が見えにくいので、輪郭の線だけライブラリの既定まで上げる。
+	   反射 (rim / highlight) は枠のガラスと同じく付けない */
+	material: { ...LENS, backdropBlur: 0, hairline: 0.92 }
+};
+
+/** 押している間だけ使う描画面。握りっぱなしにしないので whileVisible は通さない */
+export function pressGlass(node: HTMLElement) {
+	const instance = new LiquidGlass(node, { live: true, respectReducedTransparency: false, ...THUMB });
+	return () => instance.destroy();
+}
+
 /* Task 10r — カードのガラスの背後にオーブを届ける描き手。
    ライブラリの itemsBelow (dom-content.js) は、宿主 (`.bento`) より DOM の描画順で
    後にあるものを一律に除外する。オーブ (`.hole > .orb`) は `.bento` の子孫なので、
