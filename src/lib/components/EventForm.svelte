@@ -6,6 +6,7 @@
 	import { minutes, toHm } from '$lib/dates';
 	import { conflicts, travelWarning } from '$lib/calendar';
 	import Modal from './Modal.svelte';
+	import Field from './Field.svelte';
 	import SelectField, { type Opt } from './SelectField.svelte';
 
 	let {
@@ -145,23 +146,11 @@
 
 <Modal {open} title="新しい予定" onclose={() => (onclose(), (stage = 'form'))}>
 	<form id={formId} onsubmit={submit}>
-		<div class="field">
-			<label class="label" for="{formId}-title">タイトル</label>
-			<input class="input" id="{formId}-title" bind:value={title} required />
-		</div>
-		<div class="field">
-			<label class="label" for="{formId}-date">日付</label>
-			<input class="input" id="{formId}-date" type="date" bind:value={date} required />
-		</div>
+		<Field label="タイトル" bind:value={title} required />
+		<Field label="日付" type="date" bind:value={date} required />
 		<div class="row form-pair">
-			<div class="field">
-				<label class="label" for="{formId}-start">開始</label>
-				<input class="input" id="{formId}-start" type="time" bind:value={start} required />
-			</div>
-			<div class="field">
-				<label class="label" for="{formId}-end">終了</label>
-				<input class="input" id="{formId}-end" type="time" bind:value={end} required />
-			</div>
+			<Field label="開始" type="time" bind:value={start} required />
+			<Field label="終了" type="time" bind:value={end} required />
 		</div>
 		<SelectField
 			label="参加者"
@@ -173,10 +162,7 @@
 		/>
 		<SelectField label="会社" items={companies} value={companyId} onchange={(v: string) => (companyId = v)} />
 		<SelectField label="案件" items={projects} value={projectId} onchange={(v: string) => (projectId = v)} />
-		<div class="field">
-			<label class="label" for="{formId}-place">場所</label>
-			<input class="input" id="{formId}-place" bind:value={place} placeholder="渋谷、品川 など" />
-		</div>
+		<Field label="場所" bind:value={place} placeholder="渋谷、品川 など" />
 		<!-- 3 つから 1 つなので、部品を足さず素の radio に .chip の見た目を当てる -->
 		<fieldset class="field cal-radio">
 			<legend class="label">オンライン</legend>
@@ -212,10 +198,7 @@
 				onchange={(v: string) => (bufferAfter = v)}
 			/>
 		</div>
-		<div class="field">
-			<label class="label" for="{formId}-purpose">会議目的</label>
-			<input class="input" id="{formId}-purpose" bind:value={purpose} placeholder="次回の打ち合わせ など" />
-		</div>
+		<Field label="会議目的" bind:value={purpose} placeholder="次回の打ち合わせ など" />
 		<label class="row cal-switch">
 			<input type="checkbox" role="switch" bind:checked={withMeeting} />
 			<span>

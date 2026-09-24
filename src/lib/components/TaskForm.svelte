@@ -5,6 +5,7 @@
 	import { addLogOf } from '$lib/derived';
 	import { toast } from '$lib/ui.svelte';
 	import Modal from './Modal.svelte';
+	import Field from './Field.svelte';
 	import SelectField, { type Opt } from './SelectField.svelte';
 
 	let { open, onclose }: { open: boolean; onclose: () => void } = $props();
@@ -70,19 +71,10 @@
 
 <Modal {open} title="新しい ToDo を追加" onclose={cancel}>
 	<form id={formId} onsubmit={submit}>
-		<div class="field">
-			<label class="label" for="{formId}-title">タイトル</label>
-			<input class="input" id="{formId}-title" bind:value={title} required />
-		</div>
+		<Field label="タイトル" bind:value={title} required />
 		<div class="row form-pair">
-			<div class="field">
-				<label class="label" for="{formId}-due">期限</label>
-				<input class="input" id="{formId}-due" type="date" bind:value={due} />
-			</div>
-			<div class="field">
-				<label class="label" for="{formId}-time">時刻</label>
-				<input class="input" id="{formId}-time" type="time" bind:value={time} />
-			</div>
+			<Field label="期限" type="date" bind:value={due} />
+			<Field label="時刻" type="time" bind:value={time} />
 		</div>
 		<SelectField
 			label="優先度"
