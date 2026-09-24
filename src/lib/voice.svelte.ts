@@ -17,6 +17,8 @@ type Recognizer = {
 	interimResults: boolean;
 	onresult: ((e: { results: Iterable<ArrayLike<{ transcript: string }>> }) => void) | null;
 	onend: (() => void) | null;
+	onsoundstart: (() => void) | null;
+	onsoundend: (() => void) | null;
 	onerror: ((e: { error: string }) => void) | null;
 	start: () => void;
 	stop: () => void;
@@ -32,6 +34,8 @@ class Hearing {
 	level = $state(0);
 	#stop: (() => void) | null = null;
 	#stopLevel: (() => void) | null = null;
+	/** 聞き取りの側が「音が入っている」と知らせている間 (onsoundstart 〜 onsoundend) */
+	#sound = false;
 
 	/* 実物が無ければ疑似再生に落とす。握りつぶしではなく、この画面の代替の入力 (計画 Task 23)。
 	   どちらの道でも heard に文字が積まれ、以降の扱いは変わらない */
@@ -88,49 +92,66 @@ class Hearing {
 		   true を挙げている。止めるのは利用者が「止める」か「閉じる」を押したときだけにする */
 		rec.continuous = true;
 		rec.interimResults = true;
-		/* continuous でも、長く黙っているとブラウザの側で切れることがある。止める操作をしていない
-		   なら聞き直す。聞き直すと results は空から始まるので、それまでの文字の後ろに足していく */
+		/* continuous でも Chrome は数秒黙ると (no-speech) 切る (WebAudio/web-speech-api issue 99)。
+		   止める操作をしていなければ聞き直す。聞き直すと results は空から始まるので、それまでの文字の
+		   後ろに足していく。onend の中で間を置かずに start() を呼ぶと、前の接続が閉じ切っておらず
+		   InvalidStateError で失敗することがあり、以前はそこで聞き取りごと止まっていた
+		   (ユーザー指摘 2026-09-24)。少し待って聞き直し、失敗しても諦めずにもう一度待つ */
 		let kept = '';
+		let wanted = true;
+		let retry: ReturnType<typeof setTimeout> | undefined;
+		const restart = () => {
+			if (!wanted) return;
+			try {
+				rec.start();
+			} catch {
+				retry = setTimeout(restart, 250);
+			}
+		};
 		rec.onresult = (e) => {
 			this.heard = kept + [...e.results].map((r) => r[0].transcript).join('');
 		};
 		rec.onend = () => {
 			kept = this.heard;
-			try {
-				rec.start();
-			} catch {
-				this.live = false;
-			}
+			retry = setTimeout(restart, 150);
 		};
+		/* 声の大きさは、マイクを別に開かず (取り合いになる、下の #meterLevel)、聞き取りの側が
+		   知らせる「音が入っている / いない」で脈打たせる */
+		rec.onsoundstart = () => (this.#sound = true);
+		rec.onsoundend = () => (this.#sound = false);
 		// 誤りのあとに onend が来るので、先に外してから疑似再生に切り替える
 		rec.onerror = (e) => {
 			if (!NO_INPUT.includes(e.error)) return;
+			wanted = false;
 			rec.onend = rec.onresult = null;
 			this.#stop = this.#playDemo();
 		};
 		rec.start();
 		return () => {
-			rec.onresult = rec.onend = rec.onerror = null;
+			wanted = false;
+			clearTimeout(retry);
+			rec.onresult = rec.onend = rec.onerror = rec.onsoundstart = rec.onsoundend = null;
+			this.#sound = false;
 			rec.stop();
 		};
 	}
 
-	/* マイクの声の大きさを毎フレーム level へ積む (元は today/+page.svelte の $effect)。
-	   許可が無い・取れないときは null のままで、文字が増えるたびに脈打つ形に代える */
+	/* 声の大きさ (0〜1) を毎フレーム level へ積む。
+	   以前は getUserMedia でマイクを別に開いて音量を測っていたが、聞き取り
+	   (webkitSpeechRecognition) と同じマイクを取り合い、話している途中で文字起こしが
+	   止まる原因になった (ユーザー指摘 2026-09-24。docs/research/voice-orb.md は Chromium の
+	   報告 41083534 としてこの取り合いを「発表の機材で必ず試すこと」と挙げていた)。
+	   マイクは聞き取りにだけ使い、ここでは聞き取りが知らせる「音が入っている」と、
+	   文字が増えた瞬間で脈打たせる。本物の音量ほど細かくは動かないが、止まるよりよい */
 	#meterLevel() {
-		let meter: Awaited<ReturnType<typeof openMeter>> = null;
-		let dead = false;
-		openMeter().then((m) => (dead ? m?.close() : (meter = m)));
 		let last = performance.now();
 		let seen = 0;
 		let v = 0;
-		// 名前付き関数式だと自己再帰の tick が bind 前を指すので、束縛を保つため矢印関数にする
 		let raf: number;
 		const tick = (now: number) => {
-			let target = 0;
-			// live が落ちたあと (認識の onend) も stop() までは音量計は生きているので、live を見て切る
-			if (this.live && meter) target = meter.read();
-			else if (this.heard.length > seen) v = Math.max(v, 0.6);
+			// 音が入っている間は小さく揺らし、文字が増えた瞬間に大きく上げる
+			let target = this.live && this.#sound ? 0.35 + 0.15 * Math.sin(now / 120) : 0;
+			if (this.heard.length > seen) v = Math.max(v, 0.8);
 			seen = this.heard.length;
 			v = smoothLevel(v, target, now - last);
 			last = now;
@@ -138,11 +159,7 @@ class Hearing {
 			raf = requestAnimationFrame(tick);
 		};
 		raf = requestAnimationFrame(tick);
-		return () => {
-			dead = true;
-			cancelAnimationFrame(raf);
-			meter?.close();
-		};
+		return () => cancelAnimationFrame(raf);
 	}
 }
 
@@ -154,44 +171,8 @@ export const ORB_GROW = 1.3;
 export const ORB_PULSE_MIN = 0.97;
 export const ORB_PULSE_MAX = 1.08;
 
-/* 声の大きさを 0〜1 に直す範囲 (dBFS)。部屋の雑音とマイクで変わるので、会場で合わせる値
-   (一次資料の値ではない。docs/research/voice-orb.md) */
-const LEVEL_FLOOR_DB = -50;
-const LEVEL_CEIL_DB = -15;
-
 /* 上がりは速く (60ms)、下がりは遅く (300ms)。dt を使うので画面の更新頻度に左右されない */
 export function smoothLevel(v: number, target: number, dt: number) {
 	const tau = target > v ? 60 : 300;
 	return v + (target - v) * (1 - Math.exp(-dt / tau));
-}
-
-export type Meter = { read: () => number; close: () => void };
-
-/** マイクの声の大きさ (0〜1) を読む。許可が無い・取れないときは null
-    (呼び元は聞き取りの文字が増えるたびに脈打つ形に切り替える) */
-export async function openMeter(): Promise<Meter | null> {
-	let stream: MediaStream;
-	try {
-		stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-	} catch {
-		return null;
-	}
-	const ctx = new AudioContext();
-	const analyser = ctx.createAnalyser();
-	analyser.fftSize = 1024;
-	ctx.createMediaStreamSource(stream).connect(analyser);
-	const buf = new Float32Array(analyser.fftSize);
-	return {
-		read() {
-			analyser.getFloatTimeDomainData(buf);
-			let sum = 0;
-			for (const s of buf) sum += s * s;
-			const db = 20 * Math.log10(Math.sqrt(sum / buf.length));
-			return Math.min(1, Math.max(0, (db - LEVEL_FLOOR_DB) / (LEVEL_CEIL_DB - LEVEL_FLOOR_DB)));
-		},
-		close() {
-			stream.getTracks().forEach((t) => t.stop());
-			ctx.close();
-		}
-	};
 }
