@@ -154,6 +154,10 @@
 		`次の会議 ${rel(parse(m.event.date))} ${m.event.start} ${m.meeting.title}`;
 </script>
 
+{#snippet more(n: number, shown: number)}
+	{#if n > shown}<p class="muted">残り {n - shown} 件</p>{/if}
+{/snippet}
+
 <svelte:head><title>Today — KUROKO AI</title></svelte:head>
 <!-- 動かせる範囲は窓で決まるが、.bento は最大幅で止まるので窓の変化を直接見る -->
 <svelte:window onkeydown={onKey} onresize={() => cards.relayout()} />
@@ -245,7 +249,7 @@
 								<RiskIcon risk={a.risk} />
 							</div>
 						{/each}
-						{#if ap.length > 3}<p class="muted">残り {ap.length - 3} 件</p>{/if}
+						{@render more(ap.length, 3)}
 					</TodayCard>
 				{/if}
 
@@ -269,7 +273,7 @@
 							{/each}
 						</div>
 					{/each}
-					{#if rp.length > 3}<p class="muted">残り {rp.length - 3} 件</p>{/if}
+					{@render more(rp.length, 3)}
 					{#if !rp.length}<p class="muted">返信が必要な連絡はありません</p>{/if}
 				</TodayCard>
 
@@ -288,7 +292,7 @@
 							<span class="tc-text">{e.title}</span>
 						</div>
 					{/each}
-					{#if events.length > 3}<p class="muted">残り {events.length - 3} 件</p>{/if}
+					{@render more(events.length, 3)}
 					{#if !events.length}<p class="muted">今日の予定はありません</p>{/if}
 				</TodayCard>
 
@@ -302,7 +306,7 @@
 							{#if t.time}<span class="num muted">{t.time}</span>{/if}
 						</label>
 					{/each}
-					{#if tasks.length > taskRows}<p class="muted">残り {tasks.length - taskRows} 件</p>{/if}
+					{@render more(tasks.length, taskRows)}
 					{#if !hideTaskFoot}
 						<div class="row tc-foot"><a class="btn text sm" href="/tasks">ToDo をすべて見る</a></div>
 					{/if}
@@ -371,22 +375,17 @@
 				<details class="card today-mobile" open>
 					<summary>今日やること <span class="num">{count}</span> 件</summary>
 					{#each items as it (it.kind)}
+						{#snippet line()}
+							<span class="badge count">{badgeCount(it.n)}</span>
+							<span class="tc-col">
+								<span class="tc-text">{it.label}</span>
+								<span class="tc-text sub">{it.detail}</span>
+							</span>
+						{/snippet}
 						{#if it.kind === 'approval'}
-							<button class="list-row lg" type="button" onclick={() => (ui.approvalDrawer = true)}>
-								<span class="badge count">{badgeCount(it.n)}</span>
-								<span class="tc-col">
-									<span class="tc-text">{it.label}</span>
-									<span class="tc-text sub">{it.detail}</span>
-								</span>
-							</button>
+							<button class="list-row lg" type="button" onclick={() => (ui.approvalDrawer = true)}>{@render line()}</button>
 						{:else}
-							<a class="list-row lg" href={it.href}>
-								<span class="badge count">{badgeCount(it.n)}</span>
-								<span class="tc-col">
-									<span class="tc-text">{it.label}</span>
-									<span class="tc-text sub">{it.detail}</span>
-								</span>
-							</a>
+							<a class="list-row lg" href={it.href}>{@render line()}</a>
 						{/if}
 					{/each}
 				</details>
