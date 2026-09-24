@@ -24,6 +24,12 @@
 	);
 </script>
 
+{#snippet chip(label: string, on: boolean, toggle: () => void)}
+	<button class="chip" class:on aria-pressed={on} onclick={toggle}>
+		<Icon name="ic-check" size={18} class="chip-check" />{label}
+	</button>
+{/snippet}
+
 <svelte:head><title>作業履歴 — KUROKO AI</title></svelte:head>
 
 <div class="activity">
@@ -36,20 +42,12 @@
 	</p>
 
 	<div class="row page-bar" role="group" aria-label="絞り込み">
-		<button class="chip" class:on={actor === 'KUROKO'} aria-pressed={actor === 'KUROKO'} onclick={() => (actor = actor === 'KUROKO' ? null : 'KUROKO')}>
-			<Icon name="ic-check" size={18} class="chip-check" />KUROKO
-		</button>
-		<button class="chip" class:on={actor === 'user'} aria-pressed={actor === 'user'} onclick={() => (actor = actor === 'user' ? null : 'user')}>
-			<Icon name="ic-check" size={18} class="chip-check" />自分
-		</button>
+		{@render chip('KUROKO', actor === 'KUROKO', () => (actor = actor === 'KUROKO' ? null : 'KUROKO'))}
+		{@render chip('自分', actor === 'user', () => (actor = actor === 'user' ? null : 'user'))}
 		{#each origins as o (o)}
-			<button class="chip" class:on={origin === o} aria-pressed={origin === o} onclick={() => (origin = origin === o ? null : o)}>
-				<Icon name="ic-check" size={18} class="chip-check" />{ORIGIN_LABEL[o]}
-			</button>
+			{@render chip(ORIGIN_LABEL[o], origin === o, () => (origin = origin === o ? null : o))}
 		{/each}
-		<button class="chip" class:on={approvedOnly} aria-pressed={approvedOnly} onclick={() => (approvedOnly = !approvedOnly)}>
-			<Icon name="ic-check" size={18} class="chip-check" />承認ありのみ
-		</button>
+		{@render chip('承認ありのみ', approvedOnly, () => (approvedOnly = !approvedOnly))}
 	</div>
 
 	<section class="card list-card" aria-label="作業履歴の一覧">
