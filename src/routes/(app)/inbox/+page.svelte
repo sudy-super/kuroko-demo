@@ -1,11 +1,11 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { db } from '$lib/store.svelte';
 	import { companyOf, personOf, queue, nextInQueue } from '$lib/derived';
 	import { markDone } from '$lib/actions';
 	import { ui, toast } from '$lib/ui.svelte';
-	import { media } from '$lib/media.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Drawer from '$lib/components/Drawer.svelte';
@@ -21,8 +21,26 @@
 	   以前は「すべて」を件名だけのモーダルで出していて、そこから本文を開けなかった */
 	let list = $state<'queue' | 'all'>('queue');
 	const rows = $derived(list === 'queue' ? q : allMail);
-	let showRight = $state(false);
-	let sheet = $state(false);
+	/* 差出人の情報は、スレッドの頭の差出人の行を押すと、そこから広がる中央のパネルで出す
+	   (承認待ちのカードと同じ作り。ユーザー指示 2026-09-25)。以前は「人物を見る」で右の列を
+	   開き、狭い幅ではボトムシートにしていた */
+	let personFrom = $state<DOMRect | null>(null);
+	let personOpen = $state(false);
+	let senderHidden = $state(false);
+	/* 縮み終わったら差出人の行を見せ、焦点を戻す (行は縮み終わるまで隠れているので、
+	   bits-ui の戻しでは乗らない)。その間に別の場所へ移っていたら奪わない */
+	function settled() {
+		senderHidden = false;
+		tick().then(() => {
+			if (document.activeElement && document.activeElement !== document.body) return;
+			document.querySelector<HTMLElement>('.thread .sender')?.focus();
+		});
+	}
+	function openPerson(el: HTMLElement) {
+		personFrom = el.getBoundingClientRect();
+		senderHidden = true;
+		personOpen = true;
+	}
 	// 960px 以下は一覧 → 本文の 2 段階にする (仕様 5.3)。
 	// ?t= を持って入ってきたときは本文から始める (Today や人物ページからの入口)
 	let showThread = $state(page.url.searchParams.has('t'));
@@ -75,24 +93,13 @@
 
 	function select() {
 		showThread = true;
-		showRight = false;
-	}
-
-	// 960px 以下に縮んだら畳みの状態を捨てる。app.css の .show-right は一覧を隠すので、
-	// シートを使うモバイルに持ち越すと一覧が出なくなる
-	$effect(() => {
-		if (media.mobile) showRight = false;
-	});
-
-	function togglePerson() {
-		if (media.mobile) sheet = true;
-		else showRight = !showRight;
+		personOpen = false;
 	}
 </script>
 
 <svelte:head><title>メール — KUROKO AI</title></svelte:head>
 
-<div class="inbox" class:show-right={showRight} class:show-thread={showThread}>
+<div class="inbox" class:show-thread={showThread}>
 	<h1 class="sr-only">メール</h1>
 	<!-- Task 10w — HIG 上ガラスを持たないコンテンツ層なので、Task 10c のガラス (glass()) を外して
 	     普通のカードの面 (.card) に戻した (glass-scope.md 6 節) -->
@@ -126,40 +133,38 @@
 					<button class="btn text sm back" onclick={() => (showThread = false)}>
 						<Icon name="ic-left" size={18} />一覧に戻る
 					</button>
-					<button class="btn sec sm person" onclick={togglePerson}>
-						<Icon name={showRight ? 'ic-left' : 'ic-user'} size={18} />{showRight
-							? 'メール一覧に戻る'
-							: '人物を見る'}
-					</button>
 				</div>
 				{#key thread.id}
-					<ThreadView {thread} ondone={done} />
+					<ThreadView {thread} ondone={done} onsender={openPerson} {senderHidden} />
 				{/key}
 			{:else}
 				<p class="empty">表示するメールがありません</p>
 			{/if}
 		</section>
-
-		<div class="pane pane-right">
-			{#if thread}<PersonPanel identityId={thread.identityId} />{/if}
-		</div>
 	</div>
 </div>
 
-<Drawer open={sheet} title="差出人" onclose={() => (sheet = false)}>
+<Drawer
+	open={personOpen}
+	title="差出人"
+	variant="center"
+	from={personFrom}
+	onclose={() => (personOpen = false)}
+	onsettled={settled}
+>
 	<!-- Drawer の題名 (Drawer.svelte の h3) の下なので、PersonPanel の人物名は h4 にする
 	     (rereview-task-10p.md 新規 1、Modal の h4 と同じ考え方) -->
 	{#if thread}<PersonPanel identityId={thread.identityId} headingLevel={4} />{/if}
 </Drawer>
 
 <style>
-	/* 3 つのペインを横に並べる段の基準。Task 10w で内容の層からガラスを外したので
+	/* 一覧と本文の 2 つのペインを横に並べる段の基準。Task 10w で内容の層からガラスを外したので
 	   (HIG Materials「コンテンツ層に Liquid Glass を使わない」)、ここに canvas は無い */
 	.panes {
 		position: relative;
 		isolation: isolate;
 		display: grid;
-		grid-template-columns: 360px minmax(0, 1fr) 320px;
+		grid-template-columns: 360px minmax(0, 1fr);
 		align-items: start;
 		gap: var(--sp-4);
 	}
@@ -187,29 +192,12 @@
 		padding: var(--sp-5);
 		color: var(--ink-2);
 	}
-	/* 1600px 以上は 3 列。畳む操作は要らない。1440px (会議室の投影、MacBook Pro 16) では
-	   本文が 392px しかなく、全角 35〜40 字の目安 (legibility.md 76 行目) に対して
-	   実測 299px と半分程度しか無かった。ここを 1280px から広げ、人物パネルは畳んで
-	   一覧 + 本文の 2 列にすると、本文は 728px 前後まで広がる (実測は fix-hover-report.md) */
-	.back,
-	.person {
+	.back {
 		display: none;
 	}
-	@media (max-width: 1600px) {
-		.panes {
-			grid-template-columns: 360px minmax(0, 1fr);
-		}
-		.inbox.show-right .panes {
-			grid-template-columns: minmax(0, 1fr) 320px;
-		}
-		.person {
-			display: inline-flex;
-		}
-	}
-	/* components 2.2 — 960px 以下は 1 列。人物はボトムシートで開く */
+	/* components 2.2 — 960px 以下は 1 列 */
 	@media (max-width: 960px) {
-		.panes,
-		.inbox.show-right .panes {
+		.panes {
 			grid-template-columns: minmax(0, 1fr);
 		}
 		.inbox.show-thread .pane-list {

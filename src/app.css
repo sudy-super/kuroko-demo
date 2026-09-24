@@ -2142,20 +2142,6 @@ svg.i {
 	}
 }
 
-/* ruling 13 (Task fix-hover — 1280px から 1600px に拡張。本文の幅を確保するため。
-   +page.svelte の同じ閾値のコメントを見よ): 1600px 以下で Inbox の右パネルを畳む */
-@media (max-width: 1600px) {
-	.inbox .pane-right {
-		display: none;
-	}
-	.inbox.show-right .pane-right {
-		display: block;
-	}
-	.inbox.show-right .pane-list {
-		display: none;
-	}
-}
-
 /* 本文と依頼バーの右は、連携の列 (.rail) のぶんを常に空けておく。列があるときだけ空けると、
    設定で連携を切り替えるたびに本文の幅が変わって画面が揺れた (ユーザー指摘 2026-09-25)。
    ピル (.header.glass)は Task 10q で列と同じ右端 (--sp-4)に揃えると決まったので、
@@ -4522,7 +4508,7 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
 	padding-block: var(--sp-2);
 }
 
-/* PersonPanel — Inbox の右と、メールのスレッドの頭で使う */
+/* PersonPanel — メールの差出人のパネル (inbox/+page.svelte の Drawer) の中身 */
 .person-panel {
 	display: flex;
 	flex-direction: column;

@@ -19,12 +19,9 @@ export const ui = $state({
 	toast: null as Toast | null,
 	approvalDrawer: false,
 	/** 承認待ちカードから開いたときの、カードの位置と寸法。Drawer.svelte がここから
-	    広がる/ここへ縮むアニメーションの起点にする。開いた直後 (今回の Drawer が起点として
-	    使う値) だけ意味を持ち、Drawer.svelte の閉じる分岐で即座に null へ戻す
-	    (レビュー C2/I1 — wasMorph の有無に関係なく戻さないと、動きを減らす設定や
-	    961px 未満では二度と広がる動きが起きず、カードが visibility: hidden のまま固定される)。
-	    Today のカード以外 (上部バー・会議の案内など) から開いたときは null のまま
-	    (docs/research/card-expand.md) */
+	    広がる/ここへ縮むアニメーションの起点にする (開いた瞬間に Drawer が控える)。
+	    閉じたら ApprovalDrawer が null に戻す。Today のカード以外 (上部バー・会議の案内など)
+	    から開いたときは null のまま (docs/research/card-expand.md) */
 	approvalFrom: null as DOMRect | null,
 	/** 承認待ちカードを隠す (visibility: hidden) かどうか。approvalFrom は開いた瞬間に
 	    使い切って null に戻すので、縮み終わるまでカードを隠し続けるにはこちらの寿命が要る

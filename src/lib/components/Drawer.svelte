@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { tick, type Snippet } from 'svelte';
+	import type { Snippet } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import { Dialog } from 'bits-ui';
 	import { pushState } from '$app/navigation';
 	import { media } from '$lib/media.svelte';
-	import { markOverlay, ui, keepOpenOnFrame } from '$lib/ui.svelte';
+	import { markOverlay, keepOpenOnFrame } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 
 	let {
@@ -13,7 +13,9 @@
 		onclose,
 		children,
 		footer,
-		variant = 'side'
+		variant = 'side',
+		from = null,
+		onsettled
 	}: {
 		open: boolean;
 		title: string;
@@ -21,8 +23,13 @@
 		children: Snippet;
 		footer?: Snippet;
 		/** 'side' は右からのドロワー (既定、ActivityDrawer が使う)。'center' は画面中央寄りの
-		    固定パネル (ApprovalDrawer だけが使う。docs/research/card-expand.md「拡大後の大きさ」) */
+		    固定パネル (承認待ちと、メールの差出人。docs/research/card-expand.md「拡大後の大きさ」) */
 		variant?: 'side' | 'center';
+		/** 'center' のとき、ここから広がり、閉じるとここへ縮む (押した要素の矩形)。無ければ
+		    その場に開く。開いた瞬間の値だけを使う */
+		from?: DOMRect | null;
+		/** 閉じる動きが終わった。押した要素を隠していたら戻す、焦点を戻す、の後始末に使う */
+		onsettled?: (morphed: boolean) => void;
 	} = $props();
 
 	/** app.css の --d-exit。退場の 200 ミリ秒を見せてから中身を外す */
@@ -41,7 +48,9 @@
 	// なら変化に反応する
 	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 	// 起点があり、中央のパネルで、動きを減らす設定でないときだけ広げる
-	const morph = $derived(variant === 'center' && !media.mobile && !!ui.approvalFrom && !reducedMotion.current);
+	/* 起点は開いた瞬間に控える。呼び出し側が from を外しても、縮む先に使えるようにする */
+	let origin: DOMRect | null = $state(null);
+	const morph = $derived(variant === 'center' && !media.mobile && !!origin && !reducedMotion.current);
 	const box = (r: DOMRect) => ({
 		top: `${r.top}px`,
 		left: `${r.left}px`,
@@ -66,24 +75,19 @@
 			// を保ち続け、誰も cancel() しない。450ms 以内に開き直すと、広がる動きの終点を測る
 			// 前にこれが残っていて「カード → カード」の動きに固まる。開く前に必ず消す
 			panel?.getAnimations().forEach((a) => a.cancel());
-			// 閉じる途中の後始末は上の clearTimeout で消える。カードから開き直したのでなければ
-			// (起点が無ければ)、隠していたカードをここで見せ直す
-			if (!ui.approvalFrom) ui.approvalCardHidden = false;
+			origin = from;
 			render = true;
 			leaving = false;
 			pushState('', { drawer: true });
 			pushed = true;
 			return;
 		}
-		// レビュー C2/I1 — approvalFrom は「今回の Drawer が起点として使う値」。閉じる分岐に
-		// 入った時点で即座に使い切って null に戻す。wasMorph でない経路 (動きを減らす設定・
-		// 961px 未満など) でも戻さないと、カードは二度と expanded が外れず
-		// visibility: hidden のまま固定される。縮む先の矩形はローカル変数 from で持つ
+		// 起点は閉じる分岐で使い切る。縮む先の矩形はローカル変数 to で持つ
 		const wasMorph = morph;
-		const from = ui.approvalFrom;
-		ui.approvalFrom = null;
-		if (wasMorph && panel && from) {
-			panel.animate([box(panel.getBoundingClientRect()), box(from)], {
+		const to = origin;
+		origin = null;
+		if (wasMorph && panel && to) {
+			panel.animate([box(panel.getBoundingClientRect()), box(to)], {
 				duration: MORPH_MS,
 				easing: SHRINK,
 				fill: 'forwards'
@@ -99,17 +103,9 @@
 			() => {
 				render = false;
 				leaving = false;
-				// カードを隠すのは縮み終わりまで (today/+page.svelte の expanded={ui.approvalCardHidden})
-				ui.approvalCardHidden = false;
-				if (wasMorph && from) {
-					// カードは縮み終わるまで visibility: hidden なので、bits-ui の戻し
-					// (onCloseAutoFocus で止めてある) では焦点が乗らない。見えるようにしてから戻す。
-					// レビュー S2 — その間に利用者が別の場所へ Tab で移っていたら奪わない
-					tick().then(() => {
-						if (document.activeElement && document.activeElement !== document.body) return;
-						document.querySelector<HTMLElement>('.card[data-card="approvals"]')?.focus();
-					});
-				}
+				// 押した要素を隠すのは縮み終わりまで。見せ直しと焦点の戻しは呼び出し側に任せる
+				// (押した要素は縮み終わるまで visibility: hidden なので、bits-ui の戻しでは焦点が乗らない)
+				onsettled?.(wasMorph && !!to);
 			},
 			wasMorph ? MORPH_MS : EXIT_MS
 		);
@@ -120,8 +116,8 @@
 		if (!panel || !morph || leaving) return;
 		// レビュー I1 — 終点を測る前に、残っている動き (直前の縮みなど) を消してから測る
 		panel.getAnimations().forEach((a) => a.cancel());
-		const to = panel.getBoundingClientRect();
-		panel.animate([box(ui.approvalFrom!), box(to)], { duration: MORPH_MS, easing: GROW });
+		const end = panel.getBoundingClientRect();
+		panel.animate([box(origin!), box(end)], { duration: MORPH_MS, easing: GROW });
 	});
 
 	// 退場の 200 ミリ秒が終わるまでカードの塗りを戻さない。open で切ると覆いが消える前に

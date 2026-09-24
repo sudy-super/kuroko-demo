@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { db } from '$lib/store.svelte';
 	import { ui } from '$lib/ui.svelte';
 	import Drawer from './Drawer.svelte';
@@ -21,11 +22,34 @@
 			.toSorted((x, y) => (y.executedAt ?? '').localeCompare(x.executedAt ?? ''))
 			.slice(0, 3)
 	);
+
+	/* Today のカードを隠すのは縮み終わりまで (today/+page.svelte の expanded={ui.approvalCardHidden})。
+	   縮んで戻ったときは、見えるようにしてから焦点をカードへ戻す。その間に利用者が別の場所へ
+	   Tab で移っていたら奪わない (レビュー S2) */
+	function settled(morphed: boolean) {
+		ui.approvalCardHidden = false;
+		if (!morphed) return;
+		tick().then(() => {
+			if (document.activeElement && document.activeElement !== document.body) return;
+			document.querySelector<HTMLElement>('.card[data-card="approvals"]')?.focus();
+		});
+	}
 </script>
 
 <!-- 画面中央寄りの固定パネル (右からのドロワーではなく)。上部バーのピルと重ならないようにするため
      (docs/research/card-expand.md「周囲の扱い」)。作業履歴の Drawer は既定 (side) のまま変えない -->
-<Drawer open={ui.approvalDrawer} title="承認待ち" onclose={() => (ui.approvalDrawer = false)} variant="center">
+<Drawer
+	open={ui.approvalDrawer}
+	title="承認待ち"
+	onclose={() => {
+		ui.approvalDrawer = false;
+		// 起点は開いた瞬間に Drawer が控えるので、ここで外す (次に上部バーから開いたときに残さない)
+		ui.approvalFrom = null;
+	}}
+	variant="center"
+	from={ui.approvalFrom}
+	onsettled={settled}
+>
 	{#if sendingCount}
 		<p class="ap-count" aria-live="polite">承認待ち {pendingCount} 件 ・ 送信中 {sendingCount} 件</p>
 	{/if}

@@ -34,7 +34,8 @@
 	const stats = $derived(person ? personStats(db, person.id) : undefined);
 </script>
 
-<aside class="card person-panel" aria-label="差出人の情報">
+<!-- 置き場所はメールの差出人のパネル (Drawer) だけ。パネル自体が面なので、ここはカードにしない -->
+<aside class="person-panel" aria-label="差出人の情報">
 	{#if person}
 		<svelte:element this={`h${headingLevel}`} class="pp-name">{person.name}</svelte:element>
 		<p class="muted">{company?.name ?? '会社の登録なし'} {person.title}</p>

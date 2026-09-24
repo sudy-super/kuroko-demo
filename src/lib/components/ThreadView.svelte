@@ -8,7 +8,19 @@
 	import SourceIcon from './SourceIcon.svelte';
 	import ReplyBox from './ReplyBox.svelte';
 
-	let { thread, ondone }: { thread: MessageThread; ondone: () => void } = $props();
+	let {
+		thread,
+		ondone,
+		onsender,
+		senderHidden = false
+	}: {
+		thread: MessageThread;
+		ondone: () => void;
+		/** 差出人の行を押した。その行から差出人のパネルを広げる (inbox/+page.svelte) */
+		onsender: (el: HTMLElement) => void;
+		/** パネルが開いている間は行を隠す (パネルがこの行から広がって見えるように) */
+		senderHidden?: boolean;
+	} = $props();
 
 	const messages = $derived(
 		db.messages.filter((m) => m.threadId === thread.id).sort((a, b) => a.at.localeCompare(b.at))
@@ -35,7 +47,15 @@
 <article class="card thread" aria-label="メールの本文">
 	<header class="thread-head">
 		<h2>{thread.subject}</h2>
-		<p class="sender"><SourceIcon source={thread.source} />{senderMeta}</p>
+		<!-- 押すと差出人の情報がこの行から広がる (承認待ちのカードと同じ作り) -->
+		<button
+			class="sender"
+			class:hidden={senderHidden}
+			aria-haspopup="dialog"
+			onclick={(e) => onsender(e.currentTarget)}
+		>
+			<SourceIcon source={thread.source} />{senderMeta}<Icon name="ic-chev" size={16} />
+		</button>
 		{#if why}<p class="why">{why}</p>{/if}
 	</header>
 
@@ -67,13 +87,29 @@
 		margin: 0;
 		font-size: 24px;
 	}
+	/* 押せることが分かるよう、指を載せると地を敷き、末尾に山形を置く。
+	   左の余白を詰めて、題名と文字の頭をそろえる */
 	.sender {
 		display: flex;
 		align-items: center;
 		gap: var(--sp-2);
-		margin: var(--sp-1) 0 0;
+		min-height: 36px;
+		margin: var(--sp-1) 0 0 calc(var(--sp-2) * -1);
+		padding: 0 var(--sp-2);
+		border: 0;
+		border-radius: var(--r-pill);
+		background: none;
 		color: var(--ink-2);
+		font: inherit;
 		font-size: 14px;
+		cursor: pointer;
+		transition: background var(--d-fast) var(--ease-out);
+	}
+	.sender:hover {
+		background: var(--hover);
+	}
+	.sender.hidden {
+		visibility: hidden;
 	}
 	.why {
 		margin: var(--sp-1) 0 0;
