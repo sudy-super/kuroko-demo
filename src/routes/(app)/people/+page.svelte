@@ -16,6 +16,7 @@
 	];
 
 	let tab = $state<Tab>('people');
+	const current = $derived(TABS.find((t) => t.key === tab)!);
 	// 案内の筋書き (scenarios.ts) が /people?ocr=1 で直接開く
 	let cardOpen = $state(page.url.searchParams.get('ocr') === '1');
 
@@ -27,6 +28,13 @@
 
 	const staff = (companyId: string) => db.people.filter((p) => p.companyId === companyId).length;
 </script>
+
+{#snippet col(name: string, sub: string)}
+	<span class="people-col">
+		<span class="tc-text">{name}</span>
+		<span class="sub">{sub}</span>
+	</span>
+{/snippet}
 
 <svelte:head><title>会社・人物・案件 — KUROKO AI</title></svelte:head>
 
@@ -49,16 +57,12 @@
 		<!-- /inbox・/tasks と同じ形の小見出し。直上のタブと重なるが、絞り込みではなく一覧そのものの見出し -->
 		<section class="card people-list" aria-labelledby="people-list-head">
 			<h2 class="list-head" id="people-list-head">
-				<Icon name={TABS.find((t) => t.key === tab)!.icon} size={16} />{TABS.find((t) => t.key === tab)!
-					.label}<span class="num">{count[tab]}</span>
+				<Icon name={current.icon} size={16} />{current.label}<span class="num">{count[tab]}</span>
 			</h2>
 			{#if tab === 'people'}
 				{#each db.people as p (p.id)}
 					<a class="list-row lg" href="/people/{p.id}">
-						<span class="people-col">
-							<span class="tc-text">{p.name}</span>
-							<span class="sub">{companyOf(db, p.companyId)?.name ?? '会社の登録なし'} {p.title}</span>
-						</span>
+						{@render col(p.name, `${companyOf(db, p.companyId)?.name ?? '会社の登録なし'} ${p.title}`)}
 						<!-- 人物のタグは分類 (Atlassian の Tag) なので、状態の Lozenge とは見た目を分ける -->
 						{#each p.tags.slice(0, 2) as t (t)}<span class="badge tag">{t}</span>{/each}
 					</a>
@@ -66,10 +70,7 @@
 			{:else if tab === 'companies'}
 				{#each db.companies as c (c.id)}
 					<a class="list-row lg" href="/companies/{c.id}">
-						<span class="people-col">
-							<span class="tc-text">{c.name}</span>
-							<span class="sub">{c.industry} / {c.size}</span>
-						</span>
+						{@render col(c.name, `${c.industry} / ${c.size}`)}
 						<span class="badge">担当 {staff(c.id)} 名</span>
 					</a>
 				{/each}
@@ -77,10 +78,7 @@
 				{#each db.projects as pj (pj.id)}
 					{@const people = pj.personIds.map((id) => personOf(db, id)).filter((p) => !!p)}
 					<a class="list-row lg" href="/projects/{pj.id}">
-						<span class="people-col">
-							<span class="tc-text">{pj.name}</span>
-							<span class="sub">{companyOf(db, pj.companyId)?.name ?? ''}</span>
-						</span>
+						{@render col(pj.name, companyOf(db, pj.companyId)?.name ?? '')}
 						<ProjectStatusIcon status={pj.status} />
 						<span class="num muted people-amount">{pj.amount}</span>
 						<Avatars {people} />
