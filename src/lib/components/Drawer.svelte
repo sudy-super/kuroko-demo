@@ -3,7 +3,7 @@
 	import { MediaQuery } from 'svelte/reactivity';
 	import { Dialog } from 'bits-ui';
 	import { pushState } from '$app/navigation';
-	import { media } from '$lib/media.svelte';
+	import { mobile } from '$lib/media.svelte';
 	import { markOverlay, keepOpenOnFrame } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 
@@ -50,7 +50,7 @@
 	// 起点があり、中央のパネルで、動きを減らす設定でないときだけ広げる
 	/* 起点は開いた瞬間に控える。呼び出し側が from を外しても、縮む先に使えるようにする */
 	let origin: DOMRect | null = $state(null);
-	const morph = $derived(variant === 'center' && !media.mobile && !!origin && !reducedMotion.current);
+	const morph = $derived(variant === 'center' && !mobile.current && !!origin && !reducedMotion.current);
 	const box = (r: DOMRect) => ({
 		top: `${r.top}px`,
 		left: `${r.left}px`,
@@ -176,11 +176,11 @@
 						{...props}
 						aria-modal="false"
 						bind:this={panel}
-						class={media.mobile ? 'sheet' : variant === 'center' ? 'panel-center' : 'drawer'}
+						class={mobile.current ? 'sheet' : variant === 'center' ? 'panel-center' : 'drawer'}
 						class:leave={leaving}
 						class:morph
 					>
-						{#if media.mobile}<div class="sheet-handle"></div>{/if}
+						{#if mobile.current}<div class="sheet-handle"></div>{/if}
 						<div class="row" style="justify-content: space-between; margin-bottom: var(--sp-4)">
 							<Dialog.Title>
 								{#snippet child({ props: titleProps })}<h3 {...titleProps}>{title}</h3>{/snippet}

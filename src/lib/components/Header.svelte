@@ -5,7 +5,7 @@
 	import { fmtYMDW, fmtMDW, hm } from '$lib/dates';
 	import { stopGuide } from '$lib/actions';
 	import { panels, ui } from '$lib/ui.svelte';
-	import { media } from '$lib/media.svelte';
+	import { mobile } from '$lib/media.svelte';
 	import Icon from './Icon.svelte';
 	import DemoMenu from './DemoMenu.svelte';
 	import PillPanel from './PillPanel.svelte';
@@ -49,14 +49,14 @@
 
 	/* island.md「常時見せる情報」— compact に残すのは一目で分かる最小限だけ。
 	   案内の最中は段階の表示を足すぶん、日付を短い形に畳んで幅を 560px に収める */
-	const shortDate = $derived(media.mobile || guideOn);
+	const shortDate = $derived(mobile.current || guideOn);
 
 	/* 取り消しの猶予を持つトーストは、デスクトップではピルの中に出す (Toast.svelte は出さない)。
 	   猶予の間は輪 + 文言 + 取り消す、切れたあとは文言だけを、トーストが消えるまで出す
 	   (components 3.7「5 秒が過ぎても中身は消えない」)。その間は日付・利用者名・案内の段階札を
 	   畳んで幅を空ける (island.md「広がったときの中身」— 1 度に 1 項目)。
 	   時計・承認待ちの件数バッジ・アイコン 3 つは island.md「常時見せる情報」なので残す */
-	const counting = $derived(!media.mobile && !!ui.toast?.island && !ui.toast.leaving);
+	const counting = $derived(!mobile.current && !!ui.toast?.island && !ui.toast.leaving);
 
 	/* 幅は max-content のままだと、中身が入れ替わった瞬間に transition を経ずに跳ぶ
 	   (interpolate-size は width の指定値が変わったときにしか効かない。実測で 486→725px が 0ms)。
@@ -156,7 +156,7 @@
 	     デスクトップは案内中も時計を残し、代わりに利用者名を畳む (review-task-10n.md Minor 2)。
 	     モバイルは 390px 幅にハンバーガー・アイコン 3 個まで並ぶので、案内中に段階の札を出す
 	     ぶんは時計を畳んだままにする (この幅は Minor 2 の指摘の対象外、既存のまま) -->
-	{#if !(guideOn && media.mobile)}<span class="num">{hm(now)}</span>{/if}
+	{#if !(guideOn && mobile.current)}<span class="num">{hm(now)}</span>{/if}
 	{#if guideOn && !counting}
 		<!-- 仕様 11.3 の案内。段階が進んでも入れ物は作り直さず、中の文字だけが変わる
 		     (island.md「動きの時間と緩急」の「既存の要素を保ったまま動かす」)。
@@ -194,12 +194,12 @@
 		{/if}
 	</div>
 	<div class="row" style="margin-left: auto; gap: var(--sp-3)">
-		{#if !media.mobile && !guideOn && !counting}<span class="num">{db.user.name}</span>{/if}
+		{#if !mobile.current && !guideOn && !counting}<span class="num">{db.user.name}</span>{/if}
 		{@render tools()}
 	</div>
 {/snippet}
 
-{#if media.mobile}
+{#if mobile.current}
 	<header class="header solid">
 		<button class="iconbtn" aria-label="メニューを開く" onclick={() => (ui.mobileMenu = true)}>
 			<Icon name="ic-list" size={20} />
