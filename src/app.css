@@ -3742,9 +3742,9 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .panel-center::after {
    Task 10e — isolation: isolate も CSS で持つ。ライブラリは mountCanvas でこれをインラインに
    書き込むが (dom.js:189)、WebGL2 が使えない環境では mountCanvas 自体が呼ばれない
    (dom.js:144-146)。そのとき .bento が積み重ねの文脈にならないと、上の .hole の z-index: -2 が
-   .bento の外へ抜けて、塗りを持つ祖先の裏に回った瞬間にオーブが消える */
+   .bento の外へ抜けて、塗りを持つ祖先の裏に回った瞬間にオーブが消える
+   (position: relative は上の .bento の定義にある) */
 .bento {
-	position: relative;
 	isolation: isolate;
 }
 
