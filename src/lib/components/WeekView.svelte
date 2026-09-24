@@ -36,10 +36,14 @@
 		return () => clearInterval(t);
 	});
 
-	// 開いた直後だけ 8:00 が上端に来るよう送る。以降は利用者の位置を動かさない
+	/* 開いた直後だけ 8:00 が上端に来るよう送る。狭い幅で格子が横に送られるときは、今日の列が
+	   見える位置まで横にも送る (390px では木曜以降が画面の外に出る)。以降は利用者の位置を動かさない */
 	let body: HTMLDivElement | undefined = $state();
 	$effect(() => {
-		if (body) body.scrollTop = OPEN;
+		if (!body) return;
+		body.scrollTop = OPEN;
+		const today = body.querySelector<HTMLElement>('.week-day.on');
+		if (today) body.scrollLeft = Math.max(0, today.offsetLeft + today.offsetWidth - body.clientWidth);
 	});
 
 	const top = (m: number) => m * PX;
@@ -99,8 +103,10 @@
 		<div></div>
 		{#each days as d, i (i)}
 			{@const k = key(d)}
-			<div class="week-day" class:on={k === todayKey}>
-				{WD[i]}<span class="num">{d.getDate()}</span>
+			<!-- Google カレンダーと同じく、曜日を小さく上に、日付を大きく下に置き、今日は日付を
+			     塗りの丸で囲む (ユーザー指示 2026-09-25)。列全体は塗らない -->
+			<div class="week-day" class:on={k === todayKey} aria-current={k === todayKey ? 'date' : undefined}>
+				<span class="week-wd">{WD[i]}</span><span class="week-date num">{d.getDate()}</span>
 			</div>
 		{/each}
 	</div>
@@ -110,7 +116,7 @@
 		</div>
 		{#each days as d, i (i)}
 			{@const k = key(d)}
-			<div class="week-col" class:on={k === todayKey}>
+			<div class="week-col">
 				{#each layoutColumns(eventsOn(db, k), WEEK_MIN_DURATION_MIN) as { event, col, cols } (event.id)}
 					{@const h = height(event)}
 					{@const a = attrs(event)}

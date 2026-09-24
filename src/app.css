@@ -3855,13 +3855,28 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
 	display: grid;
 	grid-template-columns: 64px repeat(7, minmax(72px, 1fr));
 }
+/* 時刻の目盛りの列は、狭い幅で横に送っても左に留める。送った先の予定が透けないよう、
+   地の色の上にカードの面 (.card の白 0.7) を重ねた色で不透明に塗る */
+.week-body > :first-child {
+	position: sticky;
+	left: 0;
+	z-index: 1;
+	background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), var(--bg);
+}
+/* 曜日の行の左上の空きも留める。曜日の行と同じ地の色 */
+.week-head > :first-child {
+	position: sticky;
+	left: 0;
+	z-index: 1;
+	background: var(--bg);
+}
 .week-head {
 	/* 縦の送りが .week に一本化されたので、この行だけを画面に留める。横は .week がまとめて
 	   送るので left は指定しない (top だけの sticky は横方向は普通に流れる) */
 	position: sticky;
 	top: 0;
 	z-index: 2;
-	height: 48px;
+	height: 72px;
 	border-bottom: 1px solid var(--line-2);
 	/* 送っても下の予定が透けないよう不透明にする。--solid (白 0.92) だとカレンダーの面より
 	   白く浮いて帯に見えるので、--bg (不透明) を使い地の色に合わせる */
@@ -3869,19 +3884,31 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
 }
 .week-day {
 	display: flex;
+	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	gap: var(--sp-2);
+	gap: 2px;
 	font-size: 12px;
 	color: var(--ink-2);
 }
-.week-day .num {
-	font-size: 16px;
+.week-date {
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	font-size: 22px;
+	color: var(--ink);
 }
-/* 今日の列は色だけでなく太さでも示す (WCAG 1.4.1) */
-.week-day.on {
+/* 今日は日付を塗りの丸で囲む (Google カレンダー、月表示の .month-cell.on と同じ)。
+   色だけでなく形でも示す (WCAG 1.4.1) */
+.week-day.on .week-wd {
 	color: var(--accent);
 	font-weight: 700;
+}
+.week-day.on .week-date {
+	background: var(--accent);
+	color: #fff;
 }
 /* .week-body (.week-cols と合わせて格子の実体)は 0:00〜24:00 の全部を持つ。高さ・送りは
    上の .week に一本化したので、このクラス自身は overflow も max-height も持たない
@@ -3906,11 +3933,6 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
 		transparent 1px 88px
 	);
 	border-left: 1px solid var(--line);
-}
-.week-col.on {
-	background:
-		repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px 88px),
-		rgba(47, 124, 246, 0.04);
 }
 /* calendar-block.md「塗りと文字」「左線の可否」— Apple カレンダー / Outlook の系統。
    薄い塗り + 左端の細いバー (3px) + 塗りと同じ色相の濃い文字 (白文字にしない)。
@@ -4054,8 +4076,9 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
 .month-cell.out .month-day {
 	color: var(--ink-3);
 }
+/* 日付はマスの中央上に置く (Google カレンダーの月表示、ユーザー指示 2026-09-25) */
 .month-day {
-	align-self: flex-start;
+	align-self: center;
 	border: 0;
 	background: none;
 	min-width: 24px;

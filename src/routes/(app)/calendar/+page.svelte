@@ -5,7 +5,7 @@
 	import { db } from '$lib/store.svelte';
 	import { deleteEvent, undo } from '$lib/actions';
 	import { toast } from '$lib/ui.svelte';
-	import { parse, key, addDays, fmtMD, fmtYMDW } from '$lib/dates';
+	import { parse, key, addDays, fmtYMDW } from '$lib/dates';
 	import { weekOf } from '$lib/calendar';
 	import { linkUrl } from '$lib/derived';
 	import { personOf, projectOf } from '$lib/derived';
@@ -22,11 +22,15 @@
 	let detail = $state<CalendarEvent | null>(null);
 
 	const days = $derived(weekOf(cursor));
-	const title = $derived(
-		view === 'month'
-			? `${cursor.getFullYear()}年${cursor.getMonth() + 1}月`
-			: `${fmtMD(days[0])} 〜 ${fmtMD(days[6])}`
-	);
+	/* 週表示でも見出しは年と月にする。日付は曜日の行が大きく出すので、範囲を重ねて書かない
+	   (Google カレンダーと同じ。月をまたぐ週は「9月〜10月」) */
+	const ym = (d: Date) => `${d.getFullYear()}年${d.getMonth() + 1}月`;
+	const title = $derived.by(() => {
+		if (view === 'month') return ym(cursor);
+		const [a, b] = [days[0], days[6]];
+		if (a.getMonth() === b.getMonth()) return ym(a);
+		return a.getFullYear() === b.getFullYear() ? `${ym(a)}〜${b.getMonth() + 1}月` : `${ym(a)}〜${ym(b)}`;
+	});
 
 	const params = $derived(page.url.searchParams);
 	const formOpen = $derived(params.get('new') === '1');
@@ -63,32 +67,28 @@
 <div class="cal">
 	<h1 class="sr-only">カレンダー</h1>
 
+	<!-- 並びは Google カレンダーに合わせ、日付を動かす操作と見出しを左、表示の切り替えと
+	     追加を右に置く (ユーザー指示 2026-09-25) -->
 	<div class="row cal-bar">
-		<!-- Task 10p (参考の良い点 9、調査: Apple HIG Segmented controls「all segments are usually
-		     equal in width」、M3 Segmented buttons「Segment width = Container width / total
-		     segments」) — 月/週は排他の表示切り替えなので絞り込みチップの .chip ではなく
-		     等幅・隣接・単一外枠の segmented control (.seg) にする。選択は塗りだけで示し、
-		     チェック印は出さない (どちらを選んでも幅が変わらない) -->
-		<div class="seg" role="group" aria-label="表示の切り替え">
-			<button class="seg-btn" class:on={view === 'month'} aria-pressed={view === 'month'} onclick={() => (view = 'month')}>月</button>
-			<button class="seg-btn" class:on={view === 'week'} aria-pressed={view === 'week'} onclick={() => (view = 'week')}>週</button>
-		</div>
-		<!-- Mac のカレンダーと同じく「今日」は前後の矢印の間に枠なしで置き、日付を動かす操作を
-		     1 つの塊にする (ユーザー指摘 2026-09-24: 枠付きで単独に並ぶと浮いて見えた) -->
 		<div class="row cal-nav">
 			<button class="iconbtn" aria-label={view === 'month' ? '前の月' : '前の週'} onclick={() => shift(-1)}>
 				<Icon name="ic-left" size={20} />
 			</button>
 			<button class="btn text sm" onclick={() => (cursor = parse(db.seededOn))}>今日</button>
-			<!-- ic-arrow (軸+矢じり) は ic-left (山形) と絵柄の系統が違うとの指摘。対になる山形の
-			     ic-chev に揃える -->
 			<button class="iconbtn" aria-label={view === 'month' ? '次の月' : '次の週'} onclick={() => shift(1)}>
 				<Icon name="ic-chev" size={20} />
 			</button>
 		</div>
 		<h2 class="cal-title" aria-live="polite">{title}</h2>
-		<!-- 追加は Apple のカレンダーと同じく「+」だけのボタンにして、日付の操作と同じ列の
-		     右端に置く (青い塗りの大きなボタンが上部バーの下に単独で浮いていた) -->
+		<!-- Task 10p (参考の良い点 9、調査: Apple HIG Segmented controls「all segments are usually
+		     equal in width」、M3 Segmented buttons「Segment width = Container width / total
+		     segments」) — 月/週は排他の表示切り替えなので絞り込みチップの .chip ではなく
+		     等幅・隣接・単一外枠の segmented control (.seg) にする。選択は塗りだけで示し、
+		     チェック印は出さない (どちらを選んでも幅が変わらない) -->
+		<div class="seg cal-seg" role="group" aria-label="表示の切り替え">
+			<button class="seg-btn" class:on={view === 'month'} aria-pressed={view === 'month'} onclick={() => (view = 'month')}>月</button>
+			<button class="seg-btn" class:on={view === 'week'} aria-pressed={view === 'week'} onclick={() => (view = 'week')}>週</button>
+		</div>
 		<a class="iconbtn cal-add" href="/calendar?new=1" title="予定を追加" aria-label="予定を追加">
 			<Icon name="ic-plus" size={20} />
 		</a>
@@ -167,8 +167,10 @@
 	.cal-title {
 		font-size: 18px;
 	}
-	.cal-add {
+	.cal-seg {
 		margin-left: auto;
+	}
+	.cal-add {
 		color: var(--accent);
 	}
 	.cal-panel {
