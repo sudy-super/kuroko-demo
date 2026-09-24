@@ -66,7 +66,7 @@
 			<div class="lc-turn" class:mine>
 				<!-- 送り手は位置や色だけでなく名前でも示す (chat.md 観点 1.2)。
 				     KUROKO の印は Carbon for AI (資料 10) の「AI であることの表示」も兼ねる -->
-				<p class="lc-who">
+				<p class="msg-who">
 					{#if m.who === 'KUROKO'}<Icon name="ic-robot" size={16} />{/if}
 					{m.who}<span class="lc-at">{m.at}</span>
 				</p>
@@ -86,7 +86,7 @@
 										<button class="btn text sm" onclick={() => undoApproval(ap.id)}>取り消す</button>
 									</div>
 								{:else}
-									<p class="lc-done">
+									<p class="msg-done">
 										<Icon name={ap.status === 'executed' ? 'ic-check' : 'ic-x'} size={20} />
 										{ap.status === 'executed' ? '送信しました' : '却下しました'}
 									</p>
@@ -154,7 +154,6 @@
 		border-bottom: 1px solid var(--line);
 	}
 	.lc-head h2 {
-		margin: 0;
 		font-size: 15px;
 		overflow-wrap: anywhere;
 	}
@@ -185,13 +184,6 @@
 	.lc.slack .lc-turn.mine {
 		margin-left: 0;
 		align-items: flex-start;
-	}
-	.lc-who {
-		display: flex;
-		align-items: center;
-		gap: var(--sp-2);
-		color: var(--ink-3);
-		font-size: 12px;
 	}
 	.lc-at {
 		color: var(--ink-3);
@@ -252,15 +244,6 @@
 		align-items: center;
 		gap: var(--sp-2);
 		margin-top: var(--sp-1);
-	}
-	/* 済んだことの出し方は ChatCard の .chat-done と同じ */
-	.lc-done {
-		display: flex;
-		align-items: center;
-		gap: var(--sp-2);
-		margin-top: var(--sp-1);
-		color: var(--ink-2);
-		font-size: 14px;
 	}
 	.lc-busy {
 		padding: var(--sp-2) var(--sp-4) 0;

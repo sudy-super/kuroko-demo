@@ -19,9 +19,6 @@
 	flex: 1;
 	min-width: 0;
 }
-.people-title h1 {
-	margin: 0;
-}
 .people-add {
 	margin-left: auto;
 	color: var(--accent);
@@ -134,7 +131,6 @@
 	flex-direction: column;
 	justify-content: center;
 }
-.people-name,
 .people-col .sub,
 .people-ident {
 	overflow: hidden;
@@ -171,11 +167,7 @@
 	width: 100%;
 }
 .pp-name {
-	margin: 0;
 	font-size: 20px;
-}
-.person-panel p {
-	margin: 0;
 }
 .pp-mail {
 	color: var(--ink-2);

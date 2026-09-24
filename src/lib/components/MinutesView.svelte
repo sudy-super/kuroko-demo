@@ -111,7 +111,6 @@
 		margin-bottom: var(--sp-6);
 	}
 	.mv-summary {
-		margin: 0;
 		line-height: 1.7;
 	}
 	.mv-sub {
@@ -125,7 +124,6 @@
 		line-height: 1.8;
 	}
 	.mv-to {
-		margin: 0;
 		color: var(--ink-2);
 		font-size: 13px;
 	}

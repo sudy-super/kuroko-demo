@@ -1192,7 +1192,6 @@ svg.i {
 	gap: var(--sp-2);
 	height: 32px;
 	padding: 0 var(--sp-4);
-	margin: 0;
 	color: var(--ink-3);
 	font-size: 12px;
 	font-weight: 500;
@@ -1202,6 +1201,23 @@ svg.i {
 }
 .list-head .num {
 	color: var(--ink-3);
+}
+
+/* 会話 (/chat と LineChat) の送り手の行と、カードの操作が済んだことの行 */
+.msg-who {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-2);
+	color: var(--ink-3);
+	font-size: 12px;
+}
+.msg-done {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-2);
+	margin-top: var(--sp-1);
+	color: var(--ink-2);
+	font-size: 14px;
 }
 
 /* 関係する人物の頭文字の丸。新しい色相は増やさず --accent-soft / --accent だけを使う */
@@ -1733,7 +1749,6 @@ svg.i {
 	}
 }
 .pill-title {
-	margin: 0;
 	font-size: 14px;
 	color: var(--ink-2);
 }
@@ -1745,7 +1760,6 @@ svg.i {
 	font-size: 14px;
 }
 .pill-steps {
-	margin: 0;
 	font-size: 14px;
 	line-height: 1.5;
 	color: var(--ink-2);

@@ -245,11 +245,6 @@
 	line-height: 1.25;
 	color: var(--accent);
 }
-.week-ev-n {
-	overflow: hidden;
-	white-space: nowrap;
-	text-overflow: ellipsis;
-}
 /* 2 行目の時刻。--ink-3 は指したときの濃い塗りの上で 4.5:1 を割るので --ink-2 */
 .week-ev-time {
 	overflow: hidden;

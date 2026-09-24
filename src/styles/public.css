@@ -145,14 +145,18 @@
 	/* 画面の下端の余白は最後の要素が持つ。器や列に付けると、入りきらない窓でスクロールの終点より外に出る */
 	padding-bottom: max(var(--sp-6), env(safe-area-inset-bottom));
 }
-/* ボタンにはガラスを当てない (文字のコントラストが持たない)。--accent の平らな塗り */
-.btn.pri.public-cta {
+/* ボタンにはガラスを当てない (文字のコントラストが持たない)。/schedule/[token] の副ボタンと
+   破壊的なボタンも寸法だけそろえ、塗りは .btn.sec / .btn.danger のまま (主ボタンは 1 個) */
+.btn.public-cta {
 	width: 100%;
 	max-width: 360px;
 	height: 52px;
 	border-radius: var(--r-pill);
-	background: var(--accent);
 	font-size: 16px;
+}
+/* .btn.pri:hover と同じ詳細度で後ろに置き、指しても塗りを変えない */
+.btn.pri.public-cta {
+	background: var(--accent);
 }
 /* components 3.6 — 補足の文字は 12px まで。文字寸法の段階の下端 */
 .public .note {
@@ -169,16 +173,6 @@
    だけだと本文が下端に貼り付く。下側にも余りを分けて上下の中央に置く */
 .public-col:not(:has(> .orb)):not(:has(> .public-foot)) > .public-main {
 	margin-bottom: auto;
-}
-/* /schedule/[token] の「日時を変更する」「キャンセルする」は .public-cta の寸法だけそろえ、塗りは
-   .btn.sec / .btn.danger のまま (主ボタンは 1 個) */
-.btn.sec.public-cta,
-.btn.danger.public-cta {
-	width: 100%;
-	max-width: 360px;
-	height: 52px;
-	border-radius: var(--r-pill);
-	font-size: 16px;
 }
 /* 候補一覧・確定内容のまとめ。ガラスは使わない (docs/research/glass-scope.md、
    Welcome・接続画面と同じく下に曲げる内容がない)。.card の白い面だけ流用する */

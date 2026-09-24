@@ -135,12 +135,10 @@
 		justify-content: space-between;
 	}
 	.ap-title {
-		margin: 0;
 		font-size: 15px;
 	}
 	.ap-to,
 	.ap-subject {
-		margin: 0;
 		color: var(--ink-2);
 		font-size: 13px;
 	}

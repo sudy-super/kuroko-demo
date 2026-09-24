@@ -56,7 +56,7 @@
 				{#each db.people as p (p.id)}
 					<a class="list-row lg" href="/people/{p.id}">
 						<span class="people-col">
-							<span class="people-name">{p.name}</span>
+							<span class="tc-text">{p.name}</span>
 							<span class="sub">{companyOf(db, p.companyId)?.name ?? '会社の登録なし'} {p.title}</span>
 						</span>
 						<!-- 人物のタグは分類 (Atlassian の Tag) なので、状態の Lozenge とは見た目を分ける -->
@@ -67,7 +67,7 @@
 				{#each db.companies as c (c.id)}
 					<a class="list-row lg" href="/companies/{c.id}">
 						<span class="people-col">
-							<span class="people-name">{c.name}</span>
+							<span class="tc-text">{c.name}</span>
 							<span class="sub">{c.industry} / {c.size}</span>
 						</span>
 						<span class="badge">担当 {staff(c.id)} 名</span>
@@ -78,7 +78,7 @@
 					{@const people = pj.personIds.map((id) => personOf(db, id)).filter((p) => !!p)}
 					<a class="list-row lg" href="/projects/{pj.id}">
 						<span class="people-col">
-							<span class="people-name">{pj.name}</span>
+							<span class="tc-text">{pj.name}</span>
 							<span class="sub">{companyOf(db, pj.companyId)?.name ?? ''}</span>
 						</span>
 						<ProjectStatusIcon status={pj.status} />

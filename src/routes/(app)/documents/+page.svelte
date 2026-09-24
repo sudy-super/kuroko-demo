@@ -96,7 +96,7 @@
 							<DocKindIcon kind={d.kind} />
 							{#if pj}<span class="badge tag">{pj.name}</span>{/if}
 						</span>
-						<span class="people-name">{d.title}</span>
+						<span class="tc-text">{d.title}</span>
 						<span class="sub"
 							>{d.createdBy === 'KUROKO' ? 'KUROKO' : '自分'} / {when(d.createdAt)}</span
 						>

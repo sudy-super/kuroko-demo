@@ -58,7 +58,6 @@
 		gap: var(--sp-2);
 	}
 	h2 {
-		margin: 0;
 		font-size: 22px;
 		line-height: 1.4;
 		/* 高さを決め打ちしないので、折り返した分だけ伸びる (下に重ならない) */
@@ -76,7 +75,6 @@
 	}
 	.doc-toc h3,
 	.doc-sec h3 {
-		margin: 0;
 		font-size: 14px;
 		font-weight: 500;
 		color: var(--ink-3);

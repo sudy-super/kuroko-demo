@@ -160,7 +160,6 @@
 	}
 	.to,
 	.to-again {
-		margin: 0;
 		color: var(--ink-2);
 		font-size: 14px;
 	}
@@ -168,7 +167,6 @@
 		flex-wrap: wrap;
 	}
 	.busy {
-		margin: 0;
 		color: var(--ink-2);
 		font-size: 13px;
 	}
@@ -181,17 +179,14 @@
 		background: var(--accent-soft);
 	}
 	.proposal .tc-head h3 {
-		margin: 0;
 		font-size: 16px;
 		color: var(--ink);
 	}
 	.reason {
-		margin: 0;
 		color: var(--ink-2);
 		font-size: 13px;
 	}
 	.preview {
-		margin: 0;
 		padding: var(--sp-3) var(--sp-4);
 		border-radius: var(--r-s);
 		background: #fff;
@@ -206,7 +201,6 @@
 		scroll-margin-bottom: var(--content-bottom-clear);
 	}
 	.proposal-foot .note {
-		margin: 0;
 		color: var(--ink-3);
 		font-size: 12px;
 	}

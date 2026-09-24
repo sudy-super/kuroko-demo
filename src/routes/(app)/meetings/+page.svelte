@@ -36,7 +36,7 @@
 					{@const state = pastList ? (m.minutes ? '議事録あり' : '') : m.brief ? '準備あり' : ''}
 					<a class="list-row xl meet-row" href="/meetings/{m.id}">
 						<span class="people-col">
-							<span class="people-name">{m.title}</span>
+							<span class="tc-text">{m.title}</span>
 							<span class="meet-sub">
 								<span class="num">{ev ? `${fmtMDW(parse(ev.date))} ${ev.start}〜${ev.end}` : '日時未定'}</span>
 								{#if ev?.online || ev?.place}

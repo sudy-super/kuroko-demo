@@ -82,7 +82,6 @@
 		gap: var(--sp-4);
 	}
 	.thread-head h2 {
-		margin: 0;
 		font-size: 24px;
 	}
 	/* 押せることが分かるよう、指を載せると地を敷き、末尾に山形を置く。
@@ -132,7 +131,6 @@
 		text-align: right;
 	}
 	.body {
-		margin: 0;
 		padding: var(--sp-4);
 		border-radius: var(--r-m);
 		background: #fff;

@@ -114,7 +114,7 @@
 							{/each}
 							<!-- 題名は列の幅で切れるので、全文と属性をホバーでも読めるようにする。
 							     アイコンのツールチップと重ならないよう、button ではなく題名に付ける -->
-							<span class="week-ev-n" title={label(event, a)}>{event.title}</span>
+							<span class="tc-text" title={label(event, a)}>{event.title}</span>
 						</span>
 						{#if h >= TWO_LINES}
 							<!-- ブロックが狭いと入らないので、終わりの時刻から順に CSS で落とす -->

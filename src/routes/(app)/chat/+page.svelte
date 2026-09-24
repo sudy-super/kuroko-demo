@@ -54,7 +54,7 @@
 			<div class="chat-turn" class:mine={m.role === 'user'}>
 				<!-- chat.md 観点 1.2 — 送り手は位置や色だけでなく名前でも示す。
 				     Carbon for AI (資料 10) が求める「AI であることの表示」も兼ねる -->
-				<p class="chat-who">
+				<p class="msg-who">
 					{#if m.role === 'kuroko'}<Icon name="ic-robot" size={16} />{/if}
 					{m.role === 'kuroko' ? 'KUROKO' : db.user.name}
 				</p>
@@ -113,13 +113,6 @@
 	.chat-turn.mine {
 		margin-left: auto;
 		align-items: flex-end;
-	}
-	.chat-who {
-		display: flex;
-		align-items: center;
-		gap: var(--sp-2);
-		color: var(--ink-3);
-		font-size: 12px;
 	}
 	.chat-body {
 		padding: var(--sp-4);

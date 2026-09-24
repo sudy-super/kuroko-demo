@@ -32,7 +32,7 @@
 	<!-- 押すたびに予定や ToDo が増える操作は一度で終わらせ、済んだことを出す (HIG "provide a clear signal ...")。
 	     後から押せるままにするのは「開く」のような何度押しても同じ操作だけ (chat.md 観点 5.2) -->
 	{#if settled}
-		<p class="chat-done">
+		<p class="msg-done">
 			<Icon name={settled.status === 'accepted' ? 'ic-check' : 'ic-x'} size={20} />
 			{settled.status === 'accepted'
 				? settled.kind === 'event'
@@ -65,7 +65,6 @@
 		padding: var(--sp-4);
 	}
 	.chat-card h3 {
-		margin: 0;
 		font-size: 16px;
 		color: var(--ink);
 	}
@@ -85,13 +84,5 @@
 		flex-wrap: wrap;
 		gap: var(--sp-2);
 		margin-top: var(--sp-1);
-	}
-	.chat-done {
-		display: flex;
-		align-items: center;
-		gap: var(--sp-2);
-		margin-top: var(--sp-1);
-		color: var(--ink-2);
-		font-size: 14px;
 	}
 </style>
