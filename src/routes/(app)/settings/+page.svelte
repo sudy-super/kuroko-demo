@@ -69,7 +69,7 @@
 		pending = null;
 	}
 
-	/** 仕様 5.13 — どのサービスが正本を持つか */
+	/** 仕様 5.13 — どのデータをどのサービスに保存するか */
 	const SOURCE_OF_TRUTH: [string, string][] = [
 		['予定', 'Google カレンダー'],
 		['メール', 'Gmail'],
@@ -100,34 +100,35 @@
 
 	{#if tab === 'connect'}
 		<!-- settings-connect.md — HIG Lists and tables の grouped の形。見出し (header) はカードの上、
-		     補足 (footer) はカードの下に置き、行はロゴ・名前・状態・操作の 4 つに絞る
+		     補足 (footer) はカードの下に置き、行はロゴ・名前・スイッチの 3 つに絞る
 		     ("Keep item text succinct")。サービスごとの説明は接続の手順 (ConnectStep) で見せている -->
 		<div class="set-panes">
 			<section aria-labelledby="set-conn-head">
 				<h2 class="set-group-head" id="set-conn-head">連携</h2>
 				<div class="card set-group">
 					{#each db.settings.connections as c (c.id)}
-						<div class="list-row set-row has-logo">
+						<!-- 接続はスイッチにする (ユーザー裁定 2026-09-25)。本来はオンにすると各サービスの
+						     許可の画面へ移り、許可をやめたらオフに戻る。デモでは押した瞬間に切り替わる。
+						     HIG Toggles「switch は一覧の行の中で使う」。状態はつまみの位置と色の 2 つで示し、
+						     読み上げには role="switch" の checked が届く。行全体を押し先にする -->
+						<label class="list-row set-row has-logo">
 							<Icon name="b-{c.id}" size={24} />
 							<span class="set-name">{CONNECT_NAME[c.id]}</span>
-							<!-- 状態は形・文言・色の 3 つで示す (WCAG 1.4.1、HIG Toggles「色だけに頼らない」) -->
-							<span class="set-state" class:on={c.connected}>
-								<Icon name={c.connected ? 'ic-check-c' : 'ic-x-c'} size={16} />
-								<span class="set-state-text">{c.connected ? '接続済み' : '未接続'}</span>
-							</span>
-							<!-- 接続は外のサービスへの働きかけで 2 値の設定ではないので、スイッチにせず
-							     ボタンにする (HIG Toggles、settings-connect.md 3 節) -->
-							<button class="btn sm tint" onclick={() => toggleConnection(c.id)}>
-								{c.connected ? '解除' : '接続'}
-							</button>
-						</div>
+							<input
+								type="checkbox"
+								role="switch"
+								class="switch"
+								checked={c.connected}
+								onchange={() => toggleConnection(c.id)}
+							/>
+						</label>
 					{/each}
 				</div>
 				<p class="set-group-foot">接続したサービスの予定とメールを、KUROKO が自動で読み込みます。</p>
 			</section>
 
 			<section aria-labelledby="set-truth-head">
-				<h2 class="set-group-head" id="set-truth-head">データの正本</h2>
+				<h2 class="set-group-head" id="set-truth-head">データの保存先</h2>
 				<!-- iOS の設定の「項目名 … 値」の行。値は行の右端に二次的な文字で置く -->
 				<dl class="card set-group">
 					{#each SOURCE_OF_TRUTH as [what, where] (what)}
@@ -138,7 +139,7 @@
 					{/each}
 				</dl>
 				<p class="set-group-foot">
-					予定とメールの正本は各サービスにあります。KUROKO は読み書きするだけで、勝手に持ち出しません。
+					予定とメールは各サービスに保存されたままです。KUROKO は読み書きするだけで、勝手に持ち出しません。
 				</p>
 			</section>
 		</div>
@@ -262,7 +263,7 @@
 	.set-tabs {
 		padding: 0 var(--sp-5) var(--sp-4);
 	}
-	/* 連携と正本、レベルと必ず確認の 2 列。960px 以下は 1 列に落ちる */
+	/* 連携と保存先、レベルと必ず確認の 2 列。960px 以下は 1 列に落ちる */
 	.set-panes {
 		display: grid;
 		grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
@@ -305,23 +306,18 @@
 	.set-row.has-logo::after {
 		left: calc(var(--sp-5) + 24px + var(--sp-3));
 	}
-	div.set-row:hover {
+	div.set-row:hover,
+	dl .set-row:hover {
 		background: none;
+	}
+	/* スイッチの行は行全体が押し先 */
+	label.set-row {
+		cursor: pointer;
 	}
 	.set-name {
 		flex: 1;
 		min-width: 0;
 		font-weight: 500;
-	}
-	.set-state {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--sp-1);
-		color: var(--ink-3);
-		font-size: 14px;
-	}
-	.set-state.on {
-		color: var(--ok);
 	}
 	.set-group dt {
 		flex: 1;
@@ -448,15 +444,6 @@
 		}
 		.set-row.has-logo::after {
 			left: calc(var(--sp-4) + 24px + var(--sp-3));
-		}
-		/* 名前が折り返すので、状態は記号だけにする。文言は読み上げに残す (形と色で 2 つ) */
-		.set-state-text {
-			position: absolute;
-			width: 1px;
-			height: 1px;
-			overflow: hidden;
-			clip-path: inset(50%);
-			white-space: nowrap;
 		}
 	}
 </style>
