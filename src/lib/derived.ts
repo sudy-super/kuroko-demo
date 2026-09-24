@@ -1,5 +1,5 @@
 import type { Db, TodayItem, Meeting, CalendarEvent, Task, ProjectStatus, MessageThread, ActivityLog, ChannelIdentity } from './types';
-import { key, parse, addDays, bizDay, minutes, toHm, hm } from './dates';
+import { key, parse, addDays, bizDay, minutes, toHm } from './dates';
 
 export const personOf = (db: Db, id?: string) => db.people.find((p) => p.id === id);
 export const companyOf = (db: Db, id?: string) => db.companies.find((c) => c.id === id);

@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { db } from '$lib/store.svelte';
-	import { companyOf, documentOf, personOf, projectOf } from '$lib/derived';
+	import { documentOf, personOf, projectOf } from '$lib/derived';
 	import { generateDocument, sendDocument } from '$lib/actions';
 	import { ui, focusChatbar, toast } from '$lib/ui.svelte';
 	import { parse, rel } from '$lib/dates';
