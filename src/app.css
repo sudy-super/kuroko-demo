@@ -1105,15 +1105,15 @@ svg.i {
 	color: #fff;
 	box-shadow: none;
 }
-/* Task 10p (参考の良い点 9) — チェック印は選択・非選択のどちらでも常に描画し、非選択のときだけ
-   隠す。以前は {#if} でチェック印そのものを出し入れしており、選択を切り替えるたびに幅が変わって
-   隣のボタンの位置がずれた (ユーザー指摘: 月/週の切り替えでチェックが付くとボタンがずれる)。
-   幅を固定するのが目的なので、印を持たないチップ (People のタブなど) にも共通で効く */
-.chip .chip-check {
-	visibility: hidden;
+/* 選択を切り替えてもチップの幅を変えない (Task 10p、ユーザー指摘: 月/週の切り替えで
+   チェックが付くとボタンがずれる)。以前は非選択の印を visibility: hidden で隠していたが、
+   左にだけ印の分 (18px + 間 8px) の空白が残り、文字が右に寄って不自然だった
+   (ユーザー指摘 2026-09-24)。非選択では印を外し、その 26px を左右に 13px ずつ振り分ける */
+.chip:not(.on):has(.chip-check) {
+	padding-inline: calc(var(--sp-4) + 13px);
 }
-.chip.on .chip-check {
-	visibility: visible;
+.chip:not(.on) .chip-check {
+	display: none;
 }
 /* 選択中のチップは下地が accent なので、件数は白地に反転させる */
 .chip.on .badge.count {
