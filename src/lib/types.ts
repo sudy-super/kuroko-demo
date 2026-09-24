@@ -20,8 +20,9 @@ export const REASON_SENTENCE: Record<Reason, [string, string]> = {
 /* 承認の区分を示す文言。仕様 5.11 に日本語で載っているのは種別バッジの例の「外部送信」だけで、
    残りの 2 つは仕様がキー internal / internal_low としか書いていない。「社内」「低リスク」という
    日本語は indicators.md「承認センターの区分」の表記に合わせた。同じ節が、判断に直結する属性
-   なので記号ではなく Atlassian の Lozenge (短い文言ラベル)のまま出すと結論している */
-export const RISK_LABEL: Record<RiskLevel, string> = { external_send: '外部送信', internal: '社内', internal_low: '低リスク' };
+   なので記号ではなく Atlassian の Lozenge (短い文言ラベル)のまま出すと結論している。
+   社内と低リスクは動きが同じなので、利用者に見せる名前も「社内」にまとめた (RiskIcon.svelte) */
+export const RISK_LABEL: Record<RiskLevel, string> = { external_send: '外部送信', internal: '社内', internal_low: '社内' };
 export type LogKind = 'draft' | 'hold' | 'send' | 'register' | 'other';
 export type Automation = 'draft' | 'internal_auto' | 'trusted';
 

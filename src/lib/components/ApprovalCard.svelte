@@ -79,7 +79,7 @@
 	<div class="row ap-head">
 		<ApprovalIcon kind={a.kind} />
 		<!-- ApprovalIcon (何を送るか) とは別の記号にして、隣に並んでも区分と種類が混ざらないようにする。
-		     区分の形: 外部送信=地球儀/社内=盾/低リスク=鍵。RiskIcon.svelte -->
+		     区分の形: 外部送信=地球儀/社内=建物。RiskIcon.svelte -->
 		<RiskIcon risk={a.risk} size={20} />
 	</div>
 	<h3 class="ap-title">{a.title}</h3>
