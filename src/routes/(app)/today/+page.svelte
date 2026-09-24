@@ -44,6 +44,7 @@
 		orbPush,
 		rubber,
 		settle,
+		shove,
 		shift,
 		type Box,
 		type Pt
@@ -192,9 +193,11 @@
 	const CARDS = ['approvals', 'reply', 'meeting', 'events', 'tasks', 'sent'];
 	const ZERO: Pt = { x: 0, y: 0 };
 	/* SwiftUI の spring() の既定 (response 0.5 秒、減衰比 0.825) を Svelte の Spring に換算した値 */
-	const springs = Object.fromEntries(
-		CARDS.map((k) => [k, new Spring<Pt>(ZERO, { stiffness: 0.044, damping: 0.35 })])
-	);
+	const SPRING = { stiffness: 0.044, damping: 0.35 };
+	/* 押しのけられたカード用。SwiftUI の .snappy (response 0.3 秒、減衰比 1.0) の換算で、
+	   速く滑ってはね返らない */
+	const SNAPPY = { stiffness: 0.122, damping: 0.7 };
+	const springs = Object.fromEntries(CARDS.map((k) => [k, new Spring<Pt>(ZERO, SPRING)]));
 	/** 8px 動くまでは記録だけ (started: false)。押した扱いと区別する */
 	let drag: {
 		card: string;
@@ -205,37 +208,77 @@
 		from: Pt;
 		raw: Pt;
 		started: boolean;
+		/** このドラッグで押しのけたカード */
+		pushed: Set<string>;
 	} | null = $state(null);
 	/** ドラッグ中に見せる位置 (ラバーバンド込み) */
 	let shown: Pt | null = $state(null);
+	/** カードのガラスを描く canvas を .bento の外へ広げる幅。範囲の端まで運んだカードも描けるように */
+	let reach = $state(0);
 
-	/* .bento の左上を原点にした、カードの既定の矩形 (translate は offset* に効かない) と制約 */
-	function field(card: string) {
+	/* 座標の原点は .bento の左上。既定の矩形と球。offset* は整数に丸められて 8px の間が
+	   1px 近く狂うので、画面上の矩形からずれ (translate と音声で退く transform) を引く */
+	function measure() {
 		const b = bento!;
+		const o = b.getBoundingClientRect();
 		const bases: Record<string, Box> = {};
-		for (const c of b.querySelectorAll<HTMLElement>(':scope > .card'))
-			bases[c.dataset.card!] = { x: c.offsetLeft, y: c.offsetTop, w: c.offsetWidth, h: c.offsetHeight };
+		for (const c of b.querySelectorAll<HTMLElement>(':scope > .card')) {
+			const r = c.getBoundingClientRect();
+			const s = getComputedStyle(c);
+			const [tx = 0, ty = 0] = s.translate === 'none' ? [] : s.translate.split(' ').map(parseFloat);
+			const m = new DOMMatrix(s.transform);
+			bases[c.dataset.card!] = { x: r.left - o.left - tx - m.e, y: r.top - o.top - ty - m.f, w: r.width, h: r.height };
+		}
+		// 球の直径は箱の 48% (shader.ts の R0)
+		return { bases, orb: { x: b.clientWidth / 2, y: b.clientHeight / 2 }, r: (orbSize * 0.48) / 2 };
+	}
+	/* 動かせる範囲は本文として見えている画面の領域 (サイドナビ・連携の列・上部バー・依頼バーの内側
+	   16px)。見出しと「配置を元に戻す」は動かない障害物 */
+	function bounds() {
+		const o = bento!.getBoundingClientRect();
+		const at = (r: DOMRect): Box => ({ x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height });
+		const rect = (sel: string) => document.querySelector(sel)!.getBoundingClientRect();
+		const rail = document.querySelector('.rail');
+		const left = rect('.sidebar').right + 16;
+		const right = (rail ? rail.getBoundingClientRect().left : innerWidth.current!) - 16;
+		const top = rect('.header.glass').bottom + 16;
+		const bottom = rect('.chatbar').top - 16;
 		return {
-			base: bases[card],
-			f: {
-				orb: { x: b.clientWidth / 2, y: b.clientHeight / 2 },
-				// 球の直径は箱の 48% (shader.ts の R0)
-				r: (orbSize * 0.48) / 2,
-				box: { x: 0, y: 0, w: b.clientWidth, h: b.clientHeight },
-				others: Object.entries(bases)
-					.filter(([k]) => k !== card)
-					.map(([k, box]) => shift(box, springs[k].target))
-			}
+			box: { x: left - o.left, y: top - o.top, w: right - left, h: bottom - top },
+			fixed: [...document.querySelectorAll('.today-head > *')].map((e) => at(e.getBoundingClientRect()))
 		};
 	}
+	/* card 以外のカードの今の置き場所 (ばねの目標) */
+	function field(card: string) {
+		const { bases, orb, r } = measure();
+		const { box, fixed } = bounds();
+		const cards = Object.fromEntries(
+			Object.entries(bases)
+				.filter(([k]) => k !== card)
+				.map(([k, b]) => [k, shift(b, springs[k].target)])
+		);
+		return { base: bases[card], cards, f: { orb, r, box, others: fixed } };
+	}
+	const plus = (a: Pt, b: Pt): Pt => ({ x: a.x + b.x, y: a.y + b.y });
 
-	/* 保存したずれは書き換えず、表示のたびに制約をかけ直す (窓の大きさが変わったときも) */
+	/* 保存したずれは書き換えず、表示のたびに制約をかけ直す (窓の大きさが変わったときも)。
+	   動かしていないカードを先に固定し、動かしたカードを CARDS の順に 1 枚ずつ、
+	   前に置いたカードを避けて置く */
 	function relayout(animate = false) {
 		if (!bento || !here) return;
+		const { bases, orb, r } = measure();
+		const { box, fixed } = bounds();
+		// 32px 刻みにして、窓の大きさを少し変えるたびにガラスを作り直さないようにする
+		const out = Math.max(-box.x, -box.y, box.x + box.w - bento.clientWidth, box.y + box.h - bento.clientHeight);
+		reach = Math.ceil(out / 32) * 32;
+		const placed = CARDS.filter((k) => bases[k] && !layout[k]).map((k) => bases[k]);
 		for (const k of CARDS) {
+			if (!bases[k]) continue;
 			const want = layout[k];
-			const { base, f } = field(k);
-			const to = want && base ? (settle(base, want, f) ?? ZERO) : ZERO;
+			const to = want ? (settle(bases[k], want, { orb, r, box, others: [...fixed, ...placed] }) ?? ZERO) : ZERO;
+			if (want) placed.push(shift(bases[k], to));
+			springs[k].stiffness = SPRING.stiffness;
+			springs[k].damping = SPRING.damping;
 			springs[k].set(to, { instant: !animate || reduced.current });
 		}
 	}
@@ -258,7 +301,17 @@
 		const el = (e.target as Element).closest<HTMLElement>('.bento > .card');
 		if (!el || !here || voicing || e.button !== 0) return;
 		const from = springs[el.dataset.card!].target;
-		drag = { card: el.dataset.card!, el, id: e.pointerId, sx: e.clientX, sy: e.clientY, from, raw: from, started: false };
+		drag = {
+			card: el.dataset.card!,
+			el,
+			id: e.pointerId,
+			sx: e.clientX,
+			sy: e.clientY,
+			from,
+			raw: from,
+			started: false,
+			pushed: new Set()
+		};
 	}
 	function onMove(e: PointerEvent) {
 		if (!drag || e.pointerId !== drag.id) return;
@@ -271,9 +324,22 @@
 		}
 		// つかんだ点を保ったままポインタに 1 対 1 で付け、球の禁止域の中だけ抵抗を付ける
 		drag.raw = { x: drag.from.x + dx, y: drag.from.y + dy };
-		const { base, f } = field(drag.card);
-		const p = rubber(shift(base, drag.raw), f.orb, f.r);
-		shown = { x: drag.raw.x + p.x, y: drag.raw.y + p.y };
+		const { base, cards, f } = field(drag.card);
+		shown = plus(drag.raw, rubber(shift(base, drag.raw), f.orb, f.r));
+		/* 重ねられたカードはつるんと退く。調査 (card-drag.md) の結論は「他のカードは動かさない」
+		   だったが、ユーザー指示 2026-09-24 で調査の結論を覆した */
+		for (const [k, d] of Object.entries(shove(shift(base, shown), cards, f))) {
+			const sp = springs[k];
+			sp.stiffness = SNAPPY.stiffness;
+			sp.damping = SNAPPY.damping;
+			sp.set(plus(sp.target, d), { instant: reduced.current });
+			drag.pushed.add(k);
+		}
+	}
+	/* 既定の位置からのずれを保存する。ほぼ 0 なら既定に戻ったものとして消す */
+	function keep(k: string, to: Pt) {
+		if (Math.hypot(to.x, to.y) < 0.5) delete layout[k];
+		else layout[k] = to;
 	}
 	function onUp(e: PointerEvent) {
 		if (!drag || e.pointerId !== drag.id) return;
@@ -290,10 +356,11 @@
 			// click が来ないまま (カードの外で離した) 残ると、次の本物の押下を食べてしまう
 			setTimeout(() => d.el.removeEventListener('click', stop, { capture: true }));
 		}
-		const { base, f } = field(d.card);
-		const to = settle(base, d.raw, f) ?? d.from;
-		if (Math.hypot(to.x, to.y) < 0.5) delete layout[d.card];
-		else layout[d.card] = to;
+		// 他のカードは押しのけたあとの位置で避ける。押しのけたカードは戻さず、その位置を保存する
+		const { base, cards, f } = field(d.card);
+		const to = settle(base, d.raw, { ...f, others: [...f.others, ...Object.values(cards)] }) ?? d.from;
+		keep(d.card, to);
+		for (const k of d.pushed) keep(k, springs[k].target);
 		saveLayout();
 		const sp = springs[d.card];
 		sp.set(shown ?? d.from, { instant: true });
@@ -305,10 +372,9 @@
 	   横切るため、途中の位置も球の縁の外へ押し出す (止まった位置では押し出す量は 0) */
 	function repel(k: string, o: Pt): Pt {
 		if (!bento || (o.x === 0 && o.y === 0)) return o;
-		const { base, f } = field(k);
-		if (!base) return o;
-		const p = orbPush(shift(base, o), f.orb, f.r);
-		return { x: o.x + p.x, y: o.y + p.y };
+		const { bases, orb, r } = measure();
+		if (!bases[k]) return o;
+		return plus(o, orbPush(shift(bases[k], o), orb, r));
 	}
 	const lifted = (k: string) => !!drag?.started && drag.card === k;
 	/* ドラッグのずれは translate、音声で退く分は transform に分けて持つ。transform の
@@ -332,7 +398,8 @@
 </script>
 
 <svelte:head><title>Today — KUROKO AI</title></svelte:head>
-<svelte:window onkeydown={onKey} />
+<!-- 動かせる範囲は窓で決まるが、.bento は最大幅で止まるので窓の変化を直接見る -->
+<svelte:window onkeydown={onKey} onresize={() => relayout()} />
 
 <div class="today">
 	<!-- Task 10m — この画面にボタンは 1 つも置かない。「予定」「ToDo」の追加は ⌘K パレットと
@@ -400,6 +467,8 @@
 				{@attach watchLayout}
 				{@attach glass({
 					...CARD,
+					// 既定の bleed (約 47px) では、.bento から離れたカードが canvas の外に出てガラスが消える
+					bleed: Math.max(reach, 48),
 					targets: '.card',
 					backdrop: ['auto', orbBackdrop(() => holeOrbCanvas)]
 				})}
