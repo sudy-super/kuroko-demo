@@ -24,8 +24,7 @@
 	import TodayCard from '$lib/components/TodayCard.svelte';
 	import SourceIcon from '$lib/components/SourceIcon.svelte';
 	import ReasonIcon from '$lib/components/ReasonIcon.svelte';
-	import ApprovalIcon from '$lib/components/ApprovalIcon.svelte';
-	import RiskIcon from '$lib/components/RiskIcon.svelte';
+	import { approvalRow } from '$lib/components/Rows.svelte';
 	import DoneScreen from '$lib/components/DoneScreen.svelte';
 	import { glass, CARD, orbBackdrop } from '$lib/glass';
 	import Icon from '$lib/components/Icon.svelte';
@@ -241,14 +240,7 @@
 						}}
 						expanded={ui.approvalCardHidden}
 					>
-						{#each ap.slice(0, 3) as a (a.id)}
-							<div class="list-row">
-								<ApprovalIcon kind={a.kind} />
-								<span class="tc-text">{a.title}</span>
-								<!-- ドロワーと同じ区分の記号。ApprovalIcon (種類) とは別の形にして混ざらないようにする -->
-								<RiskIcon risk={a.risk} />
-							</div>
-						{/each}
+						{#each ap.slice(0, 3) as a (a.id)}{@render approvalRow(a)}{/each}
 						{@render more(ap.length, 3)}
 					</TodayCard>
 				{/if}

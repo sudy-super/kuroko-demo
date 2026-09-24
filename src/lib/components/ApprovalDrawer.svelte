@@ -4,8 +4,7 @@
 	import { ui } from '$lib/ui.svelte';
 	import Drawer from './Drawer.svelte';
 	import ApprovalCard from './ApprovalCard.svelte';
-	import ApprovalIcon from './ApprovalIcon.svelte';
-	import RiskIcon from './RiskIcon.svelte';
+	import { approvalRow } from './Rows.svelte';
 
 	// pending + sending (取り消せる間) を出す。executed / rejected はここに出さない
 	const active = $derived(db.approvals.filter((a) => a.status === 'pending' || a.status === 'sending'));
@@ -78,14 +77,7 @@
 	     承認待ちが残っている間も畳まない -->
 	{#if recentExecuted.length}
 		<p class="ap-recent-head">実行済み</p>
-		{#each recentExecuted as a (a.id)}
-			<div class="list-row" style="cursor: default">
-				<ApprovalIcon kind={a.kind} />
-				<span class="tc-text">{a.title}</span>
-				<!-- 承認待ちのカードと同じ区分の記号 -->
-				<RiskIcon risk={a.risk} />
-			</div>
-		{/each}
+		{#each recentExecuted as a (a.id)}{@render approvalRow(a, 'cursor: default')}{/each}
 	{/if}
 	{#snippet footer()}
 		<p class="ap-footnote muted">メール送信・日程確定・外部共有は、承認するまで実行されません。</p>

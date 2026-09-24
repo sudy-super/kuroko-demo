@@ -1,14 +1,16 @@
 <script module lang="ts">
-	import type { Document, MessageThread, Meeting, Person, Project } from '$lib/types';
+	import type { Approval, Document, MessageThread, Meeting, Person, Project } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { eventDateOf } from '$lib/derived';
 	import { parse, fmtMDW, relDay } from '$lib/dates';
 	import SourceIcon from './SourceIcon.svelte';
 	import ProjectStatusIcon from './ProjectStatusIcon.svelte';
 	import DocKindIcon from './DocKindIcon.svelte';
+	import ApprovalIcon from './ApprovalIcon.svelte';
+	import RiskIcon from './RiskIcon.svelte';
 
 	/* 詳細のカードとパネルで繰り返す、人物・案件・メール・会議・資料への 1 行のリンク */
-	export { personRow, projectRow, threadRow, meetingRow, docRow };
+	export { personRow, projectRow, threadRow, meetingRow, docRow, approvalRow };
 </script>
 
 {#snippet personRow(p: Person)}
@@ -47,4 +49,13 @@
 		<DocKindIcon kind={d.kind} />
 		<span class="people-ident">{d.title}</span>
 	</a>
+{/snippet}
+
+<!-- 種類の記号と区分の記号は別の形にして、隣に並んでも混ざらないようにする (承認カードと同じ) -->
+{#snippet approvalRow(a: Approval, style?: string)}
+	<div class="list-row" {style}>
+		<ApprovalIcon kind={a.kind} />
+		<span class="tc-text">{a.title}</span>
+		<RiskIcon risk={a.risk} />
+	</div>
 {/snippet}
