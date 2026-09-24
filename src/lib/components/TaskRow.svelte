@@ -174,9 +174,10 @@
 		align-items: center;
 		gap: var(--sp-3);
 	}
-	/* 完了した行は取り消し線ではなく薄くする (tasks-reminders.md 1 節、Apple の "dimmed") */
+	/* 完了した行は文字を薄くし、取り消し線を引く (ユーザー指示 2026-09-25。Google ToDo リストと同じ) */
 	.task-row.done .task-title {
 		color: var(--ink-3);
+		text-decoration: line-through;
 	}
 	.task-due {
 		display: inline-flex;
