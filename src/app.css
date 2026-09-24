@@ -866,11 +866,13 @@ svg.i {
 /* ruling (2026-09-16) — 入力欄そのものに輪郭を出すと、ガラスのピルの中に白い箱が
    もう 1 枚現れて見える。焦点はバー全体に出し、入力欄の輪郭は消す。
    文字入力の欄はマウスで押したときも :focus-visible が立つ (Chrome 152 で確認) ので、
-   この輪郭はキーボードでもマウスでも出る */
+   :focus-visible だけでは押したのか Tab で来たのか分からない。押して入力するときは
+   輪郭を出さず (ユーザー指示 2026-09-25)、Tab で来たときだけ出す (WCAG 2.4.7)。
+   どちらで来たかは KurokoBar.svelte が data-keyboard で渡す */
 .chatbar input:focus-visible {
 	outline: none;
 }
-.chatbar:has(input:focus-visible) {
+.chatbar[data-keyboard]:has(input:focus-visible) {
 	outline: 2px solid var(--accent);
 	outline-offset: 2px;
 }

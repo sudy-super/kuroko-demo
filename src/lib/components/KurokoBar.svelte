@@ -37,6 +37,10 @@
 		});
 	});
 
+	/* 入力欄に焦点が来たのがキーボード (Tab) か、押したのかを覚える。押して入れたときは
+	   バーの輪郭を出さない (app.css の .chatbar[data-keyboard]) */
+	let byKeyboard = $state(false);
+
 	function send() {
 		const q = text.trim();
 		if (!q) return;
@@ -52,8 +56,13 @@
 <!-- 依頼バーだけは枠の層に乗せず自分の描画面を持つ (src/lib/glass.ts の barGlass)。
      層に乗せた面どうしは互いを映せず、層に乗せるとサイドナビ・上部バー・連携の列が
      このバーの屈折に入らなくなるため (横には重ならないので実際には映る場面はない) -->
+<svelte:window
+	onkeydown={(e) => e.key === 'Tab' && (byKeyboard = true)}
+	onpointerdown={() => (byKeyboard = false)}
+/>
 <form
 	class="chatbar"
+	data-keyboard={byKeyboard || undefined}
 	{@attach barGlass}
 	onsubmit={(e) => {
 		e.preventDefault();
