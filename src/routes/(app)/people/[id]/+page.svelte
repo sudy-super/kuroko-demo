@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
-	import { companyOf, contactOf, projectOf } from '$lib/derived';
+	import { companyOf, contactOf, personOf, projectOf } from '$lib/derived';
 	import { identitiesOf, personHistory, personStats, HISTORY_ICON } from '$lib/people';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import { ui, toast, focusChatbar } from '$lib/ui.svelte';
@@ -18,7 +18,7 @@
 	] as const;
 
 	const id = $derived(page.params.id!);
-	const person = $derived(db.people.find((p) => p.id === id));
+	const person = $derived(personOf(db, id));
 	const company = $derived(companyOf(db, person?.companyId));
 	const identities = $derived(person ? identitiesOf(db, person.id) : []);
 	const projects = $derived(

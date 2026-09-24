@@ -2,7 +2,7 @@
 import type { Brief, Db, Document } from '../../types';
 import type { DocumentContext, DocumentProvider } from '../types';
 import { fmtMD, nowIso, parse } from '../../dates';
-import { meetingsOf } from '../../derived';
+import { meetingsOf, projectOf } from '../../derived';
 import { DOC_TEMPLATES } from '../../kuroko/samples';
 import { uid } from '../../kuroko/generate';
 
@@ -44,7 +44,7 @@ export const document: DocumentProvider = {
 			lastPoints: mins ? mins.decisions : ['前回の論点は議事録を参照'],
 			homework,
 			recentContacts,
-			documentIds: db.projects.find((p) => p.id === projectId)?.documentIds ?? []
+			documentIds: projectOf(db, projectId)?.documentIds ?? []
 		};
 	}
 };

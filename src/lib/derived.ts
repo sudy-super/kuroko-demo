@@ -21,7 +21,7 @@ export const personOfIdentity = (db: Db, identityId: string) =>
 /** そのメールアドレスから来た、まだ人物に結び付いていないスレッド。関連付けの提案の材料 */
 export const pendingThreadsFor = (db: Db, email: string) =>
 	db.threads.filter(
-		(t) => !t.personId && db.identities.find((i) => i.id === t.identityId)?.value === email
+		(t) => !t.personId && identityOf(db, t.identityId)?.value === email
 	);
 
 /* 人物とそのメールアドレス。宛先を組むのも効果文に出すのもここから引く
@@ -160,7 +160,7 @@ export function nextMeeting(db: Db): { meeting: Meeting; event: CalendarEvent } 
 	const ev = db.events
 		.filter((e) => e.meetingId && e.date >= k)
 		.sort((a, b) => a.date.localeCompare(b.date) || minutes(a.start) - minutes(b.start))[0];
-	const meeting = ev && db.meetings.find((m) => m.id === ev.meetingId);
+	const meeting = ev && meetingOf(db, ev.meetingId);
 	return meeting ? { meeting, event: ev } : undefined;
 }
 

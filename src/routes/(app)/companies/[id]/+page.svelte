@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
-	import { eventDateOf, meetingsOf } from '$lib/derived';
+	import { companyOf, eventDateOf, meetingsOf } from '$lib/derived';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import Icon from '$lib/components/Icon.svelte';
 	import SourceIcon from '$lib/components/SourceIcon.svelte';
 	import ProjectStatusIcon from '$lib/components/ProjectStatusIcon.svelte';
 
 	const id = $derived(page.params.id!);
-	const company = $derived(db.companies.find((c) => c.id === id));
+	const company = $derived(companyOf(db, id));
 	const people = $derived(db.people.filter((p) => p.companyId === id));
 	const projects = $derived(db.projects.filter((p) => p.companyId === id));
 	const threads = $derived(

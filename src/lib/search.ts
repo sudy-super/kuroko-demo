@@ -1,5 +1,5 @@
 import type { Db } from './types';
-import { personOf, companyOf, projectOf, threadSenderMeta } from './derived';
+import { personOf, companyOf, projectOf, meetingOf, threadSenderMeta } from './derived';
 import { PRIMARY, UTILITY } from './nav';
 import { parse, fmtMDW } from './dates';
 
@@ -147,7 +147,7 @@ function screenName(db: Db, href: string): string {
 		if (top === 'people') return personOf(db, id)?.name ?? '';
 		if (top === 'companies') return companyOf(db, id)?.name ?? '';
 		if (top === 'projects') return projectOf(db, id)?.name ?? '';
-		if (top === 'meetings') return db.meetings.find((m) => m.id === id)?.title ?? '';
+		if (top === 'meetings') return meetingOf(db, id)?.title ?? '';
 	}
 	return SCREENS.find((n) => n.href === `/${top}`)?.label ?? '';
 }

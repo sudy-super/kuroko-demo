@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
-	import { companyOf, personOf, eventDateOf, meetingsOf } from '$lib/derived';
+	import { companyOf, personOf, projectOf, eventDateOf, meetingsOf } from '$lib/derived';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import Icon from '$lib/components/Icon.svelte';
 	import SourceIcon from '$lib/components/SourceIcon.svelte';
@@ -9,7 +9,7 @@
 	import DocKindIcon from '$lib/components/DocKindIcon.svelte';
 
 	const id = $derived(page.params.id!);
-	const project = $derived(db.projects.find((p) => p.id === id));
+	const project = $derived(projectOf(db, id));
 	const company = $derived(companyOf(db, project?.companyId));
 	const people = $derived(
 		project ? project.personIds.map((x) => personOf(db, x)).filter((x) => !!x) : []
