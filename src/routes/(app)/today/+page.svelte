@@ -300,6 +300,10 @@
 	function onDown(e: PointerEvent) {
 		const el = (e.target as Element).closest<HTMLElement>('.bento > .card');
 		if (!el || !here || voicing || e.button !== 0) return;
+		/* 前のドラッグの離しが届かなかった (窓の外で離した、アプリを切り替えた) ときは、
+		   その押下を残したままにしない。残ると onMove が新しい押下を前の押下の続きと
+		   取り違え (pointerId も違うので無視し)、カードが二度と動かなくなる (ユーザー指摘 2026-09-24) */
+		if (drag) finish(drag, false);
 		const from = springs[el.dataset.card!].target;
 		drag = {
 			card: el.dataset.card!,
@@ -343,10 +347,13 @@
 	}
 	function onUp(e: PointerEvent) {
 		if (!drag || e.pointerId !== drag.id) return;
-		const d = drag;
+		finish(drag, e.type === 'pointerup');
+	}
+	/** ドラッグを閉じて、置いた位置を確定する。clicked は、直後に click が来るので止める必要があるとき */
+	function finish(d: NonNullable<typeof drag>, clicked: boolean) {
 		drag = null;
 		if (!d.started) return;
-		if (e.type === 'pointerup') {
+		if (clicked) {
 			// ドラッグの直後の click (承認パネルを開く、リンクへ移る、ToDo を切り替える) を 1 回だけ止める
 			const stop = (ev: Event) => {
 				ev.preventDefault();
@@ -464,6 +471,7 @@
 				onpointermove={onMove}
 				onpointerup={onUp}
 				onpointercancel={onUp}
+				onlostpointercapture={onUp}
 				{@attach watchLayout}
 				{@attach glass({
 					...CARD,
