@@ -50,6 +50,11 @@ export const ui = $state({
    ここで覚え、各 Root の open をこの値から引く。開き直すと他は閉じる */
 export const panels = $state({ open: null as string | null });
 
+/** 音声の聞き取りを止めたときに、依頼バーの入力欄へ渡す文字 (KurokoBar が受け取って空にする)。
+    ChatGPT の音声入力と同じく、止めたら聞き取った文字を入力欄に置き、直してから送れるようにする
+    (ユーザー指摘 2026-09-24) */
+export const dictated = $state({ text: '' });
+
 /** 依頼バーの入力欄へ焦点を移す。'.chatbar input' の知識をここ 1 か所に閉じる */
 export function focusChatbar() {
 	document.querySelector<HTMLInputElement>('.chatbar input')?.focus();

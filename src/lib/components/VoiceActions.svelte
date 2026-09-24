@@ -3,7 +3,7 @@
 	   左端に閉じる、中央に声の大きさの波形、右に止める、右端に送る (ユーザー指示 2026-09-24)。
 	   KurokoBar と VoiceOverlay の両方で使うのでここに切り出す */
 	import { MediaQuery } from 'svelte/reactivity';
-	import { ui } from '$lib/ui.svelte';
+	import { ui, dictated } from '$lib/ui.svelte';
 	import { hearing } from '$lib/voice.svelte';
 	import Icon from './Icon.svelte';
 
@@ -68,9 +68,15 @@
 		<button
 			type="button"
 			class="voice-act voice-act-stop"
-			onclick={() => hearing.stop()}
-			aria-label="聞き取りを止める"
-			title="聞き取りを止める"
+			onclick={() => {
+				/* 止めたら聞き取りを終え、聞き取った文字を依頼バーの入力欄に移す。
+				   手で直してから送れる (ChatGPT の音声入力と同じ。ユーザー指摘 2026-09-24) */
+				hearing.stop();
+				dictated.text = hearing.heard;
+				ui.voice = false;
+			}}
+			aria-label="聞き取りを止めて入力欄に入れる"
+			title="聞き取りを止めて入力欄に入れる"
 		>
 			<Icon name="ic-stop" size={20} />
 		</button>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { ui, type ContextChip } from '$lib/ui.svelte';
+	import { ui, dictated, type ContextChip } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 	import { barGlass } from '$lib/glass';
 	import VoiceActions from './VoiceActions.svelte';
@@ -21,6 +21,20 @@
 		acts?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
 		// マイクのボタンは閉じたあとに作り直されるので、描き終わりを待ってから移す
 		return () => tick().then(() => mic?.focus());
+	});
+
+	/* 音声の聞き取りを止めたら、聞き取った文字を入力欄の後ろに足し、焦点を移す。
+	   入力欄は音声の操作を閉じたあとで作り直されるので、描き終わりを待ってから移す */
+	$effect(() => {
+		const t = dictated.text.trim();
+		if (!t) return;
+		dictated.text = '';
+		text = text.trim() ? `${text.trim()} ${t}` : t;
+		tick().then(() => {
+			const input = document.querySelector<HTMLInputElement>('.chatbar input');
+			input?.focus();
+			input?.setSelectionRange(input.value.length, input.value.length);
+		});
 	});
 
 	function send() {
