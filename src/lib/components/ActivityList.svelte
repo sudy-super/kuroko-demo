@@ -33,6 +33,13 @@
 			<Icon name={ku ? 'ic-spark' : 'ic-user'} size={16} label={actorLabel(l.actor)} class="activity-actor {ku ? 'by-kuroko' : ''}" />
 		</Tip>
 		<span class="activity-text" class:undone={l.undone}>{l.text}</span>
+		{#if l.undone}
+			<!-- 取り消した記録は取り消し線を引かず (ユーザー指示 2026-09-25)、薄い文字と元に戻すの
+			     記号で示す。色だけに頼らない (WCAG 1.4.1) -->
+			<Tip text="取り消し済み">
+				<Icon name="ic-undo" size={16} label="取り消し済み" class="activity-undone" />
+			</Tip>
+		{/if}
 		{#if !compact}
 			<!-- ドロワーの直近 5 件は場所が狭いので、実行元の記号を落として 1 行に収める -->
 			<Tip text={`${ORIGIN_LABEL[l.origin]}から`}>
@@ -84,7 +91,10 @@
 	}
 	.activity-text.undone {
 		color: var(--ink-3);
-		text-decoration: line-through;
+	}
+	:global(.activity-undone) {
+		flex: none;
+		color: var(--ink-3);
 	}
 	:global(.activity-origin) {
 		flex: none;
