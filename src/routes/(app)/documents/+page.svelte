@@ -144,14 +144,7 @@
 	.docs-ask {
 		color: var(--accent);
 	}
-	/* /inbox の .panes と同じ組み方。左が一覧、右がプレビュー */
 	.panes {
-		position: relative;
-		isolation: isolate;
-		display: grid;
-		grid-template-columns: 360px minmax(0, 1fr);
-		align-items: start;
-		gap: var(--sp-4);
 		padding: 0 var(--sp-5);
 	}
 	.pane-list {
@@ -192,15 +185,11 @@
 		gap: var(--sp-3);
 	}
 	/* 2 列に並ぶ間は一覧が常に見えているので、戻る操作の行ごと出さない */
-	.pane-bar,
-	.back {
+	.pane-bar {
 		display: none;
 	}
 	/* components 2.2 — 960px 以下は 1 列にして、一覧 → プレビューの 2 段階にする */
 	@media (max-width: 960px) {
-		.panes {
-			grid-template-columns: minmax(0, 1fr);
-		}
 		.docs.show-doc .pane-list {
 			display: none;
 		}
@@ -212,9 +201,6 @@
 		}
 		.pane-bar {
 			display: flex;
-		}
-		.back {
-			display: inline-flex;
 		}
 	}
 	@media (max-width: 600px) {

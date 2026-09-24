@@ -151,15 +151,6 @@
 </Drawer>
 
 <style>
-	/* 一覧と本文の 2 つのペインを横に並べる段の基準。コンテンツ層なのでガラスは無い */
-	.panes {
-		position: relative;
-		isolation: isolate;
-		display: grid;
-		grid-template-columns: 360px minmax(0, 1fr);
-		align-items: start;
-		gap: var(--sp-4);
-	}
 	.pane {
 		min-width: 0;
 	}
@@ -176,14 +167,8 @@
 	.pane-bar {
 		justify-content: space-between;
 	}
-	.back {
-		display: none;
-	}
 	/* components 2.2 — 960px 以下は 1 列 */
 	@media (max-width: 960px) {
-		.panes {
-			grid-template-columns: minmax(0, 1fr);
-		}
 		.inbox.show-thread .pane-list {
 			display: none;
 		}
@@ -192,9 +177,6 @@
 		}
 		.inbox.show-thread .pane-thread {
 			display: flex;
-		}
-		.back {
-			display: inline-flex;
 		}
 	}
 </style>

@@ -137,12 +137,6 @@
 .app {
 	--content-bottom-clear: calc(var(--chatbar-h) + var(--sp-4) + var(--sp-8));
 }
-/* サイドナビを格納中は、左余白を切り替えボタン 1 個ぶん (左上 --sp-4 + 8px、44px、間 --sp-4) に詰める */
-@media (min-width: 961px) {
-	.app.side-hidden {
-		--side-space: var(--side-space-hidden);
-	}
-}
 
 /* components 2.1 — リセットと本文 (-webkit-font-smoothing は書かない) */
 *,
@@ -345,19 +339,6 @@ svg.i {
 	/* visibility はここでは遷移させない (開くときは即座に visible へ戻す)。
 	   閉じるときだけ .app.side-hidden .sidebar 側で遅延させる */
 	transition: transform var(--d-enter) var(--ease-out), opacity var(--d-enter) var(--ease-out);
-}
-/* 961px 以上で格納中は画面の外へ滑らせる。visibility だけ 300ms 遅らせ、閉じ終わってから Tab と読み上げから外す */
-@media (min-width: 961px) {
-	.app.side-hidden .sidebar {
-		transform: translateX(calc(-100% - var(--sp-4) * 2));
-		opacity: 0;
-		visibility: hidden;
-		pointer-events: none;
-		transition:
-			transform var(--d-enter) var(--ease-out),
-			opacity var(--d-enter) var(--ease-out),
-			visibility 0s linear var(--d-enter);
-	}
 }
 /* 格納の切り替えボタン。閉じても同じ位置に残る。76 のままだと DOM 順でサイドナビの不透明な地に隠れるので 1 段上げる */
 .side-toggle {
@@ -1004,7 +985,6 @@ svg.i {
 }
 .chip:not(.on) .chip-check {
 	width: 0;
-	margin-right: calc(var(--sp-2) * -1);
 	opacity: 0;
 }
 .chip.on .chip-check {
@@ -1170,6 +1150,20 @@ svg.i {
 .list-row .sub {
 	color: var(--ink-3);
 	font-size: 14px;
+}
+
+/* /inbox と /documents の 2 ペイン。左が一覧、右が本文。コンテンツ層なのでガラスは無い。
+   960px 以下は 1 列にし、戻る (.back) を出す */
+.panes {
+	position: relative;
+	isolation: isolate;
+	display: grid;
+	grid-template-columns: 360px minmax(0, 1fr);
+	align-items: start;
+	gap: var(--sp-4);
+}
+.back {
+	display: none;
 }
 
 /* メールの本文。承認カードと議事録のフォローメール案で同じ見た目にする (components の一貫性)。
@@ -1338,28 +1332,6 @@ svg.i {
 .seg .badge.count.danger {
 	background: var(--warn);
 	color: #fff;
-}
-/* 携帯の幅では残りいっぱいに広げ、余りを文字の長さに応じて配る (等分だと長い項目がはみ出す) */
-@media (max-width: 600px) {
-	.seg {
-		flex: 1 1 0;
-		min-width: 0;
-	}
-	.seg-btn {
-		flex: 1 1 auto;
-		min-width: 0;
-		gap: var(--sp-1);
-		padding: 0 var(--sp-1);
-		font-size: 13px;
-	}
-}
-@media (prefers-reduced-motion: reduce) {
-	.seg-thumb.ready {
-		transition: none;
-	}
-	.seg-thumb.pressed {
-		scale: none;
-	}
 }
 
 /* regular 変種のガラス (ドロワー・シート・モーダル・ポップオーバー・メニュー・トースト) */
@@ -1831,6 +1803,21 @@ svg.i {
 /* 本文と依頼バーの右は連携の列 (.rail) のぶんを常に空ける。列の有無で空けると、切り替えるたびに
    本文の幅が変わって揺れる。ピル (.header.glass) は列と同じ右端なので外す */
 @media (min-width: 961px) {
+	/* サイドナビを格納中は、左余白を切り替えボタン 1 個ぶん (左上 --sp-4 + 8px、44px、間 --sp-4) に詰める */
+	.app.side-hidden {
+		--side-space: var(--side-space-hidden);
+	}
+	/* 格納中は画面の外へ滑らせる。visibility だけ 300ms 遅らせ、閉じ終わってから Tab と読み上げから外す */
+	.app.side-hidden .sidebar {
+		transform: translateX(calc(-100% - var(--sp-4) * 2));
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+		transition:
+			transform var(--d-enter) var(--ease-out),
+			opacity var(--d-enter) var(--ease-out),
+			visibility 0s linear var(--d-enter);
+	}
 	.app .main {
 		margin-right: calc(var(--rail-w) + 32px);
 	}
@@ -1885,6 +1872,12 @@ svg.i {
 	}
 	.header.solid {
 		display: flex;
+	}
+	.panes {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.back {
+		display: inline-flex;
 	}
 	.main {
 		margin-left: 0;
@@ -1952,6 +1945,18 @@ svg.i {
 	.modal {
 		padding: var(--sp-4);
 	}
+	/* 表示の切り替えは残りいっぱいに広げ、余りを文字の長さに応じて配る (等分だと長い項目がはみ出す) */
+	.seg {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+	.seg-btn {
+		flex: 1 1 auto;
+		min-width: 0;
+		gap: var(--sp-1);
+		padding: 0 var(--sp-1);
+		font-size: 13px;
+	}
 }
 
 /* visual 4.12 — 動きを減らす設定。状態の変化だけは短いフェードで見せる */
@@ -1963,6 +1968,12 @@ svg.i {
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
 		scroll-behavior: auto !important;
+	}
+	.seg-thumb.ready {
+		transition: none;
+	}
+	.seg-thumb.pressed {
+		scale: none;
 	}
 	.toast,
 	.drawer,
