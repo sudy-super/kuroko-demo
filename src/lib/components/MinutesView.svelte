@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Meeting } from '$lib/types';
 	import { db } from '$lib/store.svelte';
-	import { acceptTaskSuggestions, rejectSuggestions, sendFollowUp } from '$lib/actions';
+	import { acceptTaskSuggestions, editFollowUp, rejectSuggestions, sendFollowUp } from '$lib/actions';
 	import { toast } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 	import SuggestionCard from './SuggestionCard.svelte';
@@ -31,14 +31,27 @@
 		sendFollowUp(meeting.id);
 		toast('フォローメールを承認待ちに送りました');
 	}
+
+	/* HIG Generative AI "Make it easy for people to refine … generated results" — 案はその場で直す。
+	   以前の「修正する」は押しても承認センターへの案内を出すだけだった */
+	let editing = $state(false);
+	let draft = $state('');
+	function startEdit() {
+		draft = minutes?.followUpMail?.body ?? '';
+		editing = true;
+	}
+	function saveEdit() {
+		editFollowUp(meeting.id, draft);
+		editing = false;
+	}
+	function focusOnMount(node: HTMLTextAreaElement) {
+		node.focus();
+	}
 </script>
 
 {#if minutes}
-	<section class="card mv" aria-label="議事録">
-		<div class="tc-head">
-			<Icon name="ic-doc" size={20} />
-			<h2>議事録</h2>
-		</div>
+	<section class="card mv" aria-labelledby="mv-minutes">
+		<h2 class="meet-head" id="mv-minutes"><Icon name="ic-spark" size={16} />議事録</h2>
 		<p class="mv-summary">{minutes.summary}</p>
 		{#if minutes.decisions.length}
 			<h3 class="mv-sub">決定事項</h3>
@@ -66,26 +79,27 @@
 	<!-- メールを持たない相手 (社内の人物) には案自体ができない (kuroko/generate.ts の minutesFor)。
 	     押しても送れないボタンを残さず、札ごと出さない -->
 	{#if minutes.followUpMail}
-	<section class="card mv" aria-label="フォローメール案">
-		<div class="tc-head">
-			<Icon name="ic-mail" size={20} />
-			<h2>フォローメール案</h2>
-		</div>
+	<section class="card mv" aria-labelledby="mv-mail">
+		<h2 class="meet-head" id="mv-mail"><Icon name="ic-spark" size={16} />フォローメール</h2>
 		<p class="mv-to">宛先 {minutes.followUpMail.to}</p>
 		<p class="mv-to">件名 {minutes.followUpMail.subject}</p>
-		<p class="mailbody">{minutes.followUpMail.body}</p>
-		<!-- buttons.md 観点A 原則 3 — この画面で塗りの主ボタンはここ 1 つだけ。上の候補カードは
-		     繰り返す要素なので塗らない (research-repeated-primary.md の Carbon の規定)。
-		     議事録がある = 会議は終わっているので、アジェンダの作成 (会議の前の操作、
-		     meetings/[id]/+page.svelte) は塗りを外してこちらに譲っている -->
-		<div class="row mv-foot">
-			<button class="btn pri" onclick={send} disabled={sent}>
-				{sent ? '承認待ちに送りました' : '承認して送信'}
-			</button>
-			<button class="btn text" onclick={() => toast('承認センターで本文を編集できます')}>
-				修正する
-			</button>
-		</div>
+		{#if editing}
+			<textarea class="textarea" rows="6" aria-label="本文を編集" bind:value={draft} use:focusOnMount></textarea>
+			<div class="row mv-foot">
+				<button class="btn pri sm" onclick={saveEdit}>保存</button>
+				<button class="btn tint sm" onclick={() => (editing = false)}>やめる</button>
+			</div>
+		{:else}
+			<p class="mailbody">{minutes.followUpMail.body}</p>
+			<!-- 承認カードと同じ組み合わせ (主は塗り、編集は薄い塗り)。承認に回した後は直せない
+			     (直すのは承認待ちのパネルの「編集」) ので、編集は出さない -->
+			<div class="row mv-foot">
+				<button class="btn pri sm" onclick={send} disabled={sent}>
+					{sent ? '承認待ちに送りました' : '承認して送信'}
+				</button>
+				{#if !sent}<button class="btn tint sm" onclick={startEdit}>編集</button>{/if}
+			</div>
+		{/if}
 	</section>
 	{/if}
 {/if}
@@ -118,7 +132,7 @@
 	}
 	.mv-foot {
 		margin-top: var(--sp-3);
-		gap: var(--sp-4);
+		gap: var(--sp-2);
 	}
 	.mv-done {
 		display: flex;

@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
-	import { meetingMailTargetFor, personOf } from '$lib/derived';
+	import { eventDateOf, meetingMailTargetFor, personOf } from '$lib/derived';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import { generateAgenda, markBriefRead, shareAgenda, updateAgenda } from '$lib/actions';
 	import { ui } from '$lib/ui.svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import Tip from '$lib/components/Tip.svelte';
 	import BriefView from '$lib/components/BriefView.svelte';
 	import TranscriptModal from '$lib/components/TranscriptModal.svelte';
 	import MinutesView from '$lib/components/MinutesView.svelte';
@@ -18,6 +17,16 @@
 	/* メールを送れる相手かどうか。社内の人物はメールの識別子を持たないので送れない
 	   (seed.ts の identities)。送れない相手にはメールを作る操作を出さない */
 	const mailTo = $derived(meeting ? meetingMailTargetFor(db, meeting.id) : undefined);
+	/* meeting-detail.md — 会議の前は準備とアジェンダ、後は議事録・ToDo 候補・フォローメールだけを出す。
+	   終わった会議にアジェンダを作る操作を出さない。議事録がまだ無い終わった会議は、記録を
+	   追加する操作を出す */
+	const done = $derived(!!meeting && (eventDateOf(db, meeting) ?? '') < db.seededOn);
+	// 共有は承認を通ってから送られる。承認待ちの間は共有の操作を出さず、そのことを書く
+	const sharePending = $derived(
+		db.approvals.some(
+			(a) => a.payload.type === 'agenda' && a.payload.meetingId === meeting?.id && (a.status === 'pending' || a.status === 'sending')
+		)
+	);
 
 	/* 「Brief を読んだ」の印。Today の「次の会議の準備」はこの印で消える (derived.ts todayItems)。
 	   会議が無い id では立てない */
@@ -74,7 +83,7 @@
 					{event.start}〜{event.end}{event.place ? ` / ${event.place}` : ''}
 				</p>
 			{/if}
-			{#if meeting?.brief}
+			{#if meeting?.brief && !done}
 				<!-- 作成した時刻は Brief が持っているので、文言もそこから組む (types.ts Brief.createdAt) -->
 				<p class="muted mt-note">
 					{meeting.brief.note ??
@@ -88,88 +97,79 @@
 		<p class="people-missing">この会議は登録されていません。</p>
 	{:else}
 		<!-- 内容の層なのでガラスは当てず、普通のカードの面に置く (glass-scope.md 6 節) -->
-		<div class="people-cards">
-			<section class="card people-sec">
-				<h2>Brief</h2>
-				{#if meeting.brief}
-					<BriefView {meeting} />
-				{:else}
-					<p class="muted">この会議の Brief はまだありません。</p>
-				{/if}
-			</section>
-
-			<section class="card people-sec">
-				<h2 class="row">
-					アジェンダ
-					{#if meeting.agendaShared}
-						<Tip text="アジェンダ共有済み">
-							<Icon name="ic-share" size={16} label="アジェンダ共有済み" class="meet-shared" />
-						</Tip>
+		<!-- 上から下へ、会議の流れの順 (準備 → アジェンダ、議事録 → ToDo の候補 → フォローメール) に
+		     1 列で読む (meeting-detail.md 6 — Meet / Zoom / Teams の要約も同じ順) -->
+		<div class="people-cards mt-cards">
+			{#if !done}
+				<section class="card people-sec" aria-labelledby="mt-brief">
+					<h2 class="meet-head" id="mt-brief"><Icon name="ic-spark" size={16} />会議の準備</h2>
+					{#if meeting.brief}
+						<BriefView {meeting} />
+					{:else}
+						<p class="muted">まだ届いていません</p>
 					{/if}
-				</h2>
+				</section>
 
-				{#if generating}
-					<p class="muted" aria-live="polite">アジェンダを作成しています…</p>
-				{:else if !meeting.agenda.length}
-					<p class="muted">議事の下書きを KUROKO が作ります。</p>
-					<!-- buttons.md 観点 A 原則 3 — 塗りの主ボタンはこの画面で 1 つだけ。議事録が
-					     できていれば会議は終わっており、次にすべきなのは MinutesView の
-					     「承認して送信」なので、そちらへ塗りを譲る -->
-					<button class="btn {meeting.minutes ? 'sec' : 'pri'}" onclick={create}>
-						<Icon name="ic-spark" size={20} />アジェンダを作成
-					</button>
-				{:else if editing}
-					<ol>
-						{#each draft as _, i (i)}
-							<li><input class="input" aria-label="アジェンダ {i + 1} 行目" bind:value={draft[i]} /></li>
-						{/each}
-					</ol>
-					<div class="row">
-						<button class="btn sec" onclick={saveEdit}>保存する</button>
-						<button class="btn text" onclick={() => (editing = false)}>やめる</button>
-					</div>
-				{:else}
-					<ol>
-						{#each meeting.agenda as t, i (i)}<li>{t}</li>{/each}
-					</ol>
-					<div class="row">
-						<button class="btn text" onclick={startEdit}>
-							<Icon name="ic-edit" size={18} />編集する
+				<section class="card people-sec" aria-labelledby="mt-agenda">
+					<h2 class="meet-head" id="mt-agenda">
+						{#if meeting.agenda.length}<Icon name="ic-spark" size={16} />{/if}アジェンダ
+					</h2>
+					{#if generating}
+						<p class="muted" aria-live="polite">作成しています…</p>
+					{:else if !meeting.agenda.length}
+						<!-- HIG Writing — 空の画面には次の一手をボタンで示す。ボタンと同じことを言う
+						     説明文は置かない ("If you can use fewer words, do so") -->
+						<button class="btn pri" onclick={create}>
+							<Icon name="ic-spark" size={20} />アジェンダを作成
 						</button>
-						{#if !meeting.agendaShared && mailTo}
-							<button class="btn sec" onclick={share}>
-								<Icon name="ic-share" size={18} />参加者に共有 (承認が必要)
-							</button>
+					{:else if editing}
+						<ol>
+							{#each draft as _, i (i)}
+								<li><input class="input" aria-label="アジェンダ {i + 1} 行目" bind:value={draft[i]} /></li>
+							{/each}
+						</ol>
+						<div class="row">
+							<button class="btn pri sm" onclick={saveEdit}>保存</button>
+							<button class="btn tint sm" onclick={() => (editing = false)}>やめる</button>
+						</div>
+					{:else}
+						<ol>
+							{#each meeting.agenda as t, i (i)}<li>{t}</li>{/each}
+						</ol>
+						<!-- 共有済みは記号ではなく文で示す (箱から出る矢印は「共有する」操作の記号で、
+						     状態を表さない。meeting-list.md 4) -->
+						{#if meeting.agendaShared}
+							<p class="mt-shared">
+								<Icon name="ic-check-c" size={16} />{mailTo?.person.name ?? person?.name ?? '参加者'}さんに共有済み
+							</p>
+						{:else if sharePending}
+							<p class="mt-shared pending"><Icon name="ic-clock" size={16} />共有の承認待ち</p>
 						{/if}
-					</div>
-					{#if !meeting.agendaShared}
-						<!-- 出せない操作は黙って消さず、出せない理由を書く (chat.md 観点 4.1 —
-						     できないことは 1 文目で言い切る) -->
-						<p class="muted">
-							{mailTo
-								? `共有先: ${mailTo.person.name}`
-								: `${person?.name ?? 'この相手'}にはメールアドレスが登録されていないため、共有できません。`}
-						</p>
+						<!-- HIG Generative AI — 作ったものは、その近くで直せるようにする。
+						     主は共有、編集は薄い塗り (承認カードと同じ組み合わせ) -->
+						<div class="row">
+							{#if !meeting.agendaShared && !sharePending && mailTo}
+								<button class="btn pri sm" onclick={share}>{mailTo.person.name}さんに共有</button>
+							{/if}
+							<button class="btn tint sm" onclick={startEdit}>編集</button>
+						</div>
+						{#if !meeting.agendaShared && !mailTo}
+							<!-- 出せない操作は黙って消さず、理由を書く (chat.md 観点 4.1) -->
+							<p class="muted">
+								{person?.name ?? 'この相手'}さんにはメールアドレスが登録されていないため、共有できません
+							</p>
+						{/if}
 					{/if}
-				{/if}
-			</section>
-
-			<!-- 議事録ができたら札ごと差し替える。MinutesView は自分で .card を描くので、
-			     この札の中に入れずきょうだいとして置く (glass-scope.md 3 節) -->
-			{#if meeting.minutes}
+				</section>
+			{:else if meeting.minutes}
 				<MinutesView {meeting} />
 			{:else}
-				<section class="card people-sec">
-					<h2>記録</h2>
-					<p class="muted">会議が終わったら、文字起こしから議事録と ToDo を作ります。</p>
-					<div class="row">
-						<button class="btn sec" onclick={() => (transcriptOpen = true)}>
-							<Icon name="ic-transcript" size={18} />文字起こしを追加
-						</button>
-						<button class="btn sec" disabled title="準備中">
-							<Icon name="ic-mic" size={18} />スマホで録音 (準備中)
-						</button>
-					</div>
+				<section class="card people-sec" aria-labelledby="mt-record">
+					<h2 class="meet-head" id="mt-record">議事録</h2>
+					<!-- 文字起こしから議事録と ToDo の候補を作る。録音は準備中なので出さない -->
+					<button class="btn pri" onclick={() => (transcriptOpen = true)}>
+						<Icon name="ic-transcript" size={20} />文字起こしを追加
+					</button>
 				</section>
 			{/if}
 		</div>
@@ -182,6 +182,21 @@
 </div>
 
 <style>
+	.mt-shared.pending {
+		color: var(--ink-2);
+	}
+	.mt-cards {
+		grid-template-columns: minmax(0, 1fr);
+		max-width: 880px;
+	}
+	.mt-shared {
+		display: flex;
+		align-items: center;
+		gap: var(--sp-1);
+		margin: 0 0 var(--sp-3) !important;
+		color: var(--ok);
+		font-size: 14px;
+	}
 	/* 作成した時刻の 1 行は、日時の行より 1 段落とす */
 	.mt-note {
 		font-size: 14px;
@@ -197,9 +212,6 @@
 	}
 	.people-sec .row {
 		flex-wrap: wrap;
-		gap: var(--sp-3);
-	}
-	:global(.meet-shared) {
-		color: var(--ok);
+		gap: var(--sp-2);
 	}
 </style>

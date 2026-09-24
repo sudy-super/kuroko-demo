@@ -4413,6 +4413,22 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
 	margin: 0 0 var(--sp-3);
 	font-size: 18px;
 }
+/* 会議の詳細のまとまりの見出し (meeting-detail.md — HIG Lists and tables の grouped の見出し)。
+   記号は付けず、KUROKO が作った中身のまとまりにだけ星を添える (HIG Generative AI
+   "Clearly identify when and where you use AI"。5 つのまとまりで同じ形にそろえる) */
+.meet-head,
+.people-sec h2.meet-head {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-1);
+	margin: 0 0 var(--sp-3);
+	color: var(--ink-2);
+	font-size: 14px;
+	font-weight: 700;
+}
+.meet-head .i {
+	color: var(--accent);
+}
 /* カードの余白の中に行を置くので、行の左右の詰めと区切り線は端までにする */
 .people-sec .list-row,
 .person-panel .list-row {

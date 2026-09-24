@@ -709,6 +709,14 @@ export function sendFollowUp(meetingId: string): Approval {
 	});
 }
 
+/** フォローメール案の本文をその場で直す (MinutesView の「編集」)。承認に回す前の案だけが対象 */
+export function editFollowUp(meetingId: string, body: string) {
+	const mail = meetingOf(db, meetingId)?.minutes?.followUpMail;
+	if (!mail) throw new Error(`フォローメール案がありません: ${meetingId}`);
+	mail.body = body;
+	save();
+}
+
 /** Brief を開いた時点で既読にする。Today の「次の会議の準備」はこの印で消える (derived.ts todayItems) */
 export function markBriefRead(meetingId: string) {
 	const m = meetingOf(db, meetingId);
