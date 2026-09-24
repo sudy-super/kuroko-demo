@@ -108,9 +108,6 @@ export function inTaskFilter(db: Db, t: Task, f: TaskFilter): boolean {
 
 const open = (t: Task) => t.status !== 'done';
 export const todayTasks = (db: Db) => db.tasks.filter((t) => inTaskFilter(db, t, 'today') && open(t));
-export const overdueTasks = (db: Db) =>
-	db.tasks.filter((t) => inTaskFilter(db, t, 'overdue') && open(t));
-export const weekTasks = (db: Db) => db.tasks.filter((t) => inTaskFilter(db, t, 'week') && open(t));
 
 /** 期限の早い順 (期限なしは末尾)、同じ日は時刻の早い順 */
 export const byDue = (a: Task, b: Task) =>

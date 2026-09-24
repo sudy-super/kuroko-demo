@@ -4,7 +4,7 @@ import { minutesFor } from './generate';
 import { SAMPLE_TRANSCRIPT } from './samples';
 import { db as store, resetDb } from '../store.svelte';
 import { addTranscript, acceptTaskSuggestions, createEvent, executeApproval, rejectSuggestions, sendFollowUp, shareAgenda } from '../actions';
-import { meetingMailTargetFor, todayCount, weekTasks } from '../derived';
+import { meetingMailTargetFor, openTaskCount, todayCount } from '../derived';
 
 describe('minutesFor', () => {
 	const db = seed(new Date(2026, 8, 15));
@@ -43,12 +43,12 @@ describe('addTranscript / acceptTaskSuggestions / sendFollowUp', () => {
 	it('採用した候補が ToDo と Today に出る', () => {
 		addTranscript('m-abc', SAMPLE_TRANSCRIPT);
 		const pending = store.suggestions.filter((s) => s.source === 'transcript' && s.status === 'pending');
-		const before = weekTasks(store).length;
+		const before = openTaskCount(store, 'week');
 		const tasks = acceptTaskSuggestions(pending.slice(0, 2).map((s) => s.id));
 		expect(tasks.length).toBe(2);
 		expect(tasks.every((t) => store.tasks.some((x) => x.id === t.id) && t.origin === 'meeting')).toBe(true);
 		// 候補の期限は 2〜4 営業日先なので Today の「今週の ToDo」に出る
-		expect(weekTasks(store).length).toBe(before + 2);
+		expect(openTaskCount(store, 'week')).toBe(before + 2);
 		expect(store.suggestions.filter((s) => s.source === 'transcript' && s.status === 'pending').length).toBe(1);
 	});
 

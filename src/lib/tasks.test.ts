@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { seed } from './seed';
 import type { Suggestion } from './types';
-import { filterTasks, openTaskCount, doneLogOf, todayTasks, overdueTasks, weekTasks } from './derived';
+import { filterTasks, openTaskCount, doneLogOf, todayTasks } from './derived';
 import { addTask, toggleTask, undo, acceptTaskSuggestions, rejectSuggestions, moveTask, sortTasksByDue } from './actions';
 import { replaceDb, db } from './store.svelte';
 
@@ -60,11 +60,9 @@ describe('filterTasks', () => {
 		]);
 		expect(openTaskCount(d, 'today')).toBe(2);
 	});
-	it('従来の 3 つの絞り込みは未完了だけを返したまま', () => {
+	it('todayTasks は未完了だけを返す', () => {
 		const d = seed(BASE);
 		expect(todayTasks(d)).toHaveLength(3);
-		expect(overdueTasks(d)).toHaveLength(0);
-		expect(weekTasks(d)).toHaveLength(5);
 	});
 });
 
