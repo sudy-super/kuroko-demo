@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Task, Origin } from '$lib/types';
+	import type { Task } from '$lib/types';
 	import { ORIGIN_LABEL, ORIGIN_ICON } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { doneLogOf, inTaskFilter } from '$lib/derived';
@@ -11,14 +11,12 @@
 
 	let {
 		task,
-		origin = 'tasks',
 		index,
 		count,
 		onmove,
 		ongrab
 	}: {
 		task: Task;
-		origin?: Origin;
 		/** 一覧の中の位置と件数。並べ替えのメニューの「上へ」「下へ」を出し分ける */
 		index: number;
 		count: number;
@@ -48,7 +46,7 @@
      キーボードと 1 回押しの代わりはメニューの「上へ」「下へ」(WCAG 2.2 2.5.7) -->
 <div class="list-row lg task-row" class:done={done} role="listitem" onpointerdown={ongrab}>
 	<label class="task-main">
-		<input type="checkbox" checked={done} aria-labelledby={titleId} onchange={() => toggleTask(task.id, origin)} />
+		<input type="checkbox" checked={done} aria-labelledby={titleId} onchange={() => toggleTask(task.id)} />
 		<span class="task-text">
 			<span class="task-title" id={titleId}>{task.title}</span>
 			{#if task.due}

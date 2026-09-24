@@ -6,7 +6,7 @@
 
 	/* ApprovalIcon と同じ作り。色は projectStatusClass (受注=緑/失注=赤/他=青)のまま、
 	   形は進行の段階で分ける (WCAG 1.4.1: 色だけで区別しない) */
-	let { status, size = 16 }: { status: ProjectStatus; size?: 16 | 20 } = $props();
+	let { status }: { status: ProjectStatus } = $props();
 
 	const MARK: Record<ProjectStatus, string> = {
 		商談前: 'ic-flag',
@@ -19,7 +19,7 @@
 </script>
 
 <Tip text={status}>
-	<Icon name={MARK[status]} {size} label={status} class="ps-icon {projectStatusClass(status)}" />
+	<Icon name={MARK[status]} size={16} label={status} class="ps-icon {projectStatusClass(status)}" />
 </Tip>
 
 <style>

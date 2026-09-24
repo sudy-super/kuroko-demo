@@ -7,15 +7,13 @@
 	import OcrFlow from './OcrFlow.svelte';
 	import ProjectStatusIcon from './ProjectStatusIcon.svelte';
 
-	/** compact は狭い場所 (メールのスレッドの頭) 向け。メモと実績を落として身元だけ出す。
-	    headingLevel — 人物名の見出しレベルは置かれる場所によって正しい階層が変わるので
+	/** headingLevel — 人物名の見出しレベルは置かれる場所によって正しい階層が変わるので
 	    呼び出し側から渡す (rereview-task-10p.md 新規 1)。デスクトップの右欄は <h1>Inbox</h1>
 	    の下なので既定の 2、Drawer のシートは題名の <h3> の下なので 4 を渡す */
 	let {
 		identityId,
-		compact = false,
 		headingLevel = 2
-	}: { identityId: string; compact?: boolean; headingLevel?: 2 | 4 } = $props();
+	}: { identityId: string; headingLevel?: 2 | 4 } = $props();
 
 	let addOpen = $state(false);
 
@@ -49,17 +47,15 @@
 			</a>
 		{/each}
 
-		{#if !compact}
-			<dl class="kv pp-stats">
-				<dt>最終商談</dt>
-				<dd>{stats?.lastMeeting ? fmtMDW(parse(stats.lastMeeting)) : '記録なし'}</dd>
-				<dt>メール</dt>
-				<dd class="num">{stats?.mails} 通</dd>
-				<dt>会議</dt>
-				<dd class="num">{stats?.meetings} 件</dd>
-			</dl>
-			{#if person.memo}<p class="pp-memo">{person.memo}</p>{/if}
-		{/if}
+		<dl class="kv pp-stats">
+			<dt>最終商談</dt>
+			<dd>{stats?.lastMeeting ? fmtMDW(parse(stats.lastMeeting)) : '記録なし'}</dd>
+			<dt>メール</dt>
+			<dd class="num">{stats?.mails} 通</dd>
+			<dt>会議</dt>
+			<dd class="num">{stats?.meetings} 件</dd>
+		</dl>
+		{#if person.memo}<p class="pp-memo">{person.memo}</p>{/if}
 
 		<a class="btn sec sm" href="/people/{person.id}">プロフィールを開く</a>
 	{:else}

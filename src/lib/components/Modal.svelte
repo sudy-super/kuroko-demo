@@ -12,8 +12,7 @@
 		onclose,
 		openFocus,
 		children,
-		actions,
-		box = $bindable(null)
+		actions
 	}: {
 		open: boolean;
 		title: string;
@@ -26,9 +25,6 @@
 		children?: Snippet;
 		/** palette は下の操作の行を持たない (行そのものが操作) */
 		actions?: Snippet;
-		/** 外枠の要素。closest('.modal') のように内部の class 名へ依存させたくない
-		    呼び出し側 (Palette の ↑↓ 送りなど)向けの公開 API */
-		box?: HTMLElement | null;
 	} = $props();
 
 	/** app.css の --d-exit */
@@ -100,7 +96,6 @@
 					<div
 						{...props}
 						aria-modal={framed ? 'false' : 'true'}
-						bind:this={box}
 						class="modal"
 						class:sm={size === 'sm'}
 						class:palette={size === 'palette'}
