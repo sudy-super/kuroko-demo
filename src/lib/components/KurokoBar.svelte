@@ -4,7 +4,7 @@
 	import { ui, type ContextChip } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 	import { barGlass } from '$lib/glass';
-	import { hearing } from '$lib/voice.svelte';
+	import VoiceActions from './VoiceActions.svelte';
 
 	let { context = null }: { context?: ContextChip | null } = $props();
 
@@ -48,18 +48,7 @@
 >
 	{#if voicing}
 		<div class="voice-bar" bind:this={acts}>
-			<button
-				type="button"
-				class="btn pri"
-				onclick={() => hearing.send(400)}
-				disabled={!hearing.heard.trim() || hearing.thinking}
-			>
-				<Icon name="ic-send" size={20} />KUROKO に送る
-			</button>
-			<button type="button" class="btn sec" onclick={() => hearing.start()} disabled={hearing.thinking}>
-				やり直す
-			</button>
-			<button type="button" class="btn text" onclick={() => (ui.voice = false)}>閉じる</button>
+			<VoiceActions />
 		</div>
 	{:else if context}
 		<button

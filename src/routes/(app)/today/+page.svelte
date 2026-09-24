@@ -624,13 +624,12 @@
 					<!-- 途中の聞き取り結果は読み上げに流さない。状態の文言と、聞き取りが終わった時点の
 					     文字だけを role="status" で伝える (voice-orb.md の読み上げとキーボード) -->
 					<div class="voice-here" style:left="{voiceX}px">
-						<p class="voice-state" role="status">
+						<!-- ユーザー指示 2026-09-24 — 状態の文言は画面には出さず読み上げだけに残す -->
+						<p class="voice-state sr-only" role="status">
 							{hearing.thinking ? '考えています…' : hearing.live ? '聞いています…' : '聞き取りました'}
 							{#if !hearing.live && !hearing.thinking}<span class="sr-only">{hearing.heard}</span>{/if}
 						</p>
 						<p class="voice-heard" aria-hidden="true">{hearing.heard}</p>
-						<!-- 仕様 5.14 — 実行の前に必ず確認するという約束をこの画面でも出す -->
-						<p class="voice-note">送信・予約・請求は、実行の前に確認します</p>
 					</div>
 				{/if}
 			</div>

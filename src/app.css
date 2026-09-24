@@ -3020,8 +3020,9 @@ section.tc .list-row:not(label):not(a):hover {
 			inset 0 0 0 1px rgba(30, 42, 71, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9), var(--e3);
 	}
 }
-/* 聞いている間の状態の文言と聞き取った文字。オーブの破片の上に文字を載せない (visual 2.8) ため、
-   球の下ではなく依頼バーのすぐ上に置く。横はオーブの中心 (today/+page.svelte の voiceX) */
+/* 聞いている間の聞き取った文字 (状態の文言は sr-only で読み上げのみ)。オーブの破片の上に
+   文字を載せない (visual 2.8) ため、球の下ではなく依頼バーのすぐ上に置く。
+   横はオーブの中心 (today/+page.svelte の voiceX) */
 .today .voice-here {
 	position: fixed;
 	bottom: calc(var(--chatbar-h) + var(--sp-4) * 2);
@@ -3220,36 +3221,6 @@ section.tc .list-row:not(label):not(a):hover {
 	width: 280px;
 	height: 280px;
 }
-.voice-state {
-	margin: 0;
-	font-size: 20px;
-	font-weight: 500;
-}
-/* 波形 5 本。JS では描かない */
-.voice-wave {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	height: 40px;
-}
-.voice-wave span {
-	width: 6px;
-	height: 12px;
-	border-radius: 3px;
-	background: var(--accent);
-	opacity: 0.45;
-}
-.voice-wave.on span {
-	animation: voice-bar 900ms var(--ease-out) infinite alternate;
-	/* 5 本を少しずつずらす。--n は 0〜4 (VoiceOverlay.svelte) */
-	animation-delay: calc(var(--n) * 110ms);
-	opacity: 1;
-}
-@keyframes voice-bar {
-	to {
-		height: 36px;
-	}
-}
 /* 聞き取った文。高さを先に確保し、文字が増えても下の操作が動かない */
 .voice-heard {
 	max-width: 520px;
@@ -3259,15 +3230,46 @@ section.tc .list-row:not(label):not(a):hover {
 	line-height: 1.6;
 	text-align: center;
 }
-.voice-note {
-	margin: 0;
-	color: var(--ink-2);
-	font-size: 14px;
-}
+/* 話している間の操作 (VoiceActions.svelte)。ユーザー指示 2026-09-24 — アイコンだけの丸いボタン
+   2 個。左が閉じる (終わらせる)、右が送る (進める)。Apple の Siri・音声入力と同じ並び */
 .voice-acts {
-	flex-wrap: wrap;
+	display: flex;
+	align-items: center;
 	justify-content: center;
-	gap: var(--sp-4);
+	gap: var(--sp-6);
+}
+.voice-act {
+	display: inline-grid;
+	place-items: center;
+	width: 56px;
+	height: 56px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	cursor: pointer;
+	transition: background var(--d-fast) var(--ease-out);
+}
+/* 依頼バーのガラスのピルの上に乗るので、ガラスは重ねず薄い塗りだけにする (枠・影なし) */
+.voice-act-close {
+	background: var(--hover);
+	color: var(--ink);
+}
+.voice-act-close:hover {
+	background: var(--press);
+}
+.voice-act-send {
+	background: var(--accent);
+	color: #fff;
+}
+.voice-act-send:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--accent) 88%, #000);
+}
+.voice-act-send:active:not(:disabled) {
+	background: color-mix(in srgb, var(--accent) 78%, #000);
+}
+.voice-act-send:disabled {
+	opacity: 0.4;
+	cursor: default;
 }
 /* Today の環状配置で聞いている間、依頼バーの中身をこの操作に差し替える (KurokoBar.svelte) */
 .chatbar .voice-bar {
@@ -3275,7 +3277,6 @@ section.tc .list-row:not(label):not(a):hover {
 	flex: 1;
 	align-items: center;
 	justify-content: center;
-	gap: var(--sp-3);
 }
 
 /* 完了画面。球の下側がカードに隠れてガラスのぼかす対象になるよう、画の 3 割を重ねる。
