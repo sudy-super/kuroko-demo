@@ -5,6 +5,7 @@
 	import { lineSay, sendReply } from '$lib/actions';
 	import { integrations } from '$lib/integrations';
 	import Icon from '$lib/components/Icon.svelte';
+	import Segmented from '$lib/components/Segmented.svelte';
 	import LineChat from '$lib/components/LineChat.svelte';
 
 	const TABS = [
@@ -64,31 +65,8 @@
 	</p>
 
 	<div class="ig-switches">
-		<!-- /tasks と同じ形 (.chip + aria-pressed)。選択中はチェック印も出す (WCAG 1.4.1) -->
-		<div class="row ig-row" role="group" aria-label="サービスを選ぶ">
-			{#each TABS as t (t.key)}
-				<button
-					class="chip"
-					class:on={db.demo.lineTab === t.key}
-					aria-pressed={db.demo.lineTab === t.key}
-					onclick={() => set('lineTab', t.key)}
-				>
-					{t.label}
-				</button>
-			{/each}
-		</div>
-		<div class="row ig-row" role="group" aria-label="話しかける人を選ぶ">
-			{#each ROLES as r (r.key)}
-				<button
-					class="chip"
-					class:on={db.demo.lineRole === r.key}
-					aria-pressed={db.demo.lineRole === r.key}
-					onclick={() => set('lineRole', r.key)}
-				>
-					{r.label}
-				</button>
-			{/each}
-		</div>
+		<Segmented label="サービスを選ぶ" items={[...TABS]} value={db.demo.lineTab} onchange={(k) => set('lineTab', k)} />
+		<Segmented label="話しかける人を選ぶ" items={[...ROLES]} value={db.demo.lineRole} onchange={(k) => set('lineRole', k)} />
 	</div>
 
 	<!-- 切り替えるとやり取りの入れ物ごと変わる。log をそのまま作り直させる -->
@@ -118,9 +96,5 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--sp-3) var(--sp-5);
-	}
-	.ig-row {
-		flex-wrap: wrap;
-		gap: var(--sp-2);
 	}
 </style>

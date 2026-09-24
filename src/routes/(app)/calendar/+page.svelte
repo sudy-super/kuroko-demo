@@ -10,6 +10,7 @@
 	import { linkUrl } from '$lib/derived';
 	import { personOf, projectOf } from '$lib/derived';
 	import Icon from '$lib/components/Icon.svelte';
+	import Segmented from '$lib/components/Segmented.svelte';
 	import Tip from '$lib/components/Tip.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import WeekView from '$lib/components/WeekView.svelte';
@@ -80,14 +81,16 @@
 			</button>
 		</div>
 		<h2 class="cal-title" aria-live="polite">{title}</h2>
-		<!-- Task 10p (参考の良い点 9、調査: Apple HIG Segmented controls「all segments are usually
-		     equal in width」、M3 Segmented buttons「Segment width = Container width / total
-		     segments」) — 月/週は排他の表示切り替えなので絞り込みチップの .chip ではなく
-		     等幅・隣接・単一外枠の segmented control (.seg) にする。選択は塗りだけで示し、
-		     チェック印は出さない (どちらを選んでも幅が変わらない) -->
-		<div class="seg cal-seg" role="group" aria-label="表示の切り替え">
-			<button class="seg-btn" class:on={view === 'month'} aria-pressed={view === 'month'} onclick={() => (view = 'month')}>月</button>
-			<button class="seg-btn" class:on={view === 'week'} aria-pressed={view === 'week'} onclick={() => (view = 'week')}>週</button>
+		<div class="cal-seg">
+			<Segmented
+				label="表示の切り替え"
+				items={[
+					{ key: 'month', label: '月' },
+					{ key: 'week', label: '週' }
+				]}
+				value={view}
+				onchange={(k) => (view = k)}
+			/>
 		</div>
 		<a class="iconbtn cal-add" href="/calendar?new=1" title="予定を追加" aria-label="予定を追加">
 			<Icon name="ic-plus" size={20} />

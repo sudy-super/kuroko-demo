@@ -6,9 +6,10 @@
 	import { ui, toast } from '$lib/ui.svelte';
 	import type { Automation, Connection } from '$lib/types';
 	import Icon from '$lib/components/Icon.svelte';
+	import Segmented from '$lib/components/Segmented.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 
-	// /people /tasks と同じチップのタブ (components 3.6)
+	// /people /tasks と同じ表示の切り替え (Segmented.svelte)
 	const TABS = [
 		{ key: 'connect', label: '連携', icon: 'ic-link' },
 		{ key: 'auto', label: '自動化レベル', icon: 'ic-bolt' },
@@ -94,17 +95,8 @@
 <div class="settings">
 	<h1 class="sr-only">設定</h1>
 
-	<div class="row set-tabs" role="group" aria-label="設定の切り替え">
-		{#each TABS as t (t.key)}
-			<button
-				class="chip"
-				class:on={tab === t.key}
-				aria-pressed={tab === t.key}
-				onclick={() => (tab = t.key)}
-			>
-				{t.label}
-			</button>
-		{/each}
+	<div class="set-tabs">
+		<Segmented label="設定の切り替え" items={[...TABS]} value={tab} onchange={(k) => (tab = k)} />
 	</div>
 
 	{#if tab === 'connect'}
@@ -267,8 +259,6 @@
 
 <style>
 	.set-tabs {
-		flex-wrap: wrap;
-		gap: var(--sp-2);
 		padding: 0 var(--sp-5) var(--sp-4);
 	}
 	/* 連携と正本、レベルと必ず確認の 2 列。960px 以下は 1 列に落ちる */

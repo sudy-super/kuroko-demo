@@ -1475,54 +1475,104 @@ svg.i {
 	font-size: 10px;
 }
 
-/* Task 10p (参考の良い点 9、調査: Apple HIG Segmented controls / M3 Segmented buttons) —
-   排他の表示切り替え。フィルターの .chip とは違い、選択は塗りだけで示しチェック印は出さない。
-   等幅で隣接し、外枠は 1 つ。M3 の Measurements (外枠 1dp、Segment width =
-   Container width / total segments) を参考にする。高さは下の Task 11r のコメントのとおり
-   44px (タップ領域の下限。M3 の既定 40dp からは外れる) */
+/* 複数から 1 つを選ぶ表示の切り替え (Segmented.svelte)。iOS 26 のセグメンテッドコントロールに
+   合わせ、薄い灰色のカプセルの中で、選んだ項目の下に白いつまみを敷く。項目の幅は文字に合わせる
+   (件数の数字が入る項目があり、等幅にすると短い項目の余白が間延びする)。高さ 44px は
+   タップ領域の下限 (WCAG 2.5.5 / Apple HIG)。つまみの内側に 4px の余白を取る */
 .seg {
+	position: relative;
 	display: inline-flex;
+	flex-wrap: nowrap;
+	padding: 4px;
 	border-radius: var(--r-pill);
-	box-shadow: inset 0 0 0 1px var(--border);
-	overflow: hidden;
+	background: rgba(30, 42, 71, 0.07);
+	/* 縮めて横に送らせると、端の項目が隠れて選べることに気づけない。幅は中身のまま保ち、
+	   収まらないときは並ぶ列 (.row) の側で折り返させる */
+	flex: none;
 }
-/* Task 11r 修正ラウンド 1 (Minor 3) — 月/週の切り替え (.seg-btn)は 40px しかなく、44px の
-   下限を割っていた (監査には未掲載だが responsive-policy.md の条件 4 に反する)。.week-ev::before
-   で踏んだとおり、親 (.seg、overflow: hidden)の中で疑似要素の inset 拡張は効かないので、実寸
-   そのものを 44px にする。.seg は高さを明示していない (中身に合わせる)ので、これだけで足りる */
+.seg-thumb {
+	position: absolute;
+	top: 4px;
+	bottom: 4px;
+	left: 0;
+	border-radius: var(--r-pill);
+	background: #fff;
+	box-shadow: 0 1px 3px rgba(30, 42, 71, 0.12), 0 1px 1px rgba(30, 42, 71, 0.06);
+	pointer-events: none;
+}
+.seg-thumb.ready {
+	transition:
+		transform 320ms cubic-bezier(0.3, 1.3, 0.5, 1),
+		width 320ms cubic-bezier(0.3, 1.3, 0.5, 1);
+}
 .seg-btn {
-	flex: 1 1 0;
+	position: relative;
 	display: inline-flex;
+	flex: none;
 	align-items: center;
 	justify-content: center;
-	min-width: 64px;
-	height: 44px;
+	gap: var(--sp-2);
+	height: 36px;
 	padding: 0 var(--sp-4);
 	border: 0;
+	border-radius: var(--r-pill);
 	background: none;
-	color: var(--accent);
+	color: var(--ink-2);
 	font-size: 14px;
 	font-weight: 500;
 	line-height: 1.4;
 	white-space: nowrap;
 	cursor: pointer;
-	transition: background var(--d-fast) var(--ease-out);
+	transition: color var(--d-fast) var(--ease-out);
 }
-.seg-btn + .seg-btn {
-	box-shadow: inset 1px 0 0 var(--border);
+/* 見える高さは 36px、押せる範囲は外側の余白まで広げて 44px にする */
+.seg-btn::after {
+	content: '';
+	position: absolute;
+	inset: -4px 0;
 }
 .seg-btn:hover {
-	background: var(--hover-accent);
+	color: var(--ink);
 }
-.seg-btn:active {
-	background: var(--press-accent);
-}
-.seg-btn.on {
-	background: var(--accent);
-	color: #fff;
+.seg-btn[aria-pressed='true'] {
+	color: var(--accent);
+	font-weight: 700;
 }
 .seg-btn:focus-visible {
 	outline-offset: -2px;
+}
+.seg .badge.count {
+	background: rgba(30, 42, 71, 0.1);
+	color: var(--ink-2);
+}
+.seg-btn[aria-pressed='true'] .badge.count {
+	background: var(--accent);
+	color: #fff;
+}
+.seg .badge.count.danger {
+	background: var(--warn);
+	color: #fff;
+}
+/* 携帯の幅では、横に並ぶ「+」などを除いた残りいっぱいに広げ、余りを項目に配る。等分にすると
+   「期限超過」のような長い項目がはみ出すので、文字の長さを基準にする。項目の中の余白と件数との
+   間を詰め、ToDo の 4 項目と「+」が 358px に収まるようにする */
+@media (max-width: 600px) {
+	.seg {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+	.seg-btn {
+		flex: 1 1 auto;
+		min-width: 0;
+		gap: 2px;
+		padding: 0 2px;
+		font-size: 13px;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.seg-thumb.ready {
+		transition: none;
+	}
 }
 
 /* components 3.7 / ユーザー指摘 2026-09-23 (指摘 1) — 他の面 (.sheet 等) と同じ regular 変種の
@@ -4237,12 +4287,9 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
 	margin: 0;
 }
 .people-bar {
-	gap: var(--sp-3);
-	padding: 0 var(--sp-5) var(--sp-5);
-}
-.people-tabs {
 	flex-wrap: wrap;
 	gap: var(--sp-3);
+	padding: 0 var(--sp-5) var(--sp-5);
 }
 .people-add {
 	margin-left: auto;

@@ -3,6 +3,7 @@
 	import { db } from '$lib/store.svelte';
 	import { badgeCount, companyOf, personOf } from '$lib/derived';
 	import Icon from '$lib/components/Icon.svelte';
+	import Segmented from '$lib/components/Segmented.svelte';
 	import ProjectStatusIcon from '$lib/components/ProjectStatusIcon.svelte';
 	import OcrFlow from '$lib/components/OcrFlow.svelte';
 	import Avatars from '$lib/components/Avatars.svelte';
@@ -32,19 +33,9 @@
 <div class="people">
 	<h1 class="sr-only">会社・人物・案件</h1>
 	<div class="row people-bar">
-		<div class="row people-tabs" role="group" aria-label="表示の切り替え">
-			{#each TABS as t (t.key)}
-				<button
-					class="chip"
-					class:on={tab === t.key}
-					aria-pressed={tab === t.key}
-					onclick={() => (tab = t.key)}
-				>
-					{t.label}
-					<span class="badge count">{badgeCount(count[t.key])}</span>
-				</button>
-			{/each}
-		</div>
+		<Segmented label="表示の切り替え" items={TABS} value={tab} onchange={(k) => (tab = k)}>
+			{#snippet extra(k)}<span class="badge count">{badgeCount(count[k])}</span>{/snippet}
+		</Segmented>
 		<!-- ToDo の「+」と同じく、切り替えの列の右端に記号だけのボタンで置く -->
 		{#if tab === 'people'}
 			<button class="iconbtn people-add" title="名刺から追加" aria-label="名刺から追加" onclick={() => (cardOpen = true)}>
