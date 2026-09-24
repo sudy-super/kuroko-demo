@@ -6,7 +6,7 @@
 	import { documentOf, personOf, projectOf } from '$lib/derived';
 	import { generateDocument, sendDocument } from '$lib/actions';
 	import { ui, focusChatbar, toast } from '$lib/ui.svelte';
-	import { parse, rel } from '$lib/dates';
+	import { relAt } from '$lib/dates';
 	import type { Document } from '$lib/types';
 	import Icon from '$lib/components/Icon.svelte';
 	import DocPreview from '$lib/components/DocPreview.svelte';
@@ -25,7 +25,6 @@
 	// 960px 以下は一覧 → プレビューの 2 段階 (/inbox と同じ)。?d= で入ってきたらプレビューから
 	let showDoc = $state(page.url.searchParams.has('d'));
 
-	const when = (at: string) => `${rel(parse(at.slice(0, 10)), parse(db.seededOn))} ${at.slice(11, 16)}`;
 	const select = (id: string) => {
 		showDoc = true;
 		goto(`/documents?d=${id}`, { noScroll: true, keepFocus: true });
@@ -98,7 +97,7 @@
 						</span>
 						<span class="tc-text">{d.title}</span>
 						<span class="sub"
-							>{d.createdBy === 'KUROKO' ? 'KUROKO' : '自分'} / {when(d.createdAt)}</span
+							>{d.createdBy === 'KUROKO' ? 'KUROKO' : '自分'} / {relAt(d.createdAt, db.seededOn)}</span
 						>
 					</span>
 				</button>

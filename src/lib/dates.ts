@@ -23,6 +23,10 @@ export function rel(d: Date, base: Date = today()): string {
   const n = Math.round((d.getTime() - base.getTime()) / 864e5);
   return n === 0 ? '今日' : n === 1 ? '明日' : n === -1 ? '昨日' : fmtMDW(d);
 }
+/** 'YYYY-MM-DD' または 'YYYY-MM-DDTHH:MM…' の日付の部分を、base の日から見た今日・明日・昨日・月日で書く */
+export function relDay(at: string, base: string): string { return rel(parse(at.slice(0, 10)), parse(base)); }
+/** relDay に時刻 'HH:MM' を添える */
+export function relAt(at: string, base: string): string { return `${relDay(at, base)} ${at.slice(11, 16)}`; }
 export function hm(d: Date = new Date()): string { return `${d.getHours()}:${pad(d.getMinutes())}`; }
 export function nowIso(): string { const d = new Date(); return `${key(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; } // ローカル時刻。UTC にしない (todaySummary が日付で絞るため)
 export function minutes(hhmm: string): number { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; }

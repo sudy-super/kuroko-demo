@@ -2,7 +2,7 @@
 	import type { Document, MessageThread, Meeting, Person, Project } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { eventDateOf } from '$lib/derived';
-	import { parse, rel, fmtMDW } from '$lib/dates';
+	import { parse, fmtMDW, relDay } from '$lib/dates';
 	import SourceIcon from './SourceIcon.svelte';
 	import ProjectStatusIcon from './ProjectStatusIcon.svelte';
 	import DocKindIcon from './DocKindIcon.svelte';
@@ -30,7 +30,7 @@
 	<a class="list-row" href="/inbox?t={t.id}">
 		<SourceIcon source={t.source} />
 		<span class="people-ident">{t.subject}</span>
-		<span class="num muted">{rel(parse(t.lastAt.slice(0, 10)), parse(db.seededOn))}</span>
+		<span class="num muted">{relDay(t.lastAt, db.seededOn)}</span>
 	</a>
 {/snippet}
 

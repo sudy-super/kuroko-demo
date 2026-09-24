@@ -3,7 +3,7 @@
 	import { REASON_ORDER } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { threadSenderMeta } from '$lib/derived';
-	import { parse, rel } from '$lib/dates';
+	import { relDay } from '$lib/dates';
 	import SourceIcon from './SourceIcon.svelte';
 	import ReasonIcon from './ReasonIcon.svelte';
 
@@ -16,7 +16,7 @@
 	/* 行に出す理由は重い順に 2 個まで (indicators.md 2 節「1 画面のインジケーターは 5〜6 個まで」)。
 	   残りはスレッドを開いたときの 1 行に出る */
 	const reasons = $derived(REASON_ORDER.filter((r) => thread.reasons.includes(r)).slice(0, 2));
-	const day = $derived(rel(parse(thread.lastAt.slice(0, 10)), parse(db.seededOn)));
+	const day = $derived(relDay(thread.lastAt, db.seededOn));
 	// 時刻は画面の他の場所と同じく 1 桁時をそのまま出す (8:05 と 08:05 を混ぜない)
 	const when = $derived(day === '今日' ? thread.lastAt.slice(11, 16).replace(/^0/, '') : day);
 	// 差出人 / 会社 / 返信数 / 時刻を 1 行にまとめる。組み立ては threadSenderMeta

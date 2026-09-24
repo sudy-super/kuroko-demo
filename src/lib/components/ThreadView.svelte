@@ -3,7 +3,7 @@
 	import { REASON_ORDER, REASON_SENTENCE } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { threadSenderMeta } from '$lib/derived';
-	import { parse, rel } from '$lib/dates';
+	import { relDay } from '$lib/dates';
 	import Icon from './Icon.svelte';
 	import SourceIcon from './SourceIcon.svelte';
 	import ReplyBox from './ReplyBox.svelte';
@@ -27,7 +27,7 @@
 	);
 	// 時刻の 1 桁時はそのまま出す (一覧の行と同じ見せ方)
 	const stamp = (at: string) =>
-		`${rel(parse(at.slice(0, 10)), parse(db.seededOn))} ${at.slice(11, 16).replace(/^0/, '')}`;
+		`${relDay(at, db.seededOn)} ${at.slice(11, 16).replace(/^0/, '')}`;
 
 	/* 一覧の行はアイコンだけなので、詳細では理由を文言で常時出す (NN/g「アイコンには可視のラベル」)。
 	   単語をスラッシュで並べずに読点でつないだ 1 文にする */

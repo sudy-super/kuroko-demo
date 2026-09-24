@@ -2,14 +2,14 @@
 	import type { Document } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { companyOf, projectOf } from '$lib/derived';
-	import { parse, rel } from '$lib/dates';
+	import { relAt } from '$lib/dates';
 	import DocKindIcon from './DocKindIcon.svelte';
 
 	let { doc }: { doc: Document } = $props();
 
 	const project = $derived(projectOf(db, doc.projectId));
 	const company = $derived(companyOf(db, project?.companyId));
-	const when = $derived(`${rel(parse(doc.createdAt.slice(0, 10)), parse(db.seededOn))} ${doc.createdAt.slice(11, 16)}`);
+	const when = $derived(relAt(doc.createdAt, db.seededOn));
 </script>
 
 <!-- 印刷ではこの節だけが残る (app.css の @media print)。紙に出る内容をここに閉じる -->

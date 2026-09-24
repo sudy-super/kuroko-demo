@@ -5,7 +5,7 @@
 	import { doneLogOf, inTaskFilter } from '$lib/derived';
 	import { toggleTask, toggleStar, undo } from '$lib/actions';
 	import { DropdownMenu } from 'bits-ui';
-	import { parse, rel } from '$lib/dates';
+	import { relDay } from '$lib/dates';
 	import Icon from './Icon.svelte';
 	import Tip from './Tip.svelte';
 
@@ -50,7 +50,7 @@
 			{#if task.due}
 				<!-- 狭い画面だけ、期限を題名の下に出す (下の @media)。広い画面は右の列に出す -->
 				<span class="num task-due task-due-sub" class:overdue aria-hidden="true"
-					>{rel(parse(task.due), parse(db.seededOn))}{task.time ? ` ${task.time}` : ''}</span
+					>{relDay(task.due, db.seededOn)}{task.time ? ` ${task.time}` : ''}</span
 				>
 			{/if}
 		</span>
@@ -59,7 +59,7 @@
 		{#if task.due}
 			<span class="num task-due" class:overdue>
 				{#if overdue}<Icon name="ic-alert" size={16} label="期限超過" class="task-od" />{/if}
-				{rel(parse(task.due), parse(db.seededOn))}{task.time ? ` ${task.time}` : ''}
+				{relDay(task.due, db.seededOn)}{task.time ? ` ${task.time}` : ''}
 			</span>
 		{/if}
 		<Tip text={originLabel} name={ORIGIN_ICON[task.origin]} size={16} class="task-origin" />

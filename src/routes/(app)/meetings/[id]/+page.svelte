@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
 	import { eventDateOf, eventOf, meetingMailTargetFor, meetingOf, personOf } from '$lib/derived';
-	import { parse, rel, fmtMDW } from '$lib/dates';
+	import { parse, fmtMDW, relAt } from '$lib/dates';
 	import { generateAgenda, markBriefRead, shareAgenda, updateAgenda } from '$lib/actions';
 	import { ui } from '$lib/ui.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -92,7 +92,7 @@
 			<!-- 作成した時刻は Brief が持っているので、文言もそこから組む (types.ts Brief.createdAt) -->
 			<p class="muted mt-note">
 				{meeting.brief.note ??
-					`${rel(parse(meeting.brief.createdAt.slice(0, 10)), parse(db.seededOn))} ${meeting.brief.createdAt.slice(11, 16)} に KUROKO が作成しました`}
+					`${relAt(meeting.brief.createdAt, db.seededOn)} に KUROKO が作成しました`}
 			</p>
 		{/if}
 	{/snippet}

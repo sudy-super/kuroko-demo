@@ -3,7 +3,7 @@
 	import { db } from '$lib/store.svelte';
 	import { companyOf, contactOf, personOf, projectOf } from '$lib/derived';
 	import { identitiesOf, personHistory, personStats, HISTORY_ICON } from '$lib/people';
-	import { parse, rel, fmtMDW } from '$lib/dates';
+	import { parse, fmtMDW, relAt } from '$lib/dates';
 	import { ui, toast, focusChatbar } from '$lib/ui.svelte';
 	import { updatePersonMemo } from '$lib/actions';
 	import Icon from '$lib/components/Icon.svelte';
@@ -46,9 +46,7 @@
 		toast('メモを保存しました');
 	}
 
-	const day = (at: string) => `${rel(parse(at.slice(0, 10)), parse(db.seededOn))} ${at.slice(11, 16)}`;
-
-	/** 依頼バーにこの人物の文脈を載せ、入力欄へ焦点を移す (仕様 5.5) */
+		/** 依頼バーにこの人物の文脈を載せ、入力欄へ焦点を移す (仕様 5.5) */
 	function ask() {
 		if (!person) return;
 		ui.context = { label: `${person.name}様について`, personId: person.id };
@@ -122,7 +120,7 @@
 				<a class="list-row" href={h.href}>
 					<Tip text={h.label} name={HISTORY_ICON[h.kind]} size={20} class="ph-history-icon" />
 					<span class="people-ident">{h.title}</span>
-					<span class="num muted">{day(h.at)}</span>
+					<span class="num muted">{relAt(h.at, db.seededOn)}</span>
 				</a>
 			{/snippet}
 		</ListSection>
