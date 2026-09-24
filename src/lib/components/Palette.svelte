@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { Command } from 'bits-ui';
 	import { goto } from '$app/navigation';
 	import { db } from '$lib/store.svelte';
@@ -45,15 +46,54 @@
 	const ask = () => open(q ? `/chat?q=${encodeURIComponent(q)}` : '/chat');
 </script>
 
-{#snippet askRow()}
+<!-- 群は見出しと行の並び。見出しの無い群 (KUROKO に頼む) もある -->
+{#snippet group(heading: string | null, items: Snippet)}
 	<Command.Group>
-		<Command.GroupItems>
-			<Command.Item class="list-row pal-row" value="ask" onSelect={ask}>
-				<Icon name="ic-spark" size={20} />
-				<span class="pal-label">KUROKO に頼む{q ? `: 「${q}」` : ''}</span>
-			</Command.Item>
-		</Command.GroupItems>
+		{#if heading}<Command.GroupHeading class="pal-group">{heading}</Command.GroupHeading>{/if}
+		<Command.GroupItems>{@render items()}</Command.GroupItems>
 	</Command.Group>
+{/snippet}
+
+{#snippet row(value: string, onSelect: () => void, icon: string, label: string, src?: string)}
+	<Command.Item class="list-row pal-row" {value} {onSelect}>
+		<Icon name={icon} size={20} /><span class="pal-label">{label}</span>
+		{#if src}<span class="pal-src">{src}</span>{/if}
+	</Command.Item>
+{/snippet}
+
+{#snippet askItems()}
+	{@render row('ask', ask, 'ic-spark', `KUROKO に頼む${q ? `: 「${q}」` : ''}`)}
+{/snippet}
+
+{#snippet recentItems()}
+	{#each recents as r (r.href)}{@render row(`recent:${r.href}`, () => open(r.href), 'ic-history', r.label)}{/each}
+{/snippet}
+
+<!-- 「予定」「ToDo」の追加。行き先は各画面の追加ボタンと同じ -->
+{#snippet actItems()}
+	{@render row('act:event', () => open('/calendar?new=1'), 'ic-plus', '予定を追加')}
+	{@render row('act:task', () => open('/tasks?new=1'), 'ic-plus', '新しい ToDo を追加')}
+{/snippet}
+
+{#snippet demoItems()}
+	{#if canStart}
+		{@render row('demo:start', () => (close(), startGuide()), 'ic-play', 'デモを開始する', 'デモ')}
+	{/if}
+	{#each SCENARIOS as s, i (i)}
+		<Command.Item
+			class="list-row pal-row scenario"
+			value="demo:sc{i}"
+			onSelect={() => {
+				close();
+				pickScenario(i);
+			}}
+		>
+			<span class="num demo-n">{i + 1}</span>
+			<span class="pal-label">{s.label}</span>
+			<span class="pal-src">デモ</span>
+		</Command.Item>
+	{/each}
+	{@render row('demo:reset', () => (close(), (ui.demoReset = true)), 'ic-undo', 'デモをリセット', 'デモ')}
 {/snippet}
 
 <Modal open={ui.palette} title="検索と依頼" size="palette" openFocus={() => input} onclose={close}>
@@ -85,115 +125,36 @@
 		<Command.List class="pal-list">
 			<Command.Viewport>
 				{#if !q}
-					{#if recents.length > 0}
-						<Command.Group>
-							<Command.GroupHeading class="pal-group">最近開いた</Command.GroupHeading>
-							<Command.GroupItems>
-								{#each recents as r (r.href)}
-									<Command.Item
-										class="list-row pal-row"
-										value="recent:{r.href}"
-										onSelect={() => open(r.href)}
-									>
-										<Icon name="ic-history" size={20} />
-										<span class="pal-label">{r.label}</span>
-									</Command.Item>
-								{/each}
-							</Command.GroupItems>
-						</Command.Group>
-					{/if}
-					{@render askRow()}
-					<!-- 「予定」「ToDo」の追加。行き先は各画面の追加ボタンと同じ -->
-					<Command.Group>
-						<Command.GroupHeading class="pal-group">よく使う操作</Command.GroupHeading>
-						<Command.GroupItems>
-							<Command.Item
-								class="list-row pal-row"
-								value="act:event"
-								onSelect={() => open('/calendar?new=1')}
-							>
-								<Icon name="ic-plus" size={20} /><span class="pal-label">予定を追加</span>
-							</Command.Item>
-							<Command.Item
-								class="list-row pal-row"
-								value="act:task"
-								onSelect={() => open('/tasks?new=1')}
-							>
-								<Icon name="ic-plus" size={20} /><span class="pal-label">新しい ToDo を追加</span>
-							</Command.Item>
-						</Command.GroupItems>
-					</Command.Group>
+					{#if recents.length > 0}{@render group('最近開いた', recentItems)}{/if}
+					{@render group(null, askItems)}
+					{@render group('よく使う操作', actItems)}
 					<!-- デモの操作の 2 つ目の置き場所。本番の画面には出さない (仕様 5.1) -->
-					<Command.Group>
-						<Command.GroupHeading class="pal-group">デモの操作</Command.GroupHeading>
-						<Command.GroupItems>
-							{#if canStart}
-								<Command.Item
-									class="list-row pal-row"
-									value="demo:start"
-									onSelect={() => {
-										close();
-										startGuide();
-									}}
-								>
-									<Icon name="ic-play" size={20} /><span class="pal-label">デモを開始する</span>
-									<span class="pal-src">デモ</span>
-								</Command.Item>
-							{/if}
-							{#each SCENARIOS as s, i (i)}
-								<Command.Item
-									class="list-row pal-row scenario"
-									value="demo:sc{i}"
-									onSelect={() => {
-										close();
-										pickScenario(i);
-									}}
-								>
-									<span class="num demo-n">{i + 1}</span>
-									<span class="pal-label">{s.label}</span>
-									<span class="pal-src">デモ</span>
-								</Command.Item>
-							{/each}
-							<Command.Item
-								class="list-row pal-row"
-								value="demo:reset"
-								onSelect={() => {
-									close();
-									ui.demoReset = true;
-								}}
-							>
-								<Icon name="ic-undo" size={20} /><span class="pal-label">デモをリセット</span>
-								<span class="pal-src">デモ</span>
-							</Command.Item>
-						</Command.GroupItems>
-					</Command.Group>
+					{@render group('デモの操作', demoItems)}
 				{:else}
 					<!-- 0 件のときは先頭に、結果があるときは最下段に置く (仕様 5.14) -->
-					{#if hits.length === 0}{@render askRow()}{/if}
+					{#if hits.length === 0}{@render group(null, askItems)}{/if}
 					{#each GROUPS as g (g)}
 						{@const rows = hits.filter((h) => h.group === g)}
 						{#if rows.length > 0}
-							<Command.Group>
-								<Command.GroupHeading class="pal-group">{g}</Command.GroupHeading>
-								<Command.GroupItems>
-									{#each rows as h (h.href + h.label)}
-										<Command.Item
-											class="list-row pal-row"
-											value="{g}:{h.href}:{h.label}"
-											onSelect={() => open(h.href)}
-										>
-											<Icon name={GROUP_ICON[g]} size={20} />
-											<span class="pal-label">
-												{h.label}<span class="sub">{h.sub}</span>
-											</span>
-											<span class="pal-src">{h.source}</span>
-										</Command.Item>
-									{/each}
-								</Command.GroupItems>
-							</Command.Group>
+							{#snippet hitItems()}
+								{#each rows as h (h.href + h.label)}
+									<Command.Item
+										class="list-row pal-row"
+										value="{g}:{h.href}:{h.label}"
+										onSelect={() => open(h.href)}
+									>
+										<Icon name={GROUP_ICON[g]} size={20} />
+										<span class="pal-label">
+											{h.label}<span class="sub">{h.sub}</span>
+										</span>
+										<span class="pal-src">{h.source}</span>
+									</Command.Item>
+								{/each}
+							{/snippet}
+							{@render group(g, hitItems)}
 						{/if}
 					{/each}
-					{#if hits.length > 0}{@render askRow()}{/if}
+					{#if hits.length > 0}{@render group(null, askItems)}{/if}
 				{/if}
 			</Command.Viewport>
 		</Command.List>
