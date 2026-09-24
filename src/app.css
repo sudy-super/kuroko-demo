@@ -76,6 +76,9 @@
 	--e3:
 		0 2px 6px hsl(220 40% 35% / 0.08), 0 12px 32px hsl(220 40% 35% / 0.12),
 		0 32px 72px hsl(220 40% 35% / 0.16);
+	/* カードの縁 (枠線は border ではなく内側の影で描く) と落ち影 */
+	--card-edge: inset 0 0 0 1px rgba(30, 42, 71, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+	--card-drop: 0 8px 24px rgba(30, 42, 71, 0.08);
 	/* ナビ層のガラスの落ち影。地が無彩色に近く、板が浮いて見えるのは影と縁だけで伝わる。
 	   ライブラリは影を描かないので CSS 側で持つ */
 	--e-glass:
@@ -549,25 +552,19 @@ svg.i {
 	border-radius: var(--r-m);
 	padding: var(--sp-5) var(--sp-5) var(--sp-4);
 	background: rgba(255, 255, 255, 0.7);
-	box-shadow:
-		inset 0 0 0 1px rgba(30, 42, 71, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9),
-		0 8px 24px rgba(30, 42, 71, 0.08);
+	box-shadow: var(--card-edge), var(--card-drop);
 	transition: box-shadow var(--d-base) var(--ease-out);
 }
 /* 状態は浮きではなく塗りの濃淡で示す (docs/research/buttons.md 観点 A) */
 .card:hover {
-	box-shadow:
-		inset 0 0 0 1px rgba(30, 42, 71, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9),
-		inset 0 0 0 999px var(--hover), 0 8px 24px rgba(30, 42, 71, 0.08);
+	box-shadow: var(--card-edge), inset 0 0 0 999px var(--hover), var(--card-drop);
 }
 .card:active {
-	box-shadow:
-		inset 0 0 0 1px rgba(30, 42, 71, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9),
-		inset 0 0 0 999px var(--press), 0 8px 24px rgba(30, 42, 71, 0.08);
+	box-shadow: var(--card-edge), inset 0 0 0 999px var(--press), var(--card-drop);
 	transition-duration: var(--d-fast);
 }
 .card.on {
-	box-shadow: inset 0 0 0 2px var(--accent), 0 8px 24px rgba(30, 42, 71, 0.08);
+	box-shadow: inset 0 0 0 2px var(--accent), var(--card-drop);
 }
 
 /* visual 2.7 / 2.8 — カードは左右 2 列、間を空けてオーブを見せる。1100px 以下は段組み
