@@ -233,7 +233,10 @@ svg.i {
 }
 
 /* ruling — フォーカスの見た目は全部品共通 */
-:focus-visible {
+:focus-visible,
+.cal-radio .chip:has(:focus-visible),
+.switch:has(input:focus-visible),
+.list-row input[type='checkbox']:focus-visible {
 	outline: 2px solid var(--accent);
 	outline-offset: 2px;
 }
@@ -683,10 +686,16 @@ svg.i {
 	cursor: pointer;
 	transition: background var(--d-fast) var(--ease-out);
 }
-.chatbar .send:hover {
+/* 塗りの主ボタンの状態。混ぜる割合は白い文字との比 hover 8.09:1 / pressed 9.40:1。
+   押せない間の打ち消しはこれより後ろに同じ詳細度で置く */
+.chatbar .send:hover,
+.btn.pri:hover,
+.voice-act-send:hover:not(:disabled) {
 	background: color-mix(in srgb, var(--accent) 88%, #000);
 }
-.chatbar .send:active {
+.chatbar .send:active,
+.btn.pri:active,
+.voice-act-send:active:not(:disabled) {
 	background: color-mix(in srgb, var(--accent) 78%, #000);
 }
 .chatbar .send:disabled {
@@ -721,16 +730,9 @@ svg.i {
 	width: 18px;
 	height: 18px;
 }
-/* 状態は塗りの明度で示す。混ぜる割合は白い文字との比 hover 8.09:1 / pressed 9.40:1 */
 .btn.pri {
 	background: var(--accent);
 	color: #fff;
-}
-.btn.pri:hover {
-	background: color-mix(in srgb, var(--accent) 88%, #000);
-}
-.btn.pri:active {
-	background: color-mix(in srgb, var(--accent) 78%, #000);
 }
 /* components 3.4 — 副ボタンの枠は 1px 実線の --accent (白地に 6.84:1)。影は持たない (M3 outlined / Carbon tertiary) */
 .btn.sec {

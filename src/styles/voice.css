@@ -62,12 +62,6 @@
 	background: var(--accent);
 	color: #fff;
 }
-.voice-act-send:hover:not(:disabled) {
-	background: color-mix(in srgb, var(--accent) 88%, #000);
-}
-.voice-act-send:active:not(:disabled) {
-	background: color-mix(in srgb, var(--accent) 78%, #000);
-}
 .voice-act-send:disabled {
 	opacity: 0.4;
 	cursor: default;
