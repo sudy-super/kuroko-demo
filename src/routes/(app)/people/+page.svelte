@@ -44,11 +44,9 @@
 		{/if}
 	</div>
 
-	<!-- Task 10w — HIG 上ガラスを持たないコンテンツ層なので、Task 10c のガラス (glass()) を外して
-	     普通のカードの面 (.card) に戻した (glass-scope.md 6 節) -->
+	<!-- コンテンツ層なのでガラスは使わない (HIG Materials) -->
 	<div class="people-cards">
-		<!-- Task 10p 修正ラウンド 1 (Important 2) — /inbox・/tasks と同じ形の小見出しを一覧の先頭に置く。
-		     直上のタブと文言・件数が重なるが、絞り込みの現在値ではなく一覧そのものの見出しなので付ける -->
+		<!-- /inbox・/tasks と同じ形の小見出し。直上のタブと重なるが、絞り込みではなく一覧そのものの見出し -->
 		<section class="card people-list" aria-labelledby="people-list-head">
 			<h2 class="list-head" id="people-list-head">
 				<Icon name={TABS.find((t) => t.key === tab)!.icon} size={16} />{TABS.find((t) => t.key === tab)!
@@ -61,7 +59,7 @@
 							<span class="people-name">{p.name}</span>
 							<span class="sub">{companyOf(db, p.companyId)?.name ?? '会社の登録なし'} {p.title}</span>
 						</span>
-						<!-- 人物のタグは分類 (Atlassian の Tag) なので、状態の Lozenge とは見た目を分ける (audit 4) -->
+						<!-- 人物のタグは分類 (Atlassian の Tag) なので、状態の Lozenge とは見た目を分ける -->
 						{#each p.tags.slice(0, 2) as t (t)}<span class="badge tag">{t}</span>{/each}
 					</a>
 				{/each}

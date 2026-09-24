@@ -79,8 +79,7 @@
 	{#if !person}
 		<p class="people-missing">この人物は登録されていません。</p>
 	{:else}
-		<!-- Task 10w — HIG 上ガラスを持たないコンテンツ層なので、Task 10c のガラス (glass()) を外して
-		     普通のカードの面 (.card) に戻した (glass-scope.md 6 節) -->
+		<!-- コンテンツ層なのでガラスは使わない (HIG Materials) -->
 		<div class="people-cards">
 			<section class="card people-sec">
 				<h2>基本情報</h2>
@@ -98,7 +97,7 @@
 				</dl>
 				{#if person.tags.length}
 					<div class="row people-tagrow">
-						<!-- 人物のタグは分類 (Atlassian の Tag) なので、状態の Lozenge とは見た目を分ける (audit 4) -->
+						<!-- 人物のタグは分類 (Atlassian の Tag) なので、状態の Lozenge とは見た目を分ける -->
 						{#each person.tags as t (t)}<span class="badge tag">{t}</span>{/each}
 					</div>
 				{/if}
@@ -110,8 +109,7 @@
 					{@const found = identities.find((i) => i.kind === ch.kind)}
 					<div class="list-row">
 						{#if found}
-							<!-- indicators.md 結論 2 — 出所はブランドの記号 1 個と aria-label にとどめ、
-							     同じ意味の文字バッジを右端に重ねない (audit 5) -->
+							<!-- 出所はブランドの記号 1 個と aria-label にとどめ、同じ意味の文字バッジを重ねない (indicators.md 結論 2) -->
 							<Tip text="{ch.label} の連絡先" name={ch.icon} size={20} />
 							<!-- メール以外は内部の ID を出さない (derived.ts の contactOf) -->
 							<span class="people-ident">{contactOf(found)}</span>

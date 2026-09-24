@@ -10,9 +10,7 @@
 	const upcoming = $derived(all.filter((m) => (eventDateOf(db, m) ?? '') >= db.seededOn).reverse());
 	const past = $derived(all.filter((m) => (eventDateOf(db, m) ?? '') < db.seededOn));
 
-	/* 行の 2 行目。日時・場所・出る人を 1 行の文字で並べる (meeting-list.md — HIG Lists and tables
-	   「行は簡潔に」。以前は頭文字の丸と共有の記号を並べていたが、誰が出るのか・何の記号かが
-	   読めなかった。ユーザー指摘 2026-09-25) */
+	/* 行の 2 行目。日時・場所・出る人を 1 行の文字で並べる (meeting-list.md、HIG Lists and tables「行は簡潔に」) */
 	const names = (ids: string[]) =>
 		ids.map((x) => personOf(db, x)?.name).filter((x) => !!x).join('、');
 </script>

@@ -108,10 +108,7 @@
 				<h2 class="set-group-head" id="set-conn-head">連携</h2>
 				<div class="card set-group">
 					{#each db.settings.connections as c (c.id)}
-						<!-- 接続はスイッチにする (ユーザー裁定 2026-09-25)。本来はオンにすると各サービスの
-						     許可の画面へ移り、許可をやめたらオフに戻る。デモでは押した瞬間に切り替わる。
-						     HIG Toggles「switch は一覧の行の中で使う」。押している間だけつまみがガラスになる
-						     (GlassSwitch)。行全体を押し先にする -->
+						<!-- 接続はスイッチ (HIG Toggles「switch は一覧の行の中で使う」)。デモでは押した瞬間に切り替わる。行全体を押し先にする -->
 						<label class="list-row set-row has-logo">
 							<Icon name="b-{c.id}" size={24} />
 							<span class="set-name">{CONNECT_NAME[c.id]}</span>
@@ -188,7 +185,7 @@
 			</section>
 		</div>
 	{:else}
-		<!-- 計画 Task 27 — このタブは表示のみ。押せる要素を置かない。形は連携タブと同じ grouped -->
+		<!-- このタブは表示のみ。押せる要素を置かない。形は連携タブと同じ grouped -->
 		<section class="set-data" aria-labelledby="set-data-head">
 			<h2 class="set-group-head" id="set-data-head">セキュリティとデータ</h2>
 			<dl class="card set-group">

@@ -28,9 +28,7 @@
 	});
 
 	let cancelOpen = $state(false);
-	/* Task 18 修正ラウンド 1 (review-task-18.md C2) — 日時を変更して選び直すと event が
-	   作り直される。作った URL を持ち続けると古い日時の .ics が落ちるので、event.id が
-	   変わったら作り直す。使い終わった URL は必ず解放する */
+	/* 日時を選び直すと event が作り直されるので、event.id が変わったら .ics の URL も作り直す。古い URL は解放する */
 	let icsUrl = $state('');
 	let icsFor_ = $state('');
 	$effect(() => {

@@ -43,41 +43,26 @@
 	const sent = $derived(db.scheduling.filter((s) => s.status === 'sent'));
 
 	// 700px 以下は Bento をやめて 1 枚の折りたたみカードにするので、オーブも 1 つだけ差し替える。
-	// Task 11r (監査 1) — 携帯を横向きにした高さ (844x390 など)では、Bento の最初のカードが
-	// 縦に収まらず依頼バー / ボトムナビの裏に沈む。ボトムナビが出る幅 (960px 以下)に限り、
-	// 窓が低い (480px 以下)ときも折りたたみカードに切り替える (下は 1 行 56px の一覧なので、
-	// 最初の項目は沈まずに済む。styles/voice.css 側でオーブも合わせて畳む)
+	// 960px 以下で窓が低い (480px 以下) ときも同じにする (Bento の最初のカードが依頼バーの裏に沈む)
 	const narrow = new MediaQuery('(max-width: 700px), (max-width: 960px) and (max-height: 480px)');
-	/* Task 10t 修正ラウンド 6 (review task-10t-fix5 I1) — 低い窓で送信済みカードが出ると、
-	   右の列は 3 枚になって ToDo の 3 行目と「ToDo をすべて見る」が入らない。CSS で伏せると
-	   題名の件数と行数が食い違ったまま説明が消えるので、出す行数そのものをここで減らし、
-	   差は「残り N 件」で説明する (styles/today.css の @media (max-height: 760px) と対) */
+	/* 低い窓で送信済みカードが出ると右の列が 3 枚になるので、ToDo の出す行数を減らし、差は「残り N 件」で
+	   説明する (CSS で伏せると題名の件数と食い違う。styles/today.css の @media (max-height: 760px) と対) */
 	const shortWindow = new MediaQuery('(min-width: 1101px) and (max-height: 760px)');
 	/* 2 行 + 「残り N 件」で 3 行分の高さに収まる。送信済みが無いときは右が 2 枚なので 3 行のまま */
 	const squeeze = $derived(shortWindow.current && sent.length > 0);
 	const taskRows = $derived(squeeze ? 2 : 3);
 	/* 「ToDo をすべて見る」は送信済みカードと重なる位置に来る。全件はサイドナビの ToDo から開ける */
 	const hideTaskFoot = $derived(squeeze);
-	/* Task 10l — 箱の一辺。球の直径はその 48% (shader.ts の R0)なので 448 で 215px。
-	   10j の 560 から 2 割小さくした。カードの列の間も同じ比で縮む (app.css の .bento の
-	   max-width: 80%) ので、球の外周と光彩がカードの縁に掛かる関係は変わらず、
-	   そこでカードのガラスの縁が破片を曲げる (visual 2.8 の 6)。
-	   ユーザー指摘 (2026-09-23) — 窓のリサイズ中も値が飛ばず連続的に追従すること。
-	   700px (narrow の境目) を下限、.bento が環状配置に切り替わる 1100px を上限にして
-	   300→448 を線形に補間する。narrow (折りたたみ表示、または携帯の横向きで高さが低い)
-	   のときは 700px 以下と同じ 300 で止める (この場合の "narrow" は高さ由来でも起こるため、
-	   幅だけの補間だと逆に大きくなってしまう) */
+	/* 箱の一辺。球の直径はその 48% (shader.ts の R0) なので 448 で 215px。窓のリサイズ中も飛ばないよう、
+	   700〜1100px の間で 300→448 を線形に補間する。narrow は高さ由来でも起きるので 300 で止める */
 	const orbSize = $derived(
 		narrow.current ? 300 : fluid(innerWidth.current ?? 1440, 700, 1100, 300, 448)
 	);
 
-	/* Task 10r — .hole のオーブが今握っている canvas。CARD のガラスの backdrop に渡し、
-	   .bento の子孫であるために除外されていた背後の絵へ実際に足す
-	   (glass.ts の orbBackdrop を見よ) */
+	/* .hole のオーブが握っている canvas。.bento の子孫なので背後の絵から除かれる分を、CARD の backdrop に足す
+	   (glass.ts の orbBackdrop) */
 	let holeOrbCanvas: HTMLCanvasElement | null = $state(null);
-	/* Task 10w — 完了画面 (.today-done) は .bento と別の glass() の host なので、
-	   orbBackdrop に渡す canvas も別に持つ (.orb-slot のオーブは .today-done の子孫であるために
-	   同じ理由で 'auto' backdrop から除外される) */
+	/* 完了画面 (.today-done) は別の glass() の host なので、渡す canvas も別に持つ */
 	let doneOrbCanvas: HTMLCanvasElement | null = $state(null);
 
 	/* 1101px 以上は環状配置 (styles/today.css)。音声をその場で聞くのとカードのドラッグはこの幅だけ */
@@ -106,8 +91,7 @@
 	/** 状態の文言を置く横の位置 (オーブの中心) */
 	let voiceX = $state(0);
 
-	// 声の大きさを求める処理は hearing.level に移した (VoiceActions の波形とここで共有するため。
-	// ユーザー指示 2026-09-24)。ここは開始・終了とカードの退避だけ受け持つ
+	// ここは開始・終了とカードの退避だけを受け持つ (声の大きさは hearing.level)
 	$effect(() => {
 		if (!voicing) return;
 		untrack(() => {
@@ -175,9 +159,8 @@
 <svelte:window onkeydown={onKey} onresize={() => cards.relayout()} />
 
 <div class="today">
-	<!-- Task 10m — この画面にボタンは 1 つも置かない。「予定」「ToDo」の追加は ⌘K パレットと
-	     各画面の追加ボタンへ、「KUROKO に頼む」は下端の依頼バーそのもの、デモの操作
-	     (開始 / 他のシナリオ / リセット) は上部バー右端のメニューと ⌘K へ移した (仕様 5.1 の裁定) -->
+	<!-- この画面にボタンは置かない。「予定」「ToDo」の追加は ⌘K と各画面、依頼は下端の依頼バー、
+	     デモの操作は上部バー右端のメニューと ⌘K (仕様 5.1) -->
 	<header class="today-head" inert={voicing}>
 		<h1 class="today-count">
 			<a href="#items">今日やること <span class="num">{count}</span> 件</a>
@@ -202,9 +185,7 @@
 
 	<div class="today-items" id="items">
 		{#if count === 0}
-			<!-- Task 10w (glass-scope.md 5 節) — 完了画面のカードは Today のカードと同じガラス
-			     (承認済みの例外、上の .today-done の CSS 注記を見よ)。.hole と同じ理由で
-			     orbBackdrop に自前の canvas を渡す (下の onCanvas) -->
+			<!-- 完了画面のカードも Today のカードと同じガラス。.hole と同じ理由で自前の canvas を渡す -->
 			<div
 				class="today-done"
 				style="--orb: {orbSize}px"
@@ -220,12 +201,8 @@
 				<DoneScreen />
 			</div>
 		{:else}
-			<!-- 並びは要件定義 p.11 の重み順。左上が最初に見られるので承認待ちを先頭に置く
-			     (eye.md 3.2 の (3)。モックは承認待ちを右下に置いていた)。
-			     Task 10l — カードごとに上の余白を変えて縦位置をずらし、列に整列して見えない
-			     ようにした。重みは 2 枚目の上の余白をいちばん広く取ることで付ける
-			     (styles/today.css の .today .bento > .card[data-card]、Task 10t 修正ラウンド 2 で
-			     :nth-child から data-card に変えた) -->
+			<!-- 並びは要件定義 p.11 の重み順。左上が最初に見られるので承認待ちを先頭に置く (eye.md 3.2)。
+			     位置と余白は styles/today.css の .card[data-card] が決める -->
 			<!-- ドラッグの押下はカードごとではなく入れ物でまとめて受ける (押下の役割は各カード自身が持つ) -->
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div
@@ -332,14 +309,8 @@
 				</TodayCard>
 
 				{#if sent.length}
-					<!-- Task 10t 修正ラウンド 5 (review task-10t-fix4 I1) — 行をリンクにすると、
-					     案内の手順 3 が指す「相手の画面を開く」という文字が画面から消え、行も
-					     押せる見た目にならなかった (高さ 36px、他のタイルと同じ色・下線なし)。
-					     カード全体を相手の画面へのリンクにする (承認待ち・次の会議と同じ「押せる
-					     カード」の見た目。ホバー・押下沈みが付き、的も 97px 全体になる)。
-					     案内の文言 (Header.svelte SECTIONS[3])もカードの題名を押す形に合わせた。
-					     I2 (review task-10t-fix4) — 「残り N 件」の行は ToDo カードと 14px 重なる
-					     ので削る。題名にすでに件数があるので情報は減らない -->
+					<!-- カード全体を相手の画面へのリンクにする (承認待ち・次の会議と同じ押せるカード)。案内の手順 3 もこれを指す。
+					     「残り N 件」の行は ToDo カードと重なるので出さない (件数は題名にある) -->
 					<TodayCard
 						card="sent"
 						{...cardAttrs('sent')}
@@ -351,9 +322,7 @@
 					>
 						{#each sent.slice(0, 1) as s (s.id)}
 							<div class="list-row">
-								<!-- 1101px で「田中 太郎様に候補を送信済み」が切れる (review task-10t-fix4 M3)。
-								     名前と文言を別の span に分け、名前の側だけ省略する (styles/today.css の
-								     .today .bento .list-row .sent-suffix) -->
+								<!-- 名前と文言を別の span に分け、名前の側だけ省略する (狭い幅で状態文が切れないように) -->
 								<span class="tc-text sent-name">{personOf(db, s.personId)?.name}様</span>
 								<span class="tc-text sent-suffix">に候補を送信済み</span>
 							</div>
@@ -386,7 +355,7 @@
 					<!-- 途中の聞き取り結果は読み上げに流さない。状態の文言と、聞き取りが終わった時点の
 					     文字だけを role="status" で伝える (voice-orb.md の読み上げとキーボード) -->
 					<div class="voice-here" style:left="{voiceX}px">
-						<!-- ユーザー指示 2026-09-24 — 状態の文言は画面には出さず読み上げだけに残す -->
+						<!-- 状態の文言は画面には出さず読み上げだけに残す -->
 						<p class="voice-state sr-only" role="status">
 							{hearing.thinking ? '考えています…' : hearing.live ? '聞いています…' : '聞き取りました'}
 							{#if !hearing.live && !hearing.thinking}<span class="sr-only">{hearing.heard}</span>{/if}

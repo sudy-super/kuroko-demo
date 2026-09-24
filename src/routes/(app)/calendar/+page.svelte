@@ -68,8 +68,7 @@
 <div class="cal">
 	<h1 class="sr-only">カレンダー</h1>
 
-	<!-- 並びは Google カレンダーに合わせ、日付を動かす操作と見出しを左、表示の切り替えと
-	     追加を右に置く (ユーザー指示 2026-09-25) -->
+	<!-- 並びは Google カレンダーに合わせ、日付を動かす操作と見出しを左、表示の切り替えと追加を右に置く -->
 	<div class="row cal-bar">
 		<div class="row cal-nav">
 			<button class="iconbtn" aria-label={view === 'month' ? '前の月' : '前の週'} onclick={() => shift(-1)}>
@@ -97,8 +96,7 @@
 		</a>
 	</div>
 
-	<!-- Task 10w — HIG 上ガラスを持たないコンテンツ層なので、Task 12 のガラス (glass()) を外して
-	     普通のカードの面 (.card) に戻した (glass-scope.md 6 節) -->
+	<!-- コンテンツ層なのでガラスは使わない (HIG Materials) -->
 	<section class="card cal-panel" aria-label="{title}の予定">
 		{#if view === 'month'}
 			<MonthView {cursor} onopen={(e) => (detail = e)} onpick={pick} />

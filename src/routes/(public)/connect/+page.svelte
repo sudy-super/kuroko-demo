@@ -4,8 +4,7 @@
 	import { markStarted } from '$lib/actions';
 	import { nextStep } from '$lib/connect';
 
-	/* ユーザー指摘 2026-09-23 — 「4 つまとめて繋ぐ」は要らない、1 つずつで進める。
-	   一括接続の経路 (connectAll) 自体をこの画面から外す */
+	/* 一括接続はせず、1 つずつ進める */
 	function skip() {
 		markStarted();
 		goto('/today');

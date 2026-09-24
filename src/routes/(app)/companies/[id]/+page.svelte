@@ -34,8 +34,7 @@
 	{#if !company}
 		<p class="people-missing">この会社は登録されていません。</p>
 	{:else}
-		<!-- Task 10w — HIG 上ガラスを持たないコンテンツ層なので、Task 10c のガラス (glass()) を外して
-		     普通のカードの面 (.card) に戻した (glass-scope.md 6 節) -->
+		<!-- コンテンツ層なのでガラスは使わない (HIG Materials) -->
 		<div class="people-cards">
 			<section class="card people-sec">
 				<h2>基本情報</h2>

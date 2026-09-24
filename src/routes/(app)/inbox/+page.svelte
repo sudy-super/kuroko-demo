@@ -17,13 +17,10 @@
 	// ?t= が指すスレッド。無ければキューの先頭 (対応済みにした直後もここに落ちる)
 	const thread = $derived(threadOf(db, page.url.searchParams.get('t') ?? undefined) ?? q[0]);
 	const allMail = $derived([...db.threads].sort((a, b) => b.lastAt.localeCompare(a.lastAt)));
-	/* 要対応とすべての受信メールは、同じ一覧の表示の切り替えにする (ユーザー指示 2026-09-25)。
-	   以前は「すべて」を件名だけのモーダルで出していて、そこから本文を開けなかった */
+	/* 要対応とすべての受信メールは、同じ一覧の表示の切り替えにする */
 	let list = $state<'queue' | 'all'>('queue');
 	const rows = $derived(list === 'queue' ? q : allMail);
-	/* 差出人の情報は、スレッドの頭の差出人の行を押すと、そこから広がる中央のパネルで出す
-	   (承認待ちのカードと同じ作り。ユーザー指示 2026-09-25)。以前は「人物を見る」で右の列を
-	   開き、狭い幅ではボトムシートにしていた */
+	/* 差出人の情報は、スレッドの頭の差出人の行を押すと広がる中央のパネルで出す (承認待ちのカードと同じ作り) */
 	let personFrom = $state<DOMRect | null>(null);
 	let personOpen = $state(false);
 	let senderHidden = $state(false);
@@ -69,9 +66,7 @@
 		// 行き先は下の $effect (thread.done を見て遷移) に任せる
 	}
 
-	/* スレッドが完了した瞬間 (「対応済みにする」、または承認された返信が 5 秒後に実行される)
-	   に次の行へ移る。行き先を決める場所をここ 1 つにまとめる (review-task-15.md C3 / I2、
-	   Task 15 が ReplyBox 側に持っていた $effect との競合を解消) */
+	/* スレッドが完了した瞬間に次の行へ移る。行き先を決める場所をここ 1 つにまとめる */
 	// 開いた時点で既に完了しているスレッドは読むために開かれている (案件・会社の「関連メール」や
 	// 「すべての受信メール」からの入口)。移すのは、見ている間に完了したときだけ
 	let opened: string | undefined;
@@ -101,8 +96,7 @@
 
 <div class="inbox" class:show-thread={showThread}>
 	<h1 class="sr-only">メール</h1>
-	<!-- Task 10w — HIG 上ガラスを持たないコンテンツ層なので、Task 10c のガラス (glass()) を外して
-	     普通のカードの面 (.card) に戻した (glass-scope.md 6 節) -->
+	<!-- コンテンツ層なのでガラスは使わない (HIG Materials) -->
 	<div class="panes">
 		<section class="card pane pane-list" aria-label="メールの一覧">
 			<div class="inbox-switch">
@@ -152,14 +146,12 @@
 	onclose={() => (personOpen = false)}
 	onsettled={settled}
 >
-	<!-- Drawer の題名 (Drawer.svelte の h3) の下なので、PersonPanel の人物名は h4 にする
-	     (rereview-task-10p.md 新規 1、Modal の h4 と同じ考え方) -->
+	<!-- Drawer の題名 (h3) の下なので、PersonPanel の人物名は h4 にする -->
 	{#if thread}<PersonPanel identityId={thread.identityId} headingLevel={4} />{/if}
 </Drawer>
 
 <style>
-	/* 一覧と本文の 2 つのペインを横に並べる段の基準。Task 10w で内容の層からガラスを外したので
-	   (HIG Materials「コンテンツ層に Liquid Glass を使わない」)、ここに canvas は無い */
+	/* 一覧と本文の 2 つのペインを横に並べる段の基準。コンテンツ層なのでガラスは無い */
 	.panes {
 		position: relative;
 		isolation: isolate;
