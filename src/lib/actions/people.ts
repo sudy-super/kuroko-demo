@@ -1,8 +1,10 @@
-import type { Origin, Person, CardFields, Project } from '../types';
+import type { Origin, Person, CardFields, Project, Approval, Document } from '../types';
 import { db } from '../store.svelte';
-import { personOf, identityOf } from '../derived';
+import { personOf, identityOf, companyOf, documentOf, projectOf, personMailTargetOf } from '../derived';
 import { uid } from '../kuroko/generate';
-import { log, must, pushed } from './core';
+import { integrations } from '../integrations';
+import { log, must, pushed, unshifted } from './core';
+import { askToSend } from './approvals';
 
 /** People のメモ。中身が変わったときだけ作業履歴に残す */
 export function updatePersonMemo(personId: string, memo: string): Person | undefined {
@@ -77,4 +79,37 @@ export function createProjectFor(personId: string, name: string): Project {
 	p!.projectIds.push(pj.id);
 	log(`案件「${pj.name}」を作成しました`, 'register', { actor: 'user', origin: 'people' });
 	return pj;
+}
+
+/** 資料を 1 件作って db に積む。1200ms の待ちは呼び出し側 (/documents) が見せる */
+export function generateDocument(
+	kind: Document['kind'],
+	projectId: string | undefined,
+	origin: Origin
+): Document {
+	const project = projectOf(db, projectId);
+	const d = integrations.document.generate(kind, {
+		companyName: companyOf(db, project?.companyId)?.name,
+		theme: project?.name,
+		projectId: project?.id,
+		personId: project?.personIds[0]
+	});
+	const out = unshifted(db.documents, d);
+	// 案件の資料一覧 (/projects/[id]) と Brief の関連資料から辿れるようにする
+	if (project) project.documentIds.unshift(d.id);
+	log(`${d.title}を作成しました`, 'draft', { origin });
+	return out;
+}
+
+export function sendDocument(docId: string, personId: string, origin: Origin = 'documents'): Approval {
+	const d = must(documentOf(db, docId), `資料がありません: ${docId}`);
+	const { person, to } = personMailTargetOf(db, personId);
+	return askToSend({
+		title: `${person.name.split(' ')[0]}様への${d.kind}の送付`,
+		to,
+		subject: d.title,
+		body: `添付: ${d.title}.pdf`,
+		payload: { type: 'document', documentId: d.id, personId },
+		origin
+	});
 }

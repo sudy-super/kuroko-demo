@@ -9,7 +9,7 @@ import { handleMention } from '../kuroko/line';
 import { goto } from '$app/navigation';
 import { integrations } from '../integrations';
 import { addTask, acceptTaskSuggestions } from './tasks';
-import { createEvent } from './calendar';
+import { createEvent } from './meetings';
 
 /* 履歴は切らない。件数で切ると、後から押せるはずの提案カードが黙って消える
    (chat.md「過去の発言のカードの操作は後から押せるべき」)。長さへの一次資料の処方は

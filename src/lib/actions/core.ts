@@ -1,9 +1,8 @@
-import type { ActivityLog, LogKind, Origin, UndoPayload, CalendarEvent, Meeting } from '../types';
+import type { ActivityLog, LogKind, Origin, UndoPayload, Demo } from '../types';
 import { db } from '../store.svelte';
 import { nowIso } from '../dates';
 import { identityOf, meetingOf, taskOf } from '../derived';
 import { uid } from '../kuroko/generate';
-import { integrations } from '../integrations';
 
 /* 作業履歴 (log) とその取り消し、各操作が共有する小さな道具 */
 
@@ -30,32 +29,15 @@ export function closeThread(th: { needsReply: boolean; done: boolean }) {
 	th.done = true;
 }
 
+type Stat = keyof Demo['stats'];
 
-/** 予定に付く会議。Brief は通常前日夜に届くものを、デモでは即時に作る */
-export function meetingFor(e: CalendarEvent): Meeting {
-	const m: Meeting = {
-		id: uid('m'),
-		eventId: e.id,
-		title: e.title,
-		personIds: e.personIds,
-		companyId: e.companyId,
-		projectId: e.projectId,
-		purpose: e.purpose ?? '',
-		briefRead: false,
-		agenda: [],
-		agendaShared: false,
-		transcriptIds: [],
-		brief: integrations.document.brief(db, e.personIds[0], e.projectId)
-	};
-	m.brief!.note = '通常は前日夜に届きます (デモのため即時生成)';
-	return m;
-}
-
+/** 作業履歴を 1 件積む。count を渡すと完了画面の実績も 1 つ数える (取り消しでは uncount で戻す) */
 export function log(
 	text: string,
 	kind: LogKind,
-	o: { actor?: 'user' | 'KUROKO'; origin?: Origin; approved?: boolean; undo?: UndoPayload } = {}
+	o: { actor?: 'user' | 'KUROKO'; origin?: Origin; approved?: boolean; undo?: UndoPayload; count?: Stat } = {}
 ): ActivityLog {
+	if (o.count) db.demo.stats[o.count]++;
 	const l: ActivityLog = {
 		id: uid('log'),
 		at: nowIso(),
@@ -69,18 +51,20 @@ export function log(
 	return unshifted(db.logs, l);
 }
 
+export const uncount = (k: Stat) => (db.demo.stats[k] = Math.max(0, db.demo.stats[k] - 1));
+
 export function undo(logId: string) {
 	const l = db.logs.find((x) => x.id === logId);
 	if (!l || !l.undo || l.undone) return;
 	const u = l.undo;
 	if (u.kind === 'task_add') {
 		db.tasks = db.tasks.filter((t) => t.id !== u.taskId);
-		db.demo.stats.tasksAdded = Math.max(0, db.demo.stats.tasksAdded - 1);
+		uncount('tasksAdded');
 	}
 	if (u.kind === 'task_done') {
 		const t = taskOf(db, u.taskId);
 		if (t) t.status = 'todo';
-		db.demo.stats.tasksDone = Math.max(0, db.demo.stats.tasksDone - 1);
+		uncount('tasksDone');
 	}
 	if (u.kind === 'event_add') {
 		db.events = db.events.filter((e) => e.id !== u.eventId);

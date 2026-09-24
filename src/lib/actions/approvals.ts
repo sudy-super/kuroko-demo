@@ -18,6 +18,10 @@ export function addApproval(input: Omit<Approval, 'id' | 'status' | 'createdAt'>
 	return a;
 }
 
+/** 社外への送信の承認を積む。送る操作はすべてここを通るので、種類の既定はメール */
+export const askToSend = (input: Omit<Approval, 'id' | 'status' | 'createdAt' | 'risk' | 'kind'> & { kind?: Approval['kind'] }) =>
+	addApproval({ risk: 'external_send', kind: 'mail', ...input });
+
 export function approve(id: string, origin: Origin = 'approval') {
 	const a = approvalOf(db, id);
 	if (!a || a.status !== 'pending') return;
@@ -101,8 +105,8 @@ export function executeApproval(id: string, auto = false) {
 	timers.delete(id);
 	const p = a.payload;
 	const ext = a.risk === 'external_send';
-	const sent = (text: string, undo?: UndoPayload) =>
-		log(text, 'send', { actor: 'user', origin: a.origin, approved: true, undo });
+	const sent = (text: string, o: { undo?: UndoPayload; count?: 'replied' } = {}) =>
+		log(text, 'send', { actor: 'user', origin: a.origin, approved: true, ...o });
 	if (p.type === 'reply') {
 		const th = threadOf(db, p.threadId)!;
 		integrations.mail.sendMessage(th, p.body);
@@ -113,16 +117,15 @@ export function executeApproval(id: string, auto = false) {
 			s.token = uid('tok');
 			s.threadId = th.id;
 		}
-		db.demo.stats.replied++;
 		// 送った先はスレッドの出所そのもの。sendReply が決めた kind と文言を食い違わせない
 		const via = a.kind === 'mail' ? 'メール' : a.kind === 'line' ? 'LINE' : 'Slack';
-		sent(`${a.to.split(' <')[0].split(' (')[0]}へ${via}を送信しました`);
+		sent(`${a.to.split(' <')[0].split(' (')[0]}へ${via}を送信しました`, { count: 'replied' });
 	} else if (p.type === 'share') {
 		sent(`${a.title}を実行しました`);
 	} else if (p.type === 'agenda') {
 		const m = meetingOf(db, p.meetingId)!;
 		m.agendaShared = true;
-		sent('アジェンダを参加者に共有しました', { kind: 'agenda_share', meetingId: m.id });
+		sent('アジェンダを参加者に共有しました', { undo: { kind: 'agenda_share', meetingId: m.id } });
 	} else if (p.type === 'document') {
 		sent(`${a.title}を送信しました`);
 	} else if (p.type === 'followup') {

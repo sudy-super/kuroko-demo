@@ -4,8 +4,9 @@ import { parse, fmtMDW } from '../dates';
 import { addressOf, personOf, companyOf, identityOf, threadOf } from '../derived';
 import { slotsFor, slotsText, uid } from '../kuroko/generate';
 import { integrations } from '../integrations';
-import { log, pushed, closeThread, meetingFor } from './core';
-import { addApproval } from './approvals';
+import { log, uncount, pushed, closeThread } from './core';
+import { askToSend } from './approvals';
+import { meetingFor } from './meetings';
 
 const draftOf = (threadId: string) => db.scheduling.find((s) => s.threadId === threadId && s.status === 'draft');
 
@@ -66,9 +67,8 @@ export function sendReply(threadId: string, body: string, origin: Origin = 'inbo
 	const to = p ? `${p.name} ${addr}` : addr;
 	// 送る先はスレッドの出所そのもの。記号もここから引く (ApprovalIcon の MARK)
 	const kind = th.source === 'line' ? 'line' : th.source === 'slack' ? 'slack' : 'mail';
-	return addApproval({
+	return askToSend({
 		title: `${p?.name.split(' ')[0] ?? '相手'}様への返信`,
-		risk: 'external_send',
 		kind,
 		to,
 		subject: `Re: ${th.subject}`,
@@ -118,11 +118,11 @@ export function confirmSlot(token: string, slotId: string) {
 	s.chosenSlotId = slotId;
 	s.eventId = event.id;
 	s.meetingId = m.id;
-	if (!redo) db.demo.stats.confirmed++;
 	// 相手が確定した予定は「元に戻す」の対象にしない。戻すのは /schedule の「日時を変更する」「キャンセルする」
 	log(`${fmtMDW(parse(slot.date))} ${slot.start} に ${p.name}様との打ち合わせを確定しました`, 'hold', {
 		origin: 'schedule',
-		approved: true
+		approved: true,
+		count: redo ? undefined : 'confirmed'
 	});
 	return out;
 }
@@ -133,7 +133,7 @@ export function changeSlot(token: string) {
 	dropBooking(s);
 	s.status = 'sent';
 	s.chosenSlotId = s.eventId = s.meetingId = undefined;
-	db.demo.stats.confirmed = Math.max(0, db.demo.stats.confirmed - 1);
+	uncount('confirmed');
 }
 
 export function cancelScheduling(token: string) {

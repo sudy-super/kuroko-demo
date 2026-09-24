@@ -28,11 +28,11 @@ export function addTask(
 	origin: Origin
 ): Task {
 	const t = unshifted(db.tasks, { id: uid('t'), priority: 'normal', status: 'todo', origin, createdAt: nowIso(), ...input });
-	db.demo.stats.tasksAdded++;
 	log(`ToDo「${t.title}」を登録しました`, 'register', {
 		actor: origin === 'chat' || origin === 'line' || origin === 'meeting' ? 'KUROKO' : 'user',
 		origin,
-		undo: { kind: 'task_add', taskId: t.id }
+		undo: { kind: 'task_add', taskId: t.id },
+		count: 'tasksAdded'
 	});
 	return t;
 }
@@ -75,11 +75,11 @@ export function toggleTask(id: string, origin: Origin = 'tasks') {
 		return;
 	}
 	t.status = 'done';
-	db.demo.stats.tasksDone++;
 	log(`ToDo「${t.title}」を完了にしました`, 'other', {
 		actor: 'user',
 		origin,
-		undo: { kind: 'task_done', taskId: t.id }
+		undo: { kind: 'task_done', taskId: t.id },
+		count: 'tasksDone'
 	});
 }
 
