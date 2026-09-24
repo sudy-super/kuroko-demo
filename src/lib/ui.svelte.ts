@@ -39,7 +39,10 @@ export const ui = $state({
 	voice: false,
 	/** Today の環状配置が出ている間だけ立つ。立っている間の音声は全画面の覆いを出さず、
 	    Today の上でカードを退かせて聞く (today/+page.svelte、docs/research/voice-orb.md) */
-	voiceHere: false
+	voiceHere: false,
+	/** サイドナビを格納しているか (961px 以上のみ意味を持つ)。初期値は localStorage から
+	    ((app)/+layout.svelte の $effect で保存。docs/research/side-collapse.md) */
+	sideHidden: typeof localStorage !== 'undefined' && localStorage.getItem('kuroko-side-hidden') === '1'
 });
 
 /* 上部バーの板 (PillPanel) と「デモの操作」のメニュー (DemoMenu) は 1 つずつしか開かない。

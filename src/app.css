@@ -168,9 +168,16 @@
 	/* 骨格の寸法 (ruling: サイドナビ 256) */
 	--side-w: 256px;
 	--rail-w: 56px;
+	/* side-collapse.md — 本文・依頼バー・覆いが左に空ける幅。格納時は .app.side-hidden が
+	   切り替えボタン 1 個ぶんに上書きする (:root:has(.app.side-hidden) が覆い側も追従させる。
+	   下の :root:has(.app.side-hidden) を見よ) */
+	--side-space: calc(var(--side-w) + 32px);
+	/* 格納時の --side-space。.app の中の上書きは :root で定義した --frame-left に届かないので
+	   (カスタムプロパティはスコープごとに解決される)、値をここに 1 つだけ置いて両側から見る */
+	--side-space-hidden: calc(var(--sp-4) + 44px + var(--sp-2) + var(--sp-4));
 	/* レビュー I2 — 枠 (サイドナビ・連携の列、段 76) が覆い (段 75) より前にあるので、
 	   覆いは枠の内側の帯に隠れないよう、この 2 つの間に中央寄せ・右寄せする */
-	--frame-left: calc(var(--side-w) + 32px);
+	--frame-left: var(--side-space);
 	--frame-right: var(--sp-4);
 	/* Task 10n — 上部バーは帯をやめて中央に浮くピルになった。高さは操作領域の下限 (44px)を
 	   割らないところまでで、island.md「普段の形と寸法」の 48〜52px の上端を取る */
@@ -192,6 +199,15 @@
 }
 .app {
 	--content-bottom-clear: calc(var(--chatbar-h) + var(--sp-4) + var(--sp-8));
+}
+/* side-collapse.md — サイドナビを格納中は、本文・依頼バーの左余白を切り替えボタン 1 個ぶんに
+   詰める (ボタンの位置は左上 var(--sp-4) + 8px、直径 44px の操作領域 + 読みやすい間 --sp-4)。
+   960px 以下はサイドナビ自体が無いので、この上書きも要らない (下の @media (max-width: 960px)
+   の --frame-left: 0px と同じく詳細度で勝つ必要が無い幅) */
+@media (min-width: 961px) {
+	.app.side-hidden {
+		--side-space: var(--side-space-hidden);
+	}
 }
 
 /* components 2.1 — リセットと本文 (-webkit-font-smoothing は書かない) */
@@ -414,7 +430,8 @@ svg.i {
 	display: none;
 }
 .main {
-	margin-left: calc(var(--side-w) + 32px);
+	margin-left: var(--side-space);
+	transition: margin-left var(--d-enter) var(--ease-out);
 	padding: var(--bar-clear) var(--sp-6) var(--content-bottom-clear);
 }
 /* 依頼バーを出さない画面 (自前の入力欄を持つ /integrations — (app)/+layout.svelte)。
@@ -436,12 +453,62 @@ svg.i {
 	gap: var(--sp-1);
 	overflow-y: auto;
 	width: var(--side-w);
-	padding: var(--sp-2);
+	/* side-collapse.md — 上だけ切り替えボタン (直径 44px、上に --sp-2 の間) のぶん空け、
+	   開いているときにボタンが 1 項目目「Today」に重ならないようにする */
+	padding: calc(44px + var(--sp-2)) var(--sp-2) var(--sp-2);
 	border-radius: var(--r-l);
 	background: var(--glass-panel);
 	-webkit-backdrop-filter: var(--blur-m);
 	backdrop-filter: var(--blur-m);
 	box-shadow: var(--rim), var(--e-glass);
+	/* visibility はここでは遷移させない (開くときは即座に visible へ戻す)。
+	   閉じるときだけ .app.side-hidden .sidebar 側で遅延させる */
+	transition: transform var(--d-enter) var(--ease-out), opacity var(--d-enter) var(--ease-out);
+}
+/* side-collapse.md — 961px 以上で格納中は画面の外へ滑らせる。opacity/visibility も落とし、
+   閉じ終わったら Tab と読み上げからも外す (visibility の遷移だけ 300ms 遅らせて、
+   アニメーションが終わってから最後に切り替える) */
+@media (min-width: 961px) {
+	.app.side-hidden .sidebar {
+		transform: translateX(calc(-100% - var(--sp-4) * 2));
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+		transition:
+			transform var(--d-enter) var(--ease-out),
+			opacity var(--d-enter) var(--ease-out),
+			visibility 0s linear var(--d-enter);
+	}
+}
+/* side-collapse.md — サイドナビの格納の切り替え。開いているときはサイドナビの上端に重ねて見せ、
+   閉じても同じ位置に残る (ボタン自身は動かさない)。.sidebar より前面に出るよう段を 1 つ上げる
+   (76 のままだと DOM 順で先に来た場合にサイドナビの不透明な地に隠れてしまう) */
+.side-toggle {
+	position: fixed;
+	left: calc(var(--sp-4) + 8px);
+	top: calc(var(--sp-4) + 8px);
+	z-index: 77;
+	pointer-events: auto;
+	display: inline-grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	color: var(--ink-2);
+	cursor: pointer;
+	background: var(--glass-panel);
+	-webkit-backdrop-filter: var(--blur-m);
+	backdrop-filter: var(--blur-m);
+	box-shadow: var(--rim), var(--e-glass);
+	transition: background var(--d-fast) var(--ease-out);
+}
+.side-toggle:hover {
+	background: var(--hover);
+}
+.side-toggle:active {
+	background: var(--press);
 }
 .nav-item {
 	position: relative;
@@ -702,7 +769,8 @@ svg.i {
 	position: fixed;
 	bottom: var(--sp-4);
 	/* 画面ではなく本文領域の中央に置く。左右を止めて余白を auto で分けると中央にそろう */
-	left: calc(var(--side-w) + 32px);
+	left: var(--side-space);
+	transition: left var(--d-enter) var(--ease-out);
 	right: var(--sp-6);
 	margin-inline: auto;
 	z-index: 55;
@@ -1971,6 +2039,7 @@ svg.i {
 	.glass,
 	.card,
 	.sidebar,
+	.side-toggle,
 	.rail,
 	.header.glass,
 	.chatbar,
@@ -2018,6 +2087,12 @@ svg.i {
 	:root:has(.app.has-rail) {
 		--frame-right: calc(var(--rail-w) + 32px);
 	}
+	/* side-collapse.md — .app.side-hidden の --side-space 上書きは .app のスコープにとどまり、
+	   :root で定義した --frame-left (覆いの位置の計算) には届かない。:has() で同じ状態を
+	   <html> から見て、覆いの左の枠幅も切り替えボタンぶんに詰める */
+	:root:has(.app.side-hidden) {
+		--frame-left: var(--side-space-hidden);
+	}
 }
 
 /* components 2.2 — 960px: サイドナビをボトムナビに替える */
@@ -2053,6 +2128,7 @@ svg.i {
 		display: none;
 	}
 	.sidebar,
+	.side-toggle,
 	.rail,
 	.header.glass {
 		display: none;
@@ -2176,6 +2252,12 @@ svg.i {
 	   上の全体の transition-duration: 0.01ms を、不透明度だけこの長さに戻す */
 	.today .bento > .card {
 		transition: opacity 200ms linear !important;
+	}
+	/* side-collapse.md — .sidebar の visibility は transition-delay (300ms) で遅らせているので、
+	   上の全体の transition-duration: 0.01ms だけでは遅延が残る (duration と delay は別)。
+	   transition ごと切って即座に切り替える */
+	.sidebar {
+		transition: none !important;
 	}
 	/* 擬似要素は別の規則にする。CSS はセレクタ列に解釈できないものが 1 つでもあると
 	   規則ごと捨てるので、対応しないブラウザで上の指定まで消えてしまう */
@@ -3415,6 +3497,7 @@ section.tc .list-row:not(label):not(a):hover {
 :root [data-liquid-glass='webgl'],
 :root [data-liquid-glass='webgl'] .card,
 .chrome[data-liquid-glass='webgl'] ~ .sidebar,
+.chrome[data-liquid-glass='webgl'] ~ .side-toggle,
 .chrome[data-liquid-glass='webgl'] ~ .header.glass,
 .chrome[data-liquid-glass='webgl'] ~ .rail,
 .chrome[data-liquid-glass='webgl'] ~ .header.solid,
@@ -3477,6 +3560,7 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .today-done .card::before
    トースト (濃い地)
    は縁がほぼ見えず効果がないので対象外にした */
 .sidebar::after,
+.side-toggle::after,
 .rail::after,
 .header.glass::after,
 .chatbar::after,
@@ -3506,6 +3590,7 @@ body:has(> .overlay-chrome[data-liquid-glass='webgl']) .today-done .card::before
 :root [data-liquid-glass='webgl']::after,
 :root [data-liquid-glass='webgl'] .card::after,
 .chrome[data-liquid-glass='webgl'] ~ .sidebar::after,
+.chrome[data-liquid-glass='webgl'] ~ .side-toggle::after,
 .chrome[data-liquid-glass='webgl'] ~ .header.glass::after,
 .chrome[data-liquid-glass='webgl'] ~ .rail::after,
 .chrome[data-liquid-glass='webgl'] ~ .header.solid::after,

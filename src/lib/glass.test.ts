@@ -105,7 +105,7 @@ describe('ガラスの配線', () => {
 		const header = {};
 		chromeGlass(
 			fakeLayer({
-				'.sidebar, .rail': [sidebar],
+				'.sidebar, .rail, .side-toggle': [sidebar],
 				'.header.glass, .header.solid, .bottomnav': [header]
 			})
 		);

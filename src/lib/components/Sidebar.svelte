@@ -27,7 +27,7 @@
 	</a>
 {/snippet}
 
-<nav class="sidebar" aria-label="画面の切り替え">
+<nav class="sidebar" id="side-nav" aria-label="画面の切り替え">
 	{#each PRIMARY as nav (nav.href)}{@render item(nav)}{/each}
 	<hr class="nav-sep" />
 	<div class="nav-head">その他</div>

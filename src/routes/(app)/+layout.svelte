@@ -34,6 +34,12 @@
 				e.preventDefault();
 				ui.palette = true;
 			}
+			// side-collapse.md — ⌘\ / Ctrl+\ はサイドナビの格納の近道。\ は文字入力と
+			// 衝突しないので、入力欄に焦点があっても効かせる
+			if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+				e.preventDefault();
+				ui.sideHidden = !ui.sideHidden;
+			}
 		};
 		window.addEventListener('keydown', key);
 		return () => {
@@ -54,9 +60,17 @@
 			closeOverlays();
 		});
 	});
+
+	// side-collapse.md — 格納の状態を localStorage へ。SSR では localStorage が無いので囲む
+	// (src/lib/todayLayout.svelte.ts の hasStorage と同じ書き方)
+	$effect(() => {
+		const hidden = ui.sideHidden;
+		if (typeof localStorage !== 'undefined')
+			localStorage.setItem('kuroko-side-hidden', hidden ? '1' : '0');
+	});
 </script>
 
-<div class="app" class:has-rail={connected.length > 0} class:no-bar={!hasBar}>
+<div class="app" class:has-rail={connected.length > 0} class:no-bar={!hasBar} class:side-hidden={ui.sideHidden}>
 	<!-- 枠のガラスのうち 5 面 (サイドナビ、上部バー、連携の列、携帯のボトムナビ・上部バー)は、
 	     この空の層に 1 枚の canvas でまとめて描く。面ごとに描画面 (WebGL context)を取ると、
 	     タブを 3 枚開いただけでブラウザの上限に届き、全面が backdrop-filter の経路に落ちる。
@@ -77,6 +91,21 @@
 			<div class="overlay-chrome-anchor" aria-hidden="true"></div>
 		</div>
 	</Portal>
+	<!-- side-collapse.md — サイドナビの外に置く。格納中もこのボタンだけは残るため。
+	     .chrome の層は「.app の直接の子の増減」を見張り (src/lib/glass.ts)、.chrome ~ .side-toggle の
+	     兄弟結合子でも塗りを下ろすので (下の app.css)、.app の直接の子のまま置く
+	     (Tip.svelte で包むと span が挟まり、どちらも効かなくなる。title だけを付ける) -->
+	<button
+		type="button"
+		class="side-toggle"
+		aria-expanded={!ui.sideHidden}
+		aria-controls="side-nav"
+		aria-label={ui.sideHidden ? 'サイドナビを出す' : 'サイドナビを隠す'}
+		title={ui.sideHidden ? 'サイドナビを出す (⌘\\)' : 'サイドナビを隠す (⌘\\)'}
+		onclick={() => (ui.sideHidden = !ui.sideHidden)}
+	>
+		<Icon name="ic-sidebar" size={20} />
+	</button>
 	<Sidebar />
 	<Header />
 	<main class="main">{@render children()}</main>

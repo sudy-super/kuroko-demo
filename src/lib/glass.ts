@@ -140,7 +140,7 @@ export function glass(options: LiquidGlassElementOptions) {
    HIG Tab bars / Toolbars がガラスを持つと明記する部品なので、描画面を増やさずこの層の
    tiers に加える。どちらも下を本文が通るので BAR と同じ塗り (.header.glass と同じ扱い) */
 const CHROME_TIERS = {
-	'.sidebar, .rail': CLEAR.tint as number,
+	'.sidebar, .rail, .side-toggle': CLEAR.tint as number,
 	'.header.glass, .header.solid, .bottomnav': BAR.tint as number
 };
 
