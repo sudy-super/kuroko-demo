@@ -343,13 +343,25 @@
 		const sp = springs[d.card];
 		sp.set(shown ?? d.from, { instant: true });
 		shown = null;
+		/* 球の上で離したときは、球の中から置き場所まで、ばねでつるんと滑り出させる。
+		   repel を当てると、最初の 1 コマで球の縁まで押し出されて瞬間移動に見える
+		   (ユーザー指摘 2026-09-25)。滑り出しの間だけ repel を外し、ほかのカードと同じ
+		   SNAPPY のばねで運ぶ */
+		escaping = d.card;
+		sp.stiffness = SNAPPY.stiffness;
+		sp.damping = SNAPPY.damping;
 		// 動きを減らす設定では、押し戻しだけ即座に置く (追従は利用者自身の操作の表示なので残す)
-		sp.set(to, { instant: reduced.current });
+		sp.set(to, { instant: reduced.current }).then(() => {
+			if (escaping === d.card) escaping = null;
+			sp.stiffness = SPRING.stiffness;
+			sp.damping = SPRING.damping;
+		});
 	}
 	/* ばねで戻る途中も球を避ける。置き場所が球の向こう側だと、まっすぐ戻る道が球の上を
 	   横切るため、途中の位置も球の縁の外へ押し出す (止まった位置では押し出す量は 0) */
+	let escaping = $state<string | null>(null);
 	function repel(k: string, o: Pt): Pt {
-		if (!bento || (o.x === 0 && o.y === 0)) return o;
+		if (!bento || (o.x === 0 && o.y === 0) || escaping === k) return o;
 		const { bases, orb, r } = measure();
 		if (!bases[k]) return o;
 		return plus(o, orbPush(shift(bases[k], o), orb, r));
