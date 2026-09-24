@@ -106,10 +106,6 @@
 	height: var(--chatbar-h);
 	padding: 0 var(--sp-2) 0 var(--sp-5);
 	border-radius: var(--r-pill);
-	background: var(--glass-panel);
-	-webkit-backdrop-filter: var(--blur-m);
-	backdrop-filter: var(--blur-m);
-	box-shadow: var(--rim), var(--e-glass);
 }
 
 /* 完了画面。球の下側 3 割をカードに重ね、ガラスがぼかす対象にする。isolation: isolate は .bento と同じ理由 */
@@ -201,10 +197,6 @@
 	max-width: calc(100vw - var(--sp-8));
 	padding: var(--sp-2);
 	border-radius: var(--r-m);
-	background: var(--glass-sheet);
-	-webkit-backdrop-filter: var(--blur-sheet);
-	backdrop-filter: var(--blur-sheet);
-	box-shadow: var(--rim), var(--e3);
 }
 .demo-menu.wide {
 	width: 420px;

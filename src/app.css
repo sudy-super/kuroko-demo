@@ -49,7 +49,6 @@
 	--disabled-soft: rgba(30, 42, 71, 0.04);
 
 	/* ガラスの塗り。4.5:1 の実測が許す下限まで薄くしてある (--ink-3 が載るナビと依頼バーは少し濃い) */
-	--glass-1: rgba(255, 255, 255, 0.48);
 	--glass-2: rgba(255, 255, 255, 0.6);
 	--glass-panel: rgba(255, 255, 255, 0.58);
 	/* ドロワー・シート・モーダル・ポップオーバー・メニューの regular 変種。文字が多いのでナビ層より濃い。
@@ -268,15 +267,6 @@ svg.i {
 	visibility: hidden;
 }
 
-/* visual 4.2 — ガラスの基本形 */
-.glass {
-	background: var(--glass-1);
-	-webkit-backdrop-filter: var(--blur-m);
-	backdrop-filter: var(--blur-m);
-	box-shadow: var(--rim), var(--e-glass);
-	border-radius: var(--r-m);
-}
-
 /* ruling — 骨格 */
 .app {
 	position: relative;
@@ -317,6 +307,20 @@ svg.i {
 .app.no-bar {
 	--chatbar-h: 0px;
 }
+/* visual 4.2 — ナビ層のガラス。依頼バーの塗りだけ .chatbar が --glass-2 に上書きする */
+.sidebar,
+.side-toggle,
+.rail,
+.header.glass,
+.header.solid,
+.chatbar,
+.bottomnav,
+.voice-acts-wrap {
+	background: var(--glass-panel);
+	-webkit-backdrop-filter: var(--blur-m);
+	backdrop-filter: var(--blur-m);
+	box-shadow: var(--rim), var(--e-glass);
+}
 /* visual 4.4 + components 3.1 — 左サイドナビ (ruling: 幅 256、項目 48、角丸 16) */
 .sidebar {
 	position: fixed;
@@ -333,10 +337,6 @@ svg.i {
 	   窓が非常に低いときのスクロールは下の @media (max-height: 600px) */
 	padding: var(--sp-2);
 	border-radius: var(--r-l);
-	background: var(--glass-panel);
-	-webkit-backdrop-filter: var(--blur-m);
-	backdrop-filter: var(--blur-m);
-	box-shadow: var(--rim), var(--e-glass);
 	/* visibility はここでは遷移させない (開くときは即座に visible へ戻す)。
 	   閉じるときだけ .app.side-hidden .sidebar 側で遅延させる */
 	transition: transform var(--d-enter) var(--ease-out), opacity var(--d-enter) var(--ease-out);
@@ -370,10 +370,6 @@ svg.i {
 	border-radius: 50%;
 	color: var(--ink-2);
 	cursor: pointer;
-	background: var(--glass-panel);
-	-webkit-backdrop-filter: var(--blur-m);
-	backdrop-filter: var(--blur-m);
-	box-shadow: var(--rim), var(--e-glass);
 	transition: background var(--d-fast) var(--ease-out);
 }
 .side-toggle:hover {
@@ -486,10 +482,6 @@ svg.i {
 	width: var(--rail-w);
 	padding: var(--sp-2);
 	border-radius: var(--r-pill);
-	background: var(--glass-panel);
-	-webkit-backdrop-filter: var(--blur-m);
-	backdrop-filter: var(--blur-m);
-	box-shadow: var(--rim), var(--e-glass);
 }
 
 /* visual 4.2 + components 3.1 — 上部バー。デスクトップはガラス、モバイルは不透明 */
@@ -514,10 +506,6 @@ svg.i {
 	/* 幅は Header.svelte が中身の自然な幅を測って px で渡す。max-content や interpolate-size では
 	   中身が入れ替わっても指定値が変わらず、transition が走らずに幅が跳ぶ */
 	transition: width var(--d-enter) var(--ease-out);
-	background: var(--glass-panel);
-	-webkit-backdrop-filter: var(--blur-m);
-	backdrop-filter: var(--blur-m);
-	box-shadow: var(--rim), var(--e-glass);
 }
 /* 上限 560px に当たったら日付だけ縮める。flex の既定 min-width: auto を外さないと縮まない */
 .hdr-date {
@@ -562,10 +550,6 @@ svg.i {
 	left: 0;
 	right: 0;
 	padding: 0 var(--sp-4);
-	background: var(--glass-panel);
-	-webkit-backdrop-filter: var(--blur-m);
-	backdrop-filter: var(--blur-m);
-	box-shadow: var(--rim), var(--e-glass);
 }
 
 /* visual 4.5 — 浮くカード。iOS 26 でガラスになるのはナビ層だけで、内容は白に近い普通の面に載る。
@@ -640,9 +624,6 @@ svg.i {
 	padding: 0 var(--sp-2) 0 var(--sp-5);
 	border-radius: var(--r-pill);
 	background: var(--glass-2);
-	-webkit-backdrop-filter: var(--blur-m);
-	backdrop-filter: var(--blur-m);
-	box-shadow: var(--rim), var(--e-glass);
 }
 
 /* .chip は既定で縮まず、狭い依頼バーで入力欄が潰れていた。下限 152px = 余白 32 + 間 8 + X 16 +
@@ -1349,6 +1330,19 @@ svg.i {
 	}
 }
 
+/* regular 変種のガラス (ドロワー・シート・モーダル・ポップオーバー・メニュー・トースト) */
+.toast,
+.drawer,
+.panel-center,
+.sheet,
+.modal,
+.pill-panel,
+.demo-menu {
+	background: var(--glass-sheet);
+	-webkit-backdrop-filter: var(--blur-sheet);
+	backdrop-filter: var(--blur-sheet);
+	box-shadow: var(--rim), var(--e3);
+}
 /* components 3.7 — トースト。他の面と同じ regular 変種のガラスを自前の backdrop-filter で描く
    (描く層の canvas は増やさない) */
 .toast {
@@ -1365,13 +1359,9 @@ svg.i {
 	min-height: 48px;
 	padding: 0 var(--sp-2) 0 var(--sp-4);
 	border-radius: var(--r-s);
-	background: var(--glass-sheet);
-	-webkit-backdrop-filter: var(--blur-sheet);
-	backdrop-filter: var(--blur-sheet);
 	color: var(--ink);
 	font-size: 14px;
 	line-height: 1.4;
-	box-shadow: var(--rim), var(--e3);
 	animation: toast-in var(--d-enter) var(--ease-enter) both;
 }
 .toast-msg {
@@ -1482,10 +1472,6 @@ svg.i {
 	padding: var(--sp-6);
 	/* 右端から浮くので右側も角を丸める */
 	border-radius: var(--r-m);
-	background: var(--glass-sheet);
-	-webkit-backdrop-filter: var(--blur-sheet);
-	backdrop-filter: var(--blur-sheet);
-	box-shadow: var(--rim), var(--e3);
 	/* 送り箱は中の .modal-body が受け持つので、本体は縮ませず隠す */
 	overflow: hidden;
 	animation: drawer-in var(--d-enter) var(--ease-enter) both;
@@ -1518,10 +1504,6 @@ svg.i {
 	max-height: calc(100dvh - var(--bar-clear) * 2);
 	padding: var(--sp-6);
 	border-radius: var(--r-l);
-	background: var(--glass-sheet);
-	-webkit-backdrop-filter: var(--blur-sheet);
-	backdrop-filter: var(--blur-sheet);
-	box-shadow: var(--rim), var(--e3);
 	/* .drawer と同じ理由 */
 	overflow: hidden;
 	animation: modal-in var(--d-enter) var(--ease-enter) both;
@@ -1554,10 +1536,6 @@ svg.i {
 	max-height: calc(100dvh - 72px);
 	padding: 0 var(--sp-4) calc(var(--sp-6) + env(safe-area-inset-bottom));
 	border-radius: var(--r-xl) var(--r-xl) 0 0;
-	background: var(--glass-sheet);
-	-webkit-backdrop-filter: var(--blur-sheet);
-	backdrop-filter: var(--blur-sheet);
-	box-shadow: var(--rim), var(--e3);
 	/* 下の .sheet .modal-body が送り箱なので、本体は縮ませず隠す */
 	overflow: hidden;
 	animation: sheet-in var(--d-enter) var(--ease-enter) both;
@@ -1617,10 +1595,6 @@ svg.i {
 	max-height: calc(100dvh - var(--bar-clear) * 2);
 	padding: var(--sp-6);
 	border-radius: var(--r-l);
-	background: var(--glass-sheet);
-	-webkit-backdrop-filter: var(--blur-sheet);
-	backdrop-filter: var(--blur-sheet);
-	box-shadow: var(--rim), var(--e3);
 	overflow: hidden;
 	animation: modal-in var(--d-enter) var(--ease-enter) both;
 }
@@ -1671,10 +1645,6 @@ svg.i {
 	z-index: 60;
 	height: var(--bottomnav-h);
 	border-radius: var(--r-l);
-	background: var(--glass-panel);
-	-webkit-backdrop-filter: var(--blur-m);
-	backdrop-filter: var(--blur-m);
-	box-shadow: var(--rim), var(--e-glass);
 }
 .bottomnav-item {
 	position: relative;
@@ -1742,10 +1712,6 @@ svg.i {
 	max-width: calc(100vw - var(--sp-8));
 	padding: var(--sp-4);
 	border-radius: var(--r-m);
-	background: var(--glass-sheet);
-	-webkit-backdrop-filter: var(--blur-sheet);
-	backdrop-filter: var(--blur-sheet);
-	box-shadow: var(--rim), var(--e3);
 	/* 開いた直後は板自身に焦点が当たる。枠は中のボタン側で示す */
 	outline: none;
 }
@@ -1834,7 +1800,6 @@ svg.i {
 
 /* visual 4.2 — ぼかしが使えない環境では不透明に倒す */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-	.glass,
 	.card,
 	.sidebar,
 	.side-toggle,
@@ -1848,8 +1813,6 @@ svg.i {
 	.modal,
 	.panel-center,
 	.pill-panel,
-	.demo-menu,
-	.select-menu,
 	.toast {
 		background: rgba(255, 255, 255, 0.94);
 	}
