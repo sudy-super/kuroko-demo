@@ -2,9 +2,9 @@
 	import { RadioGroup } from 'bits-ui';
 	import { db } from '$lib/store.svelte';
 	import { setAutomation, toggleConnection } from '$lib/actions';
-	import { CONNECT_NAME, CONNECT_BENEFIT } from '$lib/connect';
+	import { CONNECT_NAME } from '$lib/connect';
 	import { ui, toast } from '$lib/ui.svelte';
-	import type { Automation, Connection } from '$lib/types';
+	import type { Automation } from '$lib/types';
 	import Icon from '$lib/components/Icon.svelte';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -87,7 +87,6 @@
 		['保存場所', retention.region]
 	]);
 
-	const sync = (c: Connection) => (c.lastSync ? `最終同期 ${c.lastSync.slice(11, 16)}` : '');
 </script>
 
 <svelte:head><title>設定 — KUROKO AI</title></svelte:head>
@@ -100,45 +99,45 @@
 	</div>
 
 	{#if tab === 'connect'}
+		<!-- settings-connect.md — HIG Lists and tables の grouped の形。見出し (header) はカードの上、
+		     補足 (footer) はカードの下に置き、行はロゴ・名前・状態・操作の 4 つに絞る
+		     ("Keep item text succinct")。サービスごとの説明は接続の手順 (ConnectStep) で見せている -->
 		<div class="set-panes">
-			<section class="card set-list" aria-labelledby="set-conn-head">
-				<h2 class="list-head" id="set-conn-head"><Icon name="ic-link" size={16} />連携</h2>
-				{#each db.settings.connections as c (c.id)}
-					<div class="list-row set-row">
-						<Icon name="b-{c.id}" size={24} />
-						<span class="people-col">
+			<section aria-labelledby="set-conn-head">
+				<h2 class="set-group-head" id="set-conn-head">連携</h2>
+				<div class="card set-group">
+					{#each db.settings.connections as c (c.id)}
+						<div class="list-row set-row has-logo">
+							<Icon name="b-{c.id}" size={24} />
 							<span class="set-name">{CONNECT_NAME[c.id]}</span>
-							<span class="set-meta">
-								<!-- indicators.md 5 — 形の違うアイコン + 文言 + 色の 3 つで示す。
-								     色だけでは接続済みと未接続を分けない (WCAG 1.4.1) -->
-								<Icon
-									name={c.connected ? 'ic-check-c' : 'ic-x-c'}
-									size={16}
-									label={c.connected ? '接続済み' : '未接続'}
-									class={c.connected ? 'set-on' : 'set-off'}
-								/>
-								{c.connected ? '接続済み' : '未接続'}
-								<span class="sub">{c.connected ? sync(c) : CONNECT_BENEFIT[c.id]}</span>
+							<!-- 状態は形・文言・色の 3 つで示す (WCAG 1.4.1、HIG Toggles「色だけに頼らない」) -->
+							<span class="set-state" class:on={c.connected}>
+								<Icon name={c.connected ? 'ic-check-c' : 'ic-x-c'} size={16} />
+								<span class="set-state-text">{c.connected ? '接続済み' : '未接続'}</span>
 							</span>
-						</span>
-						<!-- buttons.md 観点 A 原則 3 — 繰り返される行に塗りの主ボタンは置かない
-						     (Carbon「Ghost buttons in productive cards」) -->
-						<button class="btn sm sec" onclick={() => toggleConnection(c.id)}>
-							{c.connected ? '解除' : '接続'}
-						</button>
-					</div>
-				{/each}
+							<!-- 接続は外のサービスへの働きかけで 2 値の設定ではないので、スイッチにせず
+							     ボタンにする (HIG Toggles、settings-connect.md 3 節) -->
+							<button class="btn sm tint" onclick={() => toggleConnection(c.id)}>
+								{c.connected ? '解除' : '接続'}
+							</button>
+						</div>
+					{/each}
+				</div>
+				<p class="set-group-foot">接続したサービスの予定とメールを、KUROKO が自動で読み込みます。</p>
 			</section>
 
-			<section class="card set-truth" aria-labelledby="set-truth-head">
-				<h2 class="list-head" id="set-truth-head"><Icon name="ic-db" size={16} />データの正本</h2>
-				<dl class="kv">
+			<section aria-labelledby="set-truth-head">
+				<h2 class="set-group-head" id="set-truth-head">データの正本</h2>
+				<!-- iOS の設定の「項目名 … 値」の行。値は行の右端に二次的な文字で置く -->
+				<dl class="card set-group">
 					{#each SOURCE_OF_TRUTH as [what, where] (what)}
-						<dt>{what}</dt>
-						<dd>{where}</dd>
+						<div class="list-row set-row">
+							<dt>{what}</dt>
+							<dd>{where}</dd>
+						</div>
 					{/each}
 				</dl>
-				<p class="muted set-note">
+				<p class="set-group-foot">
 					予定とメールの正本は各サービスにあります。KUROKO は読み書きするだけで、勝手に持ち出しません。
 				</p>
 			</section>
@@ -189,26 +188,28 @@
 			</section>
 		</div>
 	{:else}
-		<!-- 計画 Task 27 — このタブは表示のみ。押せる要素を置かない -->
-		<section class="card set-data" aria-labelledby="set-data-head">
-			<h2 class="list-head" id="set-data-head">
-				<Icon name="ic-shield" size={16} />セキュリティとデータ
-			</h2>
-			<dl class="kv">
+		<!-- 計画 Task 27 — このタブは表示のみ。押せる要素を置かない。形は連携タブと同じ grouped -->
+		<section class="set-data" aria-labelledby="set-data-head">
+			<h2 class="set-group-head" id="set-data-head">セキュリティとデータ</h2>
+			<dl class="card set-group">
 				{#each DATA as [what, how] (what)}
-					<dt>{what}</dt>
-					<dd>{how}</dd>
+					<div class="list-row set-row">
+						<dt>{what}</dt>
+						<dd>{how}</dd>
+					</div>
 				{/each}
 			</dl>
 		</section>
 	{/if}
 
-	<!-- 取り返しのつかない操作なので独立した色と具体的な動詞で出す (buttons.md 観点 A 原則 6)。
-	     確かめる問いは上部バーの「デモの操作」と同じ 1 枚 (DemoMenu の Modal)を開く -->
-	<div class="set-foot">
-		<button class="btn danger" onclick={() => (ui.demoReset = true)}>デモをリセット</button>
-		<p class="muted set-note">初期状態に戻し、Welcome 画面へ戻ります。</p>
-	</div>
+	<!-- HIG Buttons — 破壊的な操作は赤の文字で示し、主の役割を与えない。iOS の設定と同じく
+	     独立したグループの 1 行に置き、押すと確かめる問い (DemoMenu の Modal) を開く -->
+	<section class="set-reset" aria-label="デモのリセット">
+		<div class="card set-group">
+			<button class="list-row set-row set-danger" onclick={() => (ui.demoReset = true)}>デモをリセット</button>
+		</div>
+		<p class="set-group-foot">初期状態に戻し、Welcome 画面へ戻ります。</p>
+	</section>
 </div>
 
 <Modal
@@ -269,60 +270,86 @@
 		gap: var(--sp-4);
 		padding: 0 var(--sp-5);
 	}
-	.set-list {
+	/* grouped の見出しと補足。見出しはカードの左の余白にそろえる */
+	.set-group-head {
+		margin: 0 0 var(--sp-2);
 		padding-inline: var(--sp-5);
-		padding-block: var(--sp-2);
+		color: var(--ink-3);
+		font-size: 13px;
+		font-weight: 500;
 	}
-	/* 名前・状態・説明が 2 段で入る。高さを 48px に固定したままだと、狭い幅で折り返した
-	   中身が次の行に重なるので、行の高さは中身に追従させる */
+	.set-group-foot {
+		margin: var(--sp-2) 0 0;
+		padding-inline: var(--sp-5);
+		color: var(--ink-3);
+		font-size: 13px;
+		line-height: 1.6;
+	}
+	.set-group {
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+	}
 	.set-row {
-		height: auto;
-		padding-block: var(--sp-3);
+		gap: var(--sp-3);
+		height: 52px;
+		padding-inline: var(--sp-5);
 		cursor: default;
 	}
-	.set-row:hover {
+	/* 区切り線 (.list-row::after) は文字の始まりから引く (iOS の inset の区切り)。
+	   ロゴのある行はロゴの右 (24px + 間隔 12px) から */
+	.set-row::after {
+		left: var(--sp-5);
+		right: 0;
+	}
+	.set-row.has-logo::after {
+		left: calc(var(--sp-5) + 24px + var(--sp-3));
+	}
+	div.set-row:hover {
 		background: none;
 	}
 	.set-name {
-		display: flex;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: var(--sp-2);
+		flex: 1;
+		min-width: 0;
 		font-weight: 500;
 	}
-	/* 状態と説明は 1 行に流す。狭い幅では説明だけが次の行に落ちる */
-	.set-meta {
-		display: flex;
+	.set-state {
+		display: inline-flex;
 		align-items: center;
-		flex-wrap: wrap;
-		gap: 0 var(--sp-2);
-		min-width: 0;
-		color: var(--ink-2);
-		font-size: 14px;
-	}
-	.set-row .sub {
+		gap: var(--sp-1);
 		color: var(--ink-3);
 		font-size: 14px;
 	}
-	.settings :global(.set-on) {
+	.set-state.on {
 		color: var(--ok);
 	}
-	.settings :global(.set-off) {
-		color: var(--ink-3);
+	.set-group dt {
+		flex: 1;
+		color: var(--ink);
+	}
+	.set-group dd {
+		margin: 0;
+		color: var(--ink-2);
+	}
+	.set-danger {
+		justify-content: center;
+		color: var(--warn);
+		font-weight: 500;
+		cursor: pointer;
+	}
+	.set-reset {
+		max-width: 480px;
+		padding: var(--sp-6) var(--sp-5) 0;
 	}
 	.set-note {
 		margin-top: var(--sp-3);
 		font-size: 14px;
 		line-height: 1.7;
 	}
-	.set-truth .kv,
-	.set-data .kv {
-		margin-top: var(--sp-2);
-	}
 	/* 1 枚しか無いので、2 列のときの連携側と同じ幅で止める (幅いっぱいだと値が遠くなる) */
 	.set-data {
 		max-width: 680px;
-		margin: 0 var(--sp-5);
+		padding: 0 var(--sp-5);
 	}
 	.settings :global(.set-levels) {
 		display: flex;
@@ -374,13 +401,6 @@
 		min-width: 0;
 		font-size: 14px;
 	}
-	.set-foot {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		gap: var(--sp-2);
-		padding: var(--sp-6) var(--sp-5) 0;
-	}
 	/* モーダルの中の対比。左が変わる操作、右が変わらない操作 */
 	.set-diff {
 		display: grid;
@@ -420,20 +440,23 @@
 		.set-diff {
 			grid-template-columns: minmax(0, 1fr);
 		}
-		/* この幅では「Google カレンダー」がカードと行の左右の余白に押されて折り返す。
-		   カード側の余白を外し、行の 16px だけ残す */
-		.set-list {
-			padding-inline: 0;
+		.set-row {
+			padding-inline: var(--sp-4);
 		}
-		/* 2 列だと値が 1 語ずつ折り返すので、見出しの上に値を積む */
-		.set-truth .kv,
-		.set-data .kv {
-			grid-template-columns: minmax(0, 1fr);
-			gap: 0;
+		.set-row::after {
+			left: var(--sp-4);
 		}
-		.set-truth .kv dd,
-		.set-data .kv dd {
-			margin-bottom: var(--sp-3);
+		.set-row.has-logo::after {
+			left: calc(var(--sp-4) + 24px + var(--sp-3));
+		}
+		/* 名前が折り返すので、状態は記号だけにする。文言は読み上げに残す (形と色で 2 つ) */
+		.set-state-text {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
 		}
 	}
 </style>
