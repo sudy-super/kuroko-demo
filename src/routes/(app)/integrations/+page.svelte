@@ -38,7 +38,7 @@
 			if (!shown)
 				integrations.chat.post(db.demo.lineTab, '田中様への返信案ができました', {
 					title: a.title,
-					lines: [`宛先 ${a.to}`, a.effectLine],
+					lines: [`宛先 ${a.to}`],
 					actions: [
 						{ label: '内容を見る', act: 'preview', arg: a.id },
 						{ label: '承認して送信', act: 'approve', arg: a.id }

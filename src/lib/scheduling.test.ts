@@ -100,7 +100,6 @@ describe('scheduling', () => {
 		const ap = sendReply('th-tanaka-next', '日程の話は取り下げます。', 'inbox');
 		expect(ap.payload.type).toBe('reply');
 		expect((ap.payload as { schedulingId?: string }).schedulingId).toBeUndefined();
-		expect(ap.effectLine).not.toContain('相手が候補を選ぶと');
 	});
 	// slots を採用したあと別トーンを採用すると本文から候補が消えるので、下書きも道連れにする
 	it('dropSlotsDraft のあとは sendReply の schedulingId が付かない', () => {
@@ -109,7 +108,6 @@ describe('scheduling', () => {
 		expect(db.scheduling.filter((s) => s.threadId === 'th-tanaka-next').length).toBe(0);
 		const ap = sendReply('th-tanaka-next', '承知しました。改めてご連絡いたします。', 'inbox');
 		expect((ap.payload as { schedulingId?: string }).schedulingId).toBeUndefined();
-		expect(ap.effectLine).not.toContain('相手が候補を選ぶと');
 		approve(ap.id);
 		vi.advanceTimersByTime(SEND_DELAY_MS);
 		expect(db.scheduling.some((s) => s.token)).toBe(false);

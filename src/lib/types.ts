@@ -43,7 +43,7 @@ export interface Document { id: string; kind: '提案書' | '見積書' | '報�
 /** 何で送るか (送り先のサービス)。何をするか (共有・送付など) は title に書く。行の記号は
     このサービスのロゴで出す (ユーザー指摘 2026-09-24: 共有の記号は何で送るかを表していなかった) */
 export type ApprovalKind = 'mail' | 'line' | 'slack';
-export interface Approval { id: string; title: string; risk: RiskLevel; kind: ApprovalKind; to: string; subject?: string; body: string; effectLine: string; status: 'pending' | 'sending' | 'executed' | 'rejected'; createdAt: string; sendingAt?: string; executedAt?: string; payload: ApprovalPayload; origin: Origin }
+export interface Approval { id: string; title: string; risk: RiskLevel; kind: ApprovalKind; to: string; subject?: string; body: string; status: 'pending' | 'sending' | 'executed' | 'rejected'; createdAt: string; sendingAt?: string; executedAt?: string; payload: ApprovalPayload; origin: Origin }
 export type ApprovalPayload =
   | { type: 'reply'; threadId: string; body: string; schedulingId?: string }
   | { type: 'share'; personId: string; what: string }

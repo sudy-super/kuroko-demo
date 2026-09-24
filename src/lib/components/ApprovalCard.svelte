@@ -111,8 +111,6 @@
 		{/if}
 	{/if}
 
-	<p class="ap-effect muted">{a.effectLine}</p>
-
 	{#if a.status === 'sending'}
 		<div class="row ap-foot">
 			<span class="ap-sending">送信中…</span>
@@ -166,10 +164,6 @@
 		align-self: flex-start;
 		margin-top: var(--sp-1);
 		padding-inline: 0;
-	}
-	.ap-effect {
-		margin: 0;
-		font-size: 12px;
 	}
 	.ap-edit {
 		margin-top: var(--sp-1);

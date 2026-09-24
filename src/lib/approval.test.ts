@@ -29,7 +29,6 @@ const ext = () =>
 		kind: 'mail',
 		to: 'a <a@b.jp>',
 		body: 'x',
-		effectLine: 'e',
 		payload: { type: 'line', text: 'x' },
 		origin: 'inbox'
 	});
@@ -53,7 +52,6 @@ describe('approval', () => {
 			kind: 'mail',
 			to: 'a <a@b.jp>',
 			body: '元の本文',
-			effectLine: 'e',
 			payload: { type: 'reply', threadId: db.threads[0].id, body: '元の本文' },
 			origin: 'inbox'
 		});
@@ -85,7 +83,6 @@ describe('approval', () => {
 				kind: 'mail',
 				to: 'x',
 				body: '',
-				effectLine: '',
 				payload: { type: 'share', personId: 'p-tanaka', what: 'w' },
 				origin: 'meeting'
 			});

@@ -390,7 +390,6 @@ export function sendReply(threadId: string, body: string, origin: Origin = 'inbo
 		to,
 		subject: `Re: ${th.subject}`,
 		body,
-		effectLine: `承認すると、${p?.name.replace(' ', '') ?? ''}様 ${addr} に${what}が送信されます${draft ? '。相手が候補を選ぶと、その日時で予定が確定します' : ''}`,
 		payload: { type: 'reply', threadId, body, schedulingId: draft?.id },
 		origin
 	});
@@ -664,7 +663,6 @@ export function sendFollowUp(meetingId: string): Approval {
 		to: mail.to,
 		subject: mail.subject,
 		body: mail.body,
-		effectLine: `承認すると、${mail.to} にこのメールが送信されます`,
 		payload: { type: 'followup', meetingId, threadId },
 		origin: 'meeting'
 	});
@@ -704,7 +702,6 @@ export function shareAgenda(meetingId: string, origin: Origin = 'meeting'): Appr
 		kind: 'mail',
 		to,
 		body: m.agenda.join('\n'),
-		effectLine: `承認すると、${p.name.replace(' ', '')}様 ${addressOf(idn)} にアジェンダが共有されます`,
 		payload: { type: 'agenda', meetingId },
 		origin
 	});
@@ -860,7 +857,6 @@ export function sendDocument(docId: string, personId: string, origin: Origin = '
 		to,
 		subject: d.title,
 		body: `添付: ${d.title}.pdf`,
-		effectLine: `承認すると、${person.name.replace(' ', '')}様 ${addressOf(identity)} にこの資料が送信されます`,
 		payload: { type: 'document', documentId: d.id, personId },
 		origin
 	});
