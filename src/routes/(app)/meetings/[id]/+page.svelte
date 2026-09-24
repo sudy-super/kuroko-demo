@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
-	import { eventDateOf, meetingMailTargetFor, meetingOf, personOf } from '$lib/derived';
+	import { eventDateOf, eventOf, meetingMailTargetFor, meetingOf, personOf } from '$lib/derived';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import { generateAgenda, markBriefRead, shareAgenda, updateAgenda } from '$lib/actions';
 	import { ui } from '$lib/ui.svelte';
@@ -12,7 +12,7 @@
 
 	const id = $derived(page.params.id!);
 	const meeting = $derived(meetingOf(db, id));
-	const event = $derived(db.events.find((e) => e.id === meeting?.eventId));
+	const event = $derived(eventOf(db, meeting?.eventId));
 	const person = $derived(personOf(db, meeting?.personIds[0]));
 	/* メールを送れる相手かどうか。社内の人物はメールの識別子を持たないので送れない
 	   (seed.ts の identities)。送れない相手にはメールを作る操作を出さない */

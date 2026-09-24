@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { db } from '$lib/store.svelte';
-	import { companyOf, personOf, queue, nextInQueue } from '$lib/derived';
+	import { companyOf, personOf, threadOf, queue, nextInQueue } from '$lib/derived';
 	import { markDone } from '$lib/actions';
 	import { ui, toast } from '$lib/ui.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -15,7 +15,7 @@
 
 	const q = $derived(queue(db));
 	// ?t= が指すスレッド。無ければキューの先頭 (対応済みにした直後もここに落ちる)
-	const thread = $derived(db.threads.find((t) => t.id === page.url.searchParams.get('t')) ?? q[0]);
+	const thread = $derived(threadOf(db, page.url.searchParams.get('t') ?? undefined) ?? q[0]);
 	const allMail = $derived([...db.threads].sort((a, b) => b.lastAt.localeCompare(a.lastAt)));
 	/* 要対応とすべての受信メールは、同じ一覧の表示の切り替えにする (ユーザー指示 2026-09-25)。
 	   以前は「すべて」を件名だけのモーダルで出していて、そこから本文を開けなかった */

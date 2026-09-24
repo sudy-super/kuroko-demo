@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { db } from '$lib/store.svelte';
-	import { companyOf, personOf, projectOf } from '$lib/derived';
+	import { companyOf, documentOf, personOf, projectOf } from '$lib/derived';
 	import { generateDocument, sendDocument } from '$lib/actions';
 	import { ui, focusChatbar, toast } from '$lib/ui.svelte';
 	import { parse, rel } from '$lib/dates';
@@ -15,7 +15,7 @@
 	// 一覧は新しい順。シードは作成の古い順に並んでいる
 	const docs = $derived([...db.documents].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 	// ?d= が指す資料。無ければ一覧の先頭 (People / 案件ページの資料リンクがこの形)
-	const doc = $derived(db.documents.find((d) => d.id === page.url.searchParams.get('d')) ?? docs[0]);
+	const doc = $derived(documentOf(db, page.url.searchParams.get('d') ?? undefined) ?? docs[0]);
 
 	// 送り先は資料の相手。持たない資料 (案件に紐づかない報告書) は案件の担当者から引く
 	const to = $derived(personOf(db, doc?.personId ?? projectOf(db, doc?.projectId)?.personIds[0]));

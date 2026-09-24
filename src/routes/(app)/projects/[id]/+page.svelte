@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { db } from '$lib/store.svelte';
-	import { companyOf, personOf, projectOf, eventDateOf, meetingsOf } from '$lib/derived';
+	import { companyOf, documentOf, personOf, projectOf, eventDateOf, meetingsOf } from '$lib/derived';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import Icon from '$lib/components/Icon.svelte';
 	import SourceIcon from '$lib/components/SourceIcon.svelte';
@@ -20,7 +20,7 @@
 	const meetings = $derived(meetingsOf(db, (m) => m.projectId === id));
 	const documents = $derived(
 		project
-			? project.documentIds.map((d) => db.documents.find((x) => x.id === d)).filter((x) => !!x)
+			? project.documentIds.map((d) => documentOf(db, d)).filter((x) => !!x)
 			: []
 	);
 

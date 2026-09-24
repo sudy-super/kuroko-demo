@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import { RadioGroup } from 'bits-ui';
 	import { db, installStorageSync } from '$lib/store.svelte';
-	import { personOf, linkUrl } from '$lib/derived';
+	import { eventOf, personOf, linkUrl } from '$lib/derived';
 	import { confirmSlot, changeSlot, cancelScheduling } from '$lib/actions';
 	import { parse, fmtMDW } from '$lib/dates';
 	import { icsFor } from '$lib/ics';
@@ -15,7 +15,7 @@
 	const person = $derived(personOf(db, s?.personId));
 	const slots = $derived(s?.slots.filter((x) => x.selected) ?? []);
 	const chosen = $derived(s?.slots.find((x) => x.id === s.chosenSlotId));
-	const event = $derived(db.events.find((e) => e.id === s?.eventId));
+	const event = $derived(eventOf(db, s?.eventId));
 
 	let value = $state('');
 	// 候補が決まった時点 (sent への遷移) で一度だけ初期値を入れる。以後はユーザーの選択を尊重する

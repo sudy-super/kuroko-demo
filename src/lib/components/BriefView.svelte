@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Meeting } from '$lib/types';
 	import { db } from '$lib/store.svelte';
-	import { companyOf, personOf, projectOf } from '$lib/derived';
+	import { companyOf, documentOf, personOf, projectOf } from '$lib/derived';
 	import ProjectStatusIcon from './ProjectStatusIcon.svelte';
 	import DocKindIcon from './DocKindIcon.svelte';
 
@@ -12,7 +12,7 @@
 	const company = $derived(companyOf(db, meeting.companyId));
 	const project = $derived(projectOf(db, meeting.projectId));
 	const documents = $derived(
-		(brief?.documentIds ?? []).map((d) => db.documents.find((x) => x.id === d)).filter((x) => !!x)
+		(brief?.documentIds ?? []).map((d) => documentOf(db, d)).filter((x) => !!x)
 	);
 </script>
 

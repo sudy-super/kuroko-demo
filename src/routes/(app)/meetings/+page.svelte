@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { db } from '$lib/store.svelte';
-	import { eventDateOf, meetingsOf, personOf } from '$lib/derived';
+	import { eventDateOf, eventOf, meetingsOf, personOf } from '$lib/derived';
 	import { parse, fmtMDW } from '$lib/dates';
 	import Icon from '$lib/components/Icon.svelte';
 
@@ -30,7 +30,7 @@
 					<Icon name={icon} size={16} />{title}<span class="num">{items.length}</span>
 				</h2>
 				{#each items as m (m.id)}
-					{@const ev = db.events.find((e) => e.id === m.eventId)}
+					{@const ev = eventOf(db, m.eventId)}
 					{@const who = names(m.personIds)}
 					<!-- 右端の状態は、会議の前は準備 (Brief) が届いているか、後は議事録ができているかの
 					     1 つだけを、記号と文字の両方で出す。共有の記号は「共有する」操作の記号なので

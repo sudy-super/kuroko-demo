@@ -6,6 +6,9 @@ export const companyOf = (db: Db, id?: string) => db.companies.find((c) => c.id 
 export const projectOf = (db: Db, id?: string) => db.projects.find((p) => p.id === id);
 export const identityOf = (db: Db, id: string) => db.identities.find((i) => i.id === id);
 export const meetingOf = (db: Db, id?: string) => db.meetings.find((m) => m.id === id);
+export const eventOf = (db: Db, id?: string) => db.events.find((e) => e.id === id);
+export const threadOf = (db: Db, id?: string) => db.threads.find((t) => t.id === id);
+export const documentOf = (db: Db, id?: string) => db.documents.find((d) => d.id === id);
 
 /* 宛先の行と効果文に出す連絡先の表し方。メールはアドレスを省略せずに出す (仕様 5.3)。
    LINE / Slack の value は内部の ID なので、人が読める label (「LINE」「Slack」) に置き換える */
@@ -153,7 +156,7 @@ export const meetingsOf = (db: Db, match: (m: Meeting) => boolean) =>
 		.filter(match)
 		.sort((a, b) => (eventDateOf(db, b) ?? '').localeCompare(eventDateOf(db, a) ?? ''));
 
-export const eventDateOf = (db: Db, m: Meeting) => db.events.find((e) => e.id === m.eventId)?.date;
+export const eventDateOf = (db: Db, m: Meeting) => eventOf(db, m.eventId)?.date;
 
 export function nextMeeting(db: Db): { meeting: Meeting; event: CalendarEvent } | undefined {
 	const k = T(db);

@@ -26,6 +26,9 @@ import {
 	companyOf,
 	identityOf,
 	meetingOf,
+	eventOf,
+	threadOf,
+	documentOf,
 	projectOf,
 	doneLogOf,
 	firstFreeStart,
@@ -169,7 +172,7 @@ export function executeApproval(id: string, auto = false) {
 	const p = a.payload;
 	const ext = a.risk === 'external_send';
 	if (p.type === 'reply') {
-		const th = db.threads.find((t) => t.id === p.threadId)!;
+		const th = threadOf(db, p.threadId)!;
 		integrations.mail.sendMessage(th, p.body);
 		th.needsReply = false;
 		th.done = true;
@@ -198,7 +201,7 @@ export function executeApproval(id: string, auto = false) {
 		log(`${a.title}を送信しました`, 'send', { actor: 'user', origin: a.origin, approved: true });
 	} else if (p.type === 'followup') {
 		// 相手のスレッドがあれば reply と同じように閉じる。無い会議 (threadId は省略可能) では何もしない
-		const th = p.threadId && db.threads.find((t) => t.id === p.threadId);
+		const th = threadOf(db, p.threadId);
 		if (th) {
 			th.needsReply = false;
 			th.done = true;
@@ -370,7 +373,7 @@ export function undo(logId: string) {
 }
 
 export function insertSlots(threadId: string): SchedulingRequest {
-	const th = db.threads.find((t) => t.id === threadId)!;
+	const th = threadOf(db, threadId)!;
 	// 日程調整は相手の会社・案件に予定を結び付ける機能なので、人物が分からないまま作らない
 	// (fail-close。人物なしで作ると confirmSlot() が落ちる — review-task-15.md C1)
 	if (!th.personId) throw new Error(`insertSlots: ${threadId} に personId がありません`);
@@ -415,7 +418,7 @@ export function dropSlotsDraft(threadId: string) {
 }
 
 export function sendReply(threadId: string, body: string, origin: Origin = 'inbox'): Approval {
-	const th = db.threads.find((t) => t.id === threadId)!;
+	const th = threadOf(db, threadId)!;
 	const p = personOf(db, th.personId);
 	const idn = identityOf(db, th.identityId)!;
 	const draft = db.scheduling.find((s) => s.threadId === threadId && s.status === 'draft');
@@ -437,7 +440,7 @@ export function sendReply(threadId: string, body: string, origin: Origin = 'inbo
 }
 
 export function markDone(threadId: string) {
-	const th = db.threads.find((t) => t.id === threadId);
+	const th = threadOf(db, threadId);
 	if (!th) return;
 	th.done = true;
 	th.needsReply = false;
@@ -565,7 +568,7 @@ export function createEvent(
 }
 
 export function deleteEvent(id: string, origin: Origin = 'calendar') {
-	const e = db.events.find((x) => x.id === id);
+	const e = eventOf(db, id);
 	if (!e) return;
 	// 取り消しで戻せるよう、消す前の中身を控える。配列から外すだけで中身は書き換わらないので、
 	// 控えた参照をそのまま押し戻せばよい
@@ -585,7 +588,7 @@ export function deleteEvent(id: string, origin: Origin = 'calendar') {
 
 // 時刻は '9:00' のように 1 桁時もあるので、文字列ではなく分に直して足す
 export function addBuffer(eventId: string, min: number) {
-	const e = db.events.find((x) => x.id === eventId);
+	const e = eventOf(db, eventId);
 	if (!e) return;
 	e.bufferBefore = min;
 	e.start = toHm(minutes(e.start) + min);
@@ -896,7 +899,7 @@ export function generateDocument(
 }
 
 export function sendDocument(docId: string, personId: string, origin: Origin = 'documents'): Approval {
-	const d = db.documents.find((x) => x.id === docId);
+	const d = documentOf(db, docId);
 	if (!d) throw new Error(`資料がありません: ${docId}`);
 	const { person, identity, to } = personMailTargetOf(db, personId);
 	return addApproval({

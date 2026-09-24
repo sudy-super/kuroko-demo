@@ -1,4 +1,5 @@
 import type { Db, Source } from './types';
+import { eventOf, eventDateOf } from './derived';
 
 export type HistoryKind = 'mail' | 'line' | 'slack' | 'meeting';
 export type HistoryItem = {
@@ -53,7 +54,7 @@ export function personHistory(db: Db, personId: string): HistoryItem[] {
 	}
 	for (const m of db.meetings) {
 		if (!m.personIds.includes(personId)) continue;
-		const e = db.events.find((x) => x.id === m.eventId);
+		const e = eventOf(db, m.eventId);
 		if (!e) continue;
 		out.push({
 			at: stamp(e.date, e.start),
@@ -73,7 +74,7 @@ export function personStats(db: Db, personId: string) {
 	);
 	const past = db.meetings
 		.filter((m) => m.personIds.includes(personId))
-		.map((m) => db.events.find((e) => e.id === m.eventId)?.date)
+		.map((m) => eventDateOf(db, m))
 		.filter((d): d is string => !!d && d <= db.seededOn)
 		.sort();
 	return {
