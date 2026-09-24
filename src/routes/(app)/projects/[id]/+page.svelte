@@ -4,6 +4,7 @@
 	import { companyOf, documentOf, personOf, projectOf, eventDateOf, meetingsOf } from '$lib/derived';
 	import { parse, rel, fmtMDW } from '$lib/dates';
 	import Icon from '$lib/components/Icon.svelte';
+	import ListSection from '$lib/components/ListSection.svelte';
 	import SourceIcon from '$lib/components/SourceIcon.svelte';
 	import ProjectStatusIcon from '$lib/components/ProjectStatusIcon.svelte';
 	import DocKindIcon from '$lib/components/DocKindIcon.svelte';
@@ -23,18 +24,7 @@
 			? project.documentIds.map((d) => documentOf(db, d)).filter((x) => !!x)
 			: []
 	);
-
-	/* 仕様 5 — カードの中の一覧は上位 3 件まで。「残り N 件」を押すとその場で全部出す */
-	const LIMIT = 3;
-	let open = $state<Record<string, boolean>>({});
-	const shown = <T,>(a: T[], k: string) => (open[k] ? a : a.slice(0, LIMIT));
 </script>
-
-{#snippet more(k: string, n: number)}
-	{#if !open[k] && n > LIMIT}
-		<button class="btn text sm" onclick={() => (open[k] = true)}>残り {n - LIMIT} 件</button>
-	{/if}
-{/snippet}
 
 <svelte:head><title>{project?.name ?? '案件'} — KUROKO AI</title></svelte:head>
 
@@ -71,55 +61,43 @@
 				</dl>
 			</section>
 
-			<section class="card people-sec">
-				<h2>関連人物</h2>
-				{#each shown(people, 'people') as p (p.id)}
+			<ListSection title="関連人物" items={people} key={(p) => p.id} empty="紐づく人物はいません">
+				{#snippet row(p)}
 					<a class="list-row" href="/people/{p.id}">
 						<span class="people-ident">{p.name}</span>
 						<span class="muted">{p.title}</span>
 					</a>
-				{/each}
-				{#if !people.length}<p class="muted">紐づく人物はいません</p>{/if}
-				{@render more('people', people.length)}
-			</section>
+				{/snippet}
+			</ListSection>
 
-			<section class="card people-sec">
-				<h2>関連メール</h2>
-				{#each shown(threads, 'threads') as t (t.id)}
+			<ListSection title="関連メール" items={threads} key={(t) => t.id} empty="関連するメールはありません">
+				{#snippet row(t)}
 					<a class="list-row" href="/inbox?t={t.id}">
 						<SourceIcon source={t.source} />
 						<span class="people-ident">{t.subject}</span>
 						<span class="num muted">{rel(parse(t.lastAt.slice(0, 10)), parse(db.seededOn))}</span>
 					</a>
-				{/each}
-				{#if !threads.length}<p class="muted">関連するメールはありません</p>{/if}
-				{@render more('threads', threads.length)}
-			</section>
+				{/snippet}
+			</ListSection>
 
-			<section class="card people-sec">
-				<h2>関連会議</h2>
-				{#each shown(meetings, 'meetings') as m (m.id)}
+			<ListSection title="関連会議" items={meetings} key={(m) => m.id} empty="関連する会議はありません">
+				{#snippet row(m)}
 					{@const d = eventDateOf(db, m)}
 					<a class="list-row" href="/meetings/{m.id}">
 						<span class="people-ident">{m.title}</span>
 						<span class="num muted">{d ? fmtMDW(parse(d)) : ''}</span>
 					</a>
-				{/each}
-				{#if !meetings.length}<p class="muted">関連する会議はありません</p>{/if}
-				{@render more('meetings', meetings.length)}
-			</section>
+				{/snippet}
+			</ListSection>
 
-			<section class="card people-sec">
-				<h2>資料</h2>
-				{#each shown(documents, 'documents') as d (d.id)}
+			<ListSection title="資料" items={documents} key={(d) => d.id} empty="資料はありません">
+				{#snippet row(d)}
 					<a class="list-row" href="/documents?d={d.id}">
 						<DocKindIcon kind={d.kind} />
 						<span class="people-ident">{d.title}</span>
 					</a>
-				{/each}
-				{#if !documents.length}<p class="muted">資料はありません</p>{/if}
-				{@render more('documents', documents.length)}
-			</section>
+				{/snippet}
+			</ListSection>
 		</div>
 	{/if}
 </div>

@@ -7,6 +7,7 @@
 	import { ui, toast, focusChatbar } from '$lib/ui.svelte';
 	import { updatePersonMemo } from '$lib/actions';
 	import Icon from '$lib/components/Icon.svelte';
+	import ListSection from '$lib/components/ListSection.svelte';
 	import Tip from '$lib/components/Tip.svelte';
 	import ProjectStatusIcon from '$lib/components/ProjectStatusIcon.svelte';
 	import DocKindIcon from '$lib/components/DocKindIcon.svelte';
@@ -53,18 +54,7 @@
 		ui.context = { label: `${person.name}様について`, personId: person.id };
 		focusChatbar();
 	}
-
-	/* 仕様 5 — カードの中の一覧は上位 3 件まで。「残り N 件」を押すとその場で全部出す */
-	const LIMIT = 3;
-	let open = $state<Record<string, boolean>>({});
-	const shown = <T,>(a: T[], k: string) => (open[k] ? a : a.slice(0, LIMIT));
 </script>
-
-{#snippet more(k: string, n: number)}
-	{#if !open[k] && n > LIMIT}
-		<button class="btn text sm" onclick={() => (open[k] = true)}>残り {n - LIMIT} 件</button>
-	{/if}
-{/snippet}
 
 <svelte:head><title>{person?.name ?? '人物'} — KUROKO AI</title></svelte:head>
 
@@ -134,32 +124,28 @@
 				{/each}
 			</section>
 
-			<section class="card people-sec">
-				<h2>案件</h2>
-				{#each shown(projects, 'projects') as pj (pj.id)}
+			<ListSection title="案件" items={projects} key={(pj) => pj.id} empty="紐づく案件はありません">
+				{#snippet row(pj)}
 					<a class="list-row" href="/projects/{pj.id}">
 						<span class="people-ident">{pj.name}</span>
 						<ProjectStatusIcon status={pj.status} />
 						<span class="num muted">{pj.amount}</span>
 					</a>
-				{/each}
-				{#if !projects.length}<p class="muted">紐づく案件はありません</p>{/if}
-				{@render more('projects', projects.length)}
-			</section>
+				{/snippet}
+			</ListSection>
 
-			<section class="card people-sec">
-				<h2>最近のやりとり</h2>
-				<p class="people-stat">メール {stats?.mails} 通 / 会議 {stats?.meetings} 件</p>
-				{#each shown(history, 'history') as h (h.href + h.at)}
+			<ListSection title="最近のやりとり" items={history} key={(h) => h.href + h.at} empty="やりとりの記録はありません">
+				{#snippet head()}
+					<p class="people-stat">メール {stats?.mails} 通 / 会議 {stats?.meetings} 件</p>
+				{/snippet}
+				{#snippet row(h)}
 					<a class="list-row" href={h.href}>
 						<Tip text={h.label} name={HISTORY_ICON[h.kind]} size={20} class="ph-history-icon" />
 						<span class="people-ident">{h.title}</span>
 						<span class="num muted">{day(h.at)}</span>
 					</a>
-				{/each}
-				{#if !history.length}<p class="muted">やりとりの記録はありません</p>{/if}
-				{@render more('history', history.length)}
-			</section>
+				{/snippet}
+			</ListSection>
 
 			<section class="card people-sec">
 				<h2>メモ</h2>
@@ -183,17 +169,14 @@
 				</div>
 			</section>
 
-			<section class="card people-sec">
-				<h2>関連資料</h2>
-				{#each shown(documents, 'documents') as d (d.id)}
+			<ListSection title="関連資料" items={documents} key={(d) => d.id} empty="関連する資料はありません">
+				{#snippet row(d)}
 					<a class="list-row" href="/documents?d={d.id}">
 						<DocKindIcon kind={d.kind} />
 						<span class="people-ident">{d.title}</span>
 					</a>
-				{/each}
-				{#if !documents.length}<p class="muted">関連する資料はありません</p>{/if}
-				{@render more('documents', documents.length)}
-			</section>
+				{/snippet}
+			</ListSection>
 		</div>
 	{/if}
 </div>
