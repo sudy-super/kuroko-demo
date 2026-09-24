@@ -69,7 +69,7 @@
 	<h1 class="sr-only">カレンダー</h1>
 
 	<!-- 並びは Google カレンダーに合わせ、日付を動かす操作と見出しを左、表示の切り替えと追加を右に置く -->
-	<div class="row cal-bar">
+	<div class="row page-bar">
 		<div class="row cal-nav">
 			<button class="iconbtn" aria-label={view === 'month' ? '前の月' : '前の週'} onclick={() => shift(-1)}>
 				<Icon name="ic-left" size={20} />
@@ -155,11 +155,6 @@
 <style>
 	.cal {
 		max-width: 1080px;
-	}
-	.cal-bar {
-		flex-wrap: wrap;
-		gap: var(--sp-3);
-		padding: 0 var(--sp-5) var(--sp-5);
 	}
 	.cal-nav {
 		gap: var(--sp-1);

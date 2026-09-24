@@ -210,6 +210,11 @@ svg.i {
 	font-family: var(--num);
 	font-variant-numeric: tabular-nums;
 }
+/* 空の一覧の文言。.muted と併せると色は .muted が勝つ */
+.empty {
+	padding: var(--sp-5);
+	color: var(--ink-2);
+}
 .muted {
 	color: var(--ink-3);
 }
@@ -1113,6 +1118,17 @@ svg.i {
 	cursor: pointer;
 	transition: background var(--d-fast) var(--ease-out);
 }
+/* 一覧だけを入れるカード。行が左右の余白を持つので、カードは上下だけ空ける */
+.card.list-card {
+	padding-inline: 0;
+	padding-block: var(--sp-2);
+}
+/* 一覧の上の絞り込み・並べ替えの行 */
+.page-bar {
+	flex-wrap: wrap;
+	gap: var(--sp-3);
+	padding: 0 var(--sp-5) var(--sp-5);
+}
 .list-row.lg {
 	height: 56px;
 }
@@ -1459,21 +1475,36 @@ svg.i {
 .scrim.leave {
 	animation: fade-out var(--d-exit) var(--ease-exit) both;
 }
-.drawer {
+.drawer,
+.panel-center,
+.sheet,
+.modal {
 	position: fixed;
+	z-index: 75;
+	display: flex;
+	flex-direction: column;
+	/* 送り箱は中の .modal-body が受け持つので、本体は縮ませず隠す */
+	overflow: hidden;
+}
+/* 枠の間 (--frame-left 〜 100vw - --frame-right) の中央に浮かせる */
+.panel-center,
+.modal {
+	top: 50%;
+	left: calc((var(--frame-left) + 100vw - var(--frame-right)) / 2);
+	transform: translate(-50%, -50%);
+	max-height: calc(100dvh - var(--bar-clear) * 2);
+	border-radius: var(--r-l);
+	animation: modal-in var(--d-enter) var(--ease-enter) both;
+}
+.drawer {
 	top: var(--bar-clear);
 	/* 連携の列 (段 76) が覆い (75) より前にあるので、右端をそのぶん空ける */
 	right: var(--frame-right);
 	bottom: var(--sp-4);
-	z-index: 75;
-	display: flex;
-	flex-direction: column;
 	width: min(400px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));
 	padding: var(--sp-6);
 	/* 右端から浮くので右側も角を丸める */
 	border-radius: var(--r-m);
-	/* 送り箱は中の .modal-body が受け持つので、本体は縮ませず隠す */
-	overflow: hidden;
 	animation: drawer-in var(--d-enter) var(--ease-enter) both;
 }
 @keyframes drawer-in {
@@ -1492,21 +1523,8 @@ svg.i {
 /* 承認待ちの中央寄り固定パネル (docs/research/card-expand.md)。max-height は --bar-clear を引き、
    右上のピルと重ならない。その場に浮くので、スライドではなく .modal と同じフェード + scale (M3 Transitions) */
 .panel-center {
-	position: fixed;
-	top: 50%;
-	/* 覆いは枠の間 (--frame-left 〜 100vw - --frame-right) の中央に置く */
-	left: calc((var(--frame-left) + 100vw - var(--frame-right)) / 2);
-	transform: translate(-50%, -50%);
-	z-index: 75;
-	display: flex;
-	flex-direction: column;
 	width: min(680px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));
-	max-height: calc(100dvh - var(--bar-clear) * 2);
 	padding: var(--sp-6);
-	border-radius: var(--r-l);
-	/* .drawer と同じ理由 */
-	overflow: hidden;
-	animation: modal-in var(--d-enter) var(--ease-enter) both;
 }
 .panel-center.leave {
 	animation: modal-out var(--d-exit) var(--ease-exit) both;
@@ -1522,13 +1540,9 @@ svg.i {
 	animation: fade-out 150ms both;
 }
 .sheet {
-	position: fixed;
 	left: 0;
 	right: 0;
 	bottom: 0;
-	z-index: 75;
-	display: flex;
-	flex-direction: column;
 	width: 100%;
 	max-width: 640px;
 	margin: 0 auto;
@@ -1536,8 +1550,6 @@ svg.i {
 	max-height: calc(100dvh - 72px);
 	padding: 0 var(--sp-4) calc(var(--sp-6) + env(safe-area-inset-bottom));
 	border-radius: var(--r-xl) var(--r-xl) 0 0;
-	/* 下の .sheet .modal-body が送り箱なので、本体は縮ませず隠す */
-	overflow: hidden;
 	animation: sheet-in var(--d-enter) var(--ease-enter) both;
 }
 @keyframes sheet-in {
@@ -1555,16 +1567,12 @@ svg.i {
 }
 /* 題の行 (とつまみ) を留めて中身 (.modal-body) だけを送る。枠ごと送ると、中身が上限を超えたとき
    flex の既定の縮みで行が潰れて重なる。送り箱の中は縮ませない */
-.panel-center .modal-body,
-.drawer .modal-body,
-.sheet .modal-body {
+:is(.panel-center, .drawer, .sheet) .modal-body {
 	display: flex;
 	flex-direction: column;
 	flex: 1;
 }
-.panel-center .modal-body > *,
-.drawer .modal-body > *,
-.sheet .modal-body > * {
+:is(.panel-center, .drawer, .sheet) .modal-body > * {
 	flex: none;
 }
 /* 携帯の横向きでは 50dvh だとつまみと見出しで埋まる。この高さだけ画面をもっと使う */
@@ -1583,20 +1591,8 @@ svg.i {
 	background: var(--line-2);
 }
 .modal {
-	position: fixed;
-	top: 50%;
-	/* .panel-center と同じ理由 */
-	left: calc((var(--frame-left) + 100vw - var(--frame-right)) / 2);
-	transform: translate(-50%, -50%);
-	z-index: 75;
-	display: flex;
-	flex-direction: column;
 	width: min(560px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));
-	max-height: calc(100dvh - var(--bar-clear) * 2);
 	padding: var(--sp-6);
-	border-radius: var(--r-l);
-	overflow: hidden;
-	animation: modal-in var(--d-enter) var(--ease-enter) both;
 }
 .modal.sm {
 	width: min(400px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));

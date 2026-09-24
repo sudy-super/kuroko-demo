@@ -173,7 +173,7 @@
 <div class="tasks">
 	<h1 class="sr-only">ToDo</h1>
 
-	<div class="row tasks-bar">
+	<div class="row page-bar">
 		<Segmented label="絞り込み" items={FILTERS} value={filter} onchange={(k) => (filter = k)}>
 			{#snippet extra(k)}
 				{@const n = openTaskCount(db, k)}
@@ -198,7 +198,7 @@
 		/>
 	{/if}
 
-	<section class="card tasks-list" aria-labelledby="tasks-open-head">
+	<section class="card list-card" aria-labelledby="tasks-open-head">
 		<h2 class="list-head" id="tasks-open-head">
 			<Icon name={current.icon} size={16} />{current.label}<span class="num">{left}</span>
 		</h2>
@@ -221,7 +221,7 @@
 			</button>
 		{/if}
 		{#if open.length === 0}
-			<p class="muted tasks-empty">{current.empty}</p>
+			<p class="muted empty">{current.empty}</p>
 		{/if}
 		<div class="tasks-rows" class:dragging={!!drag} role="list" bind:this={listEl}>
 			{#each open as t (t.id)}
@@ -266,11 +266,6 @@
 <style>
 	.tasks {
 		max-width: 880px;
-	}
-	.tasks-bar {
-		flex-wrap: wrap;
-		gap: var(--sp-3);
-		padding: 0 var(--sp-5) var(--sp-5);
 	}
 	.tasks-sort {
 		margin-left: auto;
@@ -339,13 +334,6 @@
 	}
 	.tasks-slot.line-after::after {
 		bottom: -1px;
-	}
-	.tasks-list {
-		padding-inline: 0;
-		padding-block: var(--sp-2);
-	}
-	.tasks-empty {
-		padding: var(--sp-5);
 	}
 	.tasks-done-toggle {
 		margin: var(--sp-1) var(--sp-4);

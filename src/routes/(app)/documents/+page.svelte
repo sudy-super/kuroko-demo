@@ -78,7 +78,7 @@
 	<h1 class="sr-only">ドキュメント生成</h1>
 	<!-- 内容の層なのでガラスは当てず、普通のカードの面に置く (glass-scope.md 6 節) -->
 	<div class="panes">
-		<section class="card pane-list" aria-labelledby="docs-list-head">
+		<section class="card pane-list list-card" aria-labelledby="docs-list-head">
 			<!-- 見出しの行が無くなったので、作成の依頼は一覧の見出しの右端に記号だけで置く -->
 			<div class="row docs-list-top">
 				<h2 class="list-head" id="docs-list-head">
@@ -156,8 +156,6 @@
 	}
 	.pane-list {
 		min-width: 0;
-		padding-inline: 0;
-		padding-block: var(--sp-2);
 	}
 	.pane-doc {
 		display: flex;
@@ -192,10 +190,6 @@
 	.docs-actions {
 		flex-wrap: wrap;
 		gap: var(--sp-3);
-	}
-	.empty {
-		padding: var(--sp-5);
-		color: var(--ink-2);
 	}
 	/* 2 列に並ぶ間は一覧が常に見えているので、戻る操作の行ごと出さない */
 	.pane-bar,

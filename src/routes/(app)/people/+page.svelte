@@ -32,7 +32,7 @@
 
 <div class="people">
 	<h1 class="sr-only">会社・人物・案件</h1>
-	<div class="row people-bar">
+	<div class="row page-bar people-bar">
 		<Segmented label="表示の切り替え" items={TABS} value={tab} onchange={(k) => (tab = k)}>
 			{#snippet extra(k)}<span class="badge count">{badgeCount(count[k])}</span>{/snippet}
 		</Segmented>

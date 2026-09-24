@@ -98,7 +98,7 @@
 	<h1 class="sr-only">メール</h1>
 	<!-- コンテンツ層なのでガラスは使わない (HIG Materials) -->
 	<div class="panes">
-		<section class="card pane pane-list" aria-label="メールの一覧">
+		<section class="card pane pane-list list-card" aria-label="メールの一覧">
 			<div class="inbox-switch">
 				<Segmented
 					label="一覧の切り替え"
@@ -163,10 +163,6 @@
 	.pane {
 		min-width: 0;
 	}
-	.pane-list {
-		padding-inline: 0;
-		padding-block: var(--sp-2);
-	}
 	/* 切り替えは一覧のカードの先頭。行と同じ左右の余白にそろえる */
 	.inbox-switch {
 		display: flex;
@@ -179,10 +175,6 @@
 	}
 	.pane-bar {
 		justify-content: space-between;
-	}
-	.empty {
-		padding: var(--sp-5);
-		color: var(--ink-2);
 	}
 	.back {
 		display: none;

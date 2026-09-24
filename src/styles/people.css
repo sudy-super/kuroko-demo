@@ -22,11 +22,6 @@
 .people-title h1 {
 	margin: 0;
 }
-.people-bar {
-	flex-wrap: wrap;
-	gap: var(--sp-3);
-	padding: 0 var(--sp-5) var(--sp-5);
-}
 .people-add {
 	margin-left: auto;
 	color: var(--accent);

@@ -35,7 +35,7 @@
 		件を行いました。
 	</p>
 
-	<div class="row activity-filters" role="group" aria-label="絞り込み">
+	<div class="row page-bar" role="group" aria-label="絞り込み">
 		<button class="chip" class:on={actor === 'KUROKO'} aria-pressed={actor === 'KUROKO'} onclick={() => (actor = actor === 'KUROKO' ? null : 'KUROKO')}>
 			<Icon name="ic-check" size={18} class="chip-check" />KUROKO
 		</button>
@@ -52,11 +52,11 @@
 		</button>
 	</div>
 
-	<section class="card activity-list" aria-label="作業履歴の一覧">
+	<section class="card list-card" aria-label="作業履歴の一覧">
 		{#if db.logs.length === 0}
-			<p class="muted activity-empty">まだ記録はありません。</p>
+			<p class="muted empty">まだ記録はありません。</p>
 		{:else if logs.length === 0}
-			<p class="muted activity-empty">条件に一致する記録はありません。</p>
+			<p class="muted empty">条件に一致する記録はありません。</p>
 		{:else}
 			<ActivityList {logs} />
 		{/if}
@@ -69,17 +69,5 @@
 	}
 	.activity-summary {
 		margin: 0 var(--sp-5) var(--sp-4);
-	}
-	.activity-filters {
-		flex-wrap: wrap;
-		gap: var(--sp-3);
-		padding: 0 var(--sp-5) var(--sp-5);
-	}
-	.activity-list {
-		padding-inline: 0;
-		padding-block: var(--sp-2);
-	}
-	.activity-empty {
-		padding: var(--sp-5);
 	}
 </style>
