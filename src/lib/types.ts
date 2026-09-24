@@ -69,11 +69,10 @@ export type UndoPayload =
   | { kind: 'event_add'; eventId: string }
   | { kind: 'event_delete'; event: CalendarEvent; meetings: Meeting[] }
   | { kind: 'agenda_share'; meetingId: string }
-  | { kind: 'link_identity'; identityId: string }
-  | { kind: 'approval_exec'; approvalId: string };
+  | { kind: 'link_identity'; identityId: string };
 export interface ChatMessage { id: string; role: 'user' | 'kuroko'; text?: string; card?: ChatCard; chips?: string[]; at: string }
-export interface ChatCard { icon: string; title: string; lines: string[]; reason?: string; actions: { label: string; act: string; arg?: string; primary?: boolean }[] }
-export interface LineMessage { id: string; who: string; text: string; at: string; card?: { title: string; lines: string[]; actions: { label: string; act: string; arg?: string; primary?: boolean }[] }; role?: 'owner' | 'member' }
+export interface ChatCard { icon: string; title: string; lines: string[]; reason?: string; actions: { label: string; act: string; arg?: string }[] }
+export interface LineMessage { id: string; who: string; text: string; at: string; card?: { title: string; lines: string[]; actions: { label: string; act: string; arg?: string }[] }; role?: 'owner' | 'member' }
 export interface Connection { id: 'gmail' | 'gcal' | 'slack' | 'line'; connected: boolean; lastSync?: string }
 export interface Settings { automation: Automation; connections: Connection[]; retention: { saveMailBody: boolean; transcriptMonths: number; learning: boolean; region: string } }
 export interface Demo { started: boolean; guide: { on: boolean }; scenario?: number; recent: string[]; stats: { approved: number; replied: number; confirmed: number; tasksAdded: number; tasksDone: number }; lineRole: 'owner' | 'member'; lineTab: 'line' | 'slack' }
