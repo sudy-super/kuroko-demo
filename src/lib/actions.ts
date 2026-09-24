@@ -311,7 +311,6 @@ export function toggleTask(id: string, origin: Origin = 'tasks') {
 const SUGGESTION_ORIGIN: Record<Suggestion['source'], Origin> = {
 	chat: 'chat',
 	transcript: 'meeting',
-	ocr: 'people',
 	email: 'inbox',
 	line: 'line'
 };
@@ -747,7 +746,7 @@ export function updateAgenda(meetingId: string, items: string[]) {
 export function shareAgenda(meetingId: string, origin: Origin = 'meeting'): Approval {
 	const m = meetingOf(db, meetingId);
 	if (!m) throw new Error(`会議がありません: ${meetingId}`);
-	const { person: p, identity: idn, to } = mailTargetOf(db, meetingId);
+	const { person: p, to } = mailTargetOf(db, meetingId);
 	return addApproval({
 		title: `${p.name.split(' ')[0]}様へのアジェンダ共有`,
 		risk: 'external_send',
@@ -901,7 +900,7 @@ export function generateDocument(
 export function sendDocument(docId: string, personId: string, origin: Origin = 'documents'): Approval {
 	const d = documentOf(db, docId);
 	if (!d) throw new Error(`資料がありません: ${docId}`);
-	const { person, identity, to } = personMailTargetOf(db, personId);
+	const { person, to } = personMailTargetOf(db, personId);
 	return addApproval({
 		title: `${person.name.split(' ')[0]}様への${d.kind}の送付`,
 		risk: 'external_send',

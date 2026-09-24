@@ -83,7 +83,7 @@
 	<button
 		type="button"
 		class="voice-act voice-act-send"
-		onclick={() => hearing.send(400)}
+		onclick={() => hearing.send()}
 		disabled={!hearing.heard.trim() || hearing.thinking}
 		aria-label="KUROKO に送る"
 		title="KUROKO に送る"

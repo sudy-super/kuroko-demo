@@ -24,6 +24,9 @@ type Recognizer = {
 	stop: () => void;
 };
 
+/** 送ってから /chat へ移るまで「考えています」を見せる長さ */
+const THINK_MS = 400;
+
 class Hearing {
 	heard = $state('');
 	live = $state(false);
@@ -60,8 +63,7 @@ class Hearing {
 		this.level = 0;
 	}
 
-	/** delay は「考えています」を見せる長さ。Today のその場の聞き取りだけが 400ms を渡す */
-	send(delay = 0) {
+	send() {
 		const q = this.heard.trim();
 		this.stop();
 		this.thinking = true;
@@ -69,7 +71,7 @@ class Hearing {
 			ui.voice = false;
 			// Palette と同じ道。?q= を受けた /chat 側が送る (Task 22 の申し送り)
 			goto(q ? `/chat?q=${encodeURIComponent(q)}` : '/chat');
-		}, delay);
+		}, THINK_MS);
 	}
 
 	#playDemo() {

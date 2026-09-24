@@ -53,7 +53,7 @@ export type ApprovalPayload =
   | { type: 'followup'; meetingId: string; threadId?: string }
   | { type: 'line'; text: string };
 export type SuggestionKind = 'task' | 'person' | 'link_threads' | 'link_project' | 'event';
-export interface Suggestion { id: string; source: 'chat' | 'transcript' | 'ocr' | 'email' | 'line'; kind: SuggestionKind; status: 'pending' | 'accepted' | 'rejected'; reason: string; payload: SuggestionPayload; createdAt: string }
+export interface Suggestion { id: string; source: 'chat' | 'transcript' | 'email' | 'line'; kind: SuggestionKind; status: 'pending' | 'accepted' | 'rejected'; reason: string; payload: SuggestionPayload; createdAt: string }
 export type SuggestionPayload =
   | { type: 'task'; title: string; due?: string; time?: string; meetingId?: string; personId?: string; projectId?: string }
   | { type: 'person'; fields: CardFields }
