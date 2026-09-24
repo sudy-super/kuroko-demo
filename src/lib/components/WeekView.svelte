@@ -10,6 +10,7 @@
 		WEEK_MIN_EVENT_PX,
 		WEEK_MIN_DURATION_MIN
 	} from '$lib/calendar';
+	import { clock } from '$lib/clock.svelte';
 	import Icon from './Icon.svelte';
 	import Tip from './Tip.svelte';
 
@@ -29,12 +30,8 @@
 	const days = $derived(weekOf(cursor));
 	const todayKey = $derived(db.seededOn);
 
-	/* 現在時刻線は実時刻で引く。1 分ごとに引き直す */
-	let now = $state(minutes(hm()));
-	$effect(() => {
-		const t = setInterval(() => (now = minutes(hm())), 60000);
-		return () => clearInterval(t);
-	});
+	/* 現在時刻線は実時刻で引く。分の変わり目で引き直す (clock.svelte.ts) */
+	const now = $derived(minutes(hm(clock.now)));
 
 	/* 開いた直後だけ 8:00 が上端に来るよう送る。狭い幅で格子が横に送られるときは、今日の列が
 	   見える位置まで横にも送る (390px では木曜以降が画面の外に出る)。以降は利用者の位置を動かさない */

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { clock } from '$lib/clock.svelte';
 	import { db } from '$lib/store.svelte';
 	import { badgeCount, pendingApprovals, guideSection } from '$lib/derived';
 	import { fmtYMDW, fmtMDW, hm } from '$lib/dates';
@@ -38,7 +39,7 @@
 		steps: 'ひととおりの流れをお試しいただきました。'
 	};
 
-	let now = $state(new Date());
+	const now = $derived(clock.now);
 
 	const pending = $derived(pendingApprovals(db));
 	const logs = $derived(db.logs.slice(0, 3));
@@ -71,11 +72,6 @@
 		return () => ro.disconnect();
 	});
 
-	// 1 分ごとに時計を進める
-	$effect(() => {
-		const t = setInterval(() => (now = new Date()), 60_000);
-		return () => clearInterval(t);
-	});
 </script>
 
 {#snippet tools()}
