@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { MediaQuery } from 'svelte/reactivity';
 	import { untrack } from 'svelte';
+	import { prefersReducedMotion } from 'svelte/motion';
 	import { innerWidth } from 'svelte/reactivity/window';
 	import { fluid } from '$lib/fluid';
 	import { db } from '$lib/store.svelte';
@@ -81,7 +82,6 @@
 
 	/* 1101px 以上は環状配置 (styles/today.css)。音声をその場で聞くのとカードのドラッグはこの幅だけ */
 	const ring = new MediaQuery('(min-width: 1101px)');
-	const reduced = new MediaQuery('(prefers-reduced-motion: reduce)');
 	const here = $derived(ring.current && !narrow.current && count > 0);
 
 	/* ---- 音声 (docs/research/voice-orb.md) ----
@@ -148,15 +148,14 @@
 	const cards = cardDrag({
 		here: () => here,
 		voicing: () => voicing,
-		orbSize: () => orbSize,
-		reduced: () => reduced.current
+		orbSize: () => orbSize
 	});
 	/* ドラッグのずれは translate、音声で退く分は transform に分けて持つ。transform の
 	   transition だけが退き・戻りの動きになり、利用者が置いた位置はそのまま残る */
 	const cardAttrs = (k: string) => {
 		// 環状配置でない幅ではずれを当てない (段組みの中で置いた位置は意味を持たない)
 		const o = !here ? ZERO : cards.lifted(k) && cards.shown ? cards.shown : cards.repel(k, cards.springs[k].current);
-		const away = voicing && !reduced.current ? leave[k] : undefined;
+		const away = voicing && !prefersReducedMotion.current ? leave[k] : undefined;
 		return {
 			inert: voicing,
 			// class は TodayCard 自身の "card tc" を上書きしてしまうので、状態は data 属性で渡す
@@ -370,14 +369,14 @@
 					<div
 						class="hole"
 						aria-hidden="true"
-						style:scale={voicing && !reduced.current ? baseScale * ORB_GROW : baseScale}
+						style:scale={voicing && !prefersReducedMotion.current ? baseScale * ORB_GROW : baseScale}
 					>
 						<div
 							class="voice-pulse"
-							style:scale={voicing && !reduced.current && !hearing.thinking
+							style:scale={voicing && !prefersReducedMotion.current && !hearing.thinking
 								? ORB_PULSE_MIN + (ORB_PULSE_MAX - ORB_PULSE_MIN) * hearing.level
 								: 1}
-							style:opacity={voicing && reduced.current ? 0.85 + 0.15 * hearing.level : 1}
+							style:opacity={voicing && prefersReducedMotion.current ? 0.85 + 0.15 * hearing.level : 1}
 						>
 							<Orb size={drawSize} onCanvas={(c) => (holeOrbCanvas = c)} />
 						</div>

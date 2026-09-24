@@ -2,7 +2,7 @@
 	/* 話している間の操作。ChatGPT の音声入力 (Dictation) の形に合わせる — 横長の 1 本の並びに、
 	   左端に閉じる、中央に声の大きさの波形、右に止める、右端に送る (ユーザー指示 2026-09-24)。
 	   KurokoBar と VoiceOverlay の両方で使うのでここに切り出す */
-	import { MediaQuery } from 'svelte/reactivity';
+	import { prefersReducedMotion } from 'svelte/motion';
 	import { ui, dictated } from '$lib/ui.svelte';
 	import { hearing } from '$lib/voice.svelte';
 	import Icon from './Icon.svelte';
@@ -13,7 +13,6 @@
 	const DOT = 4;
 	const GAP = 6;
 
-	const reduced = new MediaQuery('(prefers-reduced-motion: reduce)');
 
 	let wrap: HTMLDivElement | undefined = $state();
 	let width = $state(0);
@@ -37,11 +36,11 @@
 		return () => ro.disconnect();
 	});
 
-	/* 動きではなく点ごとの明るさの変化にする (WCAG 2.3.3 の対象外)。reduced のときは全点を
+	/* 動きではなく点ごとの明るさの変化にする (WCAG 2.3.3 の対象外)。動きを減らす設定のときは全点を
 	   今の声の大きさに揃え、流れる動きそのものをやめる。levels は古い→新しいの順に積んであるので、
 	   末尾 count 件をそのまま左から並べれば右端が最新になる (足りない分は 0 で左を埋める) */
 	const dots = $derived(
-		reduced.current
+		prefersReducedMotion.current
 			? Array(count).fill(hearing.level)
 			: Array(Math.max(0, count - levels.length))
 					.fill(0)

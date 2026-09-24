@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { MediaQuery } from 'svelte/reactivity';
+	import { prefersReducedMotion } from 'svelte/motion';
 	import { Dialog } from 'bits-ui';
 	import { pushState } from '$app/navigation';
 	import { mobile } from '$lib/media.svelte';
@@ -44,13 +44,11 @@
 
 	let panel: HTMLElement | undefined = $state();
 	// レビュー M11 — matchMedia(...).matches を直接読むと変化を購読しないので、開いている間に
-	// 設定が変わっても morph が追随しない。MediaQuery (today/+page.svelte の narrow と同じ書き方)
-	// なら変化に反応する
-	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
+	// 設定が変わっても morph が追随しない。prefersReducedMotion (MediaQuery) なら変化に反応する
 	// 起点があり、中央のパネルで、動きを減らす設定でないときだけ広げる
 	/* 起点は開いた瞬間に控える。呼び出し側が from を外しても、縮む先に使えるようにする */
 	let origin: DOMRect | null = $state(null);
-	const morph = $derived(variant === 'center' && !mobile.current && !!origin && !reducedMotion.current);
+	const morph = $derived(variant === 'center' && !mobile.current && !!origin && !prefersReducedMotion.current);
 	const box = (r: DOMRect) => ({
 		top: `${r.top}px`,
 		left: `${r.left}px`,

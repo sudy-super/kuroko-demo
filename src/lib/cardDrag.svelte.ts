@@ -1,7 +1,7 @@
 /* Today の環状配置のカードのドラッグ (docs/research/card-drag.md)。
    キーボードでの代わりの操作はデモでは作らない。WCAG 2.2 の 2.5.7 (AA、ドラッグしない
    1 点の操作での代わり) は満たさない判断。既定の配置で情報も機能も失われないため */
-import { Spring } from 'svelte/motion';
+import { Spring, prefersReducedMotion } from 'svelte/motion';
 import { innerWidth } from 'svelte/reactivity/window';
 import { layout, saveLayout, orbPush, settle, shove, shift, type Box, type Pt } from './todayLayout.svelte';
 
@@ -12,7 +12,6 @@ export function cardDrag(opts: {
 	here: () => boolean;
 	voicing: () => boolean;
 	orbSize: () => number;
-	reduced: () => boolean;
 }) {
 	let bento: HTMLDivElement | undefined = $state();
 	const CARDS = ['approvals', 'reply', 'meeting', 'events', 'tasks', 'sent'];
@@ -103,7 +102,7 @@ export function cardDrag(opts: {
 			if (want) placed.push(shift(bases[k], to));
 			springs[k].stiffness = SPRING.stiffness;
 			springs[k].damping = SPRING.damping;
-			springs[k].set(to, { instant: !animate || opts.reduced() });
+			springs[k].set(to, { instant: !animate || prefersReducedMotion.current });
 		}
 	}
 	/* 窓の大きさ、カードの出入りと高さの変化で既定の位置が変わる */
@@ -162,7 +161,7 @@ export function cardDrag(opts: {
 			const sp = springs[k];
 			sp.stiffness = SNAPPY.stiffness;
 			sp.damping = SNAPPY.damping;
-			sp.set(plus(sp.target, d), { instant: opts.reduced() });
+			sp.set(plus(sp.target, d), { instant: prefersReducedMotion.current });
 			drag.pushed.add(k);
 		}
 	}
@@ -206,7 +205,7 @@ export function cardDrag(opts: {
 		sp.stiffness = SNAPPY.stiffness;
 		sp.damping = SNAPPY.damping;
 		// 動きを減らす設定では、押し戻しだけ即座に置く (追従は利用者自身の操作の表示なので残す)
-		sp.set(to, { instant: opts.reduced() }).then(() => {
+		sp.set(to, { instant: prefersReducedMotion.current }).then(() => {
 			if (escaping === d.card) escaping = null;
 			sp.stiffness = SPRING.stiffness;
 			sp.damping = SPRING.damping;
