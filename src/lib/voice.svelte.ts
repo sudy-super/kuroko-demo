@@ -13,6 +13,7 @@ const NO_INPUT = ['not-allowed', 'service-not-allowed', 'audio-capture', 'networ
 
 type Recognizer = {
 	lang: string;
+	continuous: boolean;
 	interimResults: boolean;
 	onresult: ((e: { results: Iterable<ArrayLike<{ transcript: string }>> }) => void) | null;
 	onend: (() => void) | null;
@@ -82,11 +83,25 @@ class Hearing {
 	#recognize(Ctor: new () => Recognizer) {
 		const rec = new Ctor();
 		rec.lang = 'ja-JP';
+		/* 既定 (false) は最終結果を 1 つ返したら終わるので、言葉の区切りの短い間でも聞き取りが
+		   止まっていた (ユーザー指摘 2026-09-24)。Web Speech API の仕様は口述 (dictation) の例に
+		   true を挙げている。止めるのは利用者が「止める」か「閉じる」を押したときだけにする */
+		rec.continuous = true;
 		rec.interimResults = true;
+		/* continuous でも、長く黙っているとブラウザの側で切れることがある。止める操作をしていない
+		   なら聞き直す。聞き直すと results は空から始まるので、それまでの文字の後ろに足していく */
+		let kept = '';
 		rec.onresult = (e) => {
-			this.heard = [...e.results].map((r) => r[0].transcript).join('');
+			this.heard = kept + [...e.results].map((r) => r[0].transcript).join('');
 		};
-		rec.onend = () => (this.live = false);
+		rec.onend = () => {
+			kept = this.heard;
+			try {
+				rec.start();
+			} catch {
+				this.live = false;
+			}
+		};
 		// 誤りのあとに onend が来るので、先に外してから疑似再生に切り替える
 		rec.onerror = (e) => {
 			if (!NO_INPUT.includes(e.error)) return;
