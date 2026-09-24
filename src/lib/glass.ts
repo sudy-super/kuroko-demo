@@ -112,7 +112,7 @@ export function orbBackdrop(getCanvas: () => HTMLCanvasElement | null): LiquidGl
    引数ごと消した。まとめて描く 2 つの層 (chromeGlass / overlayGlass)は mount を直に呼び、
    今も 50ms の間隔を渡している */
 export function glass(options: LiquidGlassElementOptions) {
-	return (node: Element) => mount(node as HTMLElement, options);
+	return (node: Element) => mount(node as HTMLElement, options, undefined, undefined, true);
 }
 
 /* 画面の枠のガラスのうち 5 面 (サイドナビ、上部バー、連携の列、携帯のボトムナビ、
@@ -231,7 +231,9 @@ function mount(
 	node: HTMLElement,
 	options: LiquidGlassElementOptions,
 	repaintMs?: number,
-	tiers?: Record<string, number>
+	tiers?: Record<string, number>,
+	/** 覆いが開いている間は CSS で隠される面 (Today のカードのガラス)。下の covered を見よ */
+	hiddenUnderOverlay = false
 ) {
 	const scope = tiers ? node.parentElement! : node;
 	const targets = () =>
@@ -240,6 +242,7 @@ function mount(
 		);
 	let instance: LiquidGlass | null = null;
 	let timer: ReturnType<typeof setInterval> | undefined;
+	let overlayWatch: MutationObserver | undefined;
 	const watcher = tiers
 		? new MutationObserver(() => instance?.update({ targets: targets() }))
 		: null;
@@ -259,6 +262,26 @@ function mount(
 			onContextRestored: () => node.setAttribute('data-liquid-glass', 'webgl')
 		});
 		watcher?.observe(scope, { childList: true });
+		/* 覆いが開いている間は、カードのガラス (Today の .bento、完了画面) を CSS で隠している
+		   (app.css の body[data-overlay='on'] ... [data-liquid-glass-layer])。隠しても live: true の
+		   描き直しは毎フレーム続き、背後の絵の明るさを GPU から読み戻す処理 (1 回 7〜70ms) が
+		   承認パネルの広がる・縮む動きを 1 秒に数フレームまで落としていた (実測: パネルを
+		   開いている 1 秒のうち 942ms がこの面の描き直し。ユーザー指摘 2026-09-24)。
+		   隠れている間はライブラリのフレームの輪から外す (visible は frame-loop.js の tick が
+		   見る旗。IntersectionObserver も同じ旗を書くが、画面内にあるかしか見ないので覆いでは
+		   倒れない)。覆いの層 (overlayGlass)・枠の層・依頼バーは、覆いの間も見えるので止めない */
+		if (hiddenUnderOverlay) {
+			const covered = () => {
+				if (!instance) return;
+				const off = document.body.dataset.overlay === 'on';
+				(instance as unknown as { visible: boolean }).visible = !off;
+				// 戻ったときは背後の絵がパネルの間に変わっているので描き直させる
+				if (!off) instance.refresh();
+			};
+			overlayWatch = new MutationObserver(covered);
+			overlayWatch.observe(document.body, { attributes: true, attributeFilter: ['data-overlay'] });
+			covered();
+		}
 		/* 引数なしの refresh() は targets の解決と観測子 (ResizeObserver / MutationObserver) の
 		   付け直しまでやり直す。ここで要るのは背後の描き直しだけなので backdrop: false を渡す。
 		   ライブラリの .d.ts はこの引数を宣言していないが、実装 (src/dom.js の refresh) は受け取る。
@@ -275,6 +298,8 @@ function mount(
 	   同期に済むため、手放す瞬間に何も描かれていない一瞬は生まれない */
 	const release = () => {
 		watcher?.disconnect();
+		overlayWatch?.disconnect();
+		overlayWatch = undefined;
 		clearInterval(timer);
 		timer = undefined;
 		instance?.destroy();

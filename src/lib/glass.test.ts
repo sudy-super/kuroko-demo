@@ -43,6 +43,8 @@ class FakeObserver {
 }
 const doc = {
 	hidden: false,
+	/* 覆いが開いている間 (data-overlay="on") は glass() の面を止める (glass.ts の mount) */
+	body: { dataset: {} as Record<string, string> },
 	listeners: new Set<() => void>(),
 	addEventListener(_: string, fn: () => void) {
 		this.listeners.add(fn);
@@ -74,6 +76,7 @@ describe('ガラスの配線', () => {
 		created.length = 0;
 		observers.length = 0;
 		doc.hidden = false;
+		doc.body.dataset = {};
 		doc.listeners.clear();
 		vi.stubGlobal('document', doc);
 		vi.stubGlobal('MutationObserver', FakeObserver);
@@ -81,6 +84,22 @@ describe('ガラスの配線', () => {
 	afterEach(() => {
 		vi.useRealTimers();
 		vi.unstubAllGlobals();
+	});
+
+	it('覆いが開いている間は glass() の面を描き直しの輪から外し、閉じたら戻して描き直させる', () => {
+		glass({})(fakeLayer({}));
+		const surface = created[0] as unknown as { visible?: boolean; refreshed: number };
+		expect(surface.visible).toBe(true);
+		// 覆いの印を見張るのは observers の最後 (glass() は層ではないので面の見張りは無い)
+		const watch = observers[observers.length - 1];
+		doc.body.dataset.overlay = 'on';
+		watch.fn();
+		expect(surface.visible).toBe(false);
+		const before = surface.refreshed;
+		delete doc.body.dataset.overlay;
+		watch.fn();
+		expect(surface.visible).toBe(true);
+		expect(surface.refreshed).toBe(before + 1);
 	});
 
 	it('取り付けで描画面を 1 つ取り、片付けで手放す', () => {
