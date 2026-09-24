@@ -1099,21 +1099,39 @@ svg.i {
 .chip:active {
 	background: var(--press-accent);
 }
-/* 選択中は塗りを変えるだけでなくチェック印を出す。印はマークアップ側 (Icon の ic-check) で置く (components 3.6、WCAG 1.4.1) */
+/* 選択は塗りの反転 (白の地に青の文字 → 青の地に白の文字) で示す。
+   1 つだけを選ぶ切り替え (設定・ToDo・人物・LINE / Slack・予定の追加) には印を付けない
+   (docs/research/chip-select.md、ユーザー裁定 2026-09-24 の案 B)。印を付けると、選択を
+   切り替えるたびに文字が動くか、選んでいないチップの文字が右に寄るかのどちらかになった。
+   Apple HIG の Segmented control、Carbon の Content switcher、GitHub Primer の
+   SegmentedControl も印を使わない。塗りと画面の地のコントラストは 6.0:1 で、
+   WCAG 1.4.11 (3:1) を満たす。塗りつぶしの有無と文字色の反転で、色以外にも差が出る (1.4.1)。
+   複数を組み合わせて選ぶ絞り込み (作業履歴) だけは M3 のフィルターチップに倣って
+   印を付ける (下の .chip-check) */
 .chip.on {
 	background: var(--accent);
 	color: #fff;
 	box-shadow: none;
 }
-/* 選択を切り替えてもチップの幅を変えない (Task 10p、ユーザー指摘: 月/週の切り替えで
-   チェックが付くとボタンがずれる)。以前は非選択の印を visibility: hidden で隠していたが、
-   左にだけ印の分 (18px + 間 8px) の空白が残り、文字が右に寄って不自然だった
-   (ユーザー指摘 2026-09-24)。非選択では印を外し、その 26px を左右に 13px ずつ振り分ける */
-.chip:not(.on):has(.chip-check) {
-	padding-inline: calc(var(--sp-4) + 13px);
+/* 絞り込みのチップの印。印が入ると文字が 26px (印 18px + 間 8px) 右へ動き、チップも
+   その分だけ広がる。印の幅と後ろの間を 0 から広げて、文字とチップの幅の変化を動きで追わせる
+   (M3 の Segmented button の実装も、印の出入りに合わせて文字の位置を動きで移す)。
+   間はチップの gap ではなく印の margin で持つ (gap だと非選択でも 8px 残る) */
+.chip .chip-check {
+	width: 18px;
+	margin-right: calc(var(--sp-2) * -1);
+	transition:
+		width var(--d-fast) var(--ease-out),
+		margin-right var(--d-fast) var(--ease-out),
+		opacity var(--d-fast) var(--ease-out);
 }
 .chip:not(.on) .chip-check {
-	display: none;
+	width: 0;
+	margin-right: calc(var(--sp-2) * -1);
+	opacity: 0;
+}
+.chip.on .chip-check {
+	margin-right: 0;
 }
 /* 選択中のチップは下地が accent なので、件数は白地に反転させる */
 .chip.on .badge.count {

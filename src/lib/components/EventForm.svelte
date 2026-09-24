@@ -6,7 +6,6 @@
 	import { minutes, toHm } from '$lib/dates';
 	import { conflicts, travelWarning } from '$lib/calendar';
 	import Modal from './Modal.svelte';
-	import Icon from './Icon.svelte';
 	import SelectField, { type Opt } from './SelectField.svelte';
 
 	let {
@@ -185,7 +184,7 @@
 				{#each ONLINE as o (o.value)}
 					<label class="chip" class:on={online === o.value}>
 						<input type="radio" class="sr-only" name="{formId}-online" value={o.value} bind:group={online} />
-						<Icon name="ic-check" size={18} class="chip-check" />{o.label}
+						{o.label}
 					</label>
 				{/each}
 			</div>

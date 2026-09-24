@@ -50,7 +50,6 @@
 				aria-pressed={tab === t.key}
 				onclick={() => (tab = t.key)}
 			>
-				<Icon name="ic-check" size={18} class="chip-check" />
 				{t.label}
 				<span class="badge count">{badgeCount(count[t.key])}</span>
 			</button>

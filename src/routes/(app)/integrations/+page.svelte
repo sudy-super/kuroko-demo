@@ -80,7 +80,7 @@
 					aria-pressed={db.demo.lineTab === t.key}
 					onclick={() => set('lineTab', t.key)}
 				>
-					<Icon name="ic-check" size={18} class="chip-check" />{t.label}
+					{t.label}
 				</button>
 			{/each}
 		</div>
@@ -92,7 +92,7 @@
 					aria-pressed={db.demo.lineRole === r.key}
 					onclick={() => set('lineRole', r.key)}
 				>
-					<Icon name="ic-check" size={18} class="chip-check" />{r.label}
+					{r.label}
 				</button>
 			{/each}
 		</div>

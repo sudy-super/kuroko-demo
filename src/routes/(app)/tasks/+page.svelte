@@ -65,7 +65,6 @@
 				aria-pressed={filter === f.key}
 				onclick={() => (filter = f.key)}
 			>
-				<Icon name="ic-check" size={18} class="chip-check" />
 				{f.label}
 				<span class="badge count" class:danger={f.key === 'overdue' && n > 0}>{badgeCount(n)}</span>
 			</button>
