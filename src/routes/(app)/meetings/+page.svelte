@@ -16,12 +16,7 @@
 <svelte:head><title>会議・議事録 — KUROKO AI</title></svelte:head>
 
 <div class="people">
-	<header class="people-head page-head">
-		<div class="page-title">
-			<h1>会議・議事録</h1>
-			<p class="page-desc">Brief とアジェンダ、終わった会議の議事録を確認します。</p>
-		</div>
-	</header>
+	<h1 class="sr-only">会議・議事録</h1>
 
 	<!-- 内容の層なのでガラスは当てず、普通のカードの面に置く (glass-scope.md 6 節) -->
 	<div class="people-cards">

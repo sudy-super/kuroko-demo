@@ -75,24 +75,19 @@
 <svelte:head><title>ドキュメント生成 — KUROKO AI</title></svelte:head>
 
 <div class="docs" class:show-doc={showDoc}>
-	<header class="page-head">
-		<div class="page-title">
-			<h1>ドキュメント生成</h1>
-			<p class="page-desc">提案書、見積書、報告書の下書きを KUROKO が作ります。</p>
-		</div>
-		<!-- 塗りの主ボタンはこの画面で 1 つだけ (buttons.md 観点 A 原則「1 画面 1 個」)。
-		     それは下の「送る」なので、ここは枠だけの副ボタンにする -->
-		<button class="btn sec" onclick={ask}>
-			<Icon name="ic-spark" size={20} />作成を KUROKO に頼む
-		</button>
-	</header>
-
+	<h1 class="sr-only">ドキュメント生成</h1>
 	<!-- 内容の層なのでガラスは当てず、普通のカードの面に置く (glass-scope.md 6 節) -->
 	<div class="panes">
 		<section class="card pane-list" aria-labelledby="docs-list-head">
-			<h2 class="list-head" id="docs-list-head">
-				<Icon name="ic-doc" size={16} />資料<span class="num">{docs.length}</span>
-			</h2>
+			<!-- 見出しの行が無くなったので、作成の依頼は一覧の見出しの右端に記号だけで置く -->
+			<div class="row docs-list-top">
+				<h2 class="list-head" id="docs-list-head">
+					<Icon name="ic-doc" size={16} />資料<span class="num">{docs.length}</span>
+				</h2>
+				<button class="iconbtn docs-ask" title="作成を KUROKO に頼む" aria-label="作成を KUROKO に頼む" onclick={ask}>
+					<Icon name="ic-spark" size={20} />
+				</button>
+			</div>
 			{#each docs as d (d.id)}
 				{@const pj = projectOf(db, d.projectId)}
 				<button class="list-row xl" class:on={d.id === doc?.id} onclick={() => select(d.id)}>
@@ -142,6 +137,13 @@
 </div>
 
 <style>
+	.docs-list-top {
+		justify-content: space-between;
+		padding-right: var(--sp-2);
+	}
+	.docs-ask {
+		color: var(--accent);
+	}
 	/* /inbox の .panes と同じ組み方。左が一覧、右がプレビュー */
 	.panes {
 		position: relative;
@@ -228,7 +230,6 @@
 	}
 	/* 印刷はプレビューの紙だけ残す。器の外 (サイドナビ、依頼バー) は app.css の @media print が落とす */
 	@media print {
-		.page-head,
 		.pane-list,
 		.pane-bar,
 		.docs-busy,

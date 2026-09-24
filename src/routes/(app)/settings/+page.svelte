@@ -92,12 +92,7 @@
 <svelte:head><title>設定 — KUROKO AI</title></svelte:head>
 
 <div class="settings">
-	<header class="page-head">
-		<div class="page-title">
-			<h1>設定</h1>
-			<p class="page-desc">連携するサービス、どこまで任せるか、データの扱いを確認します。</p>
-		</div>
-	</header>
+	<h1 class="sr-only">設定</h1>
 
 	<div class="row set-tabs" role="group" aria-label="設定の切り替え">
 		{#each TABS as t (t.key)}

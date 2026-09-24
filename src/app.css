@@ -250,40 +250,6 @@ h4 {
 	font-size: 18px;
 }
 
-/* Task 10p (参考の良い点 3) — 画面の見出しの定型。題名 (h1) + 1 行の説明、
-   主操作があれば右上に 1 つだけ。対象: /inbox /tasks /calendar /people (各画面の <style> から
-   ここへ集約した。/meetings /documents /activity /settings はこのデモにまだ画面が無いので対象外) */
-.page-head {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: flex-start;
-	justify-content: space-between;
-	gap: var(--sp-5);
-	padding: 0 var(--sp-5) var(--sp-5);
-}
-.page-title {
-	display: flex;
-	flex-direction: column;
-	gap: var(--sp-2);
-	min-width: 0;
-}
-.page-desc {
-	margin: 0;
-	color: var(--ink-2);
-	font-size: 14px;
-}
-/* Task 11r (監査 5) — 携帯を横向きにした高さでは、見出しの説明文と見出し・タブ行の余白
-   だけで安全に使える帯 (依頼バーの上、概ね 170px前後) を使い切り、一覧の先頭行が沈んで
-   いた (/inbox /tasks /calendar /people 共通の .page-head、上のコメントを見よ)。説明文は
-   見出しと重複しない情報だが、この高さでは一覧を優先して畳む */
-@media (max-width: 960px) and (max-height: 480px) {
-	.page-desc {
-		display: none;
-	}
-	.page-head {
-		padding-bottom: var(--sp-2);
-	}
-}
 p {
 	margin: 0;
 }
@@ -4247,18 +4213,23 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
 .people-title h1 {
 	margin: 0;
 }
-.people-tabs {
-	flex-wrap: wrap;
+.people-bar {
 	gap: var(--sp-3);
 	padding: 0 var(--sp-5) var(--sp-5);
 }
+.people-tabs {
+	flex-wrap: wrap;
+	gap: var(--sp-3);
+}
+.people-add {
+	margin-left: auto;
+	color: var(--accent);
+}
 @media (max-width: 960px) and (max-height: 480px) {
-	/* .people-head は .page-head と同じプロパティを後ろで書き直しているので、その下端の
-	   詰め (上の .page-head 向けの同名メディアクエリ)はここで .people-head 自身に効かせる */
 	.people-head {
 		padding-bottom: var(--sp-2);
 	}
-	.people-tabs {
+	.people-bar {
 		padding-bottom: var(--sp-2);
 	}
 	.list-head {
@@ -4413,7 +4384,7 @@ body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
 /* components 3.3 — 600px 以下は 1 列に畳み、左右の余白をモバイルの 16px にする */
 @media (max-width: 600px) {
 	.people-head,
-	.people-tabs,
+	.people-bar,
 	.people-cards,
 	.people-missing {
 		padding-inline: var(--sp-4);

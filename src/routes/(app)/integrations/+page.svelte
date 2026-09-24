@@ -53,14 +53,7 @@
 <svelte:head><title>LINE / Slack — KUROKO AI</title></svelte:head>
 
 <div class="ig">
-	<header class="page-head">
-		<div class="page-title">
-			<h1>LINE / Slack</h1>
-			<p class="page-desc">
-				ふだん使っているグループから KUROKO に頼めます。見せてよい範囲は話しかけた人によって変わります。
-			</p>
-		</div>
-	</header>
+	<h1 class="sr-only">LINE / Slack</h1>
 
 	<!-- indicators.md — 状態は文言のタグではなくアイコンと文で示す -->
 	<p class="ig-banner">

@@ -30,30 +30,27 @@
 <svelte:head><title>会社・人物・案件 — KUROKO AI</title></svelte:head>
 
 <div class="people">
-	<header class="people-head page-head">
-		<div class="page-title">
-			<h1>会社・人物・案件</h1>
-			<p class="page-desc">人物・会社・案件を切り替えて確認します。</p>
+	<h1 class="sr-only">会社・人物・案件</h1>
+	<div class="row people-bar">
+		<div class="row people-tabs" role="group" aria-label="表示の切り替え">
+			{#each TABS as t (t.key)}
+				<button
+					class="chip"
+					class:on={tab === t.key}
+					aria-pressed={tab === t.key}
+					onclick={() => (tab = t.key)}
+				>
+					{t.label}
+					<span class="badge count">{badgeCount(count[t.key])}</span>
+				</button>
+			{/each}
 		</div>
+		<!-- ToDo の「+」と同じく、切り替えの列の右端に記号だけのボタンで置く -->
 		{#if tab === 'people'}
-			<button class="btn pri" onclick={() => (cardOpen = true)}>
-				<Icon name="ic-cam" size={20} />名刺から追加
+			<button class="iconbtn people-add" title="名刺から追加" aria-label="名刺から追加" onclick={() => (cardOpen = true)}>
+				<Icon name="ic-cam" size={20} />
 			</button>
 		{/if}
-	</header>
-
-	<div class="row people-tabs" role="group" aria-label="表示の切り替え">
-		{#each TABS as t (t.key)}
-			<button
-				class="chip"
-				class:on={tab === t.key}
-				aria-pressed={tab === t.key}
-				onclick={() => (tab = t.key)}
-			>
-				{t.label}
-				<span class="badge count">{badgeCount(count[t.key])}</span>
-			</button>
-		{/each}
 	</div>
 
 	<!-- Task 10w — HIG 上ガラスを持たないコンテンツ層なので、Task 10c のガラス (glass()) を外して

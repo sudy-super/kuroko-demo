@@ -27,12 +27,7 @@
 <svelte:head><title>作業履歴 — KUROKO AI</title></svelte:head>
 
 <div class="activity">
-	<header class="activity-head page-head">
-		<div class="page-title">
-			<h1>作業履歴</h1>
-			<p class="page-desc">KUROKO とあなたが行った操作の記録です。</p>
-		</div>
-	</header>
+	<h1 class="sr-only">作業履歴</h1>
 
 	<!-- ux.md 原則 14「今日の実績を数値で」— DoneScreen と同じ文面を独立ページの先頭にも置く -->
 	<p class="muted activity-summary">

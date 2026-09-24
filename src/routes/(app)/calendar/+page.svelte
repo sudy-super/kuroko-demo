@@ -61,12 +61,7 @@
 <svelte:head><title>カレンダー — KUROKO AI</title></svelte:head>
 
 <div class="cal">
-	<header class="cal-head page-head">
-		<div class="page-title">
-			<h1>カレンダー</h1>
-			<p class="page-desc">月表示と週表示で、予定を確認・登録します。</p>
-		</div>
-	</header>
+	<h1 class="sr-only">カレンダー</h1>
 
 	<div class="row cal-bar">
 		<!-- Task 10p (参考の良い点 9、調査: Apple HIG Segmented controls「all segments are usually

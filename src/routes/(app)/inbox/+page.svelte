@@ -96,16 +96,7 @@
 <svelte:head><title>メール — KUROKO AI</title></svelte:head>
 
 <div class="inbox" class:show-right={showRight} class:show-thread={showThread}>
-	<header class="inbox-head page-head">
-		<div class="page-title">
-			<h1>メール</h1>
-			<p class="page-desc">要対応のメールだけを並べています。</p>
-		</div>
-		<button class="btn text sm" onclick={() => (allOpen = true)}>
-			すべての受信メールを見る ({total} 件)
-		</button>
-	</header>
-
+	<h1 class="sr-only">メール</h1>
 	<!-- Task 10w — HIG 上ガラスを持たないコンテンツ層なので、Task 10c のガラス (glass()) を外して
 	     普通のカードの面 (.card) に戻した (glass-scope.md 6 節) -->
 	<div class="panes">
@@ -120,6 +111,10 @@
 					<ThreadRow thread={t} on={t.id === thread?.id} onselect={select} />
 				{/each}
 			{/if}
+			<!-- 見出しの行が無くなったので、一覧の続きとして末尾に置く -->
+			<button class="btn text sm inbox-all" onclick={() => (allOpen = true)}>
+				すべての受信メールを見る ({total} 件)
+			</button>
 		</section>
 
 		<section class="pane pane-thread">
@@ -201,6 +196,9 @@
 		padding-inline: 0;
 		padding-block: var(--sp-2);
 	}
+	.inbox-all {
+		margin: var(--sp-1) var(--sp-4) 0;
+	}
 	.pane-thread {
 		display: flex;
 		flex-direction: column;
@@ -260,11 +258,6 @@
 		}
 		.back {
 			display: inline-flex;
-		}
-	}
-	@media (max-width: 600px) {
-		.inbox-head {
-			padding-inline: var(--sp-4);
 		}
 	}
 </style>

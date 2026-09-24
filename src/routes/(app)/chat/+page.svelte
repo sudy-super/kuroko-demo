@@ -44,14 +44,7 @@
 <svelte:head><title>KUROKO — KUROKO AI</title></svelte:head>
 
 <div class="chat">
-	<header class="page-head">
-		<div class="page-title">
-			<h1>KUROKO</h1>
-			<p class="page-desc">
-				下の依頼バーから話しかけてください。予定、ToDo、メール、会議準備、日程調整、資料の作成を引き受けます。
-			</p>
-		</div>
-	</header>
+	<h1 class="sr-only">KUROKO</h1>
 
 	<!-- chat.md 観点 6.1 — 発言の積み上がりは role="log" で伝える (W3C ARIA23 の例 1 がチャットそのもの)。
 	     暗黙で aria-live="polite" / aria-atomic="false" を持つので、足された分だけが割り込まずに読まれる。

@@ -48,12 +48,7 @@
 <svelte:head><title>ToDo — KUROKO AI</title></svelte:head>
 
 <div class="tasks">
-	<header class="tasks-head page-head">
-		<div class="page-title">
-			<h1>ToDo</h1>
-			<p class="page-desc">期限・今日・今週で絞り込んで ToDo を管理します。</p>
-		</div>
-	</header>
+	<h1 class="sr-only">ToDo</h1>
 
 	<div class="row tasks-bar">
 		<div class="row tasks-filters" role="group" aria-label="絞り込み">
