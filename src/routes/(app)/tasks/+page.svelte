@@ -53,22 +53,27 @@
 			<h1>ToDo</h1>
 			<p class="page-desc">期限・今日・今週で絞り込んで ToDo を管理します。</p>
 		</div>
-		<a class="btn pri" href="/tasks?new=1"><Icon name="ic-plus" size={20} />新しい ToDo を追加</a>
 	</header>
 
-	<div class="row tasks-filters" role="group" aria-label="絞り込み">
-		{#each FILTERS as f (f.key)}
-			{@const n = openTaskCount(db, f.key)}
-			<button
-				class="chip"
-				class:on={filter === f.key}
-				aria-pressed={filter === f.key}
-				onclick={() => (filter = f.key)}
-			>
-				{f.label}
-				<span class="badge count" class:danger={f.key === 'overdue' && n > 0}>{badgeCount(n)}</span>
-			</button>
-		{/each}
+	<div class="row tasks-bar">
+		<div class="row tasks-filters" role="group" aria-label="絞り込み">
+			{#each FILTERS as f (f.key)}
+				{@const n = openTaskCount(db, f.key)}
+				<button
+					class="chip"
+					class:on={filter === f.key}
+					aria-pressed={filter === f.key}
+					onclick={() => (filter = f.key)}
+				>
+					{f.label}
+					<span class="badge count" class:danger={f.key === 'overdue' && n > 0}>{badgeCount(n)}</span>
+				</button>
+			{/each}
+		</div>
+		<!-- カレンダーの「予定を追加」と同じ形 (「+」だけのボタンを操作の列の右端に) -->
+		<a class="iconbtn tasks-add" href="/tasks?new=1" title="新しい ToDo を追加" aria-label="新しい ToDo を追加">
+			<Icon name="ic-plus" size={20} />
+		</a>
 	</div>
 
 	{#if suggestions.length}
@@ -107,10 +112,17 @@
 	.tasks {
 		max-width: 880px;
 	}
+	.tasks-bar {
+		gap: var(--sp-3);
+		padding: 0 var(--sp-5) var(--sp-5);
+	}
 	.tasks-filters {
 		flex-wrap: wrap;
 		gap: var(--sp-3);
-		padding: 0 var(--sp-5) var(--sp-5);
+	}
+	.tasks-add {
+		margin-left: auto;
+		color: var(--accent);
 	}
 	.tasks-list {
 		padding-inline: 0;

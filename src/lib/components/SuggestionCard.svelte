@@ -56,8 +56,7 @@
 			</span>
 		</label>
 	{/each}
-	<!-- 塗りの主ボタンは画面に 1 つ (buttons.md 観点 A 原則 3)。/tasks のそれは見出しの
-	     「新しい ToDo を追加」なので、この札の中は 3 つとも塗りなしで枠と文字だけで段を付ける -->
+	<!-- この札は ToDo の一覧の上に並ぶ補助の知らせなので、3 つとも塗りなしで枠と文字だけで段を付ける -->
 	<div class="row tc-foot sg-foot" use:scrollIntoView>
 		<button class="btn sec" disabled={chosen.length === 0} onclick={() => onaccept(chosen)}>
 			選択した {chosen.length} 件を登録

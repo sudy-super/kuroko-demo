@@ -66,7 +66,6 @@
 			<h1>カレンダー</h1>
 			<p class="page-desc">月表示と週表示で、予定を確認・登録します。</p>
 		</div>
-		<a class="btn pri" href="/calendar?new=1"><Icon name="ic-plus" size={20} />予定を追加</a>
 	</header>
 
 	<div class="row cal-bar">
@@ -79,11 +78,13 @@
 			<button class="seg-btn" class:on={view === 'month'} aria-pressed={view === 'month'} onclick={() => (view = 'month')}>月</button>
 			<button class="seg-btn" class:on={view === 'week'} aria-pressed={view === 'week'} onclick={() => (view = 'week')}>週</button>
 		</div>
-		<button class="btn sec" onclick={() => (cursor = parse(db.seededOn))}>今日</button>
+		<!-- Mac のカレンダーと同じく「今日」は前後の矢印の間に枠なしで置き、日付を動かす操作を
+		     1 つの塊にする (ユーザー指摘 2026-09-24: 枠付きで単独に並ぶと浮いて見えた) -->
 		<div class="row cal-nav">
 			<button class="iconbtn" aria-label={view === 'month' ? '前の月' : '前の週'} onclick={() => shift(-1)}>
 				<Icon name="ic-left" size={20} />
 			</button>
+			<button class="btn text sm" onclick={() => (cursor = parse(db.seededOn))}>今日</button>
 			<!-- ic-arrow (軸+矢じり) は ic-left (山形) と絵柄の系統が違うとの指摘。対になる山形の
 			     ic-chev に揃える -->
 			<button class="iconbtn" aria-label={view === 'month' ? '次の月' : '次の週'} onclick={() => shift(1)}>
@@ -91,6 +92,11 @@
 			</button>
 		</div>
 		<h2 class="cal-title" aria-live="polite">{title}</h2>
+		<!-- 追加は Apple のカレンダーと同じく「+」だけのボタンにして、日付の操作と同じ列の
+		     右端に置く (青い塗りの大きなボタンが上部バーの下に単独で浮いていた) -->
+		<a class="iconbtn cal-add" href="/calendar?new=1" title="予定を追加" aria-label="予定を追加">
+			<Icon name="ic-plus" size={20} />
+		</a>
 	</div>
 
 	<!-- Task 10w — HIG 上ガラスを持たないコンテンツ層なので、Task 12 のガラス (glass()) を外して
@@ -165,6 +171,10 @@
 	/* 表示している範囲。見出しの階層は h2 のまま、大きさは本文の 1 段上に落とす */
 	.cal-title {
 		font-size: 18px;
+	}
+	.cal-add {
+		margin-left: auto;
+		color: var(--accent);
 	}
 	.cal-panel {
 		padding: var(--sp-4);
