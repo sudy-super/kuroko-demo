@@ -1,8 +1,8 @@
 import type { ChatMessage, Db, Suggestion } from '../types';
 import type { ContextChip } from '../ui.svelte';
-import { key, bizDay, parse, nowIso, fmtMDW, whenOf, hourOf } from '../dates';
+import { key, bizDay, parse, fmtMDW, whenOf, hourOf } from '../dates';
 import { companyOf, firstFreeStart, nextMeeting, personOf, projectOf } from '../derived';
-import { slotsFor, uid } from './generate';
+import { slotsFor, suggestion } from './generate';
 
 /** 仕様 9.1 のキーワード表による振り分け。LLM は使わない */
 export type Intent = {
@@ -80,16 +80,6 @@ export const GUIDE_CHIPS = [
 
 type Reply = Pick<ChatMessage, 'text' | 'card' | 'chips'> & { suggestion?: Suggestion };
 
-const sug = (kind: Suggestion['kind'], reason: string, payload: Suggestion['payload']): Suggestion => ({
-	id: uid('sg'),
-	source: 'chat',
-	kind,
-	status: 'pending',
-	reason,
-	payload,
-	createdAt: nowIso()
-});
-
 const nameOf = (db: Db, personId: string) => personOf(db, personId)?.name.split(' ')[0] ?? '';
 
 /* 聞き返しのチップは元の依頼文をそのまま抱えると 20 文字を超える (chat.md 観点 2.7)。
@@ -152,7 +142,7 @@ export function reply(db: Db, i: Intent, asked = false): Reply {
 		// 埋まっている時間は避ける (derived.ts の firstFreeStart)。日程調整の候補と同じ扱い
 		const { date, start, end } = firstFreeStart(db, i.when ?? key(bizDay(1, base)), 60, i.at);
 		const title = `${nameOf(db, person!.id)}様との打ち合わせ`;
-		const s = sug('event', `「${i.raw}」を打ち合わせの依頼と受け取りました`, {
+		const s = suggestion('chat', 'event', `「${i.raw}」を打ち合わせの依頼と受け取りました`, {
 			type: 'event',
 			title,
 			date,
@@ -180,7 +170,7 @@ export function reply(db: Db, i: Intent, asked = false): Reply {
 	if (i.kind === 'task') {
 		// 「覚えて」「リマインド」のような頼み方の部分は ToDo の題名から落とす
 		const title = i.raw.replace(/[、,]?\s*(覚えて|リマインドして|リマインド|todo)[。.!！]?$/i, '').trim();
-		const s = sug('task', `「${i.raw}」を ToDo の依頼と受け取りました`, {
+		const s = suggestion('chat', 'task', `「${i.raw}」を ToDo の依頼と受け取りました`, {
 			type: 'task',
 			title,
 			due: i.when,

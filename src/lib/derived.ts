@@ -9,6 +9,9 @@ export const meetingOf = (db: Db, id?: string) => db.meetings.find((m) => m.id =
 export const eventOf = (db: Db, id?: string) => db.events.find((e) => e.id === id);
 export const threadOf = (db: Db, id?: string) => db.threads.find((t) => t.id === id);
 export const documentOf = (db: Db, id?: string) => db.documents.find((d) => d.id === id);
+export const approvalOf = (db: Db, id?: string) => db.approvals.find((a) => a.id === id);
+export const taskOf = (db: Db, id?: string) => db.tasks.find((t) => t.id === id);
+export const suggestionOf = (db: Db, id?: string) => db.suggestions.find((s) => s.id === id);
 
 /* 宛先の行と効果文に出す連絡先の表し方。メールはアドレスを省略せずに出す (仕様 5.3)。
    LINE / Slack の value は内部の ID なので、人が読める label (「LINE」「Slack」) に置き換える */

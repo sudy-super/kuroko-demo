@@ -1,10 +1,18 @@
-import type { Db, TimeSlot, MessageThread, Minutes, Meeting } from '../types';
-import { bizDay, key, fmtMDW, parse, minutes, toHm } from '../dates';
+import type { Db, TimeSlot, MessageThread, Minutes, Meeting, Suggestion } from '../types';
+import { bizDay, key, fmtMDW, parse, minutes, toHm, nowIso } from '../dates';
 import { personOf, meetingMailTargetFor } from '../derived';
 import { SAMPLE_TRANSCRIPT, SAMPLE_MINUTES } from './samples';
 
 let seq = 0;
 export const uid = (p: string) => `${p}-${Date.now().toString(36)}${(++seq).toString(36)}`;
+
+/** 承認待ちの候補。登録や予定の作成は人が押してから (仕様 5.4) */
+export const suggestion = (
+	source: Suggestion['source'],
+	kind: Suggestion['kind'],
+	reason: string,
+	payload: Suggestion['payload']
+): Suggestion => ({ id: uid('sg'), source, kind, status: 'pending', reason, payload, createdAt: nowIso() });
 
 // 候補は「今日」= db.seededOn を基準にした営業日で作る。実時刻は使わない
 export function slotsFor(db: Db, _personId: string, duration = 60): TimeSlot[] {

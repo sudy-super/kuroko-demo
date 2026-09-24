@@ -35,9 +35,12 @@ import {
 	todayCount,
 	mailTargetOf,
 	personMailTargetOf,
-	orderTasks
+	orderTasks,
+	approvalOf,
+	taskOf,
+	suggestionOf
 } from './derived';
-import { agendaFor, slotsFor, slotsText, uid, minutesFor } from './kuroko/generate';
+import { agendaFor, slotsFor, slotsText, uid, minutesFor, suggestion } from './kuroko/generate';
 import { ASK_PERSON, reply, route } from './kuroko/route';
 import { handleMention } from './kuroko/line';
 import { goto } from '$app/navigation';
@@ -46,6 +49,56 @@ import { resetLayout } from './todayLayout.svelte';
 
 export const SEND_DELAY_MS = 5000;
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
+
+/** 見つからないのは呼び出し側が出すべきでない操作を出したということなので、黙らず落とす */
+function must<T>(x: T | null | undefined, msg: string): T {
+	if (!x) throw new Error(msg);
+	return x;
+}
+
+// $state proxy への書き込みは元のオブジェクトに反映されないので、積んだ後の db 側の要素を返す
+const pushed = <T>(list: T[], x: NoInfer<T>): T => list[list.push(x) - 1];
+const unshifted = <T>(list: T[], x: NoInfer<T>): T => (list.unshift(x), list[0]);
+
+function stopTimer(id: string) {
+	clearTimeout(timers.get(id));
+	timers.delete(id);
+}
+
+function closeThread(th: { needsReply: boolean; done: boolean }) {
+	th.needsReply = false;
+	th.done = true;
+}
+
+const draftOf = (threadId: string) => db.scheduling.find((s) => s.threadId === threadId && s.status === 'draft');
+
+// 日程の確定で作った予定と会議を捨てる (選び直し・日時の変更・キャンセル)
+function dropBooking(s: SchedulingRequest) {
+	db.events = db.events.filter((e) => e.id !== s.eventId);
+	db.meetings = db.meetings.filter((m) => m.id !== s.meetingId);
+}
+
+/** 予定に付く会議。Brief は通常前日夜に届くものを、デモでは即時に作る */
+function meetingFor(e: CalendarEvent): Meeting {
+	const m: Meeting = {
+		id: uid('m'),
+		eventId: e.id,
+		title: e.title,
+		personIds: e.personIds,
+		companyId: e.companyId,
+		projectId: e.projectId,
+		purpose: e.purpose ?? '',
+		briefRead: false,
+		agenda: [],
+		agendaShared: false,
+		transcriptIds: [],
+		brief: integrations.document.brief(db, e.personIds[0], e.projectId)
+	};
+	m.brief!.note = '通常は前日夜に届きます (デモのため即時生成)';
+	return m;
+}
+
+const meetingMust = (id: string) => must(meetingOf(db, id), `会議がありません: ${id}`);
 
 export function log(
 	text: string,
@@ -62,17 +115,14 @@ export function log(
 		approved: o.approved ?? false,
 		undo: o.undo
 	};
-	db.logs.unshift(l);
-	// $state proxy への書き込みは元のオブジェクトに反映されないので、db 側の要素を返す
-	return db.logs[0];
+	return unshifted(db.logs, l);
 }
 
 // 社外への送信だけは自動化レベルによらず必ず承認を求める
 const autoExecutes = (risk: Approval['risk'], level: Automation) => risk !== 'external_send' && level !== 'draft';
 
 export function addApproval(input: Omit<Approval, 'id' | 'status' | 'createdAt'>): Approval {
-	db.approvals.unshift({ ...input, id: uid('ap'), status: 'pending', createdAt: nowIso() });
-	const a = db.approvals[0];
+	const a = unshifted(db.approvals, { ...input, id: uid('ap'), status: 'pending', createdAt: nowIso() });
 	if (autoExecutes(a.risk, db.settings.automation)) {
 		executeApproval(a.id, true);
 	}
@@ -81,7 +131,7 @@ export function addApproval(input: Omit<Approval, 'id' | 'status' | 'createdAt'>
 }
 
 export function approve(id: string, origin: Origin = 'approval') {
-	const a = db.approvals.find((x) => x.id === id);
+	const a = approvalOf(db, id);
 	if (!a || a.status !== 'pending') return;
 	if (a.risk === 'external_send') {
 		a.status = 'sending';
@@ -118,10 +168,9 @@ export function lineApprove(id: string, role: 'owner' | 'member', channel: 'line
 }
 
 export function undoApproval(id: string) {
-	const a = db.approvals.find((x) => x.id === id);
+	const a = approvalOf(db, id);
 	if (!a || a.status !== 'sending') return;
-	clearTimeout(timers.get(id));
-	timers.delete(id);
+	stopTimer(id);
 	a.status = 'pending';
 	a.sendingAt = undefined;
 	save();
@@ -130,7 +179,7 @@ export function undoApproval(id: string) {
 }
 
 export function editApproval(id: string, body: string) {
-	const a = db.approvals.find((x) => x.id === id);
+	const a = approvalOf(db, id);
 	if (!a || a.status !== 'pending') return;
 	a.body = body;
 	// reply 以外の payload は本文を持たないので、種類ごとに更新先を分ける
@@ -139,11 +188,10 @@ export function editApproval(id: string, body: string) {
 }
 
 export function reject(id: string, origin: Origin = 'approval') {
-	const a = db.approvals.find((x) => x.id === id);
+	const a = approvalOf(db, id);
 	if (!a || (a.status !== 'pending' && a.status !== 'sending')) return;
 	// 送信待ちを却下したら、待っている送信も止める
-	clearTimeout(timers.get(id));
-	timers.delete(id);
+	stopTimer(id);
 	a.status = 'rejected';
 	a.sendingAt = undefined;
 	log(`${a.title}を却下しました`, 'other', { actor: 'user', origin });
@@ -162,7 +210,7 @@ export function restoreStaleSending() {
 }
 
 export function executeApproval(id: string, auto = false) {
-	const a = db.approvals.find((x) => x.id === id);
+	const a = approvalOf(db, id);
 	// 却下済みと実行済みは動かさない。待機中のタイマーが後から発火しても素通りさせる
 	if (!a || (a.status !== 'pending' && a.status !== 'sending')) return;
 	a.status = 'executed';
@@ -170,11 +218,12 @@ export function executeApproval(id: string, auto = false) {
 	timers.delete(id);
 	const p = a.payload;
 	const ext = a.risk === 'external_send';
+	const sent = (text: string, undo?: UndoPayload) =>
+		log(text, 'send', { actor: 'user', origin: a.origin, approved: true, undo });
 	if (p.type === 'reply') {
 		const th = threadOf(db, p.threadId)!;
 		integrations.mail.sendMessage(th, p.body);
-		th.needsReply = false;
-		th.done = true;
+		closeThread(th);
 		const s = p.schedulingId && db.scheduling.find((x) => x.id === p.schedulingId);
 		if (s) {
 			s.status = 'sent';
@@ -184,31 +233,23 @@ export function executeApproval(id: string, auto = false) {
 		db.demo.stats.replied++;
 		// 送った先はスレッドの出所そのもの。sendReply が決めた kind と文言を食い違わせない
 		const via = a.kind === 'mail' ? 'メール' : a.kind === 'line' ? 'LINE' : 'Slack';
-		log(`${a.to.split(' <')[0].split(' (')[0]}へ${via}を送信しました`, 'send', { actor: 'user', origin: a.origin, approved: true });
+		sent(`${a.to.split(' <')[0].split(' (')[0]}へ${via}を送信しました`);
 	} else if (p.type === 'share') {
-		log(`${a.title}を実行しました`, 'send', { actor: 'user', origin: a.origin, approved: true });
+		sent(`${a.title}を実行しました`);
 	} else if (p.type === 'agenda') {
 		const m = meetingOf(db, p.meetingId)!;
 		m.agendaShared = true;
-		log('アジェンダを参加者に共有しました', 'send', {
-			actor: 'user',
-			origin: a.origin,
-			approved: true,
-			undo: { kind: 'agenda_share', meetingId: m.id }
-		});
+		sent('アジェンダを参加者に共有しました', { kind: 'agenda_share', meetingId: m.id });
 	} else if (p.type === 'document') {
-		log(`${a.title}を送信しました`, 'send', { actor: 'user', origin: a.origin, approved: true });
+		sent(`${a.title}を送信しました`);
 	} else if (p.type === 'followup') {
 		// 相手のスレッドがあれば reply と同じように閉じる。無い会議 (threadId は省略可能) では何もしない
 		const th = threadOf(db, p.threadId);
-		if (th) {
-			th.needsReply = false;
-			th.done = true;
-		}
-		log('フォローメールを送信しました', 'send', { actor: 'user', origin: a.origin, approved: true });
+		if (th) closeThread(th);
+		sent('フォローメールを送信しました');
 	} else if (p.type === 'line') {
 		integrations.chat.post('line', p.text);
-		log('LINE に返信しました', 'send', { actor: 'user', origin: a.origin, approved: true });
+		sent('LINE に返信しました');
 	}
 	if (auto) {
 		db.logs[0].approved = false;
@@ -243,8 +284,7 @@ export function addTask(
 	},
 	origin: Origin
 ): Task {
-	db.tasks.unshift({ id: uid('t'), priority: 'normal', status: 'todo', origin, createdAt: nowIso(), ...input });
-	const t = db.tasks[0];
+	const t = unshifted(db.tasks, { id: uid('t'), priority: 'normal', status: 'todo', origin, createdAt: nowIso(), ...input });
 	db.demo.stats.tasksAdded++;
 	log(`ToDo「${t.title}」を登録しました`, 'register', {
 		actor: origin === 'chat' || origin === 'line' || origin === 'meeting' ? 'KUROKO' : 'user',
@@ -278,14 +318,14 @@ export function sortTasksByDue() {
 
 /** 星 (Google ToDo リストと同じ)。付けると優先度を高、外すと既定の中にする */
 export function toggleStar(id: string) {
-	const t = db.tasks.find((x) => x.id === id);
+	const t = taskOf(db, id);
 	if (!t) return;
 	t.priority = t.priority === 'high' ? 'normal' : 'high';
 	save();
 }
 
 export function toggleTask(id: string, origin: Origin = 'tasks') {
-	const t = db.tasks.find((x) => x.id === id);
+	const t = taskOf(db, id);
 	if (!t) return;
 	if (t.status === 'done') {
 		// 完了を外すのは「完了にしました」の取り消しと同じこと。ログと実績の戻しを undo に任せる
@@ -318,7 +358,7 @@ const SUGGESTION_ORIGIN: Record<Suggestion['source'], Origin> = {
 export function acceptTaskSuggestions(ids: string[]): Task[] {
 	const out: Task[] = [];
 	for (const id of ids) {
-		const s = db.suggestions.find((x) => x.id === id);
+		const s = suggestionOf(db, id);
 		if (!s || s.status !== 'pending' || s.payload.type !== 'task') continue;
 		const { type, ...input } = s.payload;
 		out.push(addTask(input, SUGGESTION_ORIGIN[s.source]));
@@ -342,7 +382,7 @@ export function undo(logId: string) {
 		db.demo.stats.tasksAdded = Math.max(0, db.demo.stats.tasksAdded - 1);
 	}
 	if (u.kind === 'task_done') {
-		const t = db.tasks.find((x) => x.id === u.taskId);
+		const t = taskOf(db, u.taskId);
 		if (t) t.status = 'todo';
 		db.demo.stats.tasksDone = Math.max(0, db.demo.stats.tasksDone - 1);
 	}
@@ -374,7 +414,7 @@ export function insertSlots(threadId: string): SchedulingRequest {
 	const th = threadOf(db, threadId)!;
 	// 人物が分からないまま日程調整を作らない (人物なしだと confirmSlot() が落ちる)
 	if (!th.personId) throw new Error(`insertSlots: ${threadId} に personId がありません`);
-	const existing = db.scheduling.find((s) => s.threadId === threadId && s.status === 'draft');
+	const existing = draftOf(threadId);
 	if (existing) return existing;
 	const slots = slotsFor(db, th.personId);
 	const s: SchedulingRequest = {
@@ -389,20 +429,20 @@ export function insertSlots(threadId: string): SchedulingRequest {
 		threadId,
 		text: slotsText(slots, personOf(db, th.personId)!.name.split(' ')[0])
 	};
-	db.scheduling.push(s);
+	const out = pushed(db.scheduling, s);
 	log('日程候補 3 件を提案しました', 'draft', { origin: 'inbox' });
 	save();
-	return db.scheduling[db.scheduling.length - 1];
+	return out;
 }
 
 // insertSlots() の逆。候補の載った本文を送らないと決まった時に呼ぶ。sendReply() は本文を見ず
 // threadId の draft を拾うだけなので、本文と下書きを合わせる責任はこちら側にある
 export function dropSlotsDraft(threadId: string) {
-	const i = db.scheduling.findIndex((s) => s.threadId === threadId && s.status === 'draft');
-	if (i < 0) return;
+	const draft = draftOf(threadId);
+	if (!draft) return;
 	// 承認待ち・送信待ちの返信が指している下書きは、その本文に候補が載っているので残す
 	// (executeApproval() が token を発行する先 — payload.schedulingId)
-	const id = db.scheduling[i].id;
+	const id = draft.id;
 	const held = db.approvals.some(
 		(a) =>
 			(a.status === 'pending' || a.status === 'sending') &&
@@ -410,7 +450,7 @@ export function dropSlotsDraft(threadId: string) {
 			a.payload.schedulingId === id
 	);
 	if (held) return;
-	db.scheduling.splice(i, 1);
+	db.scheduling.splice(db.scheduling.indexOf(draft), 1);
 	save();
 }
 
@@ -418,7 +458,7 @@ export function sendReply(threadId: string, body: string, origin: Origin = 'inbo
 	const th = threadOf(db, threadId)!;
 	const p = personOf(db, th.personId);
 	const idn = identityOf(db, th.identityId)!;
-	const draft = db.scheduling.find((s) => s.threadId === threadId && s.status === 'draft');
+	const draft = draftOf(threadId);
 	const addr = addressOf(idn);
 	const to = p ? `${p.name} ${addr}` : addr;
 	// 送る先はスレッドの出所そのもの。記号も効果文もここから引く (ApprovalIcon の MARK)
@@ -439,8 +479,7 @@ export function sendReply(threadId: string, body: string, origin: Origin = 'inbo
 export function markDone(threadId: string) {
 	const th = threadOf(db, threadId);
 	if (!th) return;
-	th.done = true;
-	th.needsReply = false;
+	closeThread(th);
 	log(`「${th.subject}」を対応済みにしました`, 'other', { actor: 'user', origin: 'inbox' });
 	save();
 }
@@ -452,10 +491,7 @@ export function confirmSlot(token: string, slotId: string) {
 	if (!slot) return null;
 	// 確定済みの枠を選び直した場合は、前の予定と会議を捨ててから作り直す
 	const redo = s.status === 'confirmed';
-	if (redo) {
-		db.events = db.events.filter((e) => e.id !== s.eventId);
-		db.meetings = db.meetings.filter((m) => m.id !== s.meetingId);
-	}
+	if (redo) dropBooking(s);
 	// 古い下書きの personId が '' のままならここで弾く
 	const p = personOf(db, s.personId);
 	if (!p) return null;
@@ -474,28 +510,13 @@ export function confirmSlot(token: string, slotId: string) {
 		source: 'kuroko',
 		purpose: '次回の打ち合わせ'
 	};
-	const meeting: Meeting = {
-		id: uid('m'),
-		eventId: event.id,
-		title: event.title,
-		personIds: [p.id],
-		companyId: p.companyId,
-		projectId: p.projectIds[0],
-		purpose: event.purpose!,
-		briefRead: false,
-		agenda: [],
-		agendaShared: false,
-		transcriptIds: [],
-		brief: integrations.document.brief(db, p.id, p.projectIds[0])
-	};
-	meeting.brief!.note = '通常は前日夜に届きます (デモのため即時生成)';
-	event.meetingId = meeting.id;
-	db.events.push(event);
-	db.meetings.push(meeting);
+	const m = meetingFor(event);
+	event.meetingId = m.id;
+	const out = { event: pushed(db.events, event), meeting: pushed(db.meetings, m) };
 	s.status = 'confirmed';
 	s.chosenSlotId = slotId;
 	s.eventId = event.id;
-	s.meetingId = meeting.id;
+	s.meetingId = m.id;
 	if (!redo) db.demo.stats.confirmed++;
 	// 相手が確定した予定は「元に戻す」の対象にしない。戻すのは /schedule の「日時を変更する」「キャンセルする」
 	log(`${fmtMDW(parse(slot.date))} ${slot.start} に ${p.name}様との打ち合わせを確定しました`, 'hold', {
@@ -503,14 +524,13 @@ export function confirmSlot(token: string, slotId: string) {
 		approved: true
 	});
 	save();
-	return { event: db.events[db.events.length - 1], meeting: db.meetings[db.meetings.length - 1] };
+	return out;
 }
 
 export function changeSlot(token: string) {
 	const s = db.scheduling.find((x) => x.token === token);
 	if (!s || s.status !== 'confirmed') return;
-	db.events = db.events.filter((e) => e.id !== s.eventId);
-	db.meetings = db.meetings.filter((m) => m.id !== s.meetingId);
+	dropBooking(s);
 	s.status = 'sent';
 	s.chosenSlotId = s.eventId = s.meetingId = undefined;
 	db.demo.stats.confirmed = Math.max(0, db.demo.stats.confirmed - 1);
@@ -520,8 +540,7 @@ export function changeSlot(token: string) {
 export function cancelScheduling(token: string) {
 	const s = db.scheduling.find((x) => x.token === token);
 	if (!s || (s.status !== 'sent' && s.status !== 'confirmed')) return;
-	db.events = db.events.filter((e) => e.id !== s.eventId);
-	db.meetings = db.meetings.filter((m) => m.id !== s.meetingId);
+	dropBooking(s);
 	s.status = 'cancelled';
 	log(`${personOf(db, s.personId)?.name}様との打ち合わせがキャンセルされました`, 'other', { origin: 'schedule' });
 	save();
@@ -536,21 +555,7 @@ export function createEvent(
 	if (e.online) e.url = integrations.conference.createMeetingUrl(e.online);
 	const ev = integrations.calendar.createEvent(db, e);
 	if (withMeeting) {
-		const m: Meeting = {
-			id: uid('m'),
-			eventId: e.id,
-			title: e.title,
-			personIds: e.personIds,
-			companyId: e.companyId,
-			projectId: e.projectId,
-			purpose: e.purpose ?? '',
-			briefRead: false,
-			agenda: [],
-			agendaShared: false,
-			transcriptIds: [],
-			brief: integrations.document.brief(db, e.personIds[0], e.projectId)
-		};
-		m.brief!.note = '通常は前日夜に届きます (デモのため即時生成)';
+		const m = meetingFor(e);
 		ev.meetingId = m.id;
 		db.meetings.push(m);
 	}
@@ -658,29 +663,21 @@ export function noteRecent(href: string) {
 
 /** 文字起こしを足し、議事録と ToDo 候補を作る。候補は登録せず、必ず人の承認を通す (仕様 5.4) */
 export function addTranscript(meetingId: string, text: string) {
-	const m = meetingOf(db, meetingId);
-	if (!m) throw new Error(`会議が見つかりません: ${meetingId}`);
+	const m = must(meetingOf(db, meetingId), `会議が見つかりません: ${meetingId}`);
 	const { minutes: mi, todos } = minutesFor(db, meetingId, text);
-	db.transcripts.push({ id: uid('tr'), meetingId, text, addedAt: nowIso() });
-	m.transcriptIds.push(db.transcripts[db.transcripts.length - 1].id);
+	m.transcriptIds.push(pushed(db.transcripts, { id: uid('tr'), meetingId, text, addedAt: nowIso() }).id);
 	m.minutes = mi;
 	for (const t of todos) {
-		db.suggestions.unshift({
-			id: uid('sg'),
-			source: 'transcript',
-			kind: 'task',
-			status: 'pending',
-			reason: t.reason,
-			payload: {
+		db.suggestions.unshift(
+			suggestion('transcript', 'task', t.reason, {
 				type: 'task',
 				title: t.title,
 				due: t.due,
 				meetingId,
 				personId: m.personIds[0],
 				projectId: m.projectId
-			},
-			createdAt: nowIso()
-		});
+			})
+		);
 	}
 	log(`議事録と ToDo 候補 ${todos.length} 件を作成しました`, 'draft', { origin: 'meeting' });
 	save();
@@ -689,13 +686,11 @@ export function addTranscript(meetingId: string, text: string) {
 
 export function sendFollowUp(meetingId: string): Approval {
 	const m = meetingOf(db, meetingId);
-	if (!m?.minutes) throw new Error(`議事録がありません: ${meetingId}`);
-	const mail = m.minutes.followUpMail;
-	if (!mail) throw new Error(`フォローメール案がありません: ${meetingId}`);
+	const mail = must(must(m?.minutes, `議事録がありません: ${meetingId}`).followUpMail, `フォローメール案がありません: ${meetingId}`);
 	// 相手が既に話しているスレッドがあればそこに返す。無ければ新規のメールとして送る
-	const threadId = db.threads.find((t) => t.personId === m.personIds[0])?.id;
+	const threadId = db.threads.find((t) => t.personId === m!.personIds[0])?.id;
 	return addApproval({
-		title: `${personOf(db, m.personIds[0])?.name.split(' ')[0] ?? '相手'}様へのフォローメール`,
+		title: `${personOf(db, m!.personIds[0])?.name.split(' ')[0] ?? '相手'}様へのフォローメール`,
 		risk: 'external_send',
 		kind: 'mail',
 		to: mail.to,
@@ -708,39 +703,33 @@ export function sendFollowUp(meetingId: string): Approval {
 
 /** フォローメール案の本文をその場で直す (MinutesView の「編集」)。承認に回す前の案だけが対象 */
 export function editFollowUp(meetingId: string, body: string) {
-	const mail = meetingOf(db, meetingId)?.minutes?.followUpMail;
-	if (!mail) throw new Error(`フォローメール案がありません: ${meetingId}`);
-	mail.body = body;
+	must(meetingOf(db, meetingId)?.minutes?.followUpMail, `フォローメール案がありません: ${meetingId}`).body = body;
 	save();
 }
 
 /** Brief を開いた時点で既読にする。Today の「次の会議の準備」はこの印で消える (derived.ts todayItems) */
 export function markBriefRead(meetingId: string) {
-	const m = meetingOf(db, meetingId);
-	if (!m) throw new Error(`会議がありません: ${meetingId}`);
+	const m = meetingMust(meetingId);
 	if (m.briefRead) return;
 	m.briefRead = true;
 	save();
 }
 
 export function generateAgenda(meetingId: string) {
-	const m = meetingOf(db, meetingId);
-	if (!m) throw new Error(`会議がありません: ${meetingId}`);
+	const m = meetingMust(meetingId);
 	m.agenda = agendaFor(db, m);
 	log('アジェンダを作成しました', 'draft', { origin: 'meeting' });
 	save();
 }
 
 export function updateAgenda(meetingId: string, items: string[]) {
-	const m = meetingOf(db, meetingId);
-	if (!m) throw new Error(`会議がありません: ${meetingId}`);
+	const m = meetingMust(meetingId);
 	m.agenda = items;
 	save();
 }
 
 export function shareAgenda(meetingId: string, origin: Origin = 'meeting'): Approval {
-	const m = meetingOf(db, meetingId);
-	if (!m) throw new Error(`会議がありません: ${meetingId}`);
+	const m = meetingMust(meetingId);
 	const { person: p, to } = mailTargetOf(db, meetingId);
 	return addApproval({
 		title: `${p.name.split(' ')[0]}様へのアジェンダ共有`,
@@ -799,22 +788,14 @@ export async function lineSay(text: string, role: 'owner' | 'member') {
 	if (r.suggestion) {
 		// 埋まっている時間は避ける (derived.ts の firstFreeStart)。/chat の予定の候補と同じ扱い
 		const { date, start, end } = firstFreeStart(db, r.suggestion.date, 60, r.suggestion.at);
-		const s: Suggestion = {
-			id: uid('sg'),
-			source: 'line',
-			kind: 'event',
-			status: 'pending',
-			reason: `${who}さんから「${q}」の依頼がありました`,
-			payload: {
-				type: 'event',
-				title: r.suggestion.title,
-				date,
-				start,
-				end,
-				personIds: []
-			},
-			createdAt: nowIso()
-		};
+		const s = suggestion('line', 'event', `${who}さんから「${q}」の依頼がありました`, {
+			type: 'event',
+			title: r.suggestion.title,
+			date,
+			start,
+			end,
+			personIds: []
+		});
 		db.suggestions.push(s);
 		// 社長のチャット (/chat) へ回す。押すまで予定にならないのは chatAct の create-event 任せ
 		pushChat({
@@ -837,7 +818,7 @@ export async function lineSay(text: string, role: 'owner' | 'member') {
 
 /** カードのボタン。既存の処理へ振り分けるだけで、ここでは何も組み立てない */
 export function chatAct(act: string, arg: string) {
-	const s = db.suggestions.find((x) => x.id === arg);
+	const s = suggestionOf(db, arg);
 	switch (act) {
 		case 'create-event': {
 			// 済んだ候補からは二度と作らない。表示側 (ChatCard) も同じ status で操作を引っ込める
@@ -884,17 +865,16 @@ export function generateDocument(
 		projectId: project?.id,
 		personId: project?.personIds[0]
 	});
-	db.documents.unshift(d);
+	const out = unshifted(db.documents, d);
 	// 案件の資料一覧 (/projects/[id]) と Brief の関連資料から辿れるようにする
 	if (project) project.documentIds.unshift(d.id);
 	log(`${d.title}を作成しました`, 'draft', { origin });
 	save();
-	return db.documents[0];
+	return out;
 }
 
 export function sendDocument(docId: string, personId: string, origin: Origin = 'documents'): Approval {
-	const d = documentOf(db, docId);
-	if (!d) throw new Error(`資料がありません: ${docId}`);
+	const d = must(documentOf(db, docId), `資料がありません: ${docId}`);
 	const { person, to } = personMailTargetOf(db, personId);
 	return addApproval({
 		title: `${person.name.split(' ')[0]}様への${d.kind}の送付`,
@@ -914,16 +894,15 @@ export function sendDocument(docId: string, personId: string, origin: Origin = '
 export function addPerson(fields: CardFields, origin: Origin): Person {
 	let company = db.companies.find((c) => c.name === fields.company);
 	if (!company && fields.company) {
-		db.companies.push({
+		company = pushed(db.companies, {
 			id: uid('c'),
 			name: fields.company,
 			domain: fields.email.split('@')[1] ?? '',
 			industry: '',
 			size: ''
 		});
-		company = db.companies[db.companies.length - 1];
 	}
-	db.people.push({
+	const p = pushed(db.people, {
 		id: uid('p'),
 		name: fields.name,
 		kana: fields.kana,
@@ -934,7 +913,6 @@ export function addPerson(fields: CardFields, origin: Origin): Person {
 		tags: [],
 		projectIds: []
 	});
-	const p = db.people[db.people.length - 1];
 	if (!db.identities.some((i) => i.kind === 'email' && i.value === fields.email))
 		db.identities.push({ id: uid('id'), personId: p.id, kind: 'email', value: fields.email, label: 'Gmail' });
 	log(`人物「${p.name}」を登録しました`, 'register', { actor: 'user', origin });
@@ -944,8 +922,7 @@ export function addPerson(fields: CardFields, origin: Origin): Person {
 
 /** ChannelIdentity と、そこから来た全スレッドを人物に結び付ける */
 export function linkIdentity(identityId: string, personId: string) {
-	const i = identityOf(db, identityId);
-	if (!i) throw new Error(`ChannelIdentity がありません: ${identityId}`);
+	const i = must(identityOf(db, identityId), `ChannelIdentity がありません: ${identityId}`);
 	i.personId = personId;
 	const company = personOf(db, personId)?.companyId;
 	for (const t of db.threads)
@@ -964,18 +941,17 @@ export function linkIdentity(identityId: string, personId: string) {
 /** 人物の会社の案件を作り、人物に紐付ける。商談はこれから始まるので状態は「商談前」 */
 export function createProjectFor(personId: string, name: string): Project {
 	const p = personOf(db, personId);
-	if (!p?.companyId) throw new Error(`会社が引けません: ${personId}`);
-	db.projects.push({
+	const companyId = must(p?.companyId, `会社が引けません: ${personId}`);
+	const pj = pushed(db.projects, {
 		id: uid('pj'),
 		name,
-		companyId: p.companyId,
+		companyId,
 		status: '商談前',
 		amount: '未定',
 		personIds: [personId],
 		documentIds: []
 	});
-	const pj = db.projects[db.projects.length - 1];
-	p.projectIds.push(pj.id);
+	p!.projectIds.push(pj.id);
 	log(`案件「${pj.name}」を作成しました`, 'register', { actor: 'user', origin: 'people' });
 	save();
 	return pj;
