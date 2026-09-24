@@ -3,7 +3,7 @@
 	import { db } from '$lib/store.svelte';
 	import { companyOf, documentOf, personOf, projectOf } from '$lib/derived';
 	import ProjectStatusIcon from './ProjectStatusIcon.svelte';
-	import DocKindIcon from './DocKindIcon.svelte';
+	import { docRow } from './Rows.svelte';
 
 	let { meeting }: { meeting: Meeting } = $props();
 
@@ -51,12 +51,7 @@
 {@render sec('最近の連絡', brief?.recentContacts ?? [])}
 
 <h3>関連資料</h3>
-{#each documents as d (d.id)}
-	<a class="list-row" href="/documents?d={d.id}">
-		<DocKindIcon kind={d.kind} />
-		<span class="people-ident">{d.title}</span>
-	</a>
-{/each}
+{#each documents as d (d.id)}{@render docRow(d)}{/each}
 {#if !documents.length}<p class="muted">なし</p>{/if}
 
 <style>

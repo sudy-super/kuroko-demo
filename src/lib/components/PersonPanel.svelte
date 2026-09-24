@@ -5,7 +5,7 @@
 	import { parse, fmtMDW } from '$lib/dates';
 	import Icon from './Icon.svelte';
 	import OcrFlow from './OcrFlow.svelte';
-	import ProjectStatusIcon from './ProjectStatusIcon.svelte';
+	import { projectRow } from './Rows.svelte';
 
 	/** headingLevel — 置かれる場所で正しい階層が変わるので呼び出し側から渡す。
 	    デスクトップの右欄は <h1>Inbox</h1> の下なので既定の 2、Drawer のシートは <h3> の下なので 4 */
@@ -38,13 +38,7 @@
 		<p class="muted">{company?.name ?? '会社の登録なし'} {person.title}</p>
 		<p class="pp-mail">{contact}</p>
 
-		{#each projects as pj (pj.id)}
-			<a class="list-row" href="/projects/{pj.id}">
-				<span class="people-ident">{pj.name}</span>
-				<ProjectStatusIcon status={pj.status} />
-				<span class="num muted">{pj.amount}</span>
-			</a>
-		{/each}
+		{#each projects as pj (pj.id)}{@render projectRow(pj)}{/each}
 
 		<dl class="kv pp-stats">
 			<dt>最終商談</dt>
