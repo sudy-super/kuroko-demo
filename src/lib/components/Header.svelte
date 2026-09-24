@@ -67,6 +67,19 @@
 
 </script>
 
+<!-- 板を閉じてから、全件のドロワーを開く -->
+{#snippet all(openDrawer: () => void)}
+	<button
+		class="btn text sm"
+		onclick={() => {
+			panels.open = null;
+			openDrawer();
+		}}
+	>
+		すべて見る
+	</button>
+{/snippet}
+
 {#snippet tools()}
 	<!-- island.md「広がったときの中身」— 板には直近の数件だけを出し、全件は既存のドロワーへ送る -->
 	<PillPanel name="log">
@@ -86,15 +99,7 @@
 				</div>
 			{/each}
 		{/if}
-		<button
-			class="btn text sm"
-			onclick={() => {
-				panels.open = null;
-				ui.activityDrawer = true;
-			}}
-		>
-			すべて見る
-		</button>
+		{@render all(() => (ui.activityDrawer = true))}
 	</PillPanel>
 
 	<PillPanel name="approvals">
@@ -125,15 +130,7 @@
 				</div>
 			{/each}
 		{/if}
-		<button
-			class="btn text sm"
-			onclick={() => {
-				panels.open = null;
-				ui.approvalDrawer = true;
-			}}
-		>
-			すべて見る
-		</button>
+		{@render all(() => (ui.approvalDrawer = true))}
 	</PillPanel>
 
 	<DemoMenu />
