@@ -43,8 +43,6 @@
 	const MORPH_MS = 450;
 
 	let panel: HTMLElement | undefined = $state();
-	// レビュー M11 — matchMedia(...).matches を直接読むと変化を購読しないので、開いている間に
-	// 設定が変わっても morph が追随しない。prefersReducedMotion (MediaQuery) なら変化に反応する
 	// 起点があり、中央のパネルで、動きを減らす設定でないときだけ広げる
 	/* 起点は開いた瞬間に控える。呼び出し側が from を外しても、縮む先に使えるようにする */
 	let origin: DOMRect | null = $state(null);
@@ -69,9 +67,8 @@
 		prev = open;
 		clearTimeout(timer);
 		if (open) {
-			// レビュー I1 — 縮む動きは fill: 'forwards' で終わったあとも最後の矩形 (カードの位置)
-			// を保ち続け、誰も cancel() しない。450ms 以内に開き直すと、広がる動きの終点を測る
-			// 前にこれが残っていて「カード → カード」の動きに固まる。開く前に必ず消す
+			// 縮む動きは fill: 'forwards' で最後の矩形を保ち続けるので、開く前に必ず消す
+			// (残ると広がる動きの終点を測り損ねる)
 			panel?.getAnimations().forEach((a) => a.cancel());
 			origin = from;
 			render = true;
@@ -92,10 +89,8 @@
 			});
 		}
 		leaving = true;
-		// レビュー M1 — 外から open が false にされた (× / Esc / popstate 以外、例えば
-		// ページ遷移での一斉クローズ) 経路では pushState で積んだ履歴がそのまま残る。
-		// ×/Esc は onOpenChange 側で history.back() ごと戻すので、ここでは history は
-		// 動かさず pushed だけ下ろす (二重に戻ると遷移先の履歴まで巻き戻ってしまう)
+		// 外から open が false にされた経路 (遷移での一斉クローズなど) では、pushState で積んだ履歴が残る。
+		// ×/Esc は onOpenChange で history.back() するので、ここでは pushed だけ下ろす (二重に戻らないように)
 		pushed = false;
 		timer = setTimeout(
 			() => {
@@ -112,7 +107,7 @@
 	// 開いた直後: 今の (CSS の) 位置を終点にして、カードの矩形から広げる
 	$effect(() => {
 		if (!panel || !morph || leaving) return;
-		// レビュー I1 — 終点を測る前に、残っている動き (直前の縮みなど) を消してから測る
+		// 終点を測る前に、残っている動き (直前の縮みなど) を消す
 		panel.getAnimations().forEach((a) => a.cancel());
 		const end = panel.getBoundingClientRect();
 		panel.animate([box(origin!), box(end)], { duration: MORPH_MS, easing: GROW });
@@ -145,11 +140,8 @@
 	onOpenChange={(v) => {
 		if (v) return;
 		onclose();
-		/* ×・Esc・覆いで閉じたときは、開くときに積んだ履歴を自分で 1 つ戻す。こうしないと
-		   閉じたあとの「戻る」が同じ URL の履歴を 1 つ消すだけで空振りする。
-		   戻るで閉じたときは popstate 側で pushed を下ろすのでここには来ない。
-		   ドロワーの中のリンクは onOpenChange を通らず (呼び出し側が open を false にする)、
-		   遷移が data-sveltekit-replacestate で履歴を置き換えるので、巻き戻しは起きない */
+		/* ×・Esc・覆いで閉じたときは、開くときに積んだ履歴を自分で 1 つ戻す (でないと「戻る」が空振りする)。
+		   中のリンクは data-sveltekit-replacestate で履歴を置き換えるので巻き戻しは起きない */
 		if (pushed) {
 			pushed = false;
 			history.back();

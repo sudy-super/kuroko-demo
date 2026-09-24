@@ -2,12 +2,8 @@
 	import type { Snippet } from 'svelte';
 	import { pressGlass } from '$lib/glass';
 
-	/* 複数から 1 つを選ぶ表示の切り替え。カプセルの枠の中で、選んだ項目の下に白いつまみを敷き、
-	   切り替えるとつまみが滑って動く (ユーザー提示の iOS 26 のタブバー、2026-09-25)。
-	   つまみはガラスにしない。WWDC25「Build a SwiftUI app with the new design」は segmented picker が
-	   ガラスになるのは操作の間だけとし、HIG Materials は内容の層にガラスを置かない
-	   (docs/research/segmented-liquid-glass.md)。選んだ項目の文字をアクセントの青にするのは一次資料に
-	   記述が無く、ユーザー提示のタブバーに倣った。選択は色だけでなくつまみの形でも示す (WCAG 1.4.1) */
+	/* 表示の切り替え。選んだ項目の下の白いつまみが滑って動く (iOS 26)。つまみは普段ガラスにしない
+	   (ガラスになるのは操作の間だけ、segmented-liquid-glass.md)。選択は色だけでなくつまみの形でも示す (WCAG 1.4.1) */
 	let {
 		items,
 		value,

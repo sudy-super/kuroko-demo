@@ -29,10 +29,8 @@
 		{#each card.lines as line (line)}<p>{line}</p>{/each}
 	</div>
 	{#if card.reason}<p class="chat-reason">{card.reason}</p>{/if}
-	<!-- chat.md 観点 5.2 — カードの操作は後から押せるままにするのが一次資料に沿うが、これは
-	     「開く」のように何度押しても結果が変わらない操作の話。押すたびに予定や ToDo が増える
-	     操作は一度で終わらせ、HIG の "provide a clear signal that their action had an effect" に
-	     従って済んだことを出す (MinutesView の登録済みの行と同じ形) -->
+	<!-- 押すたびに予定や ToDo が増える操作は一度で終わらせ、済んだことを出す (HIG "provide a clear signal ...")。
+	     後から押せるままにするのは「開く」のような何度押しても同じ操作だけ (chat.md 観点 5.2) -->
 	{#if settled}
 		<p class="chat-done">
 			<Icon name={settled.status === 'accepted' ? 'ic-check' : 'ic-x'} size={20} />
@@ -43,10 +41,8 @@
 				: '破棄しました'}
 		</p>
 	{:else}
-		<!-- chat.md 観点 2.6 — 作業を確定させる操作はボタン (M3「チップで作業を確定・前進させるな」)。
-		     buttons.md 観点 A + research-repeated-primary.md — 発言が積み上がる画面なので、カードごとに
-		     塗りの主ボタンを置くと画面中に塗りが並ぶ。Carbon が繰り返しのカードを名指しで
-		     tertiary / ghost としているのに倣い、塗りは使わず枠と文字だけで段を付ける -->
+		<!-- 確定の操作はボタン (M3「チップで作業を確定させるな」)。発言が積み上がる画面なので塗りは使わず、
+		     枠と文字だけで段を付ける (Carbon の繰り返しのカードは tertiary / ghost) -->
 		<div class="row chat-actions">
 			{#each card.actions as a, i (a.act)}
 				<button class="btn {i === 0 ? 'sec' : 'text'} sm" onclick={() => chatAct(a.act, a.arg ?? '')}>

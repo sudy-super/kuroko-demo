@@ -3,9 +3,8 @@
 	import { mobile } from '$lib/media.svelte';
 	import ToastCountdown from './ToastCountdown.svelte';
 
-	/* 取り消しの猶予を持つトーストは、デスクトップでは上部バーのピルの中に出す (Header.svelte、
-	   island.md)。同じ内容を 2 か所に出さない。モバイルの上部バーは画面幅いっぱいの帯で
-	   伸ばす余地が無いので、今までどおりここに出す */
+	/* 取り消しの猶予を持つトーストは、デスクトップでは上部バーのピルの中に出すのでここでは出さない。
+	   モバイルの上部バーは伸ばす余地が無いのでここに出す */
 	const hideForIsland = $derived(!mobile.current && !!ui.toast?.island);
 </script>
 

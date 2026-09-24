@@ -35,16 +35,12 @@
 		<!-- 全画面を占めるので scrim (覆いの暗さ) は敷かない。文字はこの面の地の上に載る -->
 		<Dialog.Content class="voice">
 			<Dialog.Title class="sr-only">音声で依頼</Dialog.Title>
-			<!-- chat.md 観点 3.4 — オーブが聞き取り中の指標を兼ねるので、他に目を引く
-			     進行の表示を重ねない。以前あった 5 本の波形の棒はオーブと役割が重なるので外した
-			     (voice-orb.md「状態ごとの見せ方」、ユーザー指示 2026-09-24) -->
+			<!-- オーブが聞き取り中の指標を兼ねるので、他に目を引く進行の表示を重ねない (chat.md 観点 3.4) -->
 			<div class="orb-slot voice-orb" aria-hidden="true"><Orb size={280} sparks={false} /></div>
-			<!-- chat.md 観点 3.1 / 3.3 — 曖昧な語を避け、焦点を受け取らない待ちの知らせは
-			     role="status" で伝える (WCAG 2.2 達成基準 4.1.3)。ユーザー指示 2026-09-24 —
-			     文言は画面には出さず読み上げだけに残す -->
+			<!-- 待ちの知らせは role="status" で読み上げだけに伝える (WCAG 4.1.3) -->
 			<p class="voice-state sr-only" role="status">{hearing.live ? '聞いています…' : '聞き取りました'}</p>
 			<p class="voice-heard">{hearing.heard}</p>
-			<!-- 依頼バーと同じガラスのピルに入れる (ユーザー指示 2026-09-24 — ChatGPT の音声入力の形) -->
+			<!-- 依頼バーと同じガラスのピルに入れる -->
 			<div class="voice-acts-wrap">
 				<VoiceActions />
 			</div>

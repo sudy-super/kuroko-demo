@@ -15,12 +15,9 @@
 
 	let { cursor, onopen }: { cursor: Date; onopen: (e: CalendarEvent) => void } = $props();
 
-	/* 1 分あたりの高さ。components 3.12 の既定は 48px/時 だが、それだと 30 分の予定が 24px にしか
-	   ならず、当たり判定が Apple HIG / WCAG 2.5.8 の下限 44px に届かない。疑似要素での継ぎ足しは
-	   親の overflow: hidden に切られるので、目盛りそのものを上げて 30 分の予定の実寸を 44px にした
-	   (値は calendar.ts の WEEK_HOUR_PX、styles/calendar.css の .week-hour / .week-col と同じ)。
-	   格子は 0:00〜24:00 の全部を持つ。8:00〜20:00 だけを持つと、20:00 より後に作った予定が
-	   どこにも出なくなる。見える高さで切って縦に送るのは styles/calendar.css の .week */
+	/* 1 分あたりの高さ。既定の 48px/時 だと 30 分の予定が 24px で、当たり判定が下限 44px (HIG / WCAG 2.5.8) に
+	   届かない。疑似要素の継ぎ足しは overflow: hidden に切られるので目盛りを上げる (calendar.ts の WEEK_HOUR_PX)。
+	   格子は 0:00〜24:00 の全部を持つ (8〜20 時だけだと範囲外の予定が出ない) */
 	const PX = WEEK_HOUR_PX / 60;
 	const HOURS = Array.from({ length: 24 }, (_, i) => i);
 	const OPEN = 8 * 60 * PX; // 開いた直後に見せる位置 (8:00)
@@ -43,12 +40,8 @@
 	});
 
 	const top = (m: number) => m * PX;
-	/* 短い予定も当たり判定の下限 (calendar.ts の WEEK_MIN_EVENT_PX) まで伸ばして描く。
-	   上下に隣り合う予定の塗りを離すのは CSS 側の透明な下線 (.week-ev の border-bottom +
-	   background-clip) に任せ、どの長さでも同じ 1px の隙間にする。
-	   伸びたぶんは layoutColumns の重なり判定にも渡す (WEEK_MIN_DURATION_MIN)。実時間の
-	   ままだと、続けて入った予定 (例: 11:00〜11:15 と 11:15〜12:00) の描画が重なり、
-	   文字も当たり判定も潰れる */
+	/* 短い予定も当たり判定の下限 (WEEK_MIN_EVENT_PX) まで伸ばして描き、伸びたぶんを重なり判定にも渡す。
+	   実時間のままだと続けて入った予定の描画が重なる */
 	const height = (e: CalendarEvent) =>
 		Math.max(WEEK_MIN_EVENT_PX, (minutes(e.end) - minutes(e.start)) * PX);
 
@@ -59,15 +52,10 @@
 		return `left: calc(4px + ${col} * (${w} + 1px)); width: calc(${w});`;
 	};
 
-	/* calendar-block.md「時刻の位置」— 1 行目に題名、2 行目に時刻。2 行の高さは
-	   上下の余白 4px x 2 + 題名 14px x 1.25 + 時刻 12px x 1.25 = 40.5px なので、
-	   42px に届かない予定 (45 分以下) は題名だけに落とす */
+	/* 1 行目に題名、2 行目に時刻。2 行は 4 x 2 + 14 x 1.25 + 12 x 1.25 = 40.5px なので、42px 未満は題名だけ */
 	const TWO_LINES = 42;
 
-	/* calendar-block.md「仮・バッファ・オンライン・準備の示し方」— 属性は塗りやバーの色を
-	   変えず、題名の前のアイコンで示す。2 個までに切り、幅 120px 未満のブロックでは
-	   CSS 側 (@container weekev) でアイコンごと落として題名に幅を譲る。
-	   文言は下の title と aria-label に残る */
+	/* 属性は色を変えず題名の前のアイコンで示す (calendar-block.md)。2 個まで。狭いブロックでは CSS 側で落とす */
 	const attrs = (e: CalendarEvent) =>
 		[
 			e.online ? { name: 'ic-video', label: 'オンライン会議' } : null,
@@ -87,20 +75,15 @@
 			.join(' ');
 </script>
 
-<!-- 横 (格子の最小幅) と縦 (24 時間分) の送りはこの箱 1 つが持つ (styles/calendar.css の .week 参照)。
-     曜日の行 (.week-head) はこの箱の中で position: sticky にできるので、送っても見えたままになる
-     (sticky は送れない祖先を基準にできないため、送りを分けると効かない)。
-     予定が 1 つもない週では中に押せるものが無く、キーボードだけではここへ来られないので、
-     領域そのものを焦点に入れる (WCAG 2.1.1)。規則は「押せない要素に tabindex を置くな」だが、
-     送れる領域はその例外に当たる -->
+<!-- 横と縦の送りはこの箱 1 つが持つ (送りを分けると曜日の行の sticky が効かない)。予定の無い週でも
+     キーボードで来られるよう、送れる領域そのものを焦点に入れる (WCAG 2.1.1) -->
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div class="week" bind:this={body} tabindex="0" role="group" aria-label="週の時間割">
 	<div class="week-cols week-head">
 		<div></div>
 		{#each days as d, i (i)}
 			{@const k = key(d)}
-			<!-- Google カレンダーと同じく、曜日を小さく上に、日付を大きく下に置き、今日は日付を
-			     塗りの丸で囲む (ユーザー指示 2026-09-25)。列全体は塗らない -->
+			<!-- Google カレンダーと同じく、曜日を小さく上に、日付を大きく下に置き、今日は日付を塗りの丸で囲む -->
 			<div class="week-day" class:on={k === todayKey} aria-current={k === todayKey ? 'date' : undefined}>
 				<span class="week-wd">{WD[i]}</span><span class="week-date num">{d.getDate()}</span>
 			</div>

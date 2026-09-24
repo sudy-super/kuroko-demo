@@ -32,8 +32,7 @@
 		toast('フォローメールを承認待ちに送りました');
 	}
 
-	/* HIG Generative AI "Make it easy for people to refine … generated results" — 案はその場で直す。
-	   以前の「修正する」は押しても承認センターへの案内を出すだけだった */
+	/* 案はその場で直す (HIG Generative AI "Make it easy for people to refine … generated results") */
 	let editing = $state(false);
 	let draft = $state('');
 	function startEdit() {

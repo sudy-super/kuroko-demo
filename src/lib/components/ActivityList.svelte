@@ -32,8 +32,7 @@
 		<Tip text={actorLabel(l.actor)} name={ku ? 'ic-spark' : 'ic-user'} size={16} class="activity-actor {ku ? 'by-kuroko' : ''}" />
 		<span class="activity-text" class:undone={l.undone}>{l.text}</span>
 		{#if l.undone}
-			<!-- 取り消した記録は取り消し線を引かず (ユーザー指示 2026-09-25)、薄い文字と元に戻すの
-			     記号で示す。色だけに頼らない (WCAG 1.4.1) -->
+			<!-- 取り消した記録は取り消し線を引かず、薄い文字と元に戻すの記号で示す。色だけに頼らない (WCAG 1.4.1) -->
 			<Tip text="取り消し済み" name="ic-undo" size={16} class="activity-undone" />
 		{/if}
 		{#if !compact}

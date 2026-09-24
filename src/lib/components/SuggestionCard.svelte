@@ -32,10 +32,8 @@
 	}
 </script>
 
-<!-- 仕様 5 — 提案には必ず「なぜこれを出したか」の 1 行を付ける。
-     tasks-reminders.md 6 節 — Apple Intelligence のリマインダーの提案と同じく、行ごとの「+」で
-     1 件ずつ登録し、下の「すべて登録」でまとめて登録する (Add / Include All)。以前は行に
-     チェックを付けてから「選択した N 件を登録」を押す 2 段階だった -->
+<!-- 仕様 5 — 提案には必ず「なぜこれを出したか」の 1 行を付ける。行ごとの「+」で 1 件ずつ、「すべて登録」で
+     まとめて登録する (Apple Intelligence のリマインダーの提案、tasks-reminders.md 6 節) -->
 <section class="card sg" aria-label={title}>
 	<div class="tc-head sg-head">
 		<Icon name="ic-spark" size={20} />

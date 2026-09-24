@@ -41,8 +41,7 @@
 		goto(href);
 	}
 
-	/* Task 22 の申し送り — ここから chatSend を直接呼ばない。/chat 以外の画面に発言が積まれ、
-	   利用者から見えなくなる。?q= を受けた /chat 側が送る */
+	/* ここから chatSend を直接呼ばない (/chat 以外に発言が積まれて見えなくなる)。?q= を受けた /chat 側が送る */
 	const ask = () => open(q ? `/chat?q=${encodeURIComponent(q)}` : '/chat');
 </script>
 
@@ -104,8 +103,7 @@
 						</Command.Group>
 					{/if}
 					{@render askRow()}
-					<!-- Task 10j — Today の画面から外した「予定」「ToDo」の追加はここから開く。
-					     行きつく先は各画面の追加ボタンと同じ -->
+					<!-- 「予定」「ToDo」の追加。行き先は各画面の追加ボタンと同じ -->
 					<Command.Group>
 						<Command.GroupHeading class="pal-group">よく使う操作</Command.GroupHeading>
 						<Command.GroupItems>
@@ -125,7 +123,7 @@
 							</Command.Item>
 						</Command.GroupItems>
 					</Command.Group>
-					<!-- Task 10m — デモの操作の 2 つ目の置き場所。本番の画面には出さない (仕様 5.1 の裁定) -->
+					<!-- デモの操作の 2 つ目の置き場所。本番の画面には出さない (仕様 5.1) -->
 					<Command.Group>
 						<Command.GroupHeading class="pal-group">デモの操作</Command.GroupHeading>
 						<Command.GroupItems>

@@ -5,7 +5,7 @@
 	import Icon from './Icon.svelte';
 	import Drawer from './Drawer.svelte';
 
-	// Task 10p — サイドナビの下端固定 (UTILITY) はこのメニューにも出す。省くと設定に辿り着けなくなる
+	// 下端固定の UTILITY もこのメニューに出す。省くと設定に辿り着けない
 	const items = [...PRIMARY, ...UTILITY];
 </script>
 

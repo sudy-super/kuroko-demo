@@ -1,10 +1,8 @@
 <script lang="ts">
 	import { pressGlass } from '$lib/glass';
 
-	/* スイッチ。形と動きは予定の入力の .cal-switch と同じで、押している間だけつまみが少し
-	   膨らんでガラスになる (表示の切り替えのつまみと同じ。glass.ts の pressGlass)。
-	   つまみはガラスの描画面を載せるので疑似要素ではなく要素にする。
-	   中身は <input type="checkbox" role="switch"> なので、キーボードと読み上げはそのまま効く */
+	/* スイッチ。形と動きは .cal-switch と同じで、押している間だけつまみがガラスになる (glass.ts の pressGlass)。
+	   つまみは描画面を載せるので疑似要素ではなく要素。中身は <input role="switch"> */
 	let {
 		checked,
 		label,

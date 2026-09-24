@@ -19,11 +19,9 @@
 	const day = $derived(rel(parse(thread.lastAt.slice(0, 10)), parse(db.seededOn)));
 	// 時刻は画面の他の場所と同じく 1 桁時をそのまま出す (8:05 と 08:05 を混ぜない)
 	const when = $derived(day === '今日' ? thread.lastAt.slice(11, 16).replace(/^0/, '') : day);
-	// Task 10p (参考の良い点 6) — 差出人 / 会社 / 返信数 / 時刻を 1 行にまとめる。
-	// 組み立ては threadSenderMeta に集約 (10p 修正ラウンド 1、Critical 参照)
+	// 差出人 / 会社 / 返信数 / 時刻を 1 行にまとめる。組み立ては threadSenderMeta
 	const meta = $derived(threadSenderMeta(db, thread));
-	// 10p 修正ラウンド 1 (Minor 1) — 実際は返信数ではなくスレッドのやり取りの総数。
-	// 変数名も表示も「返信」に寄っていたので、読み上げに「のやり取り」を足して数の意味を補う
+	// 実際はやり取りの総数なので、読み上げに「のやり取り」を足して数の意味を補う
 	const replies = $derived(db.messages.filter((m) => m.threadId === thread.id).length);
 </script>
 

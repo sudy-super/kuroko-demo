@@ -9,8 +9,7 @@
 	import Icon from './Icon.svelte';
 	import Modal from './Modal.svelte';
 
-	// Task 10m — デモの操作は本番の画面に出さず、上部バー右端のこのアイコンと ⌘K だけに置く
-	// (ユーザー裁定 2026-09-16、仕様 5.1)。出し分けの条件は derived.ts に 1 つだけ置く
+	// デモの操作は本番の画面に出さず、上部バー右端のこのアイコンと ⌘K だけに置く (仕様 5.1)。条件は derived.ts
 	const canStart = $derived(canStartGuide(db));
 
 	function reset() {
@@ -33,11 +32,8 @@
 		{/snippet}
 	</DropdownMenu.Trigger>
 	<DropdownMenu.Portal>
-		<!-- preventScroll — bits-ui の Content だけが既定で true になっており (popper-layer-inner.svelte の
-		     `preventScroll ?? true`)、BodyScrollLock が body に pointer-events: none を置く
-		     (internal/body-scroll-lock.svelte.js)。これだと開いている間の 1 回目の押下が下のボタンに
-		     届かず、板への切り替えに 2 回かかる。Popover (PillPanel) と bits-ui 自身の入れ子メニューは
-		     どちらも false を明示しているので、それに揃える -->
+		<!-- preventScroll — bits-ui の Content だけ既定が true で、body に pointer-events: none が付き、
+		     開いている間の 1 回目の押下が下のボタンに届かない。Popover (PillPanel) と同じく false にする -->
 		<DropdownMenu.Content class="demo-menu" align="end" sideOffset={14} preventScroll={false}>
 			{#if canStart}
 				<DropdownMenu.Item class="demo-item" onSelect={startGuide}>デモを開始する</DropdownMenu.Item>

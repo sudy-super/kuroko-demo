@@ -32,8 +32,7 @@
 	// 完了を取り消せるのは、この完了で積まれたログが残っている間だけ
 	const doneLog = $derived(done ? doneLogOf(db, task.id) : undefined);
 
-	/* 優先度は Google ToDo リストと同じ星 1 つで示す (ユーザー裁定 2026-09-25)。星を付けると高、
-	   外すと既定の中。低と中は見た目では分けない (actions.ts の toggleStar) */
+	/* 優先度は Google ToDo リストと同じ星 1 つ。付けると高、外すと中。低と中は見た目では分けない */
 	const starred = $derived(task.priority === 'high');
 
 	const originLabel = $derived(`${ORIGIN_LABEL[task.origin]}から登録`);
@@ -41,9 +40,8 @@
 
 <!-- 行の中に押せるものが 4 つ (取っ手・チェック・星・メニュー) あるので、行全体を label にはしない。
      チェックと題名だけを label で包み、題名を押しても完了にできるようにする -->
-<!-- 行のどこをつかんでも並べ替えられる (ユーザー指示 2026-09-25)。押して離しただけなら
-     今までどおり完了になり、動かしたときだけ並べ替えになる (見分けは tasks/+page.svelte の grab)。
-     キーボードと 1 回押しの代わりはメニューの「上へ」「下へ」(WCAG 2.2 2.5.7) -->
+<!-- 行のどこをつかんでも並べ替えられる。動かさずに離せば完了 (見分けは tasks/+page.svelte の grab)。
+     キーボードと 1 回押しの代わりはメニューの「上へ」「下へ」(WCAG 2.5.7) -->
 <div class="list-row lg task-row" class:done={done} role="listitem" onpointerdown={ongrab}>
 	<label class="task-main">
 		<input type="checkbox" checked={done} aria-labelledby={titleId} onchange={() => toggleTask(task.id)} />
@@ -170,7 +168,7 @@
 		align-items: center;
 		gap: var(--sp-3);
 	}
-	/* 完了した行は文字を薄くし、取り消し線を引く (ユーザー指示 2026-09-25。Google ToDo リストと同じ) */
+	/* 完了した行は文字を薄くし、取り消し線を引く (Google ToDo リストと同じ) */
 	.task-row.done .task-title {
 		color: var(--ink-3);
 		text-decoration: line-through;

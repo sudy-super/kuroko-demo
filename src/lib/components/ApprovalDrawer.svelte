@@ -23,9 +23,8 @@
 			.slice(0, 3)
 	);
 
-	/* Today のカードを隠すのは縮み終わりまで (today/+page.svelte の expanded={ui.approvalCardHidden})。
-	   縮んで戻ったときは、見えるようにしてから焦点をカードへ戻す。その間に利用者が別の場所へ
-	   Tab で移っていたら奪わない (レビュー S2) */
+	/* Today のカードを隠すのは縮み終わりまで。縮んで戻ったら見えるようにしてから焦点をカードへ戻す
+	   (その間に利用者が Tab で移っていたら奪わない) */
 	function settled(morphed: boolean) {
 		ui.approvalCardHidden = false;
 		if (!morphed) return;
@@ -61,11 +60,8 @@
 				<ApprovalCard approval={a} origin="approval" />
 			{/each}
 		</div>
-		<!-- 社内あては拡大表示の中に開閉をさらに入れない (docs/research/card-expand-content.md「承認待ち」)。
-		     ただし畳むのをやめただけで、隠してよいわけではない。自動化を「常に確認」にすると
-		     社内あても承認待ちのまま溜まる (actions.ts の autoExecutes は level !== 'draft' が条件)
-		     ので、そのときは社外あてと同じ列に並べて承認できるようにする。
-		     自動で実行される設定のとき (送信中の 5 秒間だけここに現れる) は件数の注記で足りる -->
+		<!-- 社内あては拡大表示の中にさらに開閉を入れない (card-expand-content.md)。自動化が「常に確認」だと
+		     社内あても承認待ちに溜まるので、社外あてと同じ列で承認できるようにする -->
 		{#if internal.length}
 			{#if db.settings.automation === 'draft'}
 				<div class="ap-list" style="margin-top: var(--sp-4)">

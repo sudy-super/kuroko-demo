@@ -14,14 +14,12 @@
 		children,
 		...rest
 	}: {
-		/* Task 10t 修正ラウンド 2 — カードの種類。styles/today.css の環状配置がこれで位置を選ぶ
-		   (:nth-child だと枚数が変わったときに割り当てがずれるため。review task-10t-fix I1) */
+		/* カードの種類。styles/today.css の環状配置がこれで位置を選ぶ (:nth-child だと枚数が変わるとずれる) */
 		card: string;
 		title: string;
 		icon: string;
 		href?: string;
-		/* Task 10t 修正ラウンド 5 (review task-10t-fix4 I1) — 送信済みカードを外部の
-		   相手の画面 (別タブ)へ飛ばすために要る */
+		/* 送信済みカードを相手の画面 (別タブ) へ飛ばすのに要る */
 		target?: string;
 		rel?: string;
 		onclick?: (e: MouseEvent & { currentTarget: HTMLElement }) => void;

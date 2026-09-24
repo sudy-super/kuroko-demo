@@ -11,9 +11,7 @@
 
 	let { thread }: { thread: MessageThread } = $props();
 
-	// 社外宛は連絡先を省略しない (仕様 5.3)。メール以外の内部の ID は出さない (derived.ts の
-	// addressOf)。差出人の呼び方は threadSenderMeta に集約している (rereview-task-10p.md 新規 2、
-	// ThreadView と同じ考え方 — review-task-15.md M1)
+	// 社外宛は連絡先を省略しない (仕様 5.3)。メール以外の内部の ID は出さない (derived.ts の addressOf)
 	const identity = $derived(identityOf(db, thread.identityId));
 	const to = $derived(
 		identity ? `${threadSenderMeta(db, thread)} ${addressOf(identity)}` : thread.sender
@@ -26,8 +24,7 @@
 		{ tone: 'decline', label: '断る' },
 		{ tone: 'slots', label: '日程候補を入れる' }
 	] as const;
-	// 日程調整は人物に予定を結び付ける機能なので、人物が未登録のスレッドではチップ自体を
-	// 出さない (insertSlots() が fail-close で throw するようになったため — review-task-15.md C1)
+	// 人物が未登録のスレッドでは日程調整のチップを出さない (insertSlots() が throw する)
 	const chips = $derived(CHIPS.filter((c) => c.tone !== 'slots' || thread.personId));
 
 	let body = $state('');
@@ -38,11 +35,9 @@
 		null
 	);
 	let busy = $state(false);
-	// 読み上げ利用者にも待機中 → 提案完了を伝える常設の live region (ConnectStep.svelte と同じ
-	// 作り。要素ごと出し入れすると読まれない — review-task-15.md I4)
+	// 待機中 → 提案完了を読み上げに伝える常設の live region (要素ごと出し入れすると読まれない)
 	let liveText = $state('');
-	// 下書きの置き場は Db に無い (task-6-report.md 気になっている点 4)。
-	// 置き場を新設しないので、押しても未実装の案内だけ出す
+	// 下書きの置き場は Db に無いので、押しても未実装の案内だけ出す
 	let draftNotice = $state(false);
 	const id = $props.id();
 	let bodyEl: HTMLTextAreaElement | undefined = $state();
@@ -62,15 +57,13 @@
 
 	function accept() {
 		if (!proposal) return;
-		// 本文を差し替えるこの一点で下書きの有無を本文に合わせる。採用のたびに前の採用を
-		// 上書きするので、候補の無い本文に日程調整の効果文が付くことがない (review-task-15.md C2)
+		// 本文を差し替えるこの一点で下書きの有無を本文に合わせる (候補の無い本文に日程調整の効果文が付かない)
 		if (proposal.tone === 'slots') insertSlots(thread.id);
 		else dropSlotsDraft(thread.id);
 		body = proposal.body;
 		proposal = null;
-		// 採用すると提案カードが消えるので、その行に掛けた scrollIntoView (下の use:) は効かない。
-		// 1440x900 でも送信ボタンは折り返した本文の下 (scrollY 1126、文書 2026px) にあるため、
-		// 焦点を移すだけでは画面外に残る。次に押す送信の行まで運ぶ
+		// 採用すると提案カードが消え、その行の scrollIntoView は効かない。送信ボタンは本文の下で画面外に残るので、
+		// 次に押す送信の行まで運ぶ
 		bodyEl?.focus({ preventScroll: true });
 		sendEl?.scrollIntoView({ block: 'nearest' });
 	}
@@ -80,10 +73,8 @@
 		chipsEl?.querySelector('button')?.focus();
 	}
 
-	// 844x390 では提案カードが依頼バーとボトムナビの下から始まり、採用・破棄が隠れる
-	// (review-task-15.md M4)。カード全体は 390px の高さに収まらないので、押させたい操作の行を
-	// 視界へ運ぶ。バーの分は .proposal-foot の scroll-margin-bottom で避ける。
-	// behavior を指定しなければ既定の auto = 即時なので prefers-reduced-motion と食い違わない
+	// 低い窓では提案カードが依頼バーとボトムナビの下から始まるので、押させたい操作の行を視界へ運ぶ。
+	// behavior は既定の auto (即時) なので動きを減らす設定と食い違わない
 	function scrollIntoView(node: HTMLElement) {
 		node.scrollIntoView({ block: 'nearest' });
 	}
@@ -92,8 +83,7 @@
 		if (!body.trim()) return;
 		sendReply(thread.id, body, 'inbox');
 		ui.approvalDrawer = true;
-		// 承認を作り終えたので返信欄を空にする。連打しても同じ本文の承認が積まれない
-		// (review-task-15.md I1)
+		// 承認を作り終えたので返信欄を空にする (連打で同じ本文の承認が積まれない)
 		body = '';
 	}
 </script>
@@ -108,15 +98,12 @@
 			<button class="chip" aria-disabled={busy} onclick={() => pick(c.tone)}>{c.label}</button>
 		{/each}
 	</div>
-	<!-- 読み上げ用は要素を常設し、中身の文字だけ入れ替える (ConnectStep.svelte と同じ作り)。
-	     領域ごと出し入れすると aria-live は読まれない (review-task-15.md I4)。目で見る手がかりは
-	     別の行で出し入れする (aria-live を持たないので二重に読まれない) -->
+	<!-- 読み上げ用は要素を常設し中身だけ入れ替える (出し入れすると aria-live は読まれない)。
+	     目で見る手がかりは別の行で出し入れする -->
 	<p class="sr-only" aria-live="polite">{liveText}</p>
 	{#if busy}<p class="busy">KUROKO が返信案を作成しています…</p>{/if}
 
-	<!-- 提案カードが出ている間、主ボタンは「採用」に譲る (1 画面 1 主ボタン)。採用するまで本文へは
-	     何も反映されておらず、送信しても提案前の本文しか送れないため、まず本文を確定させる採用の
-	     ほうが今できる主な操作になる。送信は提案が無いときだけ主ボタンに戻す -->
+	<!-- 提案カードが出ている間、主ボタンは「採用」に譲る (1 画面 1 主ボタン)。採用するまで本文は変わらないので -->
 	{#if proposal}
 		<div
 			class="proposal"
@@ -130,9 +117,7 @@
 			</div>
 			<p class="reason">{proposal.reason}</p>
 			<p class="preview">{proposal.body}</p>
-			<!-- 幅が足りないと折り返すので、押せる 2 つを先に並べて説明だけを次の行に落とす。
-			     間に挟むと「破棄」が「採用」の真下に来て押し間違いやすい (1440x700 で実測)。
-			     注記はカード全体の説明として aria-describedby で結んでいる (review-task-15.md M3) -->
+			<!-- 押せる 2 つを先に並べて説明だけを次の行に落とす (間に挟むと「破棄」が「採用」の真下に来て押し間違う) -->
 			<div class="row proposal-foot" use:scrollIntoView>
 				<button class="btn pri sm" onclick={accept}>採用</button>
 				<button class="btn text sm" onclick={discard}>破棄</button>
@@ -144,8 +129,7 @@
 	<textarea {id} bind:this={bodyEl} class="textarea" rows="5" aria-label="返信の本文" bind:value={body}
 	></textarea>
 
-	<!-- 外部へ出る直前にもう一度宛先を見せる。ボタンと同じ行に置くと列の幅を奪い合って
-	     メールアドレスから省略されるので、行を分けて全文を出す (review-task-15.md I3) -->
+	<!-- 外部へ出る直前に宛先をもう一度見せる。ボタンと同じ行だと幅を奪い合って省略されるので行を分ける -->
 	<p class="to-again">→ {to}</p>
 
 	<div class="row send-row" bind:this={sendEl}>
@@ -237,9 +221,7 @@
 		/* メールアドレスは単語として切れないので、折り返せる位置を明示しないと列からはみ出す */
 		overflow-wrap: anywhere;
 	}
-	/* 携帯を横向きにした高さでは、本文欄の既定 (96px + 余白) とチップの行で画面をほぼ
-	   使い切り、返信案が画面の外に出る。app.css の同じ条件 (max-width: 960px) and
-	   (max-height: 480px) に揃えて詰める。resize で伸ばせるので上限ではない */
+	/* 携帯の横向きでは返信案が画面の外に出るので本文欄を詰める (app.css と同じ条件)。resize で伸ばせる */
 	@media (max-width: 960px) and (max-height: 480px) {
 		.reply {
 			gap: var(--sp-2);
@@ -250,9 +232,7 @@
 			min-height: 0;
 			height: 72px;
 		}
-		/* 押した人がまず確かめる日程候補 3 件 (本文の 3〜7 行目) までをスクロールなしで出す。
-		   本文欄を 72px まで削った分をここへ回している (review-task-15.md I6)。
-		   入れ子のスクロールなので overscroll-behavior が要る */
+		/* 日程候補 3 件までをスクロールなしで出す。入れ子のスクロールなので overscroll-behavior が要る */
 		.preview {
 			max-height: 180px;
 			overflow-y: auto;

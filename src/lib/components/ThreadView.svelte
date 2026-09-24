@@ -29,9 +29,8 @@
 	const stamp = (at: string) =>
 		`${rel(parse(at.slice(0, 10)), parse(db.seededOn))} ${at.slice(11, 16).replace(/^0/, '')}`;
 
-	/* indicators.md 3 節 — 一覧の行はアイコンだけにするかわりに、詳細側では理由を文言で常時出す
-	   (NN/g「アイコンには可視のラベル」をここで満たす)。ただし単語をスラッシュで並べると
-	   行から外したタグと同じ見え方になるので、読点でつないだ 1 文にする (audit 6) */
+	/* 一覧の行はアイコンだけなので、詳細では理由を文言で常時出す (NN/g「アイコンには可視のラベル」)。
+	   単語をスラッシュで並べずに読点でつないだ 1 文にする */
 	const why = $derived.by(() => {
 		const rs = REASON_ORDER.filter((r) => thread.reasons.includes(r));
 		if (!rs.length) return '';
@@ -39,8 +38,7 @@
 		return [...heads, REASON_SENTENCE[rs[rs.length - 1]][1]].join('、') + '。';
 	});
 
-	// 組み立ては threadSenderMeta に集約 (ThreadRow と同じ。rereview-task-10p.md 新規 2 —
-	// 生の thread.sender のままだと一覧の行と開いたスレッドの頭で表記が食い違う)
+	// 組み立ては threadSenderMeta (生の thread.sender だと一覧の行と表記が食い違う)
 	const senderMeta = $derived(threadSenderMeta(db, thread));
 </script>
 

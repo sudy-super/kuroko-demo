@@ -7,9 +7,8 @@
 	import OcrFlow from './OcrFlow.svelte';
 	import ProjectStatusIcon from './ProjectStatusIcon.svelte';
 
-	/** headingLevel — 人物名の見出しレベルは置かれる場所によって正しい階層が変わるので
-	    呼び出し側から渡す (rereview-task-10p.md 新規 1)。デスクトップの右欄は <h1>Inbox</h1>
-	    の下なので既定の 2、Drawer のシートは題名の <h3> の下なので 4 を渡す */
+	/** headingLevel — 置かれる場所で正しい階層が変わるので呼び出し側から渡す。
+	    デスクトップの右欄は <h1>Inbox</h1> の下なので既定の 2、Drawer のシートは <h3> の下なので 4 */
 	let {
 		identityId,
 		headingLevel = 2

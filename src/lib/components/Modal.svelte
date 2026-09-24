@@ -34,10 +34,8 @@
 	let leaving = $state(false);
 	let prev = false;
 	let timer: ReturnType<typeof setTimeout> | undefined;
-	// レビュー I3 — 枠 (上部バー・サイドナビ) がある画面 ((app) 配下) だけ trapFocus を外し、
-	// 焦点は inert (markOverlay 側) で本文から締め出す。枠が無い公開の日程調整画面では
-	// 締め出す本文が無いので、bits-ui 既定の閉じ込めをそのまま使う。$derived にすると描画の
-	// たびに document.querySelector を読むので、開いた時点の値で固定する
+	// 枠がある画面 ((app) 配下) だけ trapFocus を外し、焦点は inert (markOverlay) で本文から締め出す。
+	// 枠が無い公開画面は bits-ui 既定の閉じ込めのまま。開いた時点の値で固定する (毎回 querySelector しない)
 	let framed = $state(true);
 
 	$effect(() => {
@@ -119,10 +117,8 @@
 								</Dialog.Close>
 							</div>
 						{/if}
-						<!-- 中身だけスクロールさせる。題と操作の行は箱に留めるので、行数が増えても
-						     主ボタンが画面外へ出ない (仕様 5.14)。children を渡さない呼び出し
-						     (確認モーダルなど)でも description は送れないと、極端に低い窓で
-						     操作の行が箱の外へ出てしまうため常に描く -->
+						<!-- 中身だけスクロールさせ、主ボタンが画面外へ出ないようにする (仕様 5.14)。children が無くても
+						     description が送れるよう常に描く -->
 						<div class="modal-body">
 							{#if description}
 								<Dialog.Description>

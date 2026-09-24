@@ -36,11 +36,8 @@
 	let wasEditing = false;
 	let hadFocus = false;
 
-	/* 編集の開閉で bits-ui の Dialog が焦点をドロワーの閉じるボタンへ飛ばすので、自分で戻す。
-	   「編集」が無い状態 (送信中) に閉じたときはカードへ寄せて、ドロワーの外へ出さない。
-	   戻すのは閉じた時点で焦点が自分のカードの中にあった場合だけ (hadFocus)。下の自動クローズが
-	   加わって初めて「利用者が別のカードへ移った後に閉じる」経路ができた (d66ca4d には無い)ので、
-	   条件なしに戻すとその焦点を奪う */
+	/* 編集の開閉で bits-ui の Dialog が焦点をドロワーの閉じるボタンへ飛ばすので、自分で戻す (送信中はカードへ)。
+	   閉じた時点で焦点が自分のカードの中にあった場合だけ戻す。利用者が別のカードへ移っていたら奪わない */
 	$effect(() => {
 		if (editing) taEl?.focus();
 		else if (wasEditing && hadFocus) (editBtn ?? cardEl)?.focus();
@@ -97,8 +94,7 @@
 	{:else}
 		<!-- 本文は畳んでいる間も 3 行見せる (仕様 5.11)。bits-ui の Collapsible は閉じると
 		     中身を DOM から外すので使えない。行数で切り、押せる部分だけ自前で書く -->
-		<!-- 行数で切るのは内側の span。p で切ると内側の余白の中に 4 行目が覗くので、
-		     余白を削るしかなく、1 行の本文で下が詰まって見えた (ユーザー指摘 2026-09-24) -->
+		<!-- 行数で切るのは内側の span。p で切ると内側の余白に 4 行目が覗く -->
 		<p class="mailbody" id="{id}-body"><span class="ap-body" class:clamp={!bodyOpen} bind:this={bodyEl}>{a.body}</span></p>
 		{#if clipped}
 			<!-- buttons.md 観点B — 文字だけの操作 (最下位の重要度) -->
@@ -119,11 +115,8 @@
 			<button class="btn text sm" onclick={() => undoApproval(a.id)}>取り消す</button>
 		</div>
 	{:else if !editing}
-		<!-- approval-actions-apple.md — HIG Buttons「最も選ばれる操作に目立つ見た目を、残りに
-		     目立たない見た目を」「差は大きさではなく見た目で付ける」。主は塗り (borderedProminent)、
-		     残りは同じ形の薄い塗り (bordered)。承認カードは拡大パネル (モーダル) にしか出ないので
-		     Carbon の「ダッシュボードのカードは ghost」は当たらない (approval-actions-others.md 2-4)。
-		     却下はデータを消さないので HIG の destructive に当たらず、赤にしない -->
+		<!-- 主は塗り (borderedProminent)、残りは同じ形の薄い塗り (bordered)。差は大きさではなく見た目で付ける
+		     (HIG Buttons、approval-actions-apple.md)。却下はデータを消さないので destructive にせず赤にしない -->
 		<div class="row ap-foot">
 			<button class="btn pri sm" onclick={() => approve(a.id, origin)}>{primaryLabel}</button>
 			<button class="btn tint sm" onclick={startEdit} bind:this={editBtn}>編集</button>

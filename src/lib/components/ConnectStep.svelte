@@ -7,8 +7,7 @@
 	import type { Connection } from '$lib/types';
 	import Icon from '$lib/components/Icon.svelte';
 
-	/* 裁定 1・3 — 1 画面 1 サービス。id ごとに [id] ルート側で作り直す (key) ので、
-	   ここでは id が途中で変わることを考えない */
+	/* 1 画面 1 サービス。[id] ルート側が id ごとに作り直す (key) ので、id が途中で変わることは考えない */
 	let { id }: { id: Connection['id'] } = $props();
 
 	const conns = $derived(db.settings.connections);
@@ -44,8 +43,7 @@
 		}
 	}
 
-	/* 裁定 4 — ラベル自体を「接続する」→「接続中…」と変える (NN/g State-Switch Controls)。
-	   実際の認証は行わないが、即座に終わると押した実感がないので 600ms 待つ */
+	/* ラベル自体を「接続する」→「接続中…」と変える (NN/g State-Switch Controls)。即座に終わると押した実感がないので 600ms 待つ */
 	function link() {
 		if (busy || done) return;
 		busy = true;
@@ -58,9 +56,7 @@
 		);
 	}
 
-	/* ユーザー指摘 2026-09-23 — 「接続済み」の文言と「次へ」ボタンを消し、チェックの
-	   アイコンを一拍見せてから自動で次へ進む。今つないだ場合だけでなく、戻るボタンで
-	   既に済んだ画面に戻ってきた場合 (done が最初から true)も同じ経路で進める */
+	/* チェックのアイコンを一拍見せてから自動で次へ進む。戻るで既に済んだ画面に来た場合も同じ経路 */
 	$effect(() => {
 		if (!done) return;
 		status = `${name} 接続済み`;
