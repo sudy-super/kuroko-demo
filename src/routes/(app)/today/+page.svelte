@@ -55,12 +55,12 @@
 	// Task 11r (監査 1) — 携帯を横向きにした高さ (844x390 など)では、Bento の最初のカードが
 	// 縦に収まらず依頼バー / ボトムナビの裏に沈む。ボトムナビが出る幅 (960px 以下)に限り、
 	// 窓が低い (480px 以下)ときも折りたたみカードに切り替える (下は 1 行 56px の一覧なので、
-	// 最初の項目は沈まずに済む。app.css 側でオーブも合わせて畳む)
+	// 最初の項目は沈まずに済む。styles/voice.css 側でオーブも合わせて畳む)
 	const narrow = new MediaQuery('(max-width: 700px), (max-width: 960px) and (max-height: 480px)');
 	/* Task 10t 修正ラウンド 6 (review task-10t-fix5 I1) — 低い窓で送信済みカードが出ると、
 	   右の列は 3 枚になって ToDo の 3 行目と「ToDo をすべて見る」が入らない。CSS で伏せると
 	   題名の件数と行数が食い違ったまま説明が消えるので、出す行数そのものをここで減らし、
-	   差は「残り N 件」で説明する (app.css の @media (max-height: 760px) と対) */
+	   差は「残り N 件」で説明する (styles/today.css の @media (max-height: 760px) と対) */
 	const shortWindow = new MediaQuery('(min-width: 1101px) and (max-height: 760px)');
 	/* 2 行 + 「残り N 件」で 3 行分の高さに収まる。送信済みが無いときは右が 2 枚なので 3 行のまま */
 	const squeeze = $derived(shortWindow.current && sent.length > 0);
@@ -89,7 +89,7 @@
 	   同じ理由で 'auto' backdrop から除外される) */
 	let doneOrbCanvas: HTMLCanvasElement | null = $state(null);
 
-	/* 1101px 以上は環状配置 (app.css)。音声をその場で聞くのとカードのドラッグはこの幅だけ */
+	/* 1101px 以上は環状配置 (styles/today.css)。音声をその場で聞くのとカードのドラッグはこの幅だけ */
 	const ring = new MediaQuery('(min-width: 1101px)');
 	const reduced = new MediaQuery('(prefers-reduced-motion: reduce)');
 	const here = $derived(ring.current && !narrow.current && count > 0);
@@ -441,7 +441,7 @@
 			     (eye.md 3.2 の (3)。モックは承認待ちを右下に置いていた)。
 			     Task 10l — カードごとに上の余白を変えて縦位置をずらし、列に整列して見えない
 			     ようにした。重みは 2 枚目の上の余白をいちばん広く取ることで付ける
-			     (app.css の .today .bento > .card[data-card]、Task 10t 修正ラウンド 2 で
+			     (styles/today.css の .today .bento > .card[data-card]、Task 10t 修正ラウンド 2 で
 			     :nth-child から data-card に変えた) -->
 			<!-- ドラッグの押下はカードごとではなく入れ物でまとめて受ける (押下の役割は各カード自身が持つ) -->
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -569,7 +569,7 @@
 						{#each sent.slice(0, 1) as s (s.id)}
 							<div class="list-row">
 								<!-- 1101px で「田中 太郎様に候補を送信済み」が切れる (review task-10t-fix4 M3)。
-								     名前と文言を別の span に分け、名前の側だけ省略する (app.css の
+								     名前と文言を別の span に分け、名前の側だけ省略する (styles/today.css の
 								     .today .bento .list-row .sent-suffix) -->
 								<span class="tc-text sent-name">{personOf(db, s.personId)?.name}様</span>
 								<span class="tc-text sent-suffix">に候補を送信済み</span>

@@ -14,7 +14,7 @@
 		children,
 		...rest
 	}: {
-		/* Task 10t 修正ラウンド 2 — カードの種類。app.css の環状配置がこれで位置を選ぶ
+		/* Task 10t 修正ラウンド 2 — カードの種類。styles/today.css の環状配置がこれで位置を選ぶ
 		   (:nth-child だと枚数が変わったときに割り当てがずれるため。review task-10t-fix I1) */
 		card: string;
 		title: string;

@@ -6,7 +6,7 @@
 <svelte:head><title>見つかりません — KUROKO AI</title></svelte:head>
 
 <!-- ルートの層に置くので、サイドナビや依頼バーの無い公開側と同じ骨格を使う
-     ((public)/+layout.svelte と app.css の .public-*) -->
+     ((public)/+layout.svelte と styles/public.css の .public-*) -->
 <div class="public">
 	<div class="public-col">
 		<div class="public-main">

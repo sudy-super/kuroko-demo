@@ -1,5 +1,7 @@
 <script lang="ts">
 	import '../app.css';
+	import '../styles/public.css';
+	import '../styles/today.css';
 	import '../styles/palette.css';
 	import '../styles/voice.css';
 	import '../styles/liquid-glass.css';

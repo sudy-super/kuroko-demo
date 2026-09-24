@@ -127,7 +127,7 @@ export function pressGlass(onchange: (pressed: boolean) => void, settleMs = 360)
    README の「A <video> or <canvas> below the glass … To refract only that source,
    point at it」に沿い、`backdrop: ['auto', orbBackdrop(...)]` として 'auto' の上に
    専用の描き手を重ねる。オーブを `.bento` の外へ動かす案 (b) は、Today の環状配置が
-   カードとオーブの重なりに依存している (visual 2.8 の 6、app.css の .hole) ため取らない。
+   カードとオーブの重なりに依存している (visual 2.8 の 6、styles/today.css の .hole) ため取らない。
    getCanvas() は今握っている <canvas> を返す関数を呼び元 (today/+page.svelte) から渡す。
    id セレクタで探さないのは、オーブが onMount の後で非同期に canvas を作る
    (Orb.svelte の onCanvas) ため、解決のタイミングを合わせる必要が生まれるから。

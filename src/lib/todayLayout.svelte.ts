@@ -1,5 +1,5 @@
 /* Today の環状配置で、利用者がドラッグで置いたカードの位置 (docs/research/card-drag.md)。
-   持つのは既定の位置 (app.css の環状配置) からのずれ (px) だけで、既定の式は壊さない。
+   持つのは既定の位置 (styles/today.css の環状配置) からのずれ (px) だけで、既定の式は壊さない。
    座標はすべて .bento の左上を原点にした値 */
 
 export type Pt = { x: number; y: number };
