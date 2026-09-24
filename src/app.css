@@ -1006,6 +1006,18 @@ svg.i {
 .btn.text:active {
 	background: var(--press-accent);
 }
+/* HIG Buttons の bordered (薄い塗り) に当たる。.btn.pri と並べて、差を大きさではなく
+   塗りの濃さで付ける (approval-actions-apple.md) */
+.btn.tint {
+	background: var(--accent-soft);
+	color: var(--accent);
+}
+.btn.tint:hover {
+	background: rgba(26, 94, 203, 0.16);
+}
+.btn.tint:active {
+	background: rgba(26, 94, 203, 0.2);
+}
 /* 破壊的な操作。Carbon の danger は primary / tertiary / ghost の 3 種があり、これは
    tertiary (枠だけ) に当たる。主ボタンと同じ塗りにしないのが要点 (buttons.md 観点 A 原則 6)。
    文言は「削除」「キャンセルする」のような具体的な動詞にする (同原則、資料 16) */

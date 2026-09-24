@@ -79,7 +79,7 @@
 	<div class="row ap-head">
 		<ApprovalIcon kind={a.kind} />
 		<!-- ApprovalIcon (何を送るか) とは別の記号にして、隣に並んでも区分と種類が混ざらないようにする。
-		     区分の形: 外部送信=警告の三角/社内=盾/低リスク=鍵。RiskIcon.svelte -->
+		     区分の形: 外部送信=地球儀/社内=盾/低リスク=鍵。RiskIcon.svelte -->
 		<RiskIcon risk={a.risk} size={20} />
 	</div>
 	<h3 class="ap-title">{a.title}</h3>
@@ -89,11 +89,10 @@
 	{#if editing}
 		<textarea class="textarea ap-edit" rows="5" aria-label="本文を編集" bind:value={draft} bind:this={taEl}
 		></textarea>
-		<!-- 編集はカードの中で開くだけで、Carbon の例外 (別フローが被さる temporary flow) に当たらない。
-		     複数のカードを同時に編集できるので保存も塗りにしない (上の ap-foot と同じ根拠) -->
-		<div class="row ap-edit-foot">
-			<button class="btn sec sm" onclick={saveEdit}>保存</button>
-			<button class="btn text sm" onclick={closeEdit}>取り消す</button>
+		<!-- 下の ap-foot と同じ組み合わせ (主は塗り、残りは薄い塗り) -->
+		<div class="row ap-foot">
+			<button class="btn pri sm" onclick={saveEdit}>保存</button>
+			<button class="btn tint sm" onclick={closeEdit}>取り消す</button>
 		</div>
 	{:else}
 		<!-- 本文は畳んでいる間も 3 行見せる (仕様 5.11)。bits-ui の Collapsible は閉じると
@@ -120,13 +119,15 @@
 			<button class="btn text sm" onclick={() => undoApproval(a.id)}>取り消す</button>
 		</div>
 	{:else if !editing}
-		<!-- buttons.md 観点A 原則 3 — カードが縦に並ぶ画面では塗りの主ボタンを使わない
-		     (research-repeated-primary.md の Carbon「Ghost buttons in productive cards」)。
-		     序列は枠の有無で付ける。24px 間隔で 枠付き → 文字 → 文字 の順 -->
+		<!-- approval-actions-apple.md — HIG Buttons「最も選ばれる操作に目立つ見た目を、残りに
+		     目立たない見た目を」「差は大きさではなく見た目で付ける」。主は塗り (borderedProminent)、
+		     残りは同じ形の薄い塗り (bordered)。承認カードは拡大パネル (モーダル) にしか出ないので
+		     Carbon の「ダッシュボードのカードは ghost」は当たらない (approval-actions-others.md 2-4)。
+		     却下はデータを消さないので HIG の destructive に当たらず、赤にしない -->
 		<div class="row ap-foot">
-			<button class="btn sec sm" onclick={() => approve(a.id, origin)}>{primaryLabel}</button>
-			<button class="btn text sm" onclick={startEdit} bind:this={editBtn}>編集</button>
-			<button class="btn text sm" onclick={() => reject(a.id, origin)}>却下</button>
+			<button class="btn pri sm" onclick={() => approve(a.id, origin)}>{primaryLabel}</button>
+			<button class="btn tint sm" onclick={startEdit} bind:this={editBtn}>編集</button>
+			<button class="btn tint sm" onclick={() => reject(a.id, origin)}>却下</button>
 		</div>
 	{/if}
 </article>
@@ -173,10 +174,10 @@
 	.ap-edit {
 		margin-top: var(--sp-1);
 	}
-	.ap-edit-foot,
+	/* 塗りの塊どうしは、文字だけのボタンのように広い余白で区切らなくても分かれて見える */
 	.ap-foot {
 		margin-top: var(--sp-1);
-		gap: var(--sp-6);
+		gap: var(--sp-2);
 		flex-wrap: wrap;
 	}
 	.ap-sending {
