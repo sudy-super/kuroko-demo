@@ -12,7 +12,7 @@
 	let bodyOpen = $state(false);
 	/* 3 行で収まる本文には開くものが無いので「本文を全部見る」を出さない。
 	   行数は文字幅に依るので、描かれた高さ (scrollHeight) と見えている高さで判断する */
-	let bodyEl: HTMLParagraphElement | undefined = $state();
+	let bodyEl: HTMLSpanElement | undefined = $state();
 	let clipped = $state(false);
 	$effect(() => {
 		// a.body を読んで、編集で本文が変わったときも測り直す (3 行のままだと下の観測が動かない)
@@ -97,7 +97,9 @@
 	{:else}
 		<!-- 本文は畳んでいる間も 3 行見せる (仕様 5.11)。bits-ui の Collapsible は閉じると
 		     中身を DOM から外すので使えない。行数で切り、押せる部分だけ自前で書く -->
-		<p class="mailbody" class:clamp={!bodyOpen} id="{id}-body" bind:this={bodyEl}>{a.body}</p>
+		<!-- 行数で切るのは内側の span。p で切ると内側の余白の中に 4 行目が覗くので、
+		     余白を削るしかなく、1 行の本文で下が詰まって見えた (ユーザー指摘 2026-09-24) -->
+		<p class="mailbody" id="{id}-body"><span class="ap-body" class:clamp={!bodyOpen} bind:this={bodyEl}>{a.body}</span></p>
 		{#if clipped}
 			<!-- buttons.md 観点B — 文字だけの操作 (最下位の重要度) -->
 			<button
@@ -149,16 +151,13 @@
 		color: var(--ink-2);
 		font-size: 13px;
 	}
-	/* 初期表示は 3 行まで (仕様 5.11)。overflow: hidden が切るのは内側の余白の外側なので、
-	   下の余白を残すと 4 行目の上端がそこに覗いて中途半端に切れて見える (1440x700 で実測)。
-	   畳んでいる間だけ下の余白を 0 にし、間隔は下の「本文を全部見る」の上の余白が持つ */
-	.mailbody.clamp {
+	/* 初期表示は 3 行まで (仕様 5.11) */
+	.ap-body.clamp {
 		display: -webkit-box;
 		line-clamp: 3;
 		-webkit-line-clamp: 3;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
-		padding-bottom: 0;
 	}
 	.ap-toggle {
 		align-self: flex-start;
