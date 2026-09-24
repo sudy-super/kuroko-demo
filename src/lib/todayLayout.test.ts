@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { orbPush, rubber, settle, shift, shove } from './todayLayout.svelte';
+import { orbPush, settle, shift, shove } from './todayLayout.svelte';
 
 const orb = { x: 440, y: 235 };
 const r = 107.5;
@@ -15,11 +15,6 @@ const dist = (b: typeof card) =>
 describe('Today のカードの配置', () => {
 	it('離れていれば押し戻さない', () => {
 		expect(orbPush(card, orb, r)).toEqual({ x: 0, y: 0 });
-	});
-	it('ドラッグ中の入り込みは 24px で頭打ち', () => {
-		const deep = shift(card, { x: 200, y: 0 });
-		const p = rubber(deep, orb, r);
-		expect(r + 8 - dist(shift(deep, p))).toBeCloseTo(24, 5);
 	});
 	it('球の真上に落とすと、半径 + 8px の外に置く', () => {
 		const to = settle(card, { x: 255, y: 0 }, { orb, r, box, others: [] })!;

@@ -51,15 +51,6 @@ export function orbPush(b: Box, orb: Pt, r: number): Pt {
 	].reduce((a, c) => (len(c) < len(a) ? c : a));
 }
 
-/** ドラッグ中の押し戻し。禁止域へ入り込んだ深さ p のうち min(p x 0.3, 24) だけを見せる (ラバーバンド) */
-export function rubber(b: Box, orb: Pt, r: number): Pt {
-	const push = orbPush(b, orb, r);
-	const p = len(push);
-	if (!p) return push;
-	const k = (p - Math.min(p * 0.3, 24)) / p;
-	return { x: push.x * k, y: push.y * k };
-}
-
 const into = (lo: number, size: number, min: number, max: number) =>
 	lo < min ? min - lo : lo + size > max ? max - (lo + size) : 0;
 

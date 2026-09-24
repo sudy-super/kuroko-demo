@@ -35,7 +35,6 @@
 		saveLayout,
 		resetLayout,
 		orbPush,
-		rubber,
 		settle,
 		shove,
 		shift,
@@ -296,10 +295,12 @@
 			drag.started = true;
 			drag.el.setPointerCapture(drag.id);
 		}
-		// つかんだ点を保ったままポインタに 1 対 1 で付け、球の禁止域の中だけ抵抗を付ける
+		/* つかんだ点を保ったままポインタに 1 対 1 で付ける。球の上も抵抗なく通り抜けられるが、
+		   置くことはできない: 離したときに球の上なら finish の settle が球の外の近い空きへ運ぶ
+		   (ユーザー指示 2026-09-25。以前はドラッグ中から球の縁で押し戻していた) */
 		drag.raw = { x: drag.from.x + dx, y: drag.from.y + dy };
 		const { base, cards, f } = field(drag.card);
-		shown = plus(drag.raw, rubber(shift(base, drag.raw), f.orb, f.r));
+		shown = drag.raw;
 		/* 重ねられたカードはつるんと退く。調査 (card-drag.md) の結論は「他のカードは動かさない」
 		   だったが、ユーザー指示 2026-09-24 で調査の結論を覆した */
 		for (const [k, d] of Object.entries(shove(shift(base, shown), cards, f))) {
