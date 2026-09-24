@@ -6,7 +6,9 @@
 	/* indicators.md「メール一覧の出所」の考え方を承認の行にも当てる。
 	   ここで記号にするのは「何を送るか」の種類だけ。区分 (外部送信 / 社内 / 低リスク) は
 	   Atlassian の Lozenge のまま文言で出す。置き場所は ApprovalDrawer と Today の承認カード */
-	let { kind, size = 16 }: { kind: ApprovalKind; size?: 16 | 20 } = $props();
+	/* 20px は SourceIcon と同じ理由 (LINE のブランドアイコンの最小。ユーザー裁定 2026-09-24) */
+	let { kind }: { kind: ApprovalKind } = $props();
+	const size = 20;
 
 	const MARK: Record<ApprovalKind, string> = {
 		mail: 'b-gmail',

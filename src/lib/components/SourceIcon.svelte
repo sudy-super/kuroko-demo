@@ -5,7 +5,10 @@
 
 	/* indicators.md「メール一覧の出所」— 出所は文言のタグではなくブランドの記号 1 個。
 	   KUROKO だけは外部サービスではないので、アプリ内の記号 (ic-spark) を当てる */
-	let { source, size = 16 }: { source: Source; size?: 16 | 20 } = $props();
+	/* ブランドの記号は 20px にする。LINE のブランドアイコンの最小は PC で 20px
+	   (https://www.line.me/ja/logo、ユーザー裁定 2026-09-24)。Gmail・Slack も同じ大きさに揃える */
+	let { source }: { source: Source } = $props();
+	const size = 20;
 
 	const MARK: Record<Source, string> = {
 		gmail: 'b-gmail',

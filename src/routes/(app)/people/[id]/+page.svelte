@@ -155,7 +155,7 @@
 				{#each shown(history, 'history') as h (h.href + h.at)}
 					<a class="list-row" href={h.href}>
 						<Tip text={h.label}>
-							<Icon name={HISTORY_ICON[h.kind]} size={16} label={h.label} class="ph-history-icon" />
+							<Icon name={HISTORY_ICON[h.kind]} size={20} label={h.label} class="ph-history-icon" />
 						</Tip>
 						<span class="people-ident">{h.title}</span>
 						<span class="num muted">{day(h.at)}</span>

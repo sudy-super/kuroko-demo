@@ -77,7 +77,7 @@
 <!-- tabindex は編集を閉じたときの焦点の受け皿 (上の $effect)。tab では止まらない -->
 <article class="card ap-card" aria-label={a.title} tabindex="-1" bind:this={cardEl}>
 	<div class="row ap-head">
-		<ApprovalIcon kind={a.kind} size={20} />
+		<ApprovalIcon kind={a.kind} />
 		<!-- ApprovalIcon (何を送るか) とは別の記号にして、隣に並んでも区分と種類が混ざらないようにする。
 		     区分の形: 外部送信=警告の三角/社内=盾/低リスク=鍵。RiskIcon.svelte -->
 		<RiskIcon risk={a.risk} size={20} />
