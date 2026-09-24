@@ -4,6 +4,7 @@
 	import { badgeCount, queue } from '$lib/derived';
 	import { PRIMARY, UTILITY, isActive, guideTarget, type NavItem } from '$lib/nav';
 	import Icon from './Icon.svelte';
+	import Orb from './Orb.svelte';
 
 	const inbox = $derived(queue(db).length);
 	const target = $derived(db.demo.guide.on ? guideTarget(db) : null);
@@ -31,7 +32,7 @@
 	<!-- ユーザー指示 2026-09-24 — 格納ボタン (.app 直下の .side-toggle) の右に並ぶロゴ行。
 	     サイドナビの子として一緒に格納される。Today への近道を兼ねる -->
 	<a class="nav-logo" href="/today" aria-label="KUROKO AI (Today へ)">
-		<Icon name="ic-kuroko" size={24} />
+		<span class="nav-logo-orb" aria-hidden="true"><Orb size={58} sparks={false} /></span>
 		<span>KUROKO AI</span>
 	</a>
 	<hr class="nav-sep" />

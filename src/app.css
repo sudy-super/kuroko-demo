@@ -533,6 +533,26 @@ svg.i {
 .nav-logo:focus-visible {
 	outline-offset: -2px;
 }
+/* ユーザー指示 2026-09-24 — ロゴは小さいオーブ。sparks を切るのは 28px では破片が点の雑音に
+   なるため。球の直径は箱の48% (shader.ts の R0)なので、直径28pxにするにはオーブの箱を
+   28 / 0.48 ≈ 58px で描く必要がある。ロゴ行 (44px)からはみ出すため、この入れ物は見た目の
+   直径28pxに保ち、中の .orb (58px)だけ中央に重ねてはみ出させる。光彩が行の外に出るのは
+   構わない (overflow: visible)。描画面 (WebGL context)は1つ増えるが、Todayでも6つで
+   ブラウザの上限 (1ページおよそ16)に余裕がある */
+.nav-logo-orb {
+	position: relative;
+	width: 28px;
+	height: 28px;
+	flex: none;
+	overflow: visible;
+	pointer-events: none;
+}
+.nav-logo-orb .orb {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	translate: -50% -50%;
+}
 .nav-item {
 	position: relative;
 	display: flex;
