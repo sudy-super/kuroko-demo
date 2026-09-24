@@ -473,10 +473,6 @@
 							</div>
 						{/each}
 						{#if ap.length > 3}<p class="muted">残り {ap.length - 3} 件</p>{/if}
-						<!-- カード全体が承認ドロワーを開くので、中は入れ子のボタンにしない。
-						     塗りの主ボタンは画面に 1 つ (buttons.md 観点 A 原則 3)。Today でそれに当たるのは
-						     下端の依頼バーの送信ボタンなので、ここは副ボタンにする -->
-						<div class="row tc-foot"><span class="btn sec sm">確認する</span></div>
 					</TodayCard>
 				{/if}
 
