@@ -2,11 +2,10 @@
 	import type { MessageThread } from '$lib/types';
 	import { REASON_ORDER } from '$lib/types';
 	import { db } from '$lib/store.svelte';
-	import { personOf, threadSenderMeta } from '$lib/derived';
+	import { threadSenderMeta } from '$lib/derived';
 	import { parse, rel } from '$lib/dates';
 	import SourceIcon from './SourceIcon.svelte';
 	import ReasonIcon from './ReasonIcon.svelte';
-	import Avatars from './Avatars.svelte';
 
 	let {
 		thread,
@@ -26,8 +25,6 @@
 	// 10p 修正ラウンド 1 (Minor 1) — 実際は返信数ではなくスレッドのやり取りの総数。
 	// 変数名も表示も「返信」に寄っていたので、読み上げに「のやり取り」を足して数の意味を補う
 	const replies = $derived(db.messages.filter((m) => m.threadId === thread.id).length);
-	// Task 10p (参考の良い点 7) — 送信者が登録済みの人物なら頭文字の丸を出す (未登録は空のまま)
-	const person = $derived(personOf(db, thread.personId));
 </script>
 
 <a
@@ -51,7 +48,6 @@
 			{#each reasons as r (r)}<ReasonIcon reason={r} />{/each}
 		</span>
 	</span>
-	{#if person}<Avatars people={[person]} />{/if}
 </a>
 
 <style>
