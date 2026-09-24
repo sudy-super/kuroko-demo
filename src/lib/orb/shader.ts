@@ -10,7 +10,6 @@ const float PI = 3.14159265;
 const float R0 = ${R0};
 const vec3 C_EDGE  = vec3(0.071, 0.251, 0.604); /* #12409a 球の外周を締める深い青 */
 const vec3 C_DEEP  = vec3(0.106, 0.384, 0.839); /* #1b62d6 */
-const vec3 C_TOP   = vec3(0.165, 0.435, 0.878); /* #2a6fe0 */
 const vec3 C_MID   = vec3(0.184, 0.486, 0.965); /* #2f7cf6 */
 const vec3 C_SOFT  = vec3(0.310, 0.584, 1.000); /* #4f95ff */
 const vec3 C_LIGHT = vec3(0.612, 0.769, 1.000); /* #9cc4ff */

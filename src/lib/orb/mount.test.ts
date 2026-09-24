@@ -36,8 +36,6 @@ const fakeOrb = () => {
 		orb,
 		api: {
 			start: () => void orb.started++,
-			stop: () => {},
-			resize: () => {},
 			destroy: () => void orb.destroyed++
 		} as Orb
 	};
@@ -92,8 +90,6 @@ describe('オーブの出し入れ', () => {
 		const h = host((_canvas, onFail) => ({
 			// renderer.ts の fail() と同じく、resize() の失敗は onFail で同期に返ってくる
 			start: () => onFail(new Error('framebuffer が不完全')),
-			stop: () => {},
-			resize: () => {},
 			destroy: () => {}
 		}));
 		orbLifecycle(h).acquire();

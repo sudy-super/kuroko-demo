@@ -26,7 +26,7 @@ export type OrbOptions = {
 	/** 描画面を失ったら false、戻ったら true。呼び出し側は失っている間 canvas を隠す (Task 10i) */
 	onLive?: (live: boolean) => void;
 };
-export type Orb = { start(): void; stop(): void; destroy(): void; resize(): void };
+export type Orb = { start(): void; destroy(): void };
 
 type GL = WebGLRenderingContext;
 type Target = { fb: WebGLFramebuffer; tex: WebGLTexture; w: number; h: number };
@@ -488,8 +488,6 @@ export function createOrb(canvas: HTMLCanvasElement, opts: OrbOptions): Orb | nu
 
 	return {
 		start() { running = true; t0 = performance.now(); resize(); kick(); },
-		stop() { running = false; halt(); },
-		resize,
 		destroy
 	};
 }
