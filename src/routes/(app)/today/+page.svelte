@@ -29,14 +29,7 @@
 	import DoneScreen from '$lib/components/DoneScreen.svelte';
 	import { glass, CARD, orbBackdrop } from '$lib/glass';
 	import Icon from '$lib/components/Icon.svelte';
-	import {
-		hearing,
-		openMeter,
-		smoothLevel,
-		ORB_GROW,
-		ORB_PULSE_MIN,
-		ORB_PULSE_MAX
-	} from '$lib/voice.svelte';
+	import { hearing, ORB_GROW, ORB_PULSE_MIN, ORB_PULSE_MAX } from '$lib/voice.svelte';
 	import {
 		layout,
 		saveLayout,
@@ -119,43 +112,20 @@
 	   1 以下で使う。canvas を 1 より大きく引き伸ばすとぼやけるため (voice-orb.md の実装の注意) */
 	const drawSize = $derived(orbSize * ORB_GROW * ORB_PULSE_MAX);
 	const baseScale = $derived(orbSize / drawSize);
-	/** 声の大きさ (0〜1、平滑化済み) */
-	let level = $state(0);
 	/** 画面外へ退くときの各カードの移動量 */
 	let leave: Record<string, Pt> = $state({});
 	/** 状態の文言を置く横の位置 (オーブの中心) */
 	let voiceX = $state(0);
 
+	// 声の大きさを求める処理は hearing.level に移した (VoiceActions の波形とここで共有するため。
+	// ユーザー指示 2026-09-24)。ここは開始・終了とカードの退避だけ受け持つ
 	$effect(() => {
 		if (!voicing) return;
 		untrack(() => {
 			hearing.start();
 			leave = retreat();
 		});
-		let meter: Awaited<ReturnType<typeof openMeter>> = null;
-		let dead = false;
-		// 許可が無い・取れないときは null のまま。文字が増えるたびに脈打つ形で代える
-		openMeter().then((m) => (dead ? m?.close() : (meter = m)));
-		let last = performance.now();
-		let seen = 0;
-		let v = 0;
-		let raf = requestAnimationFrame(function tick(now) {
-			let target = 0;
-			if (hearing.live && meter) target = meter.read();
-			else if (hearing.heard.length > seen) v = Math.max(v, 0.6);
-			seen = hearing.heard.length;
-			v = smoothLevel(v, target, now - last);
-			last = now;
-			level = v;
-			raf = requestAnimationFrame(tick);
-		});
-		return () => {
-			dead = true;
-			cancelAnimationFrame(raf);
-			meter?.close();
-			hearing.stop();
-			level = 0;
-		};
+		return () => hearing.stop();
 	});
 
 	/* 各カードを「オーブの中心 → カードの中心」の向きに、画面の外へ出るまで動かす量 */
@@ -612,9 +582,9 @@
 						<div
 							class="voice-pulse"
 							style:scale={voicing && !reduced.current && !hearing.thinking
-								? ORB_PULSE_MIN + (ORB_PULSE_MAX - ORB_PULSE_MIN) * level
+								? ORB_PULSE_MIN + (ORB_PULSE_MAX - ORB_PULSE_MIN) * hearing.level
 								: 1}
-							style:opacity={voicing && reduced.current ? 0.85 + 0.15 * level : 1}
+							style:opacity={voicing && reduced.current ? 0.85 + 0.15 * hearing.level : 1}
 						>
 							<Orb size={drawSize} onCanvas={(c) => (holeOrbCanvas = c)} />
 						</div>

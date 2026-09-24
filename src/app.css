@@ -3230,19 +3230,20 @@ section.tc .list-row:not(label):not(a):hover {
 	line-height: 1.6;
 	text-align: center;
 }
-/* 話している間の操作 (VoiceActions.svelte)。ユーザー指示 2026-09-24 — アイコンだけの丸いボタン
-   2 個。左が閉じる (終わらせる)、右が送る (進める)。Apple の Siri・音声入力と同じ並び */
+/* 話している間の操作 (VoiceActions.svelte)。ユーザー指示 2026-09-24 — ChatGPT の音声入力
+   (Dictation) の形。横長の 1 本の並びに、左端に閉じる、中央に波形、右に止める、右端に送る */
 .voice-acts {
 	display: flex;
 	align-items: center;
-	justify-content: center;
-	gap: var(--sp-6);
+	gap: var(--sp-3);
+	width: 100%;
 }
 .voice-act {
 	display: inline-grid;
 	place-items: center;
-	width: 56px;
-	height: 56px;
+	flex: none;
+	width: 44px;
+	height: 44px;
 	padding: 0;
 	border: 0;
 	border-radius: 50%;
@@ -3250,11 +3251,13 @@ section.tc .list-row:not(label):not(a):hover {
 	transition: background var(--d-fast) var(--ease-out);
 }
 /* 依頼バーのガラスのピルの上に乗るので、ガラスは重ねず薄い塗りだけにする (枠・影なし) */
-.voice-act-close {
+.voice-act-close,
+.voice-act-stop {
 	background: var(--hover);
 	color: var(--ink);
 }
-.voice-act-close:hover {
+.voice-act-close:hover,
+.voice-act-stop:hover {
 	background: var(--press);
 }
 .voice-act-send {
@@ -3271,12 +3274,44 @@ section.tc .list-row:not(label):not(a):hover {
 	opacity: 0.4;
 	cursor: default;
 }
+/* 中央の波形。残りの幅いっぱいに伸ばし、はみ出す点は切る。右端が最新で左へ流れていく
+   (VoiceActions.svelte の levels) */
+.voice-wave {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 6px;
+	height: 44px;
+	overflow: hidden;
+}
+.voice-dot {
+	flex: none;
+	width: 4px;
+	height: 4px;
+	border-radius: 50%;
+	background: var(--ink-2);
+}
 /* Today の環状配置で聞いている間、依頼バーの中身をこの操作に差し替える (KurokoBar.svelte) */
 .chatbar .voice-bar {
 	display: flex;
 	flex: 1;
 	align-items: center;
 	justify-content: center;
+}
+/* 全画面の覆い (VoiceOverlay.svelte)。依頼バーと同じガラスのピルの見た目を、オーブと
+   聞き取った文字の下に置く。ユーザー指示 2026-09-24 — ChatGPT の音声入力の形 */
+.voice-acts-wrap {
+	display: flex;
+	align-items: center;
+	width: min(560px, 100% - 32px);
+	height: var(--chatbar-h);
+	padding: 0 var(--sp-2) 0 var(--sp-5);
+	border-radius: var(--r-pill);
+	background: var(--glass-panel);
+	-webkit-backdrop-filter: var(--blur-m);
+	backdrop-filter: var(--blur-m);
+	box-shadow: var(--rim), var(--e-glass);
 }
 
 /* 完了画面。球の下側がカードに隠れてガラスのぼかす対象になるよう、画の 3 割を重ねる。

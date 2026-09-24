@@ -26,7 +26,11 @@ class Hearing {
 	live = $state(false);
 	/** 送った直後。Today は「考えています」を 1 拍見せてから会話の画面へ移る */
 	thinking = $state(false);
+	/** 聞いている間の声の大きさ (0〜1、平滑化済み)。Today のオーブと VoiceActions の波形が共有する
+	    (元は today/+page.svelte 側にあった。ユーザー指示 2026-09-24 — 2 か所に書かないためここへ移した) */
+	level = $state(0);
 	#stop: (() => void) | null = null;
+	#stopLevel: (() => void) | null = null;
 
 	/* 実物が無ければ疑似再生に落とす。握りつぶしではなく、この画面の代替の入力 (計画 Task 23)。
 	   どちらの道でも heard に文字が積まれ、以降の扱いは変わらない */
@@ -38,13 +42,17 @@ class Hearing {
 		const Ctor = (window as unknown as { webkitSpeechRecognition?: new () => Recognizer })
 			.webkitSpeechRecognition;
 		this.#stop = Ctor ? this.#recognize(Ctor) : this.#playDemo();
+		this.#stopLevel = this.#meterLevel();
 	}
 
 	/** 閉じたら必ず止める (マイクを握ったままにしない) */
 	stop() {
 		this.#stop?.();
 		this.#stop = null;
+		this.#stopLevel?.();
+		this.#stopLevel = null;
 		this.live = false;
+		this.level = 0;
 	}
 
 	/** delay は「考えています」を見せる長さ。Today のその場の聞き取りだけが 400ms を渡す */
@@ -89,6 +97,36 @@ class Hearing {
 		return () => {
 			rec.onresult = rec.onend = rec.onerror = null;
 			rec.stop();
+		};
+	}
+
+	/* マイクの声の大きさを毎フレーム level へ積む (元は today/+page.svelte の $effect)。
+	   許可が無い・取れないときは null のままで、文字が増えるたびに脈打つ形に代える */
+	#meterLevel() {
+		let meter: Awaited<ReturnType<typeof openMeter>> = null;
+		let dead = false;
+		openMeter().then((m) => (dead ? m?.close() : (meter = m)));
+		let last = performance.now();
+		let seen = 0;
+		let v = 0;
+		// 名前付き関数式だと自己再帰の tick が bind 前を指すので、束縛を保つため矢印関数にする
+		let raf: number;
+		const tick = (now: number) => {
+			let target = 0;
+			// live が落ちたあと (認識の onend) も stop() までは音量計は生きているので、live を見て切る
+			if (this.live && meter) target = meter.read();
+			else if (this.heard.length > seen) v = Math.max(v, 0.6);
+			seen = this.heard.length;
+			v = smoothLevel(v, target, now - last);
+			last = now;
+			this.level = v;
+			raf = requestAnimationFrame(tick);
+		};
+		raf = requestAnimationFrame(tick);
+		return () => {
+			dead = true;
+			cancelAnimationFrame(raf);
+			meter?.close();
 		};
 	}
 }

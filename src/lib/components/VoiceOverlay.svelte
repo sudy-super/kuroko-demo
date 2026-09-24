@@ -44,7 +44,10 @@
 			     文言は画面には出さず読み上げだけに残す -->
 			<p class="voice-state sr-only" role="status">{hearing.live ? '聞いています…' : '聞き取りました'}</p>
 			<p class="voice-heard">{hearing.heard}</p>
-			<VoiceActions />
+			<!-- 依頼バーと同じガラスのピルに入れる (ユーザー指示 2026-09-24 — ChatGPT の音声入力の形) -->
+			<div class="voice-acts-wrap">
+				<VoiceActions />
+			</div>
 		</Dialog.Content>
 	</Dialog.Portal>
 </Dialog.Root>
