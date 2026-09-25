@@ -32,10 +32,12 @@
 		ToDo: 'ic-todo'
 	};
 
-	function close() {
-		text = '';
-		ui.palette = false;
-	}
+	// 閉じ方 (選択・Esc・⌘K・遷移) を問わず、次に開いたときは空から始める
+	$effect(() => {
+		if (!ui.palette) text = '';
+	});
+
+	const close = () => (ui.palette = false);
 
 	function open(href: string) {
 		close();
@@ -114,10 +116,7 @@
 				class="iconbtn"
 				title="音声で依頼"
 				aria-label="音声で依頼"
-				onclick={() => {
-					ui.palette = false;
-					ui.voice = true;
-				}}
+				onclick={() => (close(), (ui.voice = true))}
 			>
 				<Icon name="ic-mic" size={20} />
 			</button>

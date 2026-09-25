@@ -9,14 +9,16 @@ import {
 import { whileVisible } from './visible';
 
 /* ライブラリは描くたびに背景を GPU から読み戻し (getImageData)、光の向きと塗りの明暗を決める。
-   ここの材質は反射 (rim / highlight) を 0、tintTone を 'light' に固定しているので、その結果は絵に
-   一切出ない。読み戻しは ⌘K の開閉で 1 回 50ms を超え、動きがカクつく元になっていた */
-const probeless = LiquidGlassWebGLV2.prototype as unknown as Record<string, unknown>;
-probeless.updateLightField = function (this: { lightFieldDirty: boolean; lightPixels: null }) {
-	this.lightFieldDirty = false;
-	this.lightPixels = null;
-};
-probeless.requestLightField = () => true;
+   下の材質は反射を 0、tintTone を 'light' に固定しているので結果は絵に出ず、覆いの開閉を止めるだけ。
+   ponytail: 材質に反射か tintTone 'auto' を足すなら、この差し替えを外す */
+Object.assign(LiquidGlassWebGLV2.prototype, {
+	updateLightField(this: { lightFieldDirty: boolean; lightPixels: null }) {
+		this.lightFieldDirty = false;
+		this.lightPixels = null;
+	},
+	// true は「読み戻しを引き受けた」。false だとその場で同期の読み戻しに切り替わる
+	requestLightField: () => true
+});
 
 /* 反射の無い Liquid Glass の材質。面の中はほぼ素通しで、縁の帯だけ像を曲げる。
    hairline は背景の明暗で白か黒を選ぶ輪郭線で、光を映すものではないので残す。
@@ -196,8 +198,8 @@ function mount(
 			onContextRestored: () => node.setAttribute('data-liquid-glass', 'webgl')
 		});
 		watcher?.observe(scope, { childList: true });
-		/* 覆いが開いている間は CSS で隠したカードのガラスも live で描き直し続け、GPU からの読み戻し
-		   (1 回 7〜70ms) が承認パネルの動きを落とす。隠れている間はフレームの輪から外す (visible は
+		/* 覆いが開いている間は CSS で隠したカードのガラスも live で描き直し続け、見えない面の描画が
+		   承認パネルの動きを落とす。隠れている間はフレームの輪から外す (visible は
 		   frame-loop.js の tick が見る旗)。覆いの層・枠の層・依頼バーは覆いの間も見えるので止めない */
 		if (hiddenUnderOverlay) {
 			const covered = () => {

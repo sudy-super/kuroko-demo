@@ -198,6 +198,5 @@ it('光の読み戻し (getImageData) を描画のたびに走らせない', () 
 	const state = { lightFieldDirty: true, lightPixels: new Uint8ClampedArray(4) };
 	r.updateLightField.call(state);
 	expect(state).toEqual({ lightFieldDirty: false, lightPixels: null });
-	// true は「読み戻しを引き受けた」の意味。false だとライブラリはその場で同期の読み戻しに切り替える
 	expect(r.requestLightField()).toBe(true);
 });
