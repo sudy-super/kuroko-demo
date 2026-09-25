@@ -47,7 +47,7 @@ const doc = {
 	body: { dataset: {} as Record<string, string> },
 	/* 面の下にあるオーブの canvas。空なら周期の描き直しは要らない (glass.ts の orbUnder) */
 	orbs: [] as object[],
-	querySelectorAll() {
+	getElementsByClassName() {
 		return this.orbs;
 	},
 	listeners: new Set<() => void>(),
@@ -149,7 +149,8 @@ describe('ガラスの配線', () => {
 		const stop = chromeGlass(fakeLayer({ '.sidebar, .rail, .side-toggle': [sidebar] }));
 		vi.advanceTimersByTime(150);
 		expect(created[0].refreshed).toBe(0);
-		doc.orbs = [{ getBoundingClientRect: () => box }];
+		const canvas = { getBoundingClientRect: () => box };
+		doc.orbs.push({ querySelector: () => canvas });
 		vi.advanceTimersByTime(150);
 		expect(created[0].refreshed).toBe(3);
 		doc.hidden = true;
@@ -161,7 +162,7 @@ describe('ガラスの配線', () => {
 		vi.advanceTimersByTime(150);
 		expect(created[0].refreshed).toBe(3);
 		expect(observers[0].connected).toBe(false);
-		doc.orbs = [];
+		doc.orbs.length = 0;
 	});
 
 	it('依頼バーは層に乗らず自分の描画面を持つ (枠の面と同じ層に乗せると互いを映せないため)', () => {

@@ -162,8 +162,15 @@ function mount(
 	let instance: LiquidGlass | null = null;
 	let timer: ReturnType<typeof setInterval> | undefined;
 	let overlayWatch: MutationObserver | undefined;
+	// 周期の描き直しで毎回ページを探さないよう、面の一覧は出入りのときだけ作り直す
+	let surfaces: Element[] = [node];
+	const retarget = () => {
+		const list = targets();
+		surfaces = list.map((t) => t.element);
+		return list;
+	};
 	const watcher = tiers
-		? new MutationObserver(() => instance?.update({ targets: targets() }))
+		? new MutationObserver(() => instance?.update({ targets: retarget() }))
 		: null;
 
 	const acquire = () => {
@@ -171,7 +178,7 @@ function mount(
 			live: !repaintMs,
 			respectReducedTransparency: false,
 			...options,
-			...(tiers ? { targets: targets() } : null),
+			...(tiers ? { targets: retarget() } : null),
 			/* 描画面を失ったら backdrop-filter へ倒す。ライブラリは属性を動かさないので、放っておくと
 			   data-liquid-glass="webgl" のまま透明な板が残る。webglcontextrestored が来なければこのまま */
 			onContextLost: () => node.setAttribute('data-liquid-glass', 'fallback'),
@@ -196,10 +203,9 @@ function mount(
 		/* 引数なしの refresh() は targets と観測子まで付け直す。背後の描き直しだけなので backdrop: false
 		   (.d.ts には無いが dom.js の refresh は受け取る)。隠れているタブでは飛ばす */
 		const repaint = instance.refresh as (o?: { backdrop?: boolean }) => void;
-		const surfaces = () => (tiers ? targets().map((t) => t.element) : [node]);
 		if (repaintMs)
 			timer = setInterval(() => {
-				if (!document.hidden && orbUnder(surfaces())) repaint.call(instance!, { backdrop: false });
+				if (!document.hidden && orbUnder(surfaces)) repaint.call(instance!, { backdrop: false });
 			}, repaintMs);
 	};
 
@@ -220,10 +226,13 @@ function mount(
 /* 周期の描き直しが要るのは、知らせずに描き変わるオーブの canvas が面の下 (ぼかしと屈折が届く 96px の外周を
    含む) にあるときだけ。それ以外の変化 (DOM・スクロール・大きさ) はライブラリが自分で拾う。
    面の中のオーブ (サイドナビのロゴ) は面の手前にあり、背後の絵に入らないので数えない */
+let orbBoxes: HTMLCollectionOf<Element> | undefined;
 function orbUnder(surfaces: Element[]) {
-	const orbs = [...document.querySelectorAll('.orb canvas:not(.off)')].filter(
-		(canvas) => !surfaces.some((surface) => surface.contains(canvas))
-	);
+	// getElementsByClassName は DOM に追従する一覧を返すので、呼ぶたびにページを探し直さない
+	orbBoxes ??= document.getElementsByClassName('orb');
+	const orbs = [...orbBoxes]
+		.map((box) => box.querySelector('canvas:not(.off)'))
+		.filter((canvas): canvas is Element => !!canvas && !surfaces.some((surface) => surface.contains(canvas)));
 	return orbs.some((canvas) => {
 		const a = canvas.getBoundingClientRect();
 		return surfaces.some((surface) => {
