@@ -1,0 +1,2057 @@
+/* KUROKO AI — グローバル CSS
+   visual N = docs/research/visual.md 第 N 節、components N = docs/research/components.md 第 N 節、
+   ruling = 設計仕様 12.3 の裁定 (visual / components より優先) */
+
+/* visual 4.1 — トークン */
+:root {
+	/* 地の色 */
+	--bg: #f4f7fc;
+
+	/* 文字と線 */
+	/* --ink → --ink-2 → --ink-3 の順に薄くなる。値はガラス越しでも 4.5:1 を保つよう実測で決めた */
+	--ink: #1e2a47;
+	--ink-2: #545d76;
+	/* 上部バーの下をくぐる /inbox の選択中の行が最悪の位置。これより薄くすると 4.5:1 を割る */
+	--ink-3: #5a6379;
+	--line: rgba(140, 160, 200, 0.18);
+	--line-2: rgba(140, 160, 200, 0.3);
+
+	/* アクセント */
+	/* ガラス越しでも 4.5:1 を保つよう、明度を実測で下げてある */
+	--accent: #1856b9;
+	/* バッジと差出人の印もこの塗り。0.16 だと上に載る --accent が 4.5:1 を割る */
+	--accent-soft: rgba(26, 94, 203, 0.1);
+	/* ナビの案内の脈動 (.pulse) だけで使う。26,94,203 は --accent と一致しない */
+	--accent-glow: rgba(26, 94, 203, 0.28);
+
+	/* ruling — 合否の色と入力欄の枠、選択中の塗り */
+	--ok: #107a48;
+	--ok-soft: rgba(46, 184, 114, 0.12);
+	--warn: #c62129;
+	--warn-soft: #fdecec;
+	--border: #8593b0;
+	/* カレンダーの予定を指したときの塗り。--sel-soft より濃くしないと、指すと薄くなる */
+	--sel-strong: rgba(196, 216, 250, 0.92);
+	/* components 3.2 / 3.11 — 一覧行、コマンドパレットの選択中の塗り */
+	/* 0.75 だと選択中の行の --ink-3 と --accent が 4.5:1 を割る。選択中は太字と aria-current でも伝わる */
+	--sel-soft: rgba(214, 228, 252, 0.58);
+	/* サイドナビ・ボトムナビの現在地の灰色のピル。--ink を乗せるので --sel-soft より濃い */
+	--sel-gray: rgba(30, 42, 71, 0.14);
+
+	/* ruling — 状態レイヤー (ホバー 8% / フォーカス 10% / 押下 10%) */
+	--hover: rgba(30, 42, 71, 0.08);
+	--press: rgba(30, 42, 71, 0.1);
+	--hover-light: rgba(255, 255, 255, 0.45);
+	--hover-accent: rgba(26, 94, 203, 0.08);
+	--press-accent: rgba(26, 94, 203, 0.1);
+	--disabled-bg: rgba(30, 42, 71, 0.12);
+	--disabled-ink: rgba(30, 42, 71, 0.38);
+	--disabled-soft: rgba(30, 42, 71, 0.04);
+
+	/* ガラスの塗り。4.5:1 の実測が許す下限まで薄くしてある (--ink-3 が載るナビと依頼バーは少し濃い) */
+	--glass-2: rgba(255, 255, 255, 0.6);
+	--glass-panel: rgba(255, 255, 255, 0.58);
+	/* ドロワー・シート・モーダル・ポップオーバー・メニューの regular 変種。文字が多いのでナビ層より濃い。
+	   WebGL 経路の塗りは src/lib/glass.ts の SHEET */
+	--glass-sheet: rgba(255, 255, 255, 0.82);
+	--solid: rgba(255, 255, 255, 0.92);
+	/* 覆いが出ている間のカードの塗り。ガラスを 2 枚重ねないために不透明へ戻す */
+	--overlay-card: rgba(255, 255, 255, 0.9);
+
+	/* Liquid Glass のぼかしはごく弱い。強くするとすりガラスになる。背景を見せる役は屈折と縁の帯が担う */
+	--blur-m: blur(16px) saturate(190%) brightness(1.05);
+	/* regular 変種のフォールバックのぼかし。WebGL 経路は SHEET.material.backdropBlur */
+	--blur-sheet: blur(22px) saturate(190%) brightness(1.05);
+	/* 縁の光 (visual 4.2)。backdrop-filter の代替経路だけで使い、WebGL 経路では 0 になって ::after が縁を描く */
+	--rim:
+		inset 0 0 0 1px rgba(255, 255, 255, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.95),
+		inset 0 0 8px rgba(255, 255, 255, 0.5), inset 0 0 24px rgba(255, 255, 255, 0.35),
+		0 0 0 1px rgba(30, 42, 71, 0.05);
+
+	/* 影 3 段 */
+	--e1: 0 1px 2px hsl(220 40% 35% / 0.06), 0 2px 6px hsl(220 40% 35% / 0.05);
+	--e2:
+		0 1px 2px hsl(220 40% 35% / 0.06), 0 6px 16px hsl(220 40% 35% / 0.07),
+		0 14px 36px hsl(220 40% 35% / 0.08);
+	--e3:
+		0 2px 6px hsl(220 40% 35% / 0.08), 0 12px 32px hsl(220 40% 35% / 0.12),
+		0 32px 72px hsl(220 40% 35% / 0.16);
+	/* カードの縁 (枠線は border ではなく内側の影で描く) と落ち影 */
+	--card-edge: inset 0 0 0 1px rgba(30, 42, 71, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+	--card-drop: 0 8px 24px rgba(30, 42, 71, 0.08);
+	/* ナビ層のガラスの落ち影。地が無彩色に近く、板が浮いて見えるのは影と縁だけで伝わる。
+	   ライブラリは影を描かないので CSS 側で持つ */
+	--e-glass:
+		0 2px 6px hsl(220 40% 35% / 0.1), 0 10px 28px hsl(220 40% 35% / 0.14),
+		0 28px 64px hsl(220 40% 35% / 0.1);
+
+	/* 角丸 (visual 4.13) */
+	--r-xs: 8px;
+	--r-s: 12px;
+	--r-m: 18px;
+	--r-l: 24px;
+	--r-xl: 28px;
+	--r-pill: 999px;
+
+	/* 余白 (components 2.1: 4 / 8 / 12 / 16 / 20 / 24 / 32 / 48 / 64 のみ) */
+	--sp-1: 4px;
+	--sp-2: 8px;
+	--sp-3: 12px;
+	--sp-4: 16px;
+	--sp-5: 20px;
+	--sp-6: 24px;
+	--sp-8: 32px;
+
+	/* 動き (visual 4.12) */
+	--d-fast: 150ms;
+	--d-base: 200ms;
+	--d-enter: 300ms;
+	--d-exit: 200ms;
+	--ease-out: cubic-bezier(0.2, 0, 0, 1);
+	--ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+	--ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
+
+	/* 書体 */
+	--font: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+	--num: 'Inter', 'Noto Sans JP', sans-serif;
+
+	/* 骨格の寸法 (ruling: サイドナビ 256) */
+	--side-w: 256px;
+	--rail-w: 56px;
+	/* 本文・依頼バー・覆いが左に空ける幅。格納時は下の :root:has(.app.side-hidden) で上書きする */
+	--side-space: calc(var(--side-w) + 32px);
+	/* .app の中の上書きは :root の --frame-left に届かない (カスタムプロパティはスコープごとに解決される) ので、
+	   格納時の値をここに置いて両側から見る */
+	--side-space-hidden: calc(var(--sp-4) + 44px + var(--sp-2) + var(--sp-4));
+	/* 覆い (段 75) は枠 (段 76) の内側の帯に隠れないよう、この 2 つの間に中央寄せ・右寄せする */
+	--frame-left: var(--side-space);
+	--frame-right: var(--sp-4);
+	/* 上部バーのピルの高さ。操作領域の下限 44px を割らない (docs/research/island.md) */
+	--header-h: 52px;
+	/* ピルの下端 + 8px。960px 以下はピルではなく上端の帯なので式が変わる */
+	--bar-clear: calc(var(--sp-4) + var(--header-h) + var(--sp-2));
+	--chatbar-h: 60px;
+	--bottomnav-h: 72px;
+	/* チップの高さ (下の .chip)。依頼バーの折り返し行の角丸がここから同心に決まるので変数にする */
+	--chip-h: 40px;
+	/* 本文の下端の余白。固定要素 (依頼バー、960px 以下はボトムナビも) の高さ + 隙間 + --sp-8。
+	   .app に置くのは .app.no-bar の --chatbar-h: 0 を効かせるため (:root だと先に解決される) */
+}
+.app {
+	--content-bottom-clear: calc(var(--chatbar-h) + var(--sp-4) + var(--sp-8));
+}
+
+/* components 2.1 — リセットと本文 (-webkit-font-smoothing は書かない) */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+html {
+	font-size: 16px;
+}
+body {
+	margin: 0;
+	font-family: var(--font);
+	font-size: 16px;
+	font-weight: 400;
+	color: var(--ink);
+	background: var(--bg);
+	line-height: 1.7;
+	letter-spacing: 0.02em;
+}
+h1,
+h2,
+h3,
+h4 {
+	margin: 0;
+	font-weight: 700;
+	line-height: 1.4;
+}
+h1 {
+	font-size: 32px;
+}
+h2 {
+	font-size: 24px;
+}
+h3 {
+	font-size: 20px;
+}
+h4 {
+	font-size: 18px;
+}
+
+p {
+	margin: 0;
+}
+a {
+	color: var(--accent);
+}
+button,
+input,
+textarea,
+select {
+	font-family: inherit;
+	letter-spacing: inherit;
+}
+svg.i {
+	display: block;
+	flex: none;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.7;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+.num {
+	font-family: var(--num);
+	font-variant-numeric: tabular-nums;
+}
+/* 空の一覧の文言。.muted と併せると色は .muted が勝つ */
+.empty {
+	padding: var(--sp-5);
+	color: var(--ink-2);
+}
+.muted {
+	color: var(--ink-3);
+}
+.row {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-2);
+}
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ruling — フォーカスの見た目は全部品共通 */
+:focus-visible,
+.cal-radio .chip:has(:focus-visible),
+.switch:has(input:focus-visible),
+.list-row input[type='checkbox']:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+/* visual 4.3 — 背景。無彩色に近い明るい階調 1 枚。色を持つのはオーブだけ */
+.bg {
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	background: linear-gradient(180deg, #f4f6fa 0%, #eef1f7 100%);
+}
+/* visual 2.8 / 4.3 — オーブ本体と光彩 */
+.orb {
+	position: relative;
+	display: grid;
+	/* トラックを size で固定する。auto のままだと中身の実寸がトラックを押し広げ、
+	   size が小さいときにオーブが箱からはみ出す */
+	grid-template: 100% / 100%;
+	place-items: center;
+	pointer-events: none;
+}
+.orb canvas {
+	grid-area: 1 / 1;
+	display: block;
+	width: 100%;
+	height: 100%;
+	/* 球とハローはシェーダーが透明の上に描く。箱の形を出す背景や影は付けない */
+	background: transparent;
+}
+/* 描画面を手放している間 (隠れたタブ) と失った直後は canvas を隠す (Orb.svelte を見よ) */
+.orb canvas.off {
+	visibility: hidden;
+}
+
+/* ruling — 骨格 */
+.app {
+	position: relative;
+	min-height: 100dvh;
+	/* 上部バーとサイドナビを覆い (Portal、段 75) より前に出すため、ここで積み重ねの文脈を作らない。
+	   overflow-x: clip は窓の右端に近いカードのガラスが横スクロールを生むのを切る。
+	   overflow-y を visible と明示すると、縦スクロールが .app の内部スクロールにならない */
+	overflow-x: clip;
+	overflow-y: visible;
+}
+/* 枠のガラスをまとめて描く空の層 (canvas 1 枚)。枠の面は DOM 順が後なので canvas の上に乗る。
+   画面いっぱいなので pointer-events を切らないと全体が押せなくなる */
+.chrome {
+	position: fixed;
+	inset: 0;
+	z-index: 76;
+	pointer-events: none;
+}
+/* ドロワー・シート・モーダル・ポップオーバー・メニューのガラスをまとめて描く空の層。
+   Portal で <body> 直下に足す ((app)/+layout.svelte)。z-index 71 は scrim (70) と面 (75) の間。
+   常駐するので DOM 順で必ず面より先に入り、同じ段でも面が上に乗る */
+.overlay-chrome {
+	position: fixed;
+	inset: 0;
+	z-index: 71;
+	pointer-events: none;
+}
+/* display: none で getBoundingClientRect() が 0 になり、ライブラリの描画対象からも外れる */
+.overlay-chrome-anchor {
+	display: none;
+}
+.main {
+	margin-left: var(--side-space);
+	transition: margin-left var(--d-enter) var(--ease-out);
+	padding: var(--bar-clear) var(--sp-6) var(--content-bottom-clear);
+}
+/* 依頼バーを出さない画面 (/integrations)。--chatbar-h を 0 にすれば下の余白も一緒に詰まる */
+.app.no-bar {
+	--chatbar-h: 0px;
+}
+/* visual 4.2 — ナビ層のガラス。依頼バーの塗りだけ .chatbar が --glass-2 に上書きする */
+.sidebar,
+.side-toggle,
+.rail,
+.header.glass,
+.header.solid,
+.chatbar,
+.bottomnav,
+.voice-acts-wrap {
+	background: var(--glass-panel);
+	-webkit-backdrop-filter: var(--blur-m);
+	backdrop-filter: var(--blur-m);
+	box-shadow: var(--rim), var(--e-glass);
+}
+/* visual 4.4 + components 3.1 — 左サイドナビ (ruling: 幅 256、項目 48、角丸 16) */
+.sidebar {
+	position: fixed;
+	left: var(--sp-4);
+	top: var(--sp-4);
+	bottom: var(--sp-4);
+	z-index: 76;
+	pointer-events: auto;
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-1);
+	width: var(--side-w);
+	/* 上 padding 8px は、ロゴ行と横に並ぶ格納ボタンの top (--sp-4 + 8px) との差。
+	   窓が非常に低いときのスクロールは下の @media (max-height: 600px) */
+	padding: var(--sp-2);
+	border-radius: var(--r-l);
+	/* visibility はここでは遷移させない (開くときは即座に visible へ戻す)。
+	   閉じるときだけ .app.side-hidden .sidebar 側で遅延させる */
+	transition: transform var(--d-enter) var(--ease-out), opacity var(--d-enter) var(--ease-out);
+}
+/* 格納の切り替えボタン。閉じても同じ位置に残る。76 のままだと DOM 順でサイドナビの不透明な地に隠れるので 1 段上げる */
+.side-toggle {
+	position: fixed;
+	left: calc(var(--sp-4) + 8px);
+	top: calc(var(--sp-4) + 8px);
+	z-index: 77;
+	pointer-events: auto;
+	display: inline-grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	color: var(--ink-2);
+	cursor: pointer;
+	transition: background var(--d-fast) var(--ease-out);
+}
+.side-toggle:hover {
+	background: var(--hover);
+}
+.side-toggle:active {
+	background: var(--press);
+}
+/* ロゴ行。格納ボタン (44px、左 --sp-4 + 8px) の右 12px に置く。padding-left 56px = 44 + 12
+   (ボタンの +8px とサイドナビの padding 8px が相殺する) */
+.nav-logo {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-2);
+	flex: none;
+	height: 44px;
+	padding-left: 56px;
+	color: var(--ink);
+	font-size: 16px;
+	font-weight: 700;
+	text-decoration: none;
+}
+.nav-logo:focus-visible {
+	outline-offset: -2px;
+}
+/* ロゴは小さいオーブ。28px では破片が点の雑音になるので sparks を切る。球の直径は箱の 48%
+   (shader.ts の R0) なので、箱 28 / 0.48 ≈ 58px の .orb を中央に重ねてはみ出させる */
+.nav-logo-orb {
+	position: relative;
+	width: 28px;
+	height: 28px;
+	flex: none;
+	overflow: visible;
+	pointer-events: none;
+}
+/* オーブは入れ物の中央に重ねる。Today の球は左右の列の間の中央で、箱 448px、
+   球の直径はその 48% (shader.ts の R0) で 215px。外周と光彩がカードの縁に掛かる (visual 2.8) */
+.nav-logo-orb .orb,
+.orb-slot .orb,
+.hole .orb {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	translate: -50% -50%;
+}
+.nav-item {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: var(--sp-4);
+	flex: none;
+	/* 11 項目 + ロゴ行を窓の高さに収め、サイドナビをスクロールさせない。固定分 109px =
+	   上下 padding 16 + ロゴ行 44 + 区切り線 1 + gap 4 x 12。項目の高さは 36px (HIG の下限) 〜 48px */
+	height: clamp(36px, calc((100dvh - 32px - 109px) / 11), 48px);
+	padding: 0 var(--sp-4);
+	border-radius: 16px; /* 同心: 24 − 8 */
+	color: var(--ink);
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 1.4;
+	text-decoration: none;
+	transition: background var(--d-fast) var(--ease-out);
+}
+.nav-item .i {
+	color: var(--ink-2);
+}
+.nav-item:hover {
+	background: var(--hover-light);
+}
+.nav-item:active {
+	background: var(--press);
+}
+.nav-item:focus-visible {
+	outline-offset: -2px;
+}
+/* 現在地は灰色の塗りのピル。色だけに頼らず、塗り・文字の 700・アイコンの線の太さで示す (WCAG 1.4.1) */
+.nav-item.on {
+	background: var(--sel-gray);
+	color: var(--ink);
+	font-weight: 700;
+}
+.nav-item.on .i {
+	color: var(--ink);
+	/* 左端の縦バーは HIG Sidebars にも M3 Navigation rail にも無い作法なので使わない */
+	stroke-width: 2.3;
+}
+.nav-item .badge {
+	margin-left: auto;
+}
+/* ロゴ行の下の区切り線。間隔は .sidebar の gap に任せる */
+.nav-sep {
+	flex: none;
+	height: 1px;
+	margin: 0; /* hr の既定 margin-block (0.5em) を消す。残すと固定分の計算 (109px) が崩れる */
+	border: 0;
+	background: var(--line);
+}
+/* 設定は margin-top: auto で下端に押し出す */
+.nav-bottom {
+	margin-top: auto;
+}
+
+/* components 3.1 — 折りたたみ時の縦並びボタン列 (visual 4.13: capsule) */
+.rail {
+	position: fixed;
+	right: var(--sp-4);
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 76;
+	pointer-events: auto;
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-2);
+	width: var(--rail-w);
+	padding: var(--sp-2);
+	border-radius: var(--r-pill);
+}
+
+/* visual 4.2 + components 3.1 — 上部バー。デスクトップはガラス、モバイルは不透明 */
+.header {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-3);
+	height: var(--header-h);
+	padding: 0 var(--sp-4);
+	z-index: 50;
+}
+/* 右上に浮くピル。右の位置は .rail と同じ --sp-4 で、本文と依頼バーの回避幅は付けない。
+   幅の上限 560px は案内が出ているときのいちばん長い並びに合わせてある */
+.header.glass {
+	position: fixed;
+	top: var(--sp-4);
+	right: var(--sp-4);
+	z-index: 76;
+	pointer-events: auto;
+	max-width: calc(100vw - var(--sp-4) * 2);
+	border-radius: var(--r-pill);
+	/* 幅は Header.svelte が中身の自然な幅を測って px で渡す。max-content や interpolate-size では
+	   中身が入れ替わっても指定値が変わらず、transition が走らずに幅が跳ぶ */
+	transition: width var(--d-enter) var(--ease-out);
+}
+/* 上限 560px に当たったら日付だけ縮める。flex の既定 min-width: auto を外さないと縮まない */
+.hdr-date {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+/* 取り消し猶予の間、ピルの中に出す輪 + 文言 + 取り消す (中身は Toast.svelte と共通)。
+   .header は高さ固定 (52px) なので 1 行に留める */
+.pill-live {
+	display: contents;
+}
+.pill-countdown {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-3);
+	flex: none;
+}
+.pill-countdown .toast-msg {
+	white-space: nowrap;
+}
+/* ピルの中身。flex: none で縮まないので、Header.svelte が測る値は常に伸び切った幅になる。
+   max-width は上限 560px から左右の余白を引いた値 */
+.hdr-inner {
+	display: flex;
+	flex: none;
+	align-items: center;
+	gap: var(--sp-3);
+	max-width: calc(560px - var(--sp-4) * 2);
+}
+/* 猶予の間だけ上限を外してピルを左へ伸ばす。上限をピルに持たせると、猶予が終わった瞬間に
+   幅が transition を経ずに跳ぶ。伸びた分がサイドナビと重ならないよう回避幅を --frame-left にする */
+.header.glass:has(.pill-countdown) .hdr-inner {
+	max-width: calc(100vw - var(--frame-left) - var(--sp-4) * 3);
+}
+/* 携帯の上部バーもガラス (HIG Toolbars)。src/lib/glass.ts の CHROME_TIERS に入っている */
+.header.solid {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	padding: 0 var(--sp-4);
+}
+
+/* visual 4.5 — 浮くカード。iOS 26 でガラスになるのはナビ層だけで、内容は白に近い普通の面に載る。
+   枠線は border ではなく内側の影で描く (border だと 1px 箱が育ち、Bento の列の高さがずれる) */
+.card {
+	position: relative;
+	border-radius: var(--r-m);
+	padding: var(--sp-5) var(--sp-5) var(--sp-4);
+	background: rgba(255, 255, 255, 0.7);
+	box-shadow: var(--card-edge), var(--card-drop);
+	transition: box-shadow var(--d-base) var(--ease-out);
+}
+/* 状態は浮きではなく塗りの濃淡で示す (docs/research/buttons.md 観点 A) */
+.card:hover {
+	box-shadow: var(--card-edge), inset 0 0 0 999px var(--hover), var(--card-drop);
+}
+.card:active {
+	box-shadow: var(--card-edge), inset 0 0 0 999px var(--press), var(--card-drop);
+	transition-duration: var(--d-fast);
+}
+.card.on {
+	box-shadow: inset 0 0 0 2px var(--accent), var(--card-drop);
+}
+
+/* visual 2.7 / 2.8 — カードは左右 2 列、間を空けてオーブを見せる。1100px 以下は段組み
+   (multi-column)。格子だと行の高さが高いほうにそろって 3 行ぶんになる。1101px 以上は絶対配置 */
+.bento {
+	position: relative;
+	max-width: 80%;
+	margin-inline: auto;
+}
+@media (max-width: 1100px) {
+	.bento {
+		column-count: 2;
+		/* visual 2.7 — この幅では中央の空きを閉じ、2 列を左右いっぱいに広げる。オーブはカードの背後へ */
+		column-gap: var(--sp-4);
+	}
+}
+.bento > .card {
+	/* 段の途中でカードが割れないようにする。段組みの既定は途中で切ること */
+	break-inside: avoid;
+}
+
+/* visual 4.6 — コンテンツ層。ここではガラスを使わない */
+.screen {
+	border-radius: var(--r-l);
+	background: rgba(255, 255, 255, 0.92);
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.85), var(--e1);
+}
+
+/* visual 4.7 — 浮くピル型の依頼バー */
+.chatbar {
+	position: fixed;
+	bottom: var(--sp-4);
+	/* 画面ではなく本文領域の中央に置く。左右を止めて余白を auto で分けると中央にそろう */
+	left: var(--side-space);
+	transition: left var(--d-enter) var(--ease-out);
+	right: var(--sp-6);
+	margin-inline: auto;
+	z-index: 55;
+	display: flex;
+	align-items: center;
+	gap: var(--sp-3);
+	max-width: 760px;
+	height: var(--chatbar-h);
+	padding: 0 var(--sp-2) 0 var(--sp-5);
+	border-radius: var(--r-pill);
+	background: var(--glass-2);
+}
+
+/* .chip は既定で縮まず、狭い依頼バーで入力欄が潰れていた。下限 152px = 余白 32 + 間 8 + X 16 +
+   文言が読める 96。入力欄には 120px を残す */
+.chatbar .chip {
+	flex-shrink: 1;
+	min-width: 152px;
+}
+.chatbar .chip span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	min-width: 0;
+}
+.chatbar input {
+	flex: 1 1 120px;
+	min-width: 120px;
+	height: 100%;
+	border: 0;
+	background: none;
+	color: var(--ink);
+	font-size: 16px;
+}
+.chatbar input::placeholder {
+	color: var(--ink-3);
+}
+/* 390 幅ではチップの下限 152px と入力欄の下限 120px が同時に収まらない (境目は約 450px)。
+   チップを入力欄の 1 行上に折り返し、--chatbar-h を 112px (8 + 40 + 12 + 44 + 8) に差し替える。
+   アイコンだけに落とすと、title はタッチ端末で出ず何に結び付いたか分からない (NN/g Icon Usability) */
+@media (max-width: 460px) {
+	:root:has(.chatbar .chip) {
+		--chatbar-h: 112px;
+	}
+	/* --r-pill のままだと半径 56px で中身が輪郭からはみ出す。外側の角丸 = 内側 + 間隔
+	   (visual.md 3.7)。内側はチップ (高さの半分)、間隔は --sp-2 */
+	.chatbar:has(.chip) {
+		flex-wrap: wrap;
+		padding-top: var(--sp-2);
+		padding-bottom: var(--sp-2);
+		border-radius: calc(var(--chip-h) / 2 + var(--sp-2));
+	}
+	.chatbar .chip {
+		flex-basis: 100%;
+	}
+	.chatbar:has(.chip) input {
+		height: 44px;
+	}
+}
+/* 焦点はバー全体に出し、ガラスの中に白い箱が現れないよう入力欄の輪郭は消す。
+   文字入力の欄は押しても :focus-visible が立つので、Tab で来たときだけ出す (WCAG 2.4.7)。
+   どちらで来たかは KurokoBar.svelte が data-keyboard で渡す */
+.chatbar input:focus-visible {
+	outline: none;
+}
+.chatbar[data-keyboard]:has(input:focus-visible) {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+.chatbar .send {
+	display: grid;
+	place-items: center;
+	flex: none;
+	width: 42px;
+	height: 42px;
+	border: 0;
+	border-radius: 50%;
+	/* 主ボタンと同じく、状態は塗りの明度だけで示す (buttons.md 観点 A) */
+	background: var(--accent);
+	color: #fff;
+	cursor: pointer;
+	transition: background var(--d-fast) var(--ease-out);
+}
+/* 塗りの主ボタンの状態。混ぜる割合は白い文字との比 hover 8.09:1 / pressed 9.40:1。
+   押せない間の打ち消しはこれより後ろに同じ詳細度で置く */
+.chatbar .send:hover,
+.btn.pri:hover,
+.voice-act-send:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--accent) 88%, #000);
+}
+.chatbar .send:active,
+.btn.pri:active,
+.voice-act-send:active:not(:disabled) {
+	background: color-mix(in srgb, var(--accent) 78%, #000);
+}
+.chatbar .send:disabled {
+	background: var(--disabled-bg);
+	color: var(--disabled-ink);
+	cursor: default;
+}
+
+/* visual 4.8 + components 3.4 — ボタン。--accent の単色塗り、角丸 --r-xs (docs/research/buttons.md 観点 A)。
+   高さ 44px (HIG / Baymard)。主と副の差は色と形で付け、大きさでは付けない */
+.btn {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--sp-2);
+	height: 44px;
+	padding: 0 var(--sp-6);
+	border: 0;
+	border-radius: var(--r-xs);
+	background: none;
+	color: var(--ink);
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1.4;
+	white-space: nowrap;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background var(--d-fast) var(--ease-out);
+}
+.btn .i {
+	width: 18px;
+	height: 18px;
+}
+.btn.pri {
+	background: var(--accent);
+	color: #fff;
+}
+/* components 3.4 — 副ボタンの枠は 1px 実線の --accent (白地に 6.84:1)。影は持たない (M3 outlined / Carbon tertiary) */
+.btn.sec {
+	background: #fff;
+	color: var(--accent);
+	box-shadow: inset 0 0 0 1px var(--accent);
+}
+.btn.sec:hover {
+	background: var(--hover-accent);
+}
+.btn.sec:active {
+	background: var(--press-accent);
+}
+/* M3 の text / Carbon の ghost に当たる最下位の重要度 (buttons.md 観点 A の結論) */
+.btn.text {
+	padding: 0 var(--sp-3);
+	color: var(--accent);
+	font-weight: 500;
+}
+.btn.text:hover {
+	background: var(--hover-accent);
+}
+.btn.text:active {
+	background: var(--press-accent);
+}
+/* HIG Buttons の bordered (薄い塗り) に当たる。.btn.pri と並べて、差を大きさではなく
+   塗りの濃さで付ける (approval-actions-apple.md) */
+.btn.tint {
+	background: var(--accent-soft);
+	color: var(--accent);
+}
+.btn.tint:hover {
+	background: rgba(26, 94, 203, 0.16);
+}
+.btn.tint:active {
+	background: rgba(26, 94, 203, 0.2);
+}
+/* 破壊的な操作 (Carbon danger tertiary)。主ボタンと同じ塗りにしない。文言は具体的な動詞にする (buttons.md 観点 A) */
+.btn.danger {
+	background: #fff;
+	color: var(--warn);
+	box-shadow: inset 0 0 0 1px var(--warn);
+}
+.btn.danger:hover {
+	background: var(--warn-soft);
+}
+/* 88% だと上に載る --warn が 4.19:1 で 4.5:1 を割る。WCAG 1.4.3 は押下中を比の対象から外さない */
+.btn.danger:active {
+	background: color-mix(in srgb, var(--warn-soft) 94%, var(--warn));
+}
+/* 小ボタンは実寸 36px。透明領域で操作領域を 44px にする (components 3.4) */
+.btn.sm {
+	height: 36px;
+	padding: 0 var(--sp-4);
+	font-weight: 500;
+}
+.btn.sm::after {
+	content: '';
+	position: absolute;
+	inset: -4px 0;
+}
+.btn.sm .i {
+	width: 16px;
+	height: 16px;
+}
+.btn.lg {
+	height: 56px;
+	padding: 0 var(--sp-8);
+	font-size: 16px;
+}
+.btn.lg .i {
+	width: 20px;
+	height: 20px;
+}
+.btn:disabled,
+.btn[aria-disabled='true'] {
+	background: var(--disabled-bg);
+	color: var(--disabled-ink);
+	box-shadow: none;
+	cursor: default;
+}
+/* 上の打ち消し (0,2,0) は .btn.pri:hover / :active (0,3,0) に負け、押せない間も塗りが変わる。
+   同じ詳細度で置き直す */
+.btn:disabled:hover,
+.btn[aria-disabled='true']:hover,
+.btn:disabled:active,
+.btn[aria-disabled='true']:active {
+	background: var(--disabled-bg);
+	box-shadow: none;
+}
+/* components 3.4 — アイコンボタン 40px の円、操作領域は 44px */
+.iconbtn {
+	position: relative;
+	display: inline-grid;
+	place-items: center;
+	flex: none;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: none;
+	color: var(--ink-2);
+	cursor: pointer;
+	transition: background var(--d-fast) var(--ease-out);
+}
+.iconbtn::after {
+	content: '';
+	position: absolute;
+	inset: -2px;
+}
+.iconbtn:hover {
+	background: var(--hover);
+}
+.iconbtn:active {
+	background: var(--press);
+}
+.iconbtn:disabled {
+	color: var(--disabled-ink);
+	background: none;
+	cursor: default;
+}
+
+/* components 3.5 — 入力欄とフォーム */
+.field {
+	margin-bottom: var(--sp-6);
+}
+.label {
+	display: block;
+	margin-bottom: var(--sp-2);
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--ink);
+}
+.help {
+	display: block;
+	margin: var(--sp-1) 0 var(--sp-2);
+	font-size: 14px;
+	font-weight: 400;
+	color: var(--ink-3);
+}
+.input,
+.textarea {
+	display: block;
+	width: 100%;
+	border: 1px solid var(--border);
+	border-radius: var(--r-s);
+	background: #fff;
+	color: var(--ink);
+	font-size: 16px;
+	line-height: 1.7;
+	transition:
+		border-color var(--d-fast) var(--ease-out),
+		box-shadow var(--d-fast) var(--ease-out);
+}
+.input {
+	height: 48px;
+	padding: 0 var(--sp-4);
+}
+.textarea {
+	min-height: 96px;
+	padding: var(--sp-3) var(--sp-4);
+	resize: vertical;
+}
+.input:hover,
+.textarea:hover {
+	border-color: var(--ink-2);
+}
+/* 入力中は 2px 相当。枠の太さを変えずに内側の影で足し、行がずれないようにする */
+.input:focus,
+.textarea:focus {
+	border-color: var(--accent);
+	box-shadow: inset 0 0 0 1px var(--accent);
+}
+.input.bad,
+.textarea.bad {
+	border-color: var(--warn);
+	box-shadow: inset 0 0 0 1px var(--warn);
+}
+.input:disabled,
+.textarea:disabled {
+	background: var(--disabled-soft);
+	border-color: var(--disabled-bg);
+	color: var(--disabled-ink);
+	cursor: default;
+}
+.error {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-1);
+	margin-top: var(--sp-2);
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--warn);
+}
+.error .i {
+	width: 16px;
+	height: 16px;
+}
+
+/* visual 4.9 + components 3.6 — チップ */
+.chip {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sp-2);
+	height: var(--chip-h);
+	padding: 0 var(--sp-4);
+	border: 0;
+	border-radius: var(--r-pill);
+	background: #fff;
+	color: var(--accent);
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.4;
+	white-space: nowrap;
+	cursor: pointer;
+	box-shadow: inset 0 0 0 1px var(--border);
+	transition: background var(--d-fast) var(--ease-out);
+}
+.chip::after {
+	content: '';
+	position: absolute;
+	inset: -2px 0;
+}
+.chip .i {
+	width: 18px;
+	height: 18px;
+}
+.chip:hover {
+	background: var(--hover-accent);
+}
+.chip:active {
+	background: var(--press-accent);
+}
+/* 1 つだけ選ぶ切り替えは塗りの反転だけで示し、印を付けない (HIG Segmented control、Carbon Content switcher)。
+   印を付けると選択のたびに文字が動く。地との比 6.0:1 (WCAG 1.4.11)。複数を選ぶ絞り込みだけ印を付ける
+   (docs/research/chip-select.md) */
+.chip.on {
+	background: var(--accent);
+	color: #fff;
+	box-shadow: none;
+}
+/* 絞り込みのチップの印。印の幅と後ろの間を 0 から広げ、文字とチップの幅の変化を動きで追わせる (M3 Segmented button)。
+   間は gap ではなく margin で持つ (gap だと非選択でも 8px 残る) */
+.chip .chip-check {
+	width: 18px;
+	margin-right: calc(var(--sp-2) * -1);
+	transition:
+		width var(--d-fast) var(--ease-out),
+		margin-right var(--d-fast) var(--ease-out),
+		opacity var(--d-fast) var(--ease-out);
+}
+.chip:not(.on) .chip-check {
+	width: 0;
+	opacity: 0;
+}
+.chip.on .chip-check {
+	margin-right: 0;
+}
+/* 選択中のチップは下地が accent なので、件数は白地に反転させる */
+.chip.on .badge.count {
+	background: #fff;
+	color: var(--accent);
+}
+/* 焦点を残したまま押せなくするため aria-disabled を使う場面がある (ReplyBox の返信案の作成中) */
+.chip:disabled,
+.chip[aria-disabled='true'] {
+	background: var(--disabled-soft);
+	color: var(--disabled-ink);
+	box-shadow: inset 0 0 0 1px var(--disabled-bg);
+	cursor: default;
+}
+.chip[aria-disabled='true']:hover,
+.chip[aria-disabled='true']:active {
+	background: var(--disabled-soft);
+}
+
+/* components 3.6 — バッジ (押せない表示専用、文字は 12px まで)。寸法は Carbon Tag medium
+   (高さ 24、文字 12、左右 8、角丸 16)。薄い塗り + 同系色の 1px の枠は Atlassian Lozenge で、色を外しても形が残る。
+   既定は中立の灰。塗りが不透明なのは、ガラスの上でオーブが透けて 12px の文字が 2.5:1 まで落ちたため */
+.badge {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sp-1);
+	height: 24px;
+	padding: 0 var(--sp-2);
+	border-radius: 16px;
+	background: #eef1f6;
+	color: var(--ink-2);
+	box-shadow: inset 0 0 0 1px #78849e;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1.4;
+	white-space: nowrap;
+}
+.badge .i,
+.badge svg {
+	width: 12px;
+	height: 12px;
+}
+/* 「外部送信」の区分。赤は Carbon では異常・破壊的操作に限るので、serious warning の橙
+   (Orange 60 #ba4e00 / Orange 10 #fff2e8) を採る。文字 4.58:1、枠 5.03:1 */
+.badge.warn {
+	background: #fff2e8;
+	color: #ba4e00;
+	box-shadow: inset 0 0 0 1px #ba4e00;
+}
+/* 人物のタグは Atlassian Tag (分類のラベル) で、状態を示す Lozenge と役割が違うので枠線だけにする。
+   枠 #78849e は人物カードの面で 3.66:1 (--border だと 3:1 を割る) */
+.badge.tag {
+	background: none;
+	color: var(--ink-2);
+	box-shadow: inset 0 0 0 1px #78849e;
+}
+/* 進行中の案件。Lozenge の inprogress、Carbon の「青 = 受動的な通知」。割り当ては derived.ts の projectStatusClass */
+.badge.info {
+	background: var(--accent-soft);
+	color: var(--accent);
+	box-shadow: inset 0 0 0 1px var(--accent);
+}
+/* 終わった案件のうち失注。Atlassian の Lozenge の "removed" に当たる */
+.badge.danger {
+	background: var(--warn-soft);
+	color: var(--warn);
+	box-shadow: inset 0 0 0 1px var(--warn);
+}
+/* 受注と、承認を伴う作業履歴。Lozenge の "success"、Carbon の「緑 = 正常」 */
+.badge.ok {
+	background: var(--ok-soft);
+	color: var(--ok);
+	box-shadow: inset 0 0 0 1px var(--ok);
+}
+/* 件数カウンタ (M3 large badge)。上限 4 文字は derived.ts の badgeCount が守る。Lozenge の枠は持たない */
+.badge.count {
+	justify-content: center;
+	height: 20px;
+	min-width: 20px;
+	padding: 0 6px;
+	border-radius: var(--r-pill);
+	background: var(--accent);
+	color: #fff;
+	box-shadow: none;
+}
+.badge.count.danger {
+	background: var(--warn);
+	color: #fff;
+}
+
+/* components 3.11 — 一覧行 */
+.list-row {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: var(--sp-3);
+	width: 100%;
+	height: 48px;
+	padding: 0 var(--sp-4);
+	border: 0;
+	background: none;
+	color: var(--ink);
+	font-size: 16px;
+	line-height: 1.4;
+	text-align: left;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background var(--d-fast) var(--ease-out);
+}
+/* 一覧だけを入れるカード。行が左右の余白を持つので、カードは上下だけ空ける */
+.card.list-card {
+	padding-inline: 0;
+	padding-block: var(--sp-2);
+}
+/* 一覧の上の絞り込み・並べ替えの行 */
+.page-bar {
+	flex-wrap: wrap;
+	gap: var(--sp-3);
+	padding: 0 var(--sp-5) var(--sp-5);
+}
+.list-row.lg {
+	height: 56px;
+}
+.list-row.xl {
+	height: 72px;
+}
+/* 2 段の文字は .inbox-lines が縦に積み、行自体は右端に担当者の丸を置くため横並び */
+.list-row.inbox {
+	height: 72px;
+}
+/* 区切り線は左右 16px 内側に入れる (components 3.11) */
+.list-row::after {
+	content: '';
+	position: absolute;
+	left: var(--sp-4);
+	right: var(--sp-4);
+	bottom: 0;
+	height: 1px;
+	background: var(--line);
+}
+.list-row:last-child::after {
+	display: none;
+}
+.list-row:hover {
+	background: rgba(255, 255, 255, 0.5);
+}
+.list-row:active {
+	background: var(--press);
+}
+.list-row:focus-visible {
+	outline-offset: -2px;
+}
+.list-row.on {
+	background: var(--sel-soft);
+}
+.list-row.on::after {
+	background: transparent;
+}
+.list-row .sub {
+	color: var(--ink-3);
+	font-size: 14px;
+}
+
+/* /inbox と /documents の 2 ペイン。左が一覧、右が本文。コンテンツ層なのでガラスは無い。
+   960px 以下は 1 列にし、戻る (.back) を出す */
+.panes {
+	position: relative;
+	isolation: isolate;
+	display: grid;
+	grid-template-columns: 360px minmax(0, 1fr);
+	align-items: start;
+	gap: var(--sp-4);
+}
+.back {
+	display: none;
+}
+
+/* メールの本文。承認カードと議事録のフォローメール案で同じ見た目にする (components の一貫性)。
+   改行はそのまま見せる。畳む挙動は使う側 (ApprovalCard の .clamp) が足す */
+.mailbody {
+	margin: var(--sp-1) 0 0;
+	padding: var(--sp-3) var(--sp-4);
+	border-radius: var(--r-s);
+	background: #fff;
+	box-shadow: inset 0 0 0 1px var(--line);
+	white-space: pre-wrap;
+	font-size: 14px;
+	line-height: 1.6;
+}
+
+/* 一覧の小見出し (アイコン + 文言 + 件数)。.badge.count とは役割が違うので流用しない */
+.list-head {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-2);
+	height: 32px;
+	padding: 0 var(--sp-4);
+	color: var(--ink-3);
+	font-size: 12px;
+	font-weight: 500;
+}
+.list-head .i {
+	color: var(--ink-3);
+}
+.list-head .num {
+	color: var(--ink-3);
+}
+
+/* 会話 (/chat と LineChat) の送り手の行と、カードの操作が済んだことの行 */
+.msg-who {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-2);
+	color: var(--ink-3);
+	font-size: 12px;
+}
+.msg-done {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-2);
+	margin-top: var(--sp-1);
+	color: var(--ink-2);
+	font-size: 14px;
+}
+
+/* 関係する人物の頭文字の丸。新しい色相は増やさず --accent-soft / --accent だけを使う */
+.avatars {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+}
+.avatar {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	margin-left: -6px;
+	border-radius: var(--r-pill);
+	background: var(--accent-soft);
+	color: var(--accent);
+	font-size: 11px;
+	font-weight: 700;
+}
+.avatar:first-child {
+	margin-left: 0;
+}
+/* 白い縁は丸同士の境目なので、重ならない先頭の丸には付けない */
+.avatar + .avatar {
+	box-shadow: 0 0 0 2px #fff;
+}
+.avatar-more {
+	background: var(--ink-3);
+	color: #fff;
+	font-size: 10px;
+}
+
+/* 表示の切り替え (Segmented.svelte)。iOS 26 に合わせ、灰色のカプセルの中で選んだ項目の下に白いつまみを敷く。
+   項目の幅は文字に合わせる (等幅だと短い項目が間延びする)。高さ 44px (WCAG 2.5.5 / HIG) */
+.seg {
+	position: relative;
+	display: inline-flex;
+	flex-wrap: nowrap;
+	padding: 4px;
+	border-radius: var(--r-pill);
+	background: rgba(30, 42, 71, 0.07);
+	/* 縮めて横に送らせると、端の項目が隠れて選べることに気づけない。幅は中身のまま保ち、
+	   収まらないときは並ぶ列 (.row) の側で折り返させる */
+	flex: none;
+}
+.seg-thumb {
+	position: absolute;
+	top: 4px;
+	bottom: 4px;
+	left: 0;
+	border-radius: var(--r-pill);
+	background: #fff;
+	box-shadow: 0 1px 3px rgba(30, 42, 71, 0.12), 0 1px 1px rgba(30, 42, 71, 0.06);
+	pointer-events: none;
+}
+.seg-thumb.ready {
+	transition:
+		transform 320ms cubic-bezier(0.3, 1.3, 0.5, 1),
+		width 320ms cubic-bezier(0.3, 1.3, 0.5, 1),
+		scale 200ms var(--ease-out);
+}
+/* 押している間はつまみを少し膨らませ、ガラス (Segmented.svelte の pressGlass) にする。
+   白い塗りと影はライブラリの面に任せて下ろす */
+.seg-thumb.pressed {
+	scale: 1.12;
+	box-shadow: none;
+}
+.seg-thumb.pressed[data-liquid-glass='webgl'] {
+	background: none;
+}
+.seg-btn {
+	position: relative;
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	gap: var(--sp-2);
+	height: 36px;
+	padding: 0 var(--sp-4);
+	border: 0;
+	border-radius: var(--r-pill);
+	background: none;
+	color: var(--ink-2);
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.4;
+	white-space: nowrap;
+	cursor: pointer;
+	transition: color var(--d-fast) var(--ease-out);
+}
+/* 見える高さは 36px、押せる範囲は外側の余白まで広げて 44px にする */
+.seg-btn::after {
+	content: '';
+	position: absolute;
+	inset: -4px 0;
+}
+.seg-btn:hover {
+	color: var(--ink);
+}
+.seg-btn[aria-pressed='true'] {
+	color: var(--accent);
+	font-weight: 700;
+}
+.seg-btn:focus-visible {
+	outline-offset: -2px;
+}
+.seg .badge.count {
+	background: rgba(30, 42, 71, 0.1);
+	color: var(--ink-2);
+}
+.seg-btn[aria-pressed='true'] .badge.count {
+	background: var(--accent);
+	color: #fff;
+}
+.seg .badge.count.danger {
+	background: var(--warn);
+	color: #fff;
+}
+
+/* regular 変種のガラス (ドロワー・シート・モーダル・ポップオーバー・メニュー・トースト) */
+.toast,
+.drawer,
+.panel-center,
+.sheet,
+.modal,
+.pill-panel,
+.demo-menu {
+	background: var(--glass-sheet);
+	-webkit-backdrop-filter: var(--blur-sheet);
+	backdrop-filter: var(--blur-sheet);
+	box-shadow: var(--rim), var(--e3);
+}
+/* components 3.7 — トースト。他の面と同じ regular 変種のガラスを自前の backdrop-filter で描く
+   (描く層の canvas は増やさない) */
+.toast {
+	position: fixed;
+	top: var(--sp-6);
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 90;
+	display: flex;
+	align-items: center;
+	gap: var(--sp-3);
+	min-width: 320px;
+	max-width: 576px;
+	min-height: 48px;
+	padding: 0 var(--sp-2) 0 var(--sp-4);
+	border-radius: var(--r-s);
+	color: var(--ink);
+	font-size: 14px;
+	line-height: 1.4;
+	animation: toast-in var(--d-enter) var(--ease-enter) both;
+}
+.toast-msg {
+	flex: 1;
+	padding: var(--sp-2) 0;
+}
+.toast-undo {
+	flex: none;
+	height: 44px;
+	padding: 0 var(--sp-3);
+	border: 0;
+	border-radius: var(--r-xs);
+	background: none;
+	color: var(--accent);
+	font-size: 14px;
+	font-weight: 700;
+	cursor: pointer;
+}
+.toast-undo:hover {
+	background: var(--hover-accent);
+}
+/* 残り秒数。数字の周りに円弧を描いて残り時間を図でも示す (components 3.7) */
+.toast-ring {
+	position: relative;
+	display: grid;
+	place-items: center;
+	flex: none;
+	width: 32px;
+	height: 32px;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1.4;
+	color: var(--ink);
+}
+/* --p を @property で登録し、CSS アニメーションだけで滑らかに減らす (setInterval で書き換えるとカクつく)。
+   --dur は Toast.svelte が渡す */
+@property --p {
+	syntax: '<number>';
+	inherits: false;
+	initial-value: 1;
+}
+.toast-ring::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: 50%;
+	background: conic-gradient(var(--accent) calc(var(--p) * 360deg), var(--sel-gray) 0);
+	-webkit-mask: radial-gradient(circle, transparent 11px, #000 12px);
+	mask: radial-gradient(circle, transparent 11px, #000 12px);
+	animation: toast-countdown var(--dur, 4s) linear both;
+}
+@keyframes toast-countdown {
+	from {
+		--p: 1;
+	}
+	to {
+		--p: 0;
+	}
+}
+/* visual 4.10 — 入場は減速、退場は加速。上端から出るので符号を反転する */
+.toast.leave {
+	animation: toast-out var(--d-exit) var(--ease-exit) both;
+	pointer-events: none; /* 退場中の二重押しを防ぐ */
+}
+@keyframes toast-in {
+	from {
+		opacity: 0;
+		transform: translate(-50%, -12px) scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: translate(-50%, 0) scale(1);
+	}
+}
+@keyframes toast-out {
+	from {
+		opacity: 1;
+		transform: translate(-50%, 0) scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: translate(-50%, -8px) scale(0.98);
+	}
+}
+
+/* visual 4.11 + components 3.8〜3.9 — 覆い、ドロワー、ボトムシート、モーダル。
+   3 つの面は regular 変種のガラス (Adopting Liquid Glass)。scrim はコンテンツ層なので変えない */
+.scrim {
+	position: fixed;
+	inset: 0;
+	z-index: 70;
+	background: rgba(30, 42, 71, 0.25);
+	animation: fade-in var(--d-enter) var(--ease-enter) both;
+}
+.scrim.leave {
+	animation: fade-out var(--d-exit) var(--ease-exit) both;
+}
+.drawer,
+.panel-center,
+.sheet,
+.modal {
+	position: fixed;
+	z-index: 75;
+	display: flex;
+	flex-direction: column;
+	/* 送り箱は中の .modal-body が受け持つので、本体は縮ませず隠す */
+	overflow: hidden;
+}
+/* 枠の間 (--frame-left 〜 100vw - --frame-right) の中央に浮かせる */
+.panel-center,
+.modal {
+	top: 50%;
+	left: calc((var(--frame-left) + 100vw - var(--frame-right)) / 2);
+	transform: translate(-50%, -50%);
+	max-height: calc(100dvh - var(--bar-clear) * 2);
+	border-radius: var(--r-l);
+	animation: modal-in var(--d-enter) var(--ease-enter) both;
+}
+.drawer {
+	top: var(--bar-clear);
+	/* 連携の列 (段 76) が覆い (75) より前にあるので、右端をそのぶん空ける */
+	right: var(--frame-right);
+	bottom: var(--sp-4);
+	width: min(400px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));
+	padding: var(--sp-6);
+	/* 右端から浮くので右側も角を丸める */
+	border-radius: var(--r-m);
+	animation: drawer-in var(--d-enter) var(--ease-enter) both;
+}
+@keyframes drawer-in {
+	from {
+		transform: translateX(100%);
+	}
+}
+.drawer.leave {
+	animation: drawer-out var(--d-exit) var(--ease-exit) both;
+}
+@keyframes drawer-out {
+	to {
+		transform: translateX(100%);
+	}
+}
+/* 承認待ちの中央寄り固定パネル (docs/research/card-expand.md)。max-height は --bar-clear を引き、
+   右上のピルと重ならない。その場に浮くので、スライドではなく .modal と同じフェード + scale (M3 Transitions) */
+.panel-center {
+	width: min(680px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));
+	padding: var(--sp-6);
+}
+.panel-center.leave {
+	animation: modal-out var(--d-exit) var(--ease-exit) both;
+}
+/* カードから広がる/縮む間は Drawer.svelte の WAAPI が位置と寸法を直接動かすので、scale アニメーションと競合させない */
+.panel-center.morph {
+	animation: none;
+}
+.panel-center.morph > * {
+	animation: fade-in 200ms 250ms both;
+}
+.panel-center.morph.leave > * {
+	animation: fade-out 150ms both;
+}
+.sheet {
+	left: 0;
+	right: 0;
+	bottom: 0;
+	width: 100%;
+	max-width: 640px;
+	margin: 0 auto;
+	height: 50dvh;
+	max-height: calc(100dvh - 72px);
+	padding: 0 var(--sp-4) calc(var(--sp-6) + env(safe-area-inset-bottom));
+	border-radius: var(--r-xl) var(--r-xl) 0 0;
+	animation: sheet-in var(--d-enter) var(--ease-enter) both;
+}
+@keyframes sheet-in {
+	from {
+		transform: translateY(100%);
+	}
+}
+.sheet.leave {
+	animation: sheet-out var(--d-exit) var(--ease-exit) both;
+}
+@keyframes sheet-out {
+	to {
+		transform: translateY(100%);
+	}
+}
+/* 題の行 (とつまみ) を留めて中身 (.modal-body) だけを送る。枠ごと送ると、中身が上限を超えたとき
+   flex の既定の縮みで行が潰れて重なる。送り箱の中は縮ませない */
+:is(.panel-center, .drawer, .sheet) .modal-body {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+}
+:is(.panel-center, .drawer, .sheet) .modal-body > * {
+	flex: none;
+}
+/* 携帯の横向きでは 50dvh だとつまみと見出しで埋まる。この高さだけ画面をもっと使う */
+@media (max-width: 960px) and (max-height: 480px) {
+	.sheet {
+		height: calc(100dvh - 72px);
+	}
+}
+/* つまみ 32 x 4px (components 3.8)。上下の余白は余白の目盛りに合わせて 20px */
+.sheet-handle {
+	flex: none;
+	width: 32px;
+	height: 4px;
+	margin: var(--sp-5) auto;
+	border-radius: 2px;
+	background: var(--line-2);
+}
+.modal {
+	width: min(560px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));
+	padding: var(--sp-6);
+}
+.modal.sm {
+	width: min(400px, calc(100vw - var(--frame-left) - var(--frame-right) - 32px));
+}
+/* 中身だけスクロールさせ、行数が増えても主ボタンが画面外へ出ないようにする (仕様 5.14)。
+   内側 4px の余白を -4px で相殺する。無いと中の入力欄の :focus-visible の輪郭 (計 4px) が切れる */
+.modal-body {
+	min-height: 0;
+	overflow-y: auto;
+	margin: -4px;
+	padding: 4px;
+}
+/* 操作の行 (components 5.1 — 主ボタンは左) */
+.modal-actions {
+	gap: var(--sp-6);
+	margin-top: var(--sp-6);
+}
+/* 移動時間の警告だけ操作が 3 つ並ぶ。幅の狭いモーダルには収まらないので折り返させる */
+.modal.sm .modal-actions {
+	flex-wrap: wrap;
+	gap: var(--sp-4) var(--sp-5);
+}
+@keyframes modal-in {
+	from {
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(0.96);
+	}
+}
+.modal.leave {
+	animation: modal-out var(--d-exit) var(--ease-exit) both;
+}
+@keyframes modal-out {
+	to {
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(0.96);
+	}
+}
+
+/* components 3.2 — ボトムナビ。ガラス (HIG Tab bars)、src/lib/glass.ts の CHROME_TIERS */
+.bottomnav {
+	display: none;
+	position: fixed;
+	left: var(--sp-2);
+	right: var(--sp-2);
+	bottom: calc(var(--sp-2) + env(safe-area-inset-bottom));
+	z-index: 60;
+	height: var(--bottomnav-h);
+	border-radius: var(--r-l);
+}
+.bottomnav-item {
+	position: relative;
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: var(--sp-1);
+	border: 0;
+	background: none;
+	color: var(--ink-2);
+	font-size: 12px;
+	font-weight: 400;
+	line-height: 1.4;
+	text-decoration: none;
+	cursor: pointer;
+}
+/* 現在地は 64 x 32px の pill をアイコンの背後だけに敷く (components 3.2) */
+.bottomnav-item::before {
+	content: '';
+	position: absolute;
+	top: var(--sp-2);
+	width: 64px;
+	height: 32px;
+	border-radius: var(--r-pill);
+	background: transparent;
+	transition: background var(--d-fast) var(--ease-out);
+}
+.bottomnav-item:hover::before {
+	background: var(--hover);
+}
+.bottomnav-item:active::before {
+	background: var(--press);
+}
+/* サイドナビと同じく灰色のピル + 濃い文字色 */
+.bottomnav-item.on {
+	color: var(--ink);
+	font-weight: 700;
+}
+.bottomnav-item.on::before {
+	background: var(--sel-gray);
+}
+/* 面に加えてアイコンの線も太くし、色の違いだけにしない (M3 active indicator) */
+.bottomnav-item.on .i {
+	stroke-width: 2.3;
+}
+.bottomnav-item .i,
+.bottomnav-item .badge {
+	position: relative;
+}
+.bottomnav-item:focus-visible {
+	outline-offset: -2px;
+}
+
+/* ピルのボタンから開く板 (PillPanel.svelte)。ポップオーバーは regular 変種のガラス。
+   枠 (76) から開くので 77 に出す。覆いの層の canvas (71) は板より後ろになるので映らない。
+   OVERLAY_TIERS から外し、自前の backdrop-filter で真後ろをぼかす */
+.pill-panel {
+	z-index: 77;
+	display: flex;
+	flex-direction: column;
+	gap: var(--sp-2);
+	width: 320px;
+	max-width: calc(100vw - var(--sp-8));
+	padding: var(--sp-4);
+	border-radius: var(--r-m);
+	/* 開いた直後は板自身に焦点が当たる。枠は中のボタン側で示す */
+	outline: none;
+}
+/* 300〜400ms の ease-out (island.md) */
+.pill-panel[data-state='open'] {
+	animation: pill-in var(--d-enter) var(--ease-out) both;
+}
+.pill-panel[data-state='closed'] {
+	animation: pill-out var(--d-exit) var(--ease-exit) both;
+}
+@keyframes pill-in {
+	from {
+		opacity: 0;
+		translate: 0 -8px;
+		scale: 0.96;
+	}
+}
+@keyframes pill-out {
+	to {
+		opacity: 0;
+		translate: 0 -4px;
+		scale: 0.98;
+	}
+}
+.pill-title {
+	font-size: 14px;
+	color: var(--ink-2);
+}
+.pill-row {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-2);
+	min-width: 0;
+	font-size: 14px;
+}
+.pill-steps {
+	font-size: 14px;
+	line-height: 1.5;
+	color: var(--ink-2);
+}
+.pill-panel .btn {
+	align-self: flex-start;
+}
+/* 案内の段階の札。ピルの中に収める小さな錠剤で、押すと手順の板が開く */
+.pill-guide {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sp-2);
+	flex: none;
+	height: 32px;
+	padding: 0 var(--sp-3);
+	border: 0;
+	border-radius: var(--r-pill);
+	background: var(--sel-soft);
+	color: var(--ink);
+	font: inherit;
+	font-size: 13px;
+	white-space: nowrap;
+	cursor: pointer;
+}
+/* .iconbtn::after と同じ仕掛け。見た目 32px のまま操作領域を 44px にする */
+.pill-guide::after {
+	content: '';
+	position: absolute;
+	inset: -6px;
+}
+.pill-guide .num {
+	color: var(--accent);
+	font-weight: 700;
+}
+.pulse {
+	animation: pulse 2s var(--ease-out) infinite;
+}
+@keyframes pulse {
+	0%,
+	100% {
+		box-shadow: 0 0 0 0 var(--accent-glow);
+	}
+	50% {
+		box-shadow: 0 0 0 8px rgba(26, 94, 203, 0);
+	}
+}
+
+/* visual 4.2 — ぼかしが使えない環境では不透明に倒す */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	.card,
+	.sidebar,
+	.side-toggle,
+	.rail,
+	.header.glass,
+	.chatbar,
+	.header.solid,
+	.bottomnav,
+	.drawer,
+	.sheet,
+	.modal,
+	.panel-center,
+	.pill-panel,
+	.toast {
+		background: rgba(255, 255, 255, 0.94);
+	}
+}
+
+/* 本文と依頼バーの右は連携の列 (.rail) のぶんを常に空ける。列の有無で空けると、切り替えるたびに
+   本文の幅が変わって揺れる。ピル (.header.glass) は列と同じ右端なので外す */
+@media (min-width: 961px) {
+	/* サイドナビを格納中は、左余白を切り替えボタン 1 個ぶん (左上 --sp-4 + 8px、44px、間 --sp-4) に詰める */
+	.app.side-hidden {
+		--side-space: var(--side-space-hidden);
+	}
+	/* 格納中は画面の外へ滑らせる。visibility だけ 300ms 遅らせ、閉じ終わってから Tab と読み上げから外す */
+	.app.side-hidden .sidebar {
+		transform: translateX(calc(-100% - var(--sp-4) * 2));
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+		transition:
+			transform var(--d-enter) var(--ease-out),
+			opacity var(--d-enter) var(--ease-out),
+			visibility 0s linear var(--d-enter);
+	}
+	.app .main {
+		margin-right: calc(var(--rail-w) + 32px);
+	}
+	.app .chatbar {
+		right: calc(var(--rail-w) + 32px);
+	}
+	/* 覆いは Portal で <body> 直下に出るので、右の枠幅も同じく常に列のぶんを空ける */
+	:root {
+		--frame-right: calc(var(--rail-w) + 32px);
+	}
+	/* .app.side-hidden の --side-space 上書きは :root の --frame-left に届かないので、:has() で <html> から見る */
+	:root:has(.app.side-hidden) {
+		--frame-left: var(--side-space-hidden);
+	}
+}
+
+/* components 2.2 — 960px: サイドナビをボトムナビに替える */
+@media (max-width: 960px) {
+	/* モバイルでは .header.solid / .bottomnav が段を上げていないので、canvas を 76 にすると
+	   文字の上にぼかしが乗る。元の 50 に戻す */
+	.chrome {
+		z-index: 50;
+	}
+	:root {
+		/* サイドナビ・連携の列が無いので覆いを避ける幅も要らない */
+		--frame-left: 0px;
+		--frame-right: 0px;
+		/* 上端に貼り付く不透明な帯なので、浮かせるぶんの 16px が要らない */
+		--bar-clear: calc(var(--header-h) + var(--sp-4));
+		/* 依頼バーの底 (ボトムナビの高さ + セーフエリア + --sp-2 x 2)。.chatbar の bottom と共有する */
+		--chatbar-bottom: calc(
+			var(--bottomnav-h) + env(safe-area-inset-bottom) + var(--sp-2) + var(--sp-2)
+		);
+	}
+	/* 依頼バーはボトムナビの上に載る。ボトムナビの高さと浮かせる分 (--chatbar-bottom)に、
+	   依頼バー自身の高さと読みやすい間をここでまとめて足す。置き場所は広い幅と同じ .app */
+	.app {
+		--content-bottom-clear: calc(var(--chatbar-bottom) + var(--chatbar-h) + var(--sp-8));
+	}
+	/* 幅が足りないので案内の札は段階だけにする。見出しは押して開く板の中に出る */
+	.pg-title {
+		display: none;
+	}
+	.sidebar,
+	.side-toggle,
+	.rail,
+	.header.glass {
+		display: none;
+	}
+	.bottomnav {
+		display: flex;
+	}
+	.header.solid {
+		display: flex;
+	}
+	.panes {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.back {
+		display: inline-flex;
+	}
+	.main {
+		margin-left: 0;
+		margin-right: 0;
+		padding: var(--bar-clear) var(--sp-4) var(--content-bottom-clear);
+	}
+	/* 依頼バーはボトムナビの上に載せる */
+	.chatbar {
+		left: var(--sp-4);
+		right: var(--sp-4);
+		width: auto;
+		max-width: none;
+		margin-inline: 0;
+		transform: none;
+		bottom: var(--chatbar-bottom);
+	}
+	/* モバイルの --bar-clear はピルの下端ではないので、固定値 (帯 52px + 上下の余白 44px) にする */
+	.modal {
+		max-height: calc(100dvh - 96px);
+	}
+	/* components 3.7 — モバイルのトーストは上端いっぱい */
+	.toast {
+		left: var(--sp-4);
+		right: var(--sp-4);
+		max-width: none;
+		min-width: 0;
+		transform: none;
+		top: calc(12px + env(safe-area-inset-top));
+	}
+	@keyframes toast-in {
+		from {
+			opacity: 0;
+			transform: translateY(-12px) scale(0.98);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+	@keyframes toast-out {
+		from {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+		to {
+			opacity: 0;
+			transform: translateY(-8px) scale(0.98);
+		}
+	}
+}
+
+/* .nav-item の clamp が下限 36px (HIG) に当たる境目は 100dvh = 537px。それより低い窓では
+   サイドナビ自身をスクロールさせる (安全側に 600px) */
+@media (max-height: 600px) {
+	.sidebar {
+		overflow-y: auto;
+	}
+}
+
+/* components 3.3 — 600px: カードと区画の内側をモバイルの 16px にする */
+@media (max-width: 600px) {
+	.card {
+		padding: var(--sp-4);
+	}
+	.modal {
+		padding: var(--sp-4);
+	}
+	/* 表示の切り替えは残りいっぱいに広げ、余りを文字の長さに応じて配る (等分だと長い項目がはみ出す) */
+	.seg {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+	.seg-btn {
+		flex: 1 1 auto;
+		min-width: 0;
+		gap: var(--sp-1);
+		padding: 0 var(--sp-1);
+		font-size: 13px;
+	}
+}
+
+/* visual 4.12 — 動きを減らす設定。状態の変化だけは短いフェードで見せる */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+	.seg-thumb.ready {
+		transition: none;
+	}
+	.seg-thumb.pressed {
+		scale: none;
+	}
+	.toast,
+	.drawer,
+	.sheet,
+	.modal,
+	.panel-center,
+	.scrim {
+		animation: fade-in 120ms linear both !important;
+	}
+	.toast.leave,
+	.drawer.leave,
+	.sheet.leave,
+	.modal.leave,
+	.panel-center.leave,
+	.scrim.leave {
+		animation: fade-out 120ms linear both !important;
+	}
+	/* 公開画面の時間差の入場、チェックマークの拡大、画面遷移の横スライドは opacity の変化だけ残す */
+	.public .in,
+	.connect-cta .i {
+		animation: fade-in 120ms linear both !important;
+	}
+	/* 音声で聞く間、カードはその場で 200ms で消す (voice-orb.md)。不透明度だけこの長さに戻す */
+	.today .bento > .card {
+		transition: opacity 200ms linear !important;
+	}
+	/* .sidebar の visibility の transition-delay は duration を縮めても残るので、transition ごと切る */
+	.sidebar {
+		transition: none !important;
+	}
+	/* 擬似要素は別の規則にする。CSS はセレクタ列に解釈できないものが 1 つでもあると
+	   規則ごと捨てるので、対応しないブラウザで上の指定まで消えてしまう */
+	::view-transition-new(root) {
+		animation: fade-in 120ms linear both !important;
+	}
+	::view-transition-old(root) {
+		animation: fade-out 120ms linear both !important;
+	}
+}
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+}
+@keyframes fade-out {
+	to {
+		opacity: 0;
+	}
+}
+
+/* ruling 17 — 印刷 */
+@media print {
+	.bg,
+	.app > :not(main),
+	.chatbar,
+	.toast,
+	.scrim {
+		display: none !important;
+	}
+	/* 画面用の .app .main (連携の列のぶんの右の余白) に勝たせる */
+	.app .main {
+		margin: 0;
+		padding: 0;
+	}
+	.screen,
+	.card {
+		box-shadow: none;
+		background: #fff;
+	}
+	/* ガラスの canvas も落とす。display はライブラリがインラインで書くので !important でしか下ろせない。
+	   塗りも不透明に戻す。body を足すのは後ろの :root [data-liquid-glass='webgl'] .card (0,4,0) に勝つため */
+	[data-liquid-glass-layer] {
+		display: none !important;
+	}
+	:root body [data-liquid-glass='webgl'] .card {
+		background: #fff !important;
+	}
+}

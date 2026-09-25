@@ -1,0 +1,174 @@
+import { describe, it, expect } from 'vitest';
+import { seed, SEED } from './seed';
+import { identitiesOf, personHistory, personStats } from './people';
+import { updatePersonMemo } from './actions';
+import { replaceDb, db } from './store.svelte';
+
+const BASE = new Date(2026, 8, 15); // 火曜。シードの相対日付がこの日を基準になる
+
+describe('identitiesOf', () => {
+	it('その人物に紐づく連絡先だけを返す', () => {
+		const d = seed(BASE);
+		expect(identitiesOf(d, SEED.tanaka).map((i) => i.id)).toEqual([SEED.tanakaMailIdentity, SEED.tanakaLineIdentity]);
+		// personId のない連絡先 (未登録の差出人) は誰のものにもならない
+		expect(identitiesOf(d, SEED.sato).map((i) => i.kind)).toEqual(['email', 'slack_id']);
+		expect(identitiesOf(d, 'p-none')).toEqual([]);
+	});
+});
+
+describe('personHistory', () => {
+	it('スレッドと会議を新しい順に並べる', () => {
+		const d = seed(BASE);
+		const h = personHistory(d, SEED.tanaka);
+		// シードの過去の商談 2 件 (8/25 見積提示、8/5 デモ実施) が後ろに続く
+		expect(h.map((x) => x.title)).toEqual([
+			'次回お打ち合わせについて',
+			'先ほどの件、了解しました',
+			'ABC 株式会社 見積提示',
+			'ABC 株式会社 デモ実施'
+		]);
+		expect(h.map((x) => x.kind)).toEqual(['mail', 'line', 'meeting', 'meeting']);
+		expect(h.map((x) => x.label)).toEqual(['メール', 'LINE', '会議', '会議']);
+		expect(h[0].href).toBe(`/inbox?t=${SEED.tanakaNextThread}`);
+		expect(h[0].at > h[1].at).toBe(true);
+	});
+
+	it('Slack のスレッドは slack になる', () => {
+		const d = seed(BASE);
+		expect(personHistory(d, SEED.yamada).map((x) => x.kind)).toEqual(['slack']);
+	});
+
+	it('これから先の会議は「最近のやりとり」に混ぜない', () => {
+		const d = seed(BASE);
+		// SEED.abcMeeting の予定 (SEED.abcMeetingEvent) は翌営業日なので出さない (過去の商談 2 件は出る)
+		const h = personHistory(d, SEED.tanaka);
+		expect(h.some((x) => x.href === `/meetings/${SEED.abcMeeting}`)).toBe(false);
+		expect(h.filter((x) => x.kind === 'meeting').length).toBe(2);
+	});
+
+	it('過去の会議は会議として出し、時刻は 0 埋めして比べる', () => {
+		const d = seed(BASE);
+		d.events.push({
+			id: 'ev-past',
+			date: '2026-09-14',
+			start: '9:00',
+			end: '10:00',
+			title: 'ABC 株式会社 初回商談',
+			personIds: [SEED.tanaka],
+			source: 'gcal',
+			meetingId: 'm-past'
+		});
+		d.meetings.push({
+			id: 'm-past',
+			eventId: 'ev-past',
+			title: 'ABC 株式会社 初回商談',
+			personIds: [SEED.tanaka],
+			purpose: '',
+			briefRead: false,
+			agenda: [],
+			agendaShared: false,
+			transcriptIds: []
+		});
+		const h = personHistory(d, SEED.tanaka);
+		const m = h.find((x) => x.kind === 'meeting')!;
+		expect(m.at).toBe('2026-09-14T09:00');
+		expect(m.href).toBe('/meetings/m-past');
+		// 9/14 19:40 の LINE より後ろに来る (文字列のままだと '9:00' > '19:40' になってしまう)
+		expect(h.map((x) => x.title)).toEqual([
+			'次回お打ち合わせについて',
+			'先ほどの件、了解しました',
+			'ABC 株式会社 初回商談',
+			'ABC 株式会社 見積提示',
+			'ABC 株式会社 デモ実施'
+		]);
+	});
+});
+
+describe('personStats', () => {
+	it('メールの通数、会議の件数、最終商談を返す', () => {
+		const d = seed(BASE);
+		// SEED.tanakaNextThread の 2 通。LINE のスレッドは数えない。
+		// SEED.abcMeetingEvent は翌営業日の予定なので数えず、過去の商談 2 件だけを数える
+		expect(personStats(d, SEED.tanaka)).toEqual({ mails: 2, meetings: 2, lastMeeting: '2026-08-25' });
+		expect(personStats(d, SEED.sato)).toEqual({ mails: 2, meetings: 0, lastMeeting: undefined });
+	});
+
+	it('会議の件数は personHistory に出る会議の数と一致する', () => {
+		const d = seed(BASE);
+		const count = (id: string) => personHistory(d, id).filter((x) => x.kind === 'meeting').length;
+		// 先の予定しか無い状態
+		expect(personStats(d, SEED.tanaka).meetings).toBe(count(SEED.tanaka));
+		d.events.push({
+			id: 'ev-past',
+			date: '2026-09-01',
+			start: '15:00',
+			end: '16:00',
+			title: '見積提示',
+			personIds: [SEED.tanaka],
+			source: 'gcal',
+			meetingId: 'm-past'
+		});
+		d.meetings.push({
+			id: 'm-past',
+			eventId: 'ev-past',
+			title: '見積提示',
+			personIds: [SEED.tanaka],
+			purpose: '',
+			briefRead: false,
+			agenda: [],
+			agendaShared: false,
+			transcriptIds: []
+		});
+		// 過去の会議を足しても両者はずれない (シードの 2 件 + 足した 1 件)
+		expect(personStats(d, SEED.tanaka).meetings).toBe(count(SEED.tanaka));
+		expect(count(SEED.tanaka)).toBe(3);
+	});
+
+	it('最終商談は基準日までで最も新しい会議の日付', () => {
+		const d = seed(BASE);
+		d.events.push({
+			id: 'ev-past',
+			date: '2026-09-01',
+			start: '15:00',
+			end: '16:00',
+			title: '見積提示',
+			personIds: [SEED.tanaka],
+			source: 'gcal',
+			meetingId: 'm-past'
+		});
+		d.meetings.push({
+			id: 'm-past',
+			eventId: 'ev-past',
+			title: '見積提示',
+			personIds: [SEED.tanaka],
+			purpose: '',
+			briefRead: false,
+			agenda: [],
+			agendaShared: false,
+			transcriptIds: []
+		});
+		// 足した 9/1 はシードの 8/25 より新しいので最終商談になる
+		expect(personStats(d, SEED.tanaka)).toEqual({ mails: 2, meetings: 3, lastMeeting: '2026-09-01' });
+	});
+});
+
+describe('updatePersonMemo', () => {
+	it('メモを書き換えて作業履歴に残す', () => {
+		replaceDb(seed(BASE));
+		const before = db.logs.length;
+		const p = updatePersonMemo(SEED.tanaka, '価格は決裁者と直接詰める。');
+		expect(p?.memo).toBe('価格は決裁者と直接詰める。');
+		expect(db.people.find((x) => x.id === SEED.tanaka)!.memo).toBe('価格は決裁者と直接詰める。');
+		expect(db.logs.length).toBe(before + 1);
+		expect(db.logs[0]).toMatchObject({ actor: 'user', origin: 'people', kind: 'other' });
+		expect(db.logs[0].text).toContain('田中 太郎');
+	});
+
+	it('中身が変わらないときは履歴を増やさない', () => {
+		replaceDb(seed(BASE));
+		const memo = db.people.find((x) => x.id === SEED.tanaka)!.memo;
+		const before = db.logs.length;
+		updatePersonMemo(SEED.tanaka, memo);
+		expect(db.logs.length).toBe(before);
+	});
+});

@@ -1,0 +1,62 @@
+/* form の共有部品 — bits-ui の Select と、フォームで使う小さな部品 */
+
+/* 期限と時刻、前後のバッファのように 2 つ並べる組。片方だけ広げず、同じ幅で割る */
+.form-pair {
+	gap: var(--sp-4);
+	align-items: flex-start;
+}
+.form-pair > .field {
+	flex: 1;
+	min-width: 0;
+}
+/* 選ぶ欄は入力欄と同じ見た目にし、中身を両端に寄せる */
+.select-trigger {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--sp-2);
+	text-align: left;
+	cursor: pointer;
+}
+.select-trigger > span {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+/* ic-chev は右向き。開く向きに合わせて下を向かせる */
+.select-trigger .i {
+	transform: rotate(90deg);
+	flex: none;
+}
+/* モーダル (75) より上に出す。regular 変種のガラスを自前の backdrop-filter で描く。モーダルの中で開くので、
+   canvas 方式だと一覧のすぐ後ろがモーダル自身になって塗りが出ない。--rim は WebGL 経路で 0 に下ろす
+   仕組みを通らず常に反射が出るので書かない */
+.select-menu {
+	z-index: 80;
+	width: var(--bits-select-anchor-width);
+	max-height: 280px;
+	overflow-y: auto;
+	padding: var(--sp-2);
+	border-radius: var(--r-m);
+	background: var(--glass-sheet);
+	-webkit-backdrop-filter: var(--blur-sheet);
+	backdrop-filter: var(--blur-sheet);
+	box-shadow: var(--e3);
+}
+.select-menu:focus-visible {
+	outline: none;
+}
+.select-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--sp-3);
+	min-height: 44px;
+	padding: 0 var(--sp-4);
+	border-radius: var(--r-s);
+	font-size: 16px;
+	cursor: pointer;
+}
+.select-item[data-highlighted] {
+	background: var(--sel-soft);
+}

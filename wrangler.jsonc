@@ -1,0 +1,11 @@
+// Cloudflare Workers の静的ファイルの配信で公開する (npm run build の出力 build/ をそのまま置く)。
+// SPA なので、無いパスは index.html を返す (vite.config.ts の adapter-static の fallback と対)
+{
+	"name": "kuroko-demo",
+	"compatibility_date": "2026-09-21",
+	"assets": {
+		"directory": "./build",
+		"not_found_handling": "single-page-application"
+	},
+	"routes": [{ "pattern": "kuroko-demo.sudy.me", "custom_domain": true }]
+}

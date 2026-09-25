@@ -1,0 +1,111 @@
+<script lang="ts">
+	import { tick } from 'svelte';
+	import { ui, dictated, request, type ContextChip } from '$lib/ui.svelte';
+	import Icon from './Icon.svelte';
+	import { barGlass } from '$lib/glass';
+	import VoiceActions from './VoiceActions.svelte';
+
+	let { context = null }: { context?: ContextChip | null } = $props();
+
+	let text = $state('');
+	let mic: HTMLButtonElement | undefined = $state();
+	let acts: HTMLDivElement | undefined = $state();
+
+	/* Today の環状配置では、音声の操作をこのバーの位置に代わりに出す (docs/research/voice-orb.md の
+	   「操作の置き場所」)。出したら操作へ、閉じたらマイクのボタンへ焦点を移す */
+	const voicing = $derived(ui.voice && ui.voiceHere);
+	$effect(() => {
+		if (!voicing) return;
+		// 聞き取る前は「KUROKO に送る」が押せないので、押せる最初の操作へ
+		acts?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+		// マイクのボタンは閉じたあとに作り直されるので、描き終わりを待ってから移す
+		return () => tick().then(() => mic?.focus());
+	});
+
+	/* 音声の聞き取りを止めたら、聞き取った文字を入力欄の後ろに足し、焦点を移す。
+	   入力欄は音声の操作を閉じたあとで作り直されるので、描き終わりを待ってから移す */
+	$effect(() => {
+		const t = dictated.text.trim();
+		if (!t) return;
+		dictated.text = '';
+		text = text.trim() ? `${text.trim()} ${t}` : t;
+		tick().then(() => {
+			const input = document.querySelector<HTMLInputElement>('.chatbar input');
+			input?.focus();
+			input?.setSelectionRange(input.value.length, input.value.length);
+		});
+	});
+
+	/* 入力欄に焦点が来たのがキーボード (Tab) か、押したのかを覚える。押して入れたときは
+	   バーの輪郭を出さない (app.css の .chatbar[data-keyboard]) */
+	let byKeyboard = $state(false);
+
+	function send() {
+		const q = text.trim();
+		if (!q) return;
+		text = '';
+		request('/chat', { kind: 'ask', q });
+	}
+</script>
+
+<!-- 依頼バーだけは枠の層に乗せず自分の描画面を持つ (src/lib/glass.ts の barGlass)。
+     層に乗せた面どうしは互いを映せず、層に乗せるとサイドナビ・上部バー・連携の列が
+     このバーの屈折に入らなくなるため (横には重ならないので実際には映る場面はない) -->
+<svelte:window
+	onkeydown={(e) => e.key === 'Tab' && (byKeyboard = true)}
+	onpointerdown={() => (byKeyboard = false)}
+/>
+<form
+	class="chatbar"
+	data-keyboard={byKeyboard || undefined}
+	{@attach barGlass}
+	onsubmit={(e) => {
+		e.preventDefault();
+		send();
+	}}
+>
+	{#if voicing}
+		<div class="voice-bar" bind:this={acts}>
+			<VoiceActions />
+		</div>
+	{:else if context}
+		<button
+			type="button"
+			class="chip"
+			title={context.label}
+			aria-label="{context.label}との結び付けを外す"
+			onclick={() => (ui.context = null)}
+		>
+			<span>{context.label}</span>
+			<Icon name="ic-x" size={16} />
+		</button>
+	{/if}
+	{#if !voicing}
+		<input name="q" bind:value={text} placeholder="KUROKO に話しかける" aria-label="KUROKO への依頼" />
+		<button
+			type="button"
+			class="iconbtn"
+			title="音声で依頼"
+			aria-label="音声で依頼"
+			bind:this={mic}
+			onclick={() => (ui.voice = true)}
+		>
+			<Icon name="ic-mic" size={20} />
+		</button>
+		<button type="submit" class="send" aria-label="依頼" disabled={!text.trim()}>
+			<Icon name="ic-send" size={20} />
+		</button>
+	{/if}
+</form>
+
+<style>
+	/* 送信ボタンは実寸 42px なので、透明な領域を足して操作領域を 44px にする (components 3.4) */
+	.send {
+		position: relative;
+	}
+	.send::after {
+		content: '';
+		position: absolute;
+		inset: -1px;
+	}
+</style>

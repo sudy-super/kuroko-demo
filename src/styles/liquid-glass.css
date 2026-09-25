@@ -1,0 +1,110 @@
+/* Liquid Glass — ガラスの面は apple-liquid-glass-webgl が WebGL2 で描く。塗り・ぼかし・縁の光も
+   ライブラリが描くので、CSS 側の同じ役の指定は下ろす (canvas は z-index -1 の子で、塗りを残すと
+   白い板が残る)。WebGL2 が無い環境は data-liquid-glass="fallback" で backdrop-filter のまま */
+/* 枠の 5 面は .chrome の canvas にまとめて描かれ、面は .chrome のきょうだいなので ~ で書く。
+   依頼バーは自分が host (glass.ts の barGlass)。ドロワー・シート・モーダルは <body> の子、
+   ポップオーバー・メニューは孫と深さが揃わないので、:has() で overlay-chrome を確かめて子孫として下ろす。
+   .select-menu・.toast・.pill-panel・.demo-menu は含めない (glass.ts の OVERLAY_TIERS を見よ) */
+:root [data-liquid-glass='webgl'],
+:root [data-liquid-glass='webgl'] .card,
+.chrome[data-liquid-glass='webgl'] ~ .sidebar,
+.chrome[data-liquid-glass='webgl'] ~ .side-toggle,
+.chrome[data-liquid-glass='webgl'] ~ .header.glass,
+.chrome[data-liquid-glass='webgl'] ~ .rail,
+.chrome[data-liquid-glass='webgl'] ~ .header.solid,
+.chrome[data-liquid-glass='webgl'] ~ .bottomnav,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .sheet,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .modal,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .panel-center {
+	background: none;
+	-webkit-backdrop-filter: none;
+	backdrop-filter: none;
+	/* 下の ::after の z-index: -1 は、面が積み重ねの文脈を作らないと canvas の裏に回って消える */
+	isolation: isolate;
+	/* --rim は要素自身の box-shadow なので、canvas (z-index -1 の子)の下に隠れて描いても
+	   見えない。下の ::after が同じ形をもう一度描くので、要素自身の分は消す */
+	--rim: 0 0 rgba(0, 0, 0, 0);
+}
+
+/* 文字が多い面は、塗りを上限 (tint 1.5) まで上げてもオーブの直上で --ink-3 が 4.5:1 に届かない。
+   canvas の上に薄い白を 1 枚重ねて下限を持ち上げる (HIG Materials の regular 変種)。完了画面のカードも同じ */
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer::before,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .sheet::before,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .modal::before,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .panel-center::before,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .today-done .card::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	border-radius: inherit;
+	pointer-events: none;
+	background: rgba(255, 255, 255, 0.42);
+}
+
+/* トーストは canvas の層の後ろになるので使わず、自前の backdrop-filter で真後ろをぼかす。
+   --rim は濃い地に合わないので付けない */
+
+/* 反射の無い Liquid Glass。上縁の鏡面と左縁の白い線は付けず、下縁・右縁の極薄い暗線だけを残す。
+   canvas は要素の z-index: -1 の子なので、inset の影は canvas の下に隠れる。疑似要素で描く */
+.sidebar::after,
+.side-toggle::after,
+.rail::after,
+.header.glass::after,
+.chatbar::after,
+.header.solid::after,
+.bottomnav::after,
+.drawer::after,
+.sheet::after,
+.modal::after,
+.panel-center::after,
+.pill-panel::after,
+.demo-menu::after,
+.select-menu::after,
+:root [data-liquid-glass='webgl'] .card::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	pointer-events: none;
+	box-shadow:
+		inset 0 -1px 0 rgba(30, 42, 71, 0.18), inset -1px 0 0 rgba(30, 42, 71, 0.12);
+}
+/* canvas と同じ -1 に置き、背景 → canvas → この縁 → 内容 の順にする。WebGL2 が無い経路では
+   積み重ねの文脈が無く、負の段だと副ボタンの塗りの裏へ回るので付けない */
+:root [data-liquid-glass='webgl']::after,
+:root [data-liquid-glass='webgl'] .card::after,
+.chrome[data-liquid-glass='webgl'] ~ .sidebar::after,
+.chrome[data-liquid-glass='webgl'] ~ .side-toggle::after,
+.chrome[data-liquid-glass='webgl'] ~ .header.glass::after,
+.chrome[data-liquid-glass='webgl'] ~ .rail::after,
+.chrome[data-liquid-glass='webgl'] ~ .header.solid::after,
+.chrome[data-liquid-glass='webgl'] ~ .bottomnav::after,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .drawer::after,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .sheet::after,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .modal::after,
+body:has(> .overlay-chrome[data-liquid-glass='webgl']) .panel-center::after {
+	z-index: -1;
+}
+
+/* 描画面を失ったら canvas を下ろし backdrop-filter に戻す。display はライブラリがインラインで書くので !important */
+[data-liquid-glass='fallback'] > [data-liquid-glass-layer] {
+	display: none !important;
+}
+
+/* canvas は bleed の分だけ要素の外へ出るので基準の親が要る。isolation: isolate はライブラリも書くが、
+   WebGL2 が無いと書かれず、.hole の z-index: -2 が .bento の外へ抜けてオーブが消える */
+.bento {
+	isolation: isolate;
+}
+
+/* visual 4.11 — ガラスを 2 枚重ねない。覆いが出ている間はカードの canvas を落とし、塗りを不透明に戻す
+   (必ず対で当てる)。ライブラリが display: block をインラインで書くので !important */
+body[data-overlay='on'] .bento > [data-liquid-glass-layer],
+body[data-overlay='on'] .today-done > [data-liquid-glass-layer] {
+	display: none !important;
+}
+:root body[data-overlay='on'] [data-liquid-glass='webgl'] .card {
+	background: var(--overlay-card);
+}

@@ -1,0 +1,242 @@
+/* public — Welcome と /connect。iPhone の初期設定と同じく、ビューポート全体を 1 本の縦の列にする
+   (オーブ → 見出し → 説明、主ボタンは下端)。パネルにまとめない。オーブの上に文字は載せない (visual 2.8) */
+.public {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	justify-content: center;
+	/* min-height ではなく height。縦の空きを確定させないと、下のオーブが flex で縮めない。
+	   オーブを下限まで縮めても入りきらない窓 (e.g. 横向きの電話) だけここがスクロールする */
+	height: 100dvh;
+	overflow-y: auto;
+	/* 下端の余白は器ではなく最後の .public-foot が持つ。器の padding-bottom は、入りきらない窓で
+	   スクロール範囲の外に出る */
+	padding: var(--sp-6) var(--sp-6) 0;
+	/* オーブのキャンバスは球の直径の約 2 倍の光彩と破片を含むので、狭い画面では横にはみ出す */
+	overflow-x: clip;
+}
+.public-col {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--sp-5);
+	width: 100%;
+	max-width: 560px;
+	text-align: center;
+}
+/* 携帯の横向きでは器の余白と間隔を詰め、最初の画面に主ボタンを入れる (responsive-policy.md 3) */
+@media (max-width: 960px) and (max-height: 480px) {
+	.public {
+		padding-top: var(--sp-2);
+	}
+	.public-col {
+		gap: var(--sp-2);
+	}
+}
+/* オーブと本文の塊は上下の空きを等分した位置に、操作群は下端に置く (下の margin-top: auto と対) */
+.public-col > .orb {
+	/* 縮む余地を持つのはオーブだけ (下限 120px)。下に要る高さを定数で持つと、中身の有無や折り返しで合わなくなる */
+	flex: 0 1 auto;
+	min-height: 120px;
+	margin-top: auto;
+	/* Orb は width も height もインラインの style に書く。width を下ろして
+	   高さ (flex が縮める側) から正方形を作らないと、縮んだときに楕円になる */
+	width: auto !important;
+	max-width: 100%;
+	aspect-ratio: 1;
+}
+
+/* 見出しと説明。記事 11 に従い、大見出しは行間 1.25、字間 0 */
+.public-main {
+	display: flex;
+	flex-direction: column;
+	/* アイコンのような幅を持つ要素は align-items が無いと左端に寄る */
+	align-items: center;
+	gap: var(--sp-3);
+	width: 100%;
+}
+.public-main h1 {
+	font-size: 32px;
+	font-weight: 700;
+	line-height: 1.25;
+	letter-spacing: 0;
+}
+/* 仕様 12.3 — Welcome の見出しだけ 40px。文字寸法の段階 (12〜40) の上端 */
+.public-main .brand {
+	font-size: 40px;
+}
+.public-main p {
+	color: var(--ink-2);
+	font-size: 16px;
+}
+/* balance は狭い画面で 1 文字だけの行が残るのを防ぐ。
+   ただし日本語では語の途中で割ることがあるので auto-phrase で文節の切れ目に寄せる */
+.public-main h1,
+.public-main p {
+	text-wrap: balance;
+	word-break: auto-phrase;
+}
+
+/* サービスの画面 (/connect/<id>)。1 画面 1 サービス。ガラスは使わない (下に曲げる内容がない) */
+
+/* HIG Onboarding の page control 相当。今いる段階だけ塗り、残りは線の色で置く。
+   order で列の先頭 (オーブより上)へ出す */
+.connect-steps {
+	display: flex;
+	gap: var(--sp-2);
+	order: -1;
+}
+/* 非現在の点は --line-2 だと地 (#f4f7fc)に対して 1.27:1 で、段階の総数が目で読めない。
+   文字ではないので 3:1 が下限 (WCAG 1.4.11)。この色は同じ位置で 3.30:1 */
+.connect-steps span {
+	width: var(--sp-2);
+	height: var(--sp-2);
+	border-radius: var(--r-pill);
+	background: #7888ac;
+}
+.connect-steps span.on {
+	background: var(--accent);
+}
+/* ブランドアイコンは 64px。flex の列なので、中央寄せは align-self で行う */
+.connect-mark {
+	align-self: center;
+	margin-bottom: var(--sp-2);
+}
+/* 「接続中…」「接続済み」の間も塗りは --accent のまま。灰色にすると状態の違いが色の変化として読まれる。
+   状態はラベルとチェックの形で示す (NN/g State-Switch Controls) */
+.btn.connect-cta[aria-disabled='true'] {
+	background: var(--accent);
+	color: #fff;
+}
+/* onboarding.md 3.2 — 完了は進捗バーではなくチェックマークで締める */
+.connect-cta .i {
+	animation: check-in var(--d-base) var(--ease-out) backwards;
+}
+@keyframes check-in {
+	from {
+		opacity: 0;
+		scale: 0.85;
+	}
+}
+/* 「接続中…」の間だけ出す回転リング。reduced-motion では app.css の全体規則で静止するが、
+   輪の形自体が処理中であることを示すので文字のラベルと合わせて意味は保たれる */
+.connect-cta .spinner {
+	width: 18px;
+	height: 18px;
+	border: 2px solid rgb(255 255 255 / 0.4);
+	border-top-color: #fff;
+	border-radius: 50%;
+	animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* 下端に寄せる操作群。主ボタンは幅いっぱいの pill、副操作は文字リンク */
+.public-foot {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--sp-3);
+	width: 100%;
+	margin-top: auto;
+	/* 画面の下端の余白は最後の要素が持つ。器や列に付けると、入りきらない窓でスクロールの終点より外に出る */
+	padding-bottom: max(var(--sp-6), env(safe-area-inset-bottom));
+}
+/* ボタンにはガラスを当てない (文字のコントラストが持たない)。/schedule/[token] の副ボタンと
+   破壊的なボタンも寸法だけそろえ、塗りは .btn.sec / .btn.danger のまま (主ボタンは 1 個) */
+.btn.public-cta {
+	width: 100%;
+	max-width: 360px;
+	height: 52px;
+	border-radius: var(--r-pill);
+	font-size: 16px;
+}
+/* .btn.pri:hover と同じ詳細度で後ろに置き、指しても塗りを変えない */
+.btn.pri.public-cta {
+	background: var(--accent);
+}
+/* components 3.6 — 補足の文字は 12px まで。文字寸法の段階の下端 */
+.public .note {
+	color: var(--ink-3);
+	font-size: 12px;
+	line-height: 1.6;
+}
+
+/* 相手が開く画面 (/schedule/[token]) はオーブを出さないので、縦の余りを本文の塊が吸って中央にそろえる */
+.public-col:not(:has(> .orb)) > .public-main {
+	margin-top: auto;
+}
+/* 下に操作群 (.public-foot)が無い状態 (無効なリンク・キャンセル済み)では、上の margin-top: auto
+   だけだと本文が下端に貼り付く。下側にも余りを分けて上下の中央に置く */
+.public-col:not(:has(> .orb)):not(:has(> .public-foot)) > .public-main {
+	margin-bottom: auto;
+}
+/* 候補一覧・確定内容のまとめ。ガラスは使わない (docs/research/glass-scope.md、
+   Welcome・接続画面と同じく下に曲げる内容がない)。.card の白い面だけ流用する */
+.sched-slots,
+.sched-summary {
+	display: flex;
+	flex-direction: column;
+	/* 親が縦の flex なので、既定の flex-shrink: 1 だと低い窓で行が 44px 未満に潰れる。縮ませず .public がスクロールする */
+	flex: none;
+	width: 100%;
+	border-radius: var(--r-m);
+	background: rgba(255, 255, 255, 0.7);
+	box-shadow: var(--card-edge);
+	overflow: hidden;
+}
+.sched-slot {
+	width: 100%;
+	font-weight: 500;
+}
+.sched-slot:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: -2px;
+}
+/* 素の radio と同じ見た目にする (bits-ui の RadioGroup.Item はボタンなので input が無い)。
+   焦点の輪郭は行そのものが持つ (components 3.6 の chip と同じ考え方) */
+.sched-radio {
+	flex: none;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	box-shadow: inset 0 0 0 1.5px var(--border);
+}
+.sched-radio.on {
+	box-shadow: inset 0 0 0 6px var(--accent);
+}
+
+/* onboarding.md 3.1 — 時間差のフェードイン。遅れは要素側の --delay で渡す。
+   backwards にして、終わったあとは下ろす (.btn の hover の transform を殺さないため) */
+.public .in {
+	animation: public-in var(--d-enter) var(--ease-out) var(--delay, 0ms) backwards;
+}
+@keyframes public-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+}
+
+/* 画面遷移は横スライド。startViewTransition があるブラウザだけで動く (機能検出は layout 側) */
+::view-transition-old(root) {
+	animation: vt-out var(--d-base) var(--ease-enter) both;
+}
+::view-transition-new(root) {
+	animation: vt-in var(--d-base) var(--ease-enter) both;
+}
+@keyframes vt-out {
+	to {
+		opacity: 0;
+		translate: -24px 0;
+	}
+}
+@keyframes vt-in {
+	from {
+		opacity: 0;
+		translate: 24px 0;
+	}
+}
