@@ -3,6 +3,7 @@ import type { ContextChip } from '../ui.svelte';
 import { key, bizDay, parse, fmtMDW, whenOf, hourOf } from '../dates';
 import { companyOf, firstFreeStart, nextMeeting, personOf, projectOf } from '../derived';
 import { slotsFor, suggestion } from './generate';
+import { SEED } from '../seed';
 
 /** 仕様 9.1 のキーワード表による振り分け。LLM は使わない */
 export type Intent = {
@@ -16,9 +17,9 @@ export type Intent = {
 };
 
 const PEOPLE: [string, string][] = [
-	['田中', 'p-tanaka'],
-	['佐藤', 'p-sato'],
-	['山田', 'p-yamada']
+	['田中', SEED.tanaka],
+	['佐藤', SEED.sato],
+	['山田', SEED.yamada]
 ];
 
 /**

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { db, resetDb } from './store.svelte';
 import { addPerson, linkIdentity, undo } from './actions';
 import { personOfIdentity } from './derived';
+import { SEED } from './seed';
 
 beforeEach(() => {
 	(globalThis as any).localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
@@ -10,7 +11,7 @@ beforeEach(() => {
 
 describe('ChannelIdentity の関連付け', () => {
 	it('未登録の差出人は関連付けまでパネルに出ない', () => {
-		expect(personOfIdentity(db, 'id-sunrise')).toBeUndefined();
+		expect(personOfIdentity(db, SEED.sunriseIdentity)).toBeUndefined();
 		const p = addPerson(
 			{
 				name: '鈴木 一郎',
@@ -23,11 +24,11 @@ describe('ChannelIdentity の関連付け', () => {
 			},
 			'people'
 		);
-		expect(personOfIdentity(db, 'id-sunrise')).toBeUndefined();
-		linkIdentity('id-sunrise', p.id);
-		expect(personOfIdentity(db, 'id-sunrise')?.id).toBe(p.id);
-		expect(db.threads.filter((t) => t.identityId === 'id-sunrise').every((t) => t.personId === p.id)).toBe(true);
+		expect(personOfIdentity(db, SEED.sunriseIdentity)).toBeUndefined();
+		linkIdentity(SEED.sunriseIdentity, p.id);
+		expect(personOfIdentity(db, SEED.sunriseIdentity)?.id).toBe(p.id);
+		expect(db.threads.filter((t) => t.identityId === SEED.sunriseIdentity).every((t) => t.personId === p.id)).toBe(true);
 		undo(db.logs[0].id);
-		expect(personOfIdentity(db, 'id-sunrise')).toBeUndefined();
+		expect(personOfIdentity(db, SEED.sunriseIdentity)).toBeUndefined();
 	});
 });

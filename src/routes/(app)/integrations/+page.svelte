@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { page } from '$app/state';
+	import { SEED } from '$lib/seed';
+	import { takeIntent } from '$lib/ui.svelte';
 	import { db } from '$lib/store.svelte';
 	import { lineSay, sendReply } from '$lib/actions';
 	import { integrations } from '$lib/integrations';
@@ -18,22 +18,22 @@
 	] as const;
 
 	// 承認のシーンで使う、田中様とのやり取り (src/lib/seed.ts の queueThreads)
-	const TANAKA = 'th-tanaka-next';
+	const TANAKA = SEED.tanakaNextThread;
 
 	const set = <K extends 'lineTab' | 'lineRole'>(k: K, v: (typeof db.demo)[K]) => {
 		db.demo[k] = v;
 	};
 
-	onMount(() => {
-		// 承認のシーン: 田中様への返信案を KUROKO のカードとして LINE に出す。
-		// 無ければここで作る (/inbox を通らずにこの画面だけで見せられるように)。
-		// status は見ない。送信済みや却下済みでも作り直さない (やり直しは「デモをリセット」)
-		if (page.url.searchParams.get('scene') === 'approve') {
+	// 案内の筋書き (scenarios.ts) からの 2 つの場面
+	/* 承認のシーン: 田中様への返信案を KUROKO のカードとして LINE に出す。
+	   無ければここで作る (/inbox を通らずにこの画面だけで見せられるように)。
+	   status は見ない。送信済みや却下済みでも作り直さない (やり直しは「デモをリセット」) */
+	$effect(() =>
+		takeIntent('line-approve', () => {
 			const a =
 				db.approvals.find((x) => x.payload.type === 'reply' && x.payload.threadId === TANAKA) ??
 				sendReply(TANAKA, '田中様\n\nご連絡ありがとうございます。\n次回の日程を調整いたします。', 'line');
-			// 同じ承認のカードが既に出ているなら積み直さない。この URL は途中でやり直すために
-			// 開き直されるので、そのたびにカードと承認が増えないようにする
+			// 同じ承認のカードが既に出ているなら積み直さない (筋書きは途中でやり直せる)
 			const shown = db[db.demo.lineTab].some((m) => m.card?.actions.some((x) => x.arg === a.id));
 			if (!shown)
 				integrations.chat.post(db.demo.lineTab, '田中様への返信案ができました', {
@@ -44,10 +44,9 @@
 						{ label: '承認して送信', act: 'approve', arg: a.id }
 					]
 				});
-		}
-		const say = page.url.searchParams.get('say');
-		if (say) lineSay(say, db.demo.lineRole);
-	});
+		})
+	);
+	$effect(() => takeIntent('line-say', (i) => lineSay(i.text, db.demo.lineRole)));
 </script>
 
 <svelte:head><title>LINE / Slack — KUROKO AI</title></svelte:head>

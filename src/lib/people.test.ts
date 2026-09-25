@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { seed } from './seed';
+import { seed, SEED } from './seed';
 import { identitiesOf, personHistory, personStats } from './people';
 import { updatePersonMemo } from './actions';
 import { replaceDb, db } from './store.svelte';
@@ -9,9 +9,9 @@ const BASE = new Date(2026, 8, 15); // 火曜。シードの相対日付がこ�
 describe('identitiesOf', () => {
 	it('その人物に紐づく連絡先だけを返す', () => {
 		const d = seed(BASE);
-		expect(identitiesOf(d, 'p-tanaka').map((i) => i.id)).toEqual(['id-tanaka-mail', 'id-tanaka-line']);
+		expect(identitiesOf(d, SEED.tanaka).map((i) => i.id)).toEqual([SEED.tanakaMailIdentity, SEED.tanakaLineIdentity]);
 		// personId のない連絡先 (未登録の差出人) は誰のものにもならない
-		expect(identitiesOf(d, 'p-sato').map((i) => i.kind)).toEqual(['email', 'slack_id']);
+		expect(identitiesOf(d, SEED.sato).map((i) => i.kind)).toEqual(['email', 'slack_id']);
 		expect(identitiesOf(d, 'p-none')).toEqual([]);
 	});
 });
@@ -19,7 +19,7 @@ describe('identitiesOf', () => {
 describe('personHistory', () => {
 	it('スレッドと会議を新しい順に並べる', () => {
 		const d = seed(BASE);
-		const h = personHistory(d, 'p-tanaka');
+		const h = personHistory(d, SEED.tanaka);
 		// シードの過去の商談 2 件 (8/25 見積提示、8/5 デモ実施) が後ろに続く
 		expect(h.map((x) => x.title)).toEqual([
 			'次回お打ち合わせについて',
@@ -29,20 +29,20 @@ describe('personHistory', () => {
 		]);
 		expect(h.map((x) => x.kind)).toEqual(['mail', 'line', 'meeting', 'meeting']);
 		expect(h.map((x) => x.label)).toEqual(['メール', 'LINE', '会議', '会議']);
-		expect(h[0].href).toBe('/inbox?t=th-tanaka-next');
+		expect(h[0].href).toBe(`/inbox?t=${SEED.tanakaNextThread}`);
 		expect(h[0].at > h[1].at).toBe(true);
 	});
 
 	it('Slack のスレッドは slack になる', () => {
 		const d = seed(BASE);
-		expect(personHistory(d, 'p-yamada').map((x) => x.kind)).toEqual(['slack']);
+		expect(personHistory(d, SEED.yamada).map((x) => x.kind)).toEqual(['slack']);
 	});
 
 	it('これから先の会議は「最近のやりとり」に混ぜない', () => {
 		const d = seed(BASE);
-		// m-abc の予定 (ev-abc-meeting) は翌営業日なので出さない (過去の商談 2 件は出る)
-		const h = personHistory(d, 'p-tanaka');
-		expect(h.some((x) => x.href === '/meetings/m-abc')).toBe(false);
+		// SEED.abcMeeting の予定 (SEED.abcMeetingEvent) は翌営業日なので出さない (過去の商談 2 件は出る)
+		const h = personHistory(d, SEED.tanaka);
+		expect(h.some((x) => x.href === `/meetings/${SEED.abcMeeting}`)).toBe(false);
 		expect(h.filter((x) => x.kind === 'meeting').length).toBe(2);
 	});
 
@@ -54,7 +54,7 @@ describe('personHistory', () => {
 			start: '9:00',
 			end: '10:00',
 			title: 'ABC 株式会社 初回商談',
-			personIds: ['p-tanaka'],
+			personIds: [SEED.tanaka],
 			source: 'gcal',
 			meetingId: 'm-past'
 		});
@@ -62,14 +62,14 @@ describe('personHistory', () => {
 			id: 'm-past',
 			eventId: 'ev-past',
 			title: 'ABC 株式会社 初回商談',
-			personIds: ['p-tanaka'],
+			personIds: [SEED.tanaka],
 			purpose: '',
 			briefRead: false,
 			agenda: [],
 			agendaShared: false,
 			transcriptIds: []
 		});
-		const h = personHistory(d, 'p-tanaka');
+		const h = personHistory(d, SEED.tanaka);
 		const m = h.find((x) => x.kind === 'meeting')!;
 		expect(m.at).toBe('2026-09-14T09:00');
 		expect(m.href).toBe('/meetings/m-past');
@@ -87,24 +87,24 @@ describe('personHistory', () => {
 describe('personStats', () => {
 	it('メールの通数、会議の件数、最終商談を返す', () => {
 		const d = seed(BASE);
-		// th-tanaka-next の 2 通。LINE のスレッドは数えない。
-		// ev-abc-meeting は翌営業日の予定なので数えず、過去の商談 2 件だけを数える
-		expect(personStats(d, 'p-tanaka')).toEqual({ mails: 2, meetings: 2, lastMeeting: '2026-08-25' });
-		expect(personStats(d, 'p-sato')).toEqual({ mails: 2, meetings: 0, lastMeeting: undefined });
+		// SEED.tanakaNextThread の 2 通。LINE のスレッドは数えない。
+		// SEED.abcMeetingEvent は翌営業日の予定なので数えず、過去の商談 2 件だけを数える
+		expect(personStats(d, SEED.tanaka)).toEqual({ mails: 2, meetings: 2, lastMeeting: '2026-08-25' });
+		expect(personStats(d, SEED.sato)).toEqual({ mails: 2, meetings: 0, lastMeeting: undefined });
 	});
 
 	it('会議の件数は personHistory に出る会議の数と一致する', () => {
 		const d = seed(BASE);
 		const count = (id: string) => personHistory(d, id).filter((x) => x.kind === 'meeting').length;
 		// 先の予定しか無い状態
-		expect(personStats(d, 'p-tanaka').meetings).toBe(count('p-tanaka'));
+		expect(personStats(d, SEED.tanaka).meetings).toBe(count(SEED.tanaka));
 		d.events.push({
 			id: 'ev-past',
 			date: '2026-09-01',
 			start: '15:00',
 			end: '16:00',
 			title: '見積提示',
-			personIds: ['p-tanaka'],
+			personIds: [SEED.tanaka],
 			source: 'gcal',
 			meetingId: 'm-past'
 		});
@@ -112,7 +112,7 @@ describe('personStats', () => {
 			id: 'm-past',
 			eventId: 'ev-past',
 			title: '見積提示',
-			personIds: ['p-tanaka'],
+			personIds: [SEED.tanaka],
 			purpose: '',
 			briefRead: false,
 			agenda: [],
@@ -120,8 +120,8 @@ describe('personStats', () => {
 			transcriptIds: []
 		});
 		// 過去の会議を足しても両者はずれない (シードの 2 件 + 足した 1 件)
-		expect(personStats(d, 'p-tanaka').meetings).toBe(count('p-tanaka'));
-		expect(count('p-tanaka')).toBe(3);
+		expect(personStats(d, SEED.tanaka).meetings).toBe(count(SEED.tanaka));
+		expect(count(SEED.tanaka)).toBe(3);
 	});
 
 	it('最終商談は基準日までで最も新しい会議の日付', () => {
@@ -132,7 +132,7 @@ describe('personStats', () => {
 			start: '15:00',
 			end: '16:00',
 			title: '見積提示',
-			personIds: ['p-tanaka'],
+			personIds: [SEED.tanaka],
 			source: 'gcal',
 			meetingId: 'm-past'
 		});
@@ -140,7 +140,7 @@ describe('personStats', () => {
 			id: 'm-past',
 			eventId: 'ev-past',
 			title: '見積提示',
-			personIds: ['p-tanaka'],
+			personIds: [SEED.tanaka],
 			purpose: '',
 			briefRead: false,
 			agenda: [],
@@ -148,7 +148,7 @@ describe('personStats', () => {
 			transcriptIds: []
 		});
 		// 足した 9/1 はシードの 8/25 より新しいので最終商談になる
-		expect(personStats(d, 'p-tanaka')).toEqual({ mails: 2, meetings: 3, lastMeeting: '2026-09-01' });
+		expect(personStats(d, SEED.tanaka)).toEqual({ mails: 2, meetings: 3, lastMeeting: '2026-09-01' });
 	});
 });
 
@@ -156,9 +156,9 @@ describe('updatePersonMemo', () => {
 	it('メモを書き換えて作業履歴に残す', () => {
 		replaceDb(seed(BASE));
 		const before = db.logs.length;
-		const p = updatePersonMemo('p-tanaka', '価格は決裁者と直接詰める。');
+		const p = updatePersonMemo(SEED.tanaka, '価格は決裁者と直接詰める。');
 		expect(p?.memo).toBe('価格は決裁者と直接詰める。');
-		expect(db.people.find((x) => x.id === 'p-tanaka')!.memo).toBe('価格は決裁者と直接詰める。');
+		expect(db.people.find((x) => x.id === SEED.tanaka)!.memo).toBe('価格は決裁者と直接詰める。');
 		expect(db.logs.length).toBe(before + 1);
 		expect(db.logs[0]).toMatchObject({ actor: 'user', origin: 'people', kind: 'other' });
 		expect(db.logs[0].text).toContain('田中 太郎');
@@ -166,9 +166,9 @@ describe('updatePersonMemo', () => {
 
 	it('中身が変わらないときは履歴を増やさない', () => {
 		replaceDb(seed(BASE));
-		const memo = db.people.find((x) => x.id === 'p-tanaka')!.memo;
+		const memo = db.people.find((x) => x.id === SEED.tanaka)!.memo;
 		const before = db.logs.length;
-		updatePersonMemo('p-tanaka', memo);
+		updatePersonMemo(SEED.tanaka, memo);
 		expect(db.logs.length).toBe(before);
 	});
 });

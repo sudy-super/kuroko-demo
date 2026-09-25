@@ -15,6 +15,7 @@ import {
 	createEvent
 } from './actions';
 import { todayCount } from './derived';
+import { SEED } from './seed';
 
 beforeEach(() => {
 	(globalThis as any).localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
@@ -83,7 +84,7 @@ describe('approval', () => {
 				kind: 'mail',
 				to: 'x',
 				body: '',
-				payload: { type: 'share', personId: 'p-tanaka', what: 'w' },
+				payload: { type: 'share', personId: SEED.tanaka, what: 'w' },
 				origin: 'meeting'
 			});
 			expect(a.status, `${risk}/${level}`).toBe(expected);
@@ -139,7 +140,7 @@ describe('approval', () => {
 				start: '15:00',
 				end: '16:00',
 				title: '打ち合わせ',
-				personIds: ['p-tanaka'],
+				personIds: [SEED.tanaka],
 				withMeeting: true
 			},
 			'calendar'
@@ -163,7 +164,7 @@ describe('approval', () => {
 		expect(todayCount(db)).toBe(n + 1);
 		undo(db.logs[0].id);
 		expect(db.tasks.find((x) => x.id === t.id)).toBeUndefined();
-		toggleTask('t-cards');
+		toggleTask(SEED.cardsTask);
 		expect(todayCount(db)).toBe(n - 1);
 		undo(db.logs[0].id);
 		expect(todayCount(db)).toBe(n);

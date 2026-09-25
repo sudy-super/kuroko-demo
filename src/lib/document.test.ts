@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { db, resetDb } from './store.svelte';
 import { generateDocument, sendDocument, approve, SEND_DELAY_MS } from './actions';
+import { SEED } from './seed';
 
 beforeEach(() => {
 	(globalThis as any).localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
@@ -56,11 +57,11 @@ describe('sendDocument', () => {
 	});
 
 	it('資料が無ければ落ちる', () => {
-		expect(() => sendDocument('doc-none', 'p-tanaka')).toThrow();
+		expect(() => sendDocument('doc-none', SEED.tanaka)).toThrow();
 	});
 
 	it('メールアドレスの無い相手には送れない', () => {
 		const d = generateDocument('提案書', db.projects[0].id, 'documents');
-		expect(() => sendDocument(d.id, 'p-yamada')).toThrow();
+		expect(() => sendDocument(d.id, SEED.yamada)).toThrow();
 	});
 });

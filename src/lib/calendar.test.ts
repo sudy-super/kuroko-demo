@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { seed } from './seed';
+import { seed, SEED } from './seed';
 import { key } from './dates';
 import type { CalendarEvent } from './types';
 import {
@@ -24,7 +24,7 @@ describe('travelWarning', () => {
 	const db = seed(BASE);
 	it('渋谷 13:00〜14:00 の後に 品川 14:30 は警告', () => {
 		const w = travelWarning(db, { date: '2026-09-15', start: '14:30', end: '15:30', place: '品川' });
-		expect(w?.prev.id).toBe('ev-shibuya');
+		expect(w?.prev.id).toBe(SEED.shibuyaEvent);
 		expect(w?.gapMin).toBe(30);
 	});
 	it('同じ場所なら警告なし', () => {
@@ -46,7 +46,7 @@ describe('conflicts', () => {
 	const db = seed(BASE);
 	it('重なる予定を返す', () => {
 		expect(conflicts(db, { date: '2026-09-15', start: '13:30', end: '14:30' }).map((e) => e.id)).toEqual([
-			'ev-shibuya'
+			SEED.shibuyaEvent
 		]);
 	});
 	it('前の予定の終了と次の開始が同じなら重ならない', () => {
@@ -170,9 +170,9 @@ describe('eventsOn', () => {
 	it('その日の予定を開始の早い順に返す', () => {
 		const db = seed(BASE);
 		expect(eventsOn(db, '2026-09-15').map((e) => e.id)).toEqual([
-			'ev-standup',
-			'ev-shibuya',
-			'ev-sato-call'
+			SEED.standupEvent,
+			SEED.shibuyaEvent,
+			SEED.satoCallEvent
 		]);
 	});
 });
@@ -180,16 +180,16 @@ describe('eventsOn', () => {
 describe('deleteEvent の取り消し', () => {
 	it('シードの予定を消しても、取り消しで会議ごと戻る', () => {
 		replaceDb(seed(BASE));
-		const target = db.events.find((e) => e.id === 'ev-shibuya')!;
+		const target = db.events.find((e) => e.id === SEED.shibuyaEvent)!;
 		const before = db.events.length;
 		const meetings = db.meetings.filter((m) => m.eventId === target.id).length;
 		deleteEvent(target.id);
-		expect(db.events.find((e) => e.id === 'ev-shibuya')).toBeUndefined();
+		expect(db.events.find((e) => e.id === SEED.shibuyaEvent)).toBeUndefined();
 		const l = db.logs[0];
 		expect(l.undo).toEqual({ kind: 'event_delete', event: target, meetings: expect.any(Array) });
 		undo(l.id);
 		expect(db.events.length).toBe(before);
-		expect(db.events.find((e) => e.id === 'ev-shibuya')!.title).toBe(target.title);
+		expect(db.events.find((e) => e.id === SEED.shibuyaEvent)!.title).toBe(target.title);
 		expect(db.meetings.filter((m) => m.eventId === target.id).length).toBe(meetings);
 		expect(db.logs.find((x) => x.id === l.id)!.undone).toBe(true);
 	});

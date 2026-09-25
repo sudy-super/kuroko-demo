@@ -14,6 +14,7 @@ import {
 } from './actions';
 import { todayCount, pendingApprovals, todayTasks, guideSection, todaySummary } from './derived';
 import { SAMPLE_TRANSCRIPT } from './kuroko/samples';
+import { SEED } from './seed';
 
 beforeEach(() => {
 	(globalThis as any).localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
@@ -33,8 +34,8 @@ describe('ゴールデンパス', () => {
 		expect(guideSection(db)).toBe(2);
 
 		// 2. 田中様へ日程候補つきの返信 → 承認して送信
-		const s = insertSlots('th-tanaka-next');
-		const ap = sendReply('th-tanaka-next', s.text);
+		const s = insertSlots(SEED.tanakaNextThread);
+		const ap = sendReply(SEED.tanakaNextThread, s.text);
 		approve(ap.id);
 		vi.advanceTimersByTime(SEND_DELAY_MS);
 		expect(todayCount(db)).toBe(5); // 返信 1 件が減り、日程調整の返信待ち 1 件が増える
@@ -46,10 +47,10 @@ describe('ゴールデンパス', () => {
 		expect(guideSection(db)).toBe(4);
 
 		// 4. 会議の前後 — Brief、アジェンダ、文字起こし、ToDo 候補 2 件
-		markBriefRead('m-abc');
+		markBriefRead(SEED.abcMeeting);
 		expect(todayCount(db)).toBe(3);
-		generateAgenda('m-abc');
-		addTranscript('m-abc', SAMPLE_TRANSCRIPT);
+		generateAgenda(SEED.abcMeeting);
+		addTranscript(SEED.abcMeeting, SAMPLE_TRANSCRIPT);
 		const ids = db.suggestions
 			.filter((x) => x.status === 'pending' && x.payload.type === 'task')
 			.slice(0, 2)
@@ -66,13 +67,13 @@ describe('ゴールデンパス', () => {
 	it('完了画面の数字は上段も本文も実際のログと合う', () => {
 		for (const a of pendingApprovals(db)) approve(a.id);
 		vi.advanceTimersByTime(SEND_DELAY_MS);
-		const s = insertSlots('th-tanaka-next');
-		approve(sendReply('th-tanaka-next', s.text).id);
+		const s = insertSlots(SEED.tanakaNextThread);
+		approve(sendReply(SEED.tanakaNextThread, s.text).id);
 		vi.advanceTimersByTime(SEND_DELAY_MS);
 		confirmSlot(s.token!, s.slots[0].id);
-		markBriefRead('m-abc');
-		generateAgenda('m-abc');
-		addTranscript('m-abc', SAMPLE_TRANSCRIPT);
+		markBriefRead(SEED.abcMeeting);
+		generateAgenda(SEED.abcMeeting);
+		addTranscript(SEED.abcMeeting, SAMPLE_TRANSCRIPT);
 		acceptTaskSuggestions(
 			db.suggestions
 				.filter((x) => x.status === 'pending' && x.payload.type === 'task')

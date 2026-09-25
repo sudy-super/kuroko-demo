@@ -1,6 +1,7 @@
 import type { Db, LineMessage } from '../types';
 import { bizDay, key, parse, fmtMD, whenOf, hourOf } from '../dates';
 import { freeSlots, personOf } from '../derived';
+import { SEED } from '../seed';
 
 export interface MentionResult {
 	reply: string;
@@ -51,7 +52,7 @@ export function handleMention(db: Db, text: string, role: 'owner' | 'member'): M
 		const { date } = dayOf(db, body);
 		const time = hourOf(body);
 		const task = { title, due: key(date), ...(time ? { time } : {}) };
-		const who = owner ? db.user.name : (personOf(db, 'p-yamada')?.name ?? '');
+		const who = owner ? db.user.name : (personOf(db, SEED.yamada)?.name ?? '');
 		return {
 			reply: 'ToDo を登録しました。',
 			task,

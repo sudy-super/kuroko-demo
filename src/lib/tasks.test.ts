@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { seed } from './seed';
+import { seed, SEED } from './seed';
 import type { Suggestion } from './types';
 import { filterTasks, openTaskCount, doneLogOf, todayTasks } from './derived';
 import { addTask, toggleTask, undo, acceptTaskSuggestions, rejectSuggestions, moveTask, sortTasksByDue } from './actions';
@@ -10,27 +10,27 @@ const BASE = new Date(2026, 8, 15); // 火曜。シードの相対日付がこ�
 describe('filterTasks', () => {
 	it('期限超過は基準日より前の期限だけ (完了も含めて出す)', () => {
 		const d = seed(BASE);
-		expect(filterTasks(d, 'overdue').map((t) => t.id)).toEqual(['t-expense']);
+		expect(filterTasks(d, 'overdue').map((t) => t.id)).toEqual([SEED.expenseTask]);
 		// 完了済みしかないので、チップの件数は 0 になる
 		expect(openTaskCount(d, 'overdue')).toBe(0);
 	});
 	it('今日は期限が基準日のもの', () => {
 		const d = seed(BASE);
 		expect(filterTasks(d, 'today').map((t) => t.id)).toEqual([
-			't-abc-proposal',
-			't-xyz-quote',
-			't-cards'
+			SEED.abcProposalTask,
+			SEED.xyzQuoteTask,
+			SEED.cardsTask
 		]);
 		expect(openTaskCount(d, 'today')).toBe(3);
 	});
 	it('今週は基準日から 6 日後まで', () => {
 		const d = seed(BASE);
 		expect(filterTasks(d, 'week').map((t) => t.id)).toEqual([
-			't-abc-proposal',
-			't-xyz-quote',
-			't-cards',
-			't-training',
-			't-standup-doc'
+			SEED.abcProposalTask,
+			SEED.xyzQuoteTask,
+			SEED.cardsTask,
+			SEED.trainingTask,
+			SEED.standupDocTask
 		]);
 		expect(openTaskCount(d, 'week')).toBe(5);
 	});
@@ -46,17 +46,17 @@ describe('filterTasks', () => {
 		});
 		const ids = filterTasks(d, 'all').map((t) => t.id);
 		expect(ids).toHaveLength(7);
-		expect(ids.at(-1)).toBe('t-expense'); // 完了は最後
+		expect(ids.at(-1)).toBe(SEED.expenseTask); // 完了は最後
 		expect(ids.at(-2)).toBe('t-nodue'); // 期限なしは未完了の最後
 		expect(openTaskCount(d, 'all')).toBe(6);
 	});
 	it('完了にすると同じフィルタの末尾へ下がる', () => {
 		const d = seed(BASE);
-		d.tasks.find((t) => t.id === 't-abc-proposal')!.status = 'done';
+		d.tasks.find((t) => t.id === SEED.abcProposalTask)!.status = 'done';
 		expect(filterTasks(d, 'today').map((t) => t.id)).toEqual([
-			't-xyz-quote',
-			't-cards',
-			't-abc-proposal'
+			SEED.xyzQuoteTask,
+			SEED.cardsTask,
+			SEED.abcProposalTask
 		]);
 		expect(openTaskCount(d, 'today')).toBe(2);
 	});
@@ -93,8 +93,8 @@ describe('doneLogOf', () => {
 	it('初期データの完了済みを外しても実績は減らない', () => {
 		replaceDb(seed(BASE));
 		const before = db.demo.stats.tasksDone;
-		toggleTask('t-expense');
-		expect(db.tasks.find((x) => x.id === 't-expense')!.status).toBe('todo');
+		toggleTask(SEED.expenseTask);
+		expect(db.tasks.find((x) => x.id === SEED.expenseTask)!.status).toBe('todo');
 		expect(db.demo.stats.tasksDone).toBe(before);
 	});
 	it('同じ ToDo を何度も完了にしたら直近のログを返す', () => {

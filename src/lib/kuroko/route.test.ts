@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { seed } from '../seed';
+import { seed, SEED } from '../seed';
 import { route, reply } from './route';
 
 const db = seed(new Date(2026, 8, 15));
 
 describe('route', () => {
 	it.each([
-		['田中さんと打ち合わせ入れて', 'event', 'p-tanaka'],
+		['田中さんと打ち合わせ入れて', 'event', SEED.tanaka],
 		['金曜までに ABC 社へ見積提出、覚えて', 'task', undefined],
-		['田中さんとの過去のやり取り', 'person', 'p-tanaka'],
-		['佐藤さんのメールに返信', 'mail', 'p-sato'],
+		['田中さんとの過去のやり取り', 'person', SEED.tanaka],
+		['佐藤さんのメールに返信', 'mail', SEED.sato],
 		['明日の会議準備', 'brief', undefined],
-		['田中さんに候補送って', 'schedule', 'p-tanaka'],
+		['田中さんに候補送って', 'schedule', SEED.tanaka],
 		['ABC 社向けの提案書を作って', 'document', undefined],
 		['こんにちは', 'unknown', undefined]
 	])('%s → %s', (text, kind, personId) => {
@@ -21,7 +21,7 @@ describe('route', () => {
 	});
 
 	it('文脈チップの人物を使う', () => {
-		expect(route(db, '返信案を作って', { label: '', personId: 'p-sato' }).personId).toBe('p-sato');
+		expect(route(db, '返信案を作って', { label: '', personId: SEED.sato }).personId).toBe(SEED.sato);
 	});
 
 	it('提案書の種別', () => {

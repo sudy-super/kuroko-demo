@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { seed } from '../seed';
+import { seed, SEED } from '../seed';
 import { agendaFor } from './generate';
 
 describe('agendaFor', () => {
@@ -7,7 +7,7 @@ describe('agendaFor', () => {
 	const find = (id: string) => db.meetings.find((m) => m.id === id)!;
 
 	it('宿題があり目的に価格が入る会議は 5 項目', () => {
-		expect(agendaFor(db, find('m-abc'))).toEqual([
+		expect(agendaFor(db, find(SEED.abcMeeting))).toEqual([
 			'前回宿題の確認',
 			'導入スケジュールのすり合わせ',
 			'価格条件',
@@ -17,8 +17,8 @@ describe('agendaFor', () => {
 	});
 
 	it('宿題が無く目的に価格も入らない会議は 3 項目', () => {
-		// m-abc-demo は Brief を持たず、目的は「製品デモで適用範囲の当たりを付ける」
-		expect(agendaFor(db, find('m-abc-demo'))).toEqual([
+		// SEED.abcDemoMeeting は Brief を持たず、目的は「製品デモで適用範囲の当たりを付ける」
+		expect(agendaFor(db, find(SEED.abcDemoMeeting))).toEqual([
 			'導入スケジュールのすり合わせ',
 			'契約タイミング',
 			'次回アクション'
@@ -26,6 +26,6 @@ describe('agendaFor', () => {
 	});
 
 	it('目的に価格が入れば価格条件が入る', () => {
-		expect(agendaFor(db, find('m-abc-quote'))).toContain('価格条件');
+		expect(agendaFor(db, find(SEED.abcQuoteMeeting))).toContain('価格条件');
 	});
 });

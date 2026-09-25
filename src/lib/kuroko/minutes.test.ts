@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { seed } from '../seed';
+import { seed, SEED } from '../seed';
 import { minutesFor } from './generate';
 import { SAMPLE_TRANSCRIPT } from './samples';
 import { db as store, resetDb } from '../store.svelte';
@@ -9,13 +9,13 @@ import { meetingMailTargetFor, openTaskCount, todayCount } from '../derived';
 describe('minutesFor', () => {
 	const db = seed(new Date(2026, 8, 15));
 	it('サンプルは固定の議事録', () => {
-		const r = minutesFor(db, 'm-abc', SAMPLE_TRANSCRIPT);
+		const r = minutesFor(db, SEED.abcMeeting, SAMPLE_TRANSCRIPT);
 		expect(r.minutes.decisions.length).toBe(3);
 		expect(r.todos.length).toBe(3);
 		expect(r.todos[0].reason).toContain('文字起こし');
 	});
 	it('任意の文からも候補を最大 3 件', () => {
-		const r = minutesFor(db, 'm-abc', '来週までに資料を送付する。価格は据え置きで合意。次回は再来週に調整する。以上。');
+		const r = minutesFor(db, SEED.abcMeeting, '来週までに資料を送付する。価格は据え置きで合意。次回は再来週に調整する。以上。');
 		expect(r.todos.length).toBe(2);
 		expect(r.minutes.decisions[0]).toContain('合意');
 	});
@@ -32,8 +32,8 @@ describe('addTranscript / acceptTaskSuggestions / sendFollowUp', () => {
 	});
 
 	it('文字起こしから議事録と候補 3 件を作る', () => {
-		addTranscript('m-abc', SAMPLE_TRANSCRIPT);
-		const m = store.meetings.find((x) => x.id === 'm-abc')!;
+		addTranscript(SEED.abcMeeting, SAMPLE_TRANSCRIPT);
+		const m = store.meetings.find((x) => x.id === SEED.abcMeeting)!;
 		expect(m.minutes?.decisions.length).toBe(3);
 		expect(m.transcriptIds.length).toBe(1);
 		expect(store.suggestions.filter((s) => s.source === 'transcript' && s.status === 'pending').length).toBe(3);
@@ -41,7 +41,7 @@ describe('addTranscript / acceptTaskSuggestions / sendFollowUp', () => {
 	});
 
 	it('採用した候補が ToDo と Today に出る', () => {
-		addTranscript('m-abc', SAMPLE_TRANSCRIPT);
+		addTranscript(SEED.abcMeeting, SAMPLE_TRANSCRIPT);
 		const pending = store.suggestions.filter((s) => s.source === 'transcript' && s.status === 'pending');
 		const before = openTaskCount(store, 'week');
 		const tasks = acceptTaskSuggestions(pending.slice(0, 2).map((s) => s.id));
@@ -53,27 +53,27 @@ describe('addTranscript / acceptTaskSuggestions / sendFollowUp', () => {
 	});
 
 	it('残りを破棄すると候補が消える', () => {
-		addTranscript('m-abc', SAMPLE_TRANSCRIPT);
+		addTranscript(SEED.abcMeeting, SAMPLE_TRANSCRIPT);
 		const pending = store.suggestions.filter((s) => s.source === 'transcript' && s.status === 'pending');
 		rejectSuggestions([pending[0].id]);
 		expect(store.suggestions.find((s) => s.id === pending[0].id)!.status).toBe('rejected');
 	});
 
 	it('フォローメールは外部送信の承認待ちになる', () => {
-		addTranscript('m-abc', SAMPLE_TRANSCRIPT);
+		addTranscript(SEED.abcMeeting, SAMPLE_TRANSCRIPT);
 		const before = todayCount(store);
-		const a = sendFollowUp('m-abc');
+		const a = sendFollowUp(SEED.abcMeeting);
 		expect(a.status).toBe('pending');
 		expect(a.risk).toBe('external_send');
-		expect(a.payload).toMatchObject({ type: 'followup', meetingId: 'm-abc' });
-		expect(a.body).toBe(store.meetings.find((x) => x.id === 'm-abc')!.minutes!.followUpMail!.body);
+		expect(a.payload).toMatchObject({ type: 'followup', meetingId: SEED.abcMeeting });
+		expect(a.body).toBe(store.meetings.find((x) => x.id === SEED.abcMeeting)!.minutes!.followUpMail!.body);
 		// Today の承認待ちのタイルに乗る
 		expect(todayCount(store)).toBe(before + 1);
 	});
 
 	it('フォローメールを送るとそのスレッドが閉じる', () => {
-		addTranscript('m-abc', SAMPLE_TRANSCRIPT);
-		const a = sendFollowUp('m-abc');
+		addTranscript(SEED.abcMeeting, SAMPLE_TRANSCRIPT);
+		const a = sendFollowUp(SEED.abcMeeting);
 		const threadId = (a.payload as { threadId?: string }).threadId!;
 		expect(store.threads.find((t) => t.id === threadId)!.needsReply).toBe(true);
 		executeApproval(a.id);
@@ -83,7 +83,7 @@ describe('addTranscript / acceptTaskSuggestions / sendFollowUp', () => {
 	});
 
 	it('議事録がない会議のフォローメールは失敗する', () => {
-		expect(() => sendFollowUp('m-abc')).toThrow();
+		expect(() => sendFollowUp(SEED.abcMeeting)).toThrow();
 	});
 
 	/* 社内の人物はメールの識別子を持たない (seed.ts の identities)。議事録と ToDo は作れるが
@@ -95,7 +95,7 @@ describe('addTranscript / acceptTaskSuggestions / sendFollowUp', () => {
 				start: '10:00',
 				end: '11:00',
 				title: '山田様との打ち合わせ',
-				personIds: ['p-yamada'],
+				personIds: [SEED.yamada],
 				withMeeting: true
 			},
 			'chat'
@@ -114,7 +114,7 @@ describe('addTranscript / acceptTaskSuggestions / sendFollowUp', () => {
 				start: '10:00',
 				end: '11:00',
 				title: '山田様との打ち合わせ',
-				personIds: ['p-yamada'],
+				personIds: [SEED.yamada],
 				withMeeting: true
 			},
 			'chat'
@@ -123,6 +123,6 @@ describe('addTranscript / acceptTaskSuggestions / sendFollowUp', () => {
 		expect(meetingMailTargetFor(store, meetingId)).toBeUndefined();
 		expect(() => shareAgenda(meetingId)).toThrow();
 		// 田中様は引ける
-		expect(meetingMailTargetFor(store, 'm-abc')?.to).toContain('tanaka@abc.co.jp');
+		expect(meetingMailTargetFor(store, SEED.abcMeeting)?.to).toContain('tanaka@abc.co.jp');
 	});
 });

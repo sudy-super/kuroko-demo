@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { seed } from './seed';
+import { seed, SEED } from './seed';
 import { key, bizDay } from './dates';
 import { FILLER_SUBJECTS } from './kuroko/samples';
 import { threadSenderMeta, companyOf } from './derived';
@@ -14,8 +14,8 @@ describe('seed', () => {
 		expect(db.threads.length).toBe(8 + 39 + 2); // キュー 8 + 件名のみ 39 + サンライズ過去 2 (面談日程はキューにもある)
 		expect(db.approvals.filter((a) => a.status === 'pending').length).toBe(2);
 		expect(db.tasks.filter((t) => t.due === '2026-09-15' && t.status !== 'done').length).toBe(3);
-		expect(db.meetings[0].eventId).toBe('ev-abc-meeting');
-		expect(db.events.find((e) => e.id === 'ev-abc-meeting')!.date).toBe(
+		expect(db.meetings[0].eventId).toBe(SEED.abcMeetingEvent);
+		expect(db.events.find((e) => e.id === SEED.abcMeetingEvent)!.date).toBe(
 			key(bizDay(1, new Date(2026, 8, 15)))
 		);
 	});
@@ -24,7 +24,7 @@ describe('seed', () => {
 		const past = db.meetings.filter(
 			(m) => db.events.find((e) => e.id === m.eventId)!.date < db.seededOn
 		);
-		expect(past.map((m) => m.id)).toEqual(['m-abc-demo', 'm-abc-quote']);
+		expect(past.map((m) => m.id)).toEqual([SEED.abcDemoMeeting, SEED.abcQuoteMeeting]);
 		expect(past.every((m) => !!m.minutes)).toBe(true);
 	});
 	it('件名のみのスレッドの元になる件名は 39 件', () => {

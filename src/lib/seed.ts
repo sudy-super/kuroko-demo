@@ -3,7 +3,34 @@ import { key, bizDay, addDays, nextWeekday, fmtMD } from './dates';
 import { FILLER_SUBJECTS, DOC_TEMPLATES } from './kuroko/samples';
 
 /* 保存の形が変わったら版を上げる。古い保存は読めないので初期状態から作り直させる */
-export const DB_VERSION = 4;
+export const DB_VERSION = 5;
+
+/* 見本の ID は、後から作られるデータ (kuroko/generate.ts の uid) と同じく中身を表さない。
+   コード・テスト・案内の筋書きが特定の見本を指すときは、ここの名前を使う */
+export const SEED = {
+	abcCo: 'c-wuu098te',
+	abcDemoMeeting: 'm-syj9m5c9',
+	abcMeeting: 'm-vqpvh0ce',
+	abcMeetingEvent: 'ev-rrd3vexc',
+	abcProposalTask: 't-jp448pyz',
+	abcQuoteMeeting: 'm-4pt4biw2',
+	cardsTask: 't-nx8vpqm5',
+	expenseTask: 't-zzxbo657',
+	sato: 'p-qvr4u400',
+	satoCallEvent: 'ev-d6ep67a4',
+	shibuyaEvent: 'ev-bqt0gs44',
+	standupDocTask: 't-lprklrla',
+	standupEvent: 'ev-ugsbhi9y',
+	sunriseIdentity: 'id-ehfzvr9b',
+	sunriseInterviewThread: 'th-0s0myfzv',
+	tanaka: 'p-jm2kz188',
+	tanakaLineIdentity: 'id-wtnilvvx',
+	tanakaMailIdentity: 'id-az6z6hk9',
+	tanakaNextThread: 'th-g80c2c3b',
+	trainingTask: 't-0aogstu6',
+	xyzQuoteTask: 't-w8gtwdju',
+	yamada: 'p-2pqiowfh',
+} as const;
 
 export function seed(base: Date = new Date()): Db {
 	const b = new Date(base);
@@ -23,14 +50,14 @@ export function seed(base: Date = new Date()): Db {
 
 	const queueThreads: MessageThread[] = [
 		{
-			id: 'th-tanaka-next',
+			id: 'th-g80c2c3b',
 			source: 'gmail',
 			subject: '次回お打ち合わせについて',
 			sender: '田中 太郎 / ABC 株式会社',
-			identityId: 'id-tanaka-mail',
-			personId: 'p-tanaka',
-			companyId: 'c-abc',
-			projectId: 'pj-abc-dx',
+			identityId: 'id-az6z6hk9',
+			personId: 'p-jm2kz188',
+			companyId: 'c-wuu098te',
+			projectId: 'pj-axk0knp2',
 			reasons: ['question', 'project', 'known_contact'],
 			needsReply: true,
 			done: false,
@@ -38,14 +65,14 @@ export function seed(base: Date = new Date()): Db {
 			lastAt: at(T, '9:12')
 		},
 		{
-			id: 'th-sato-training',
+			id: 'th-5iw7qbjw',
 			source: 'gmail',
 			subject: '研修内容のご相談',
 			sender: '佐藤 美咲 / XYZ 株式会社',
-			identityId: 'id-sato-mail',
-			personId: 'p-sato',
-			companyId: 'c-xyz',
-			projectId: 'pj-xyz-ai',
+			identityId: 'id-qe7x7zc6',
+			personId: 'p-qvr4u400',
+			companyId: 'c-7x9w0wg8',
+			projectId: 'pj-zpiw6l27',
 			reasons: ['question', 'project', 'known_contact'],
 			needsReply: false,
 			done: false,
@@ -53,13 +80,13 @@ export function seed(base: Date = new Date()): Db {
 			lastAt: at(T, '8:45')
 		},
 		{
-			id: 'th-yamada-quote',
+			id: 'th-thb8z1o6',
 			source: 'slack',
 			subject: '見積書の確認をお願いします',
 			sender: '山田 健二 / Slack',
-			identityId: 'id-yamada-slack',
-			personId: 'p-yamada',
-			companyId: 'c-kuroko',
+			identityId: 'id-x91a8td7',
+			personId: 'p-2pqiowfh',
+			companyId: 'c-l34xvewn',
 			reasons: ['unanswered_3d', 'known_contact'],
 			needsReply: false,
 			done: false,
@@ -67,12 +94,12 @@ export function seed(base: Date = new Date()): Db {
 			lastAt: at(T, '8:20')
 		},
 		{
-			id: 'th-abc-invoice',
+			id: 'th-we6tbigh',
 			source: 'gmail',
 			subject: '請求書送付のご連絡',
 			sender: '経理部 / ABC 株式会社',
-			identityId: 'id-abc-keiri',
-			companyId: 'c-abc',
+			identityId: 'id-4wdu9zhj',
+			companyId: 'c-wuu098te',
 			reasons: ['project'],
 			needsReply: false,
 			done: false,
@@ -80,14 +107,14 @@ export function seed(base: Date = new Date()): Db {
 			lastAt: at(T, '8:05')
 		},
 		{
-			id: 'th-tanaka-line',
+			id: 'th-b7j2w5x1',
 			source: 'line',
 			subject: '先ほどの件、了解しました',
 			sender: '田中 太郎 / LINE',
-			identityId: 'id-tanaka-line',
-			personId: 'p-tanaka',
-			companyId: 'c-abc',
-			projectId: 'pj-abc-dx',
+			identityId: 'id-wtnilvvx',
+			personId: 'p-jm2kz188',
+			companyId: 'c-wuu098te',
+			projectId: 'pj-axk0knp2',
 			reasons: ['known_contact'],
 			needsReply: false,
 			done: false,
@@ -95,11 +122,11 @@ export function seed(base: Date = new Date()): Db {
 			lastAt: at(Y, '19:40')
 		},
 		{
-			id: 'th-sunrise-interview',
+			id: 'th-0s0myfzv',
 			source: 'gmail',
 			subject: '面談日程のご相談',
 			sender: '採用担当 / 株式会社サンライズ',
-			identityId: 'id-sunrise',
+			identityId: 'id-ehfzvr9b',
 			reasons: ['overdue'],
 			needsReply: false,
 			done: false,
@@ -107,14 +134,14 @@ export function seed(base: Date = new Date()): Db {
 			lastAt: at(Y, '17:05')
 		},
 		{
-			id: 'th-sato-thanks',
+			id: 'th-i0lyvvz0',
 			source: 'gmail',
 			subject: '資料ありがとうございました',
 			sender: '佐藤 美咲 / XYZ 株式会社',
-			identityId: 'id-sato-mail',
-			personId: 'p-sato',
-			companyId: 'c-xyz',
-			projectId: 'pj-xyz-ai',
+			identityId: 'id-qe7x7zc6',
+			personId: 'p-qvr4u400',
+			companyId: 'c-7x9w0wg8',
+			projectId: 'pj-zpiw6l27',
 			reasons: ['project', 'known_contact'],
 			needsReply: false,
 			done: false,
@@ -122,12 +149,12 @@ export function seed(base: Date = new Date()): Db {
 			lastAt: at(key(addDays(-2, b)), '15:30')
 		},
 		{
-			id: 'th-soumu-office',
+			id: 'th-8l8sgipw',
 			source: 'gmail',
 			subject: 'オフィス移転の件',
 			sender: '総務 / 株式会社 KUROKO',
-			identityId: 'id-soumu',
-			companyId: 'c-kuroko',
+			identityId: 'id-xb5uadxy',
+			companyId: 'c-l34xvewn',
 			reasons: [],
 			needsReply: false,
 			done: false,
@@ -139,11 +166,11 @@ export function seed(base: Date = new Date()): Db {
 	// 未登録の差出人 (サンライズ鈴木様)の過去のやり取り。People への登録提案の材料になる
 	const sunriseThreads: MessageThread[] = [
 		{
-			id: 'th-sunrise-quote',
+			id: 'th-3tgte0d8',
 			source: 'gmail',
 			subject: 'ご見積のご送付',
 			sender: '採用担当 / 株式会社サンライズ',
-			identityId: 'id-sunrise',
+			identityId: 'id-ehfzvr9b',
 			reasons: [],
 			needsReply: false,
 			done: false,
@@ -151,11 +178,11 @@ export function seed(base: Date = new Date()): Db {
 			lastAt: at(key(addDays(-20, b)), '14:10')
 		},
 		{
-			id: 'th-sunrise-thanks',
+			id: 'th-vjbyjlru',
 			source: 'gmail',
 			subject: 'デモのお礼',
 			sender: '採用担当 / 株式会社サンライズ',
-			identityId: 'id-sunrise',
+			identityId: 'id-ehfzvr9b',
 			reasons: [],
 			needsReply: false,
 			done: false,
@@ -165,11 +192,11 @@ export function seed(base: Date = new Date()): Db {
 	];
 
 	const fillerThreads: MessageThread[] = FILLER_SUBJECTS.map((f, i) => ({
-		id: `th-f-${i + 1}`,
+		id: `th-f${(i + 1).toString(36).padStart(7, '0')}`,
 		source: 'gmail' as const,
 		subject: f.subject,
 		sender: f.from,
-		identityId: `id-f-${i + 1}`,
+		identityId: `id-f${(i + 1).toString(36).padStart(7, '0')}`,
 		reasons: [],
 		needsReply: false,
 		done: false,
@@ -179,86 +206,86 @@ export function seed(base: Date = new Date()): Db {
 
 	const messages: Message[] = [
 		{
-			id: 'mg-tanaka-next-me',
-			threadId: 'th-tanaka-next',
+			id: 'mg-9qnhh5jg',
+			threadId: 'th-g80c2c3b',
 			from: 'me',
 			body: '田中様\n\nお世話になっております。株式会社 KUROKO の佐々木です。\n\nご検討いただきありがとうございます。\n提案書の修正版をお送りしますので、ご確認のほどよろしくお願いいたします。',
 			at: at(Y, '18:22'),
 			sentVia: 'approval'
 		},
 		{
-			id: 'mg-tanaka-next',
-			threadId: 'th-tanaka-next',
+			id: 'mg-k9xff9i2',
+			threadId: 'th-g80c2c3b',
 			from: 'them',
 			body: '佐々木様\n\nお世話になっております。ABC 株式会社の田中です。\n\n先日の提案について社内で検討が進んでおります。\n次回のお打ち合わせを来週で設定できればと思うのですが、\nご都合はいかがでしょうか。\n\nよろしくお願いいたします。',
 			at: at(T, '9:12')
 		},
 		{
-			id: 'mg-sato-training',
-			threadId: 'th-sato-training',
+			id: 'mg-kd5wq0k6',
+			threadId: 'th-5iw7qbjw',
 			from: 'them',
 			body: '佐々木様\n\nいつもお世話になっております。XYZ 株式会社の佐藤です。\n\nAI 研修の内容について、対象者を管理職に絞る案が社内で出ています。\nカリキュラムの調整は可能でしょうか。',
 			at: at(T, '8:45')
 		},
 		{
-			id: 'mg-yamada-quote',
-			threadId: 'th-yamada-quote',
+			id: 'mg-cpvculxn',
+			threadId: 'th-thb8z1o6',
 			from: 'them',
 			body: '佐々木さん、XYZ 社向けの見積書を作成しました。\n金額と条件をご確認ください。\n(Slack #sales より)',
 			at: at(T, '8:20')
 		},
 		{
-			id: 'mg-abc-invoice',
-			threadId: 'th-abc-invoice',
+			id: 'mg-7xxpqpy7',
+			threadId: 'th-we6tbigh',
 			from: 'them',
 			body: `佐々木様\n\n${prevMonth} 月分の請求書をお送りいたします。\nご確認のほどよろしくお願いいたします。`,
 			at: at(T, '8:05')
 		},
 		{
-			id: 'mg-tanaka-line',
-			threadId: 'th-tanaka-line',
+			id: 'mg-4d5brqa4',
+			threadId: 'th-b7j2w5x1',
 			from: 'them',
 			body: '先ほどの件、了解しました。社内で共有しておきます。',
 			at: at(Y, '19:40')
 		},
 		{
-			id: 'mg-sunrise-interview',
-			threadId: 'th-sunrise-interview',
+			id: 'mg-65cr43b8',
+			threadId: 'th-0s0myfzv',
 			from: 'them',
 			body: '佐々木様\n\n株式会社サンライズの鈴木です。\n先日ご相談した面談の日程について、今週中にご希望をいただけますでしょうか。',
 			at: at(Y, '17:05')
 		},
 		{
-			id: 'mg-sato-thanks',
-			threadId: 'th-sato-thanks',
+			id: 'mg-dxdr02rf',
+			threadId: 'th-i0lyvvz0',
 			from: 'them',
 			body: '佐々木様\n\n研修資料をお送りいただきありがとうございました。\n社内で共有いたします。',
 			at: at(key(addDays(-2, b)), '15:30')
 		},
 		{
-			id: 'mg-soumu-office',
-			threadId: 'th-soumu-office',
+			id: 'mg-16fva40f',
+			threadId: 'th-8l8sgipw',
 			from: 'them',
 			body: '佐々木社長\n\nオフィス移転の候補物件を 3 件に絞りました。\n来週、内見の日程を調整させてください。',
 			at: at(key(addDays(-2, b)), '11:20')
 		},
 		{
-			id: 'mg-sunrise-quote',
-			threadId: 'th-sunrise-quote',
+			id: 'mg-j80d6nia',
+			threadId: 'th-3tgte0d8',
 			from: 'them',
 			body: '佐々木様\n\n株式会社サンライズの鈴木です。\nご依頼いただいたお見積をお送りいたします。ご確認をお願いいたします。',
 			at: at(key(addDays(-20, b)), '14:10')
 		},
 		{
-			id: 'mg-sunrise-thanks',
-			threadId: 'th-sunrise-thanks',
+			id: 'mg-royeppm3',
+			threadId: 'th-vjbyjlru',
 			from: 'them',
 			body: '佐々木様\n\n株式会社サンライズの鈴木です。\n本日はデモのお時間をいただきありがとうございました。',
 			at: at(key(addDays(-35, b)), '11:25')
 		},
 		// 件名だけだったメールにも本文を 1 通ずつ持たせる (一覧の「すべて」から開けるため)
 		...fillerThreads.map((t, i) => ({
-			id: `mg-f-${i + 1}`,
+			id: `mg-f${(i + 1).toString(36).padStart(7, '0')}`,
 			threadId: t.id,
 			from: 'them' as const,
 			body: FILLER_SUBJECTS[i].body,
@@ -268,27 +295,27 @@ export function seed(base: Date = new Date()): Db {
 
 	const documents: Document[] = [
 		{
-			id: 'doc-abc-proposal',
+			id: 'doc-uqxzmho0',
 			kind: '提案書',
 			title: 'ABC 株式会社 DX 導入提案書',
-			projectId: 'pj-abc-dx',
-			personId: 'p-tanaka',
+			projectId: 'pj-axk0knp2',
+			personId: 'p-jm2kz188',
 			createdBy: 'KUROKO',
 			createdAt: at(Y, '10:24'),
 			sections: [...DOC_TEMPLATES['提案書']('ABC 株式会社', 'DX 導入')]
 		},
 		{
-			id: 'doc-xyz-quote',
+			id: 'doc-gk2n1942',
 			kind: '見積書',
 			title: 'XYZ 株式会社 AI 研修 御見積書',
-			projectId: 'pj-xyz-ai',
-			personId: 'p-sato',
+			projectId: 'pj-zpiw6l27',
+			personId: 'p-qvr4u400',
 			createdBy: 'KUROKO',
 			createdAt: at(key(addDays(-2, b)), '16:32'),
 			sections: [...DOC_TEMPLATES['見積書']('XYZ 株式会社', 'AI 研修')]
 		},
 		{
-			id: 'doc-report-prev',
+			id: 'doc-itbcb1uq',
 			kind: '報告書',
 			title: `${prevMonth} 月活動報告`,
 			createdBy: 'user',
@@ -296,11 +323,11 @@ export function seed(base: Date = new Date()): Db {
 			sections: [...DOC_TEMPLATES['報告書']('ABC 株式会社', '')]
 		},
 		{
-			id: 'doc-abc-quote',
+			id: 'doc-qw4zfmg1',
 			kind: '見積書',
 			title: 'ABC 社_見積書.pdf',
-			projectId: 'pj-abc-dx',
-			personId: 'p-tanaka',
+			projectId: 'pj-axk0knp2',
+			personId: 'p-jm2kz188',
 			createdBy: 'KUROKO',
 			createdAt: at(key(addDays(-21, b)), '16:40'),
 			sections: [
@@ -311,11 +338,11 @@ export function seed(base: Date = new Date()): Db {
 			]
 		},
 		{
-			id: 'doc-abc-minutes',
+			id: 'doc-8uqh5vn5',
 			kind: '報告書',
 			title: `議事録 ${md(-21)}`,
-			projectId: 'pj-abc-dx',
-			personId: 'p-tanaka',
+			projectId: 'pj-axk0knp2',
+			personId: 'p-jm2kz188',
 			createdBy: 'KUROKO',
 			createdAt: at(key(addDays(-21, b)), '17:30'),
 			sections: [
@@ -326,11 +353,11 @@ export function seed(base: Date = new Date()): Db {
 			]
 		},
 		{
-			id: 'doc-xyz-training',
+			id: 'doc-x6osynyn',
 			kind: '提案書',
 			title: 'XYZ 社_研修提案.pdf',
-			projectId: 'pj-xyz-ai',
-			personId: 'p-sato',
+			projectId: 'pj-zpiw6l27',
+			personId: 'p-qvr4u400',
 			createdBy: 'KUROKO',
 			createdAt: at(key(addDays(-18, b)), '14:05'),
 			sections: [
@@ -348,41 +375,41 @@ export function seed(base: Date = new Date()): Db {
 	return {
 		version: DB_VERSION,
 		seededOn: T,
-		user: { id: 'u-sasaki', name: '佐々木 健', company: '株式会社 KUROKO', title: '代表取締役' },
+		user: { id: 'u-8wynxjtm', name: '佐々木 健', company: '株式会社 KUROKO', title: '代表取締役' },
 		companies: [
-			{ id: 'c-abc', name: 'ABC 株式会社', domain: 'abc.co.jp', industry: '製造業', size: '従業員 320 名' },
-			{ id: 'c-xyz', name: 'XYZ 株式会社', domain: 'xyz.co.jp', industry: '小売業', size: '従業員 120 名' },
-			{ id: 'c-kuroko', name: '株式会社 KUROKO', domain: 'kuroko.co.jp', industry: 'IT', size: '従業員 12 名' },
-			{ id: 'c-sunrise', name: '株式会社サンライズ', domain: 'sunrise.co.jp', industry: '人材', size: '従業員 40 名' }
+			{ id: 'c-wuu098te', name: 'ABC 株式会社', domain: 'abc.co.jp', industry: '製造業', size: '従業員 320 名' },
+			{ id: 'c-7x9w0wg8', name: 'XYZ 株式会社', domain: 'xyz.co.jp', industry: '小売業', size: '従業員 120 名' },
+			{ id: 'c-l34xvewn', name: '株式会社 KUROKO', domain: 'kuroko.co.jp', industry: 'IT', size: '従業員 12 名' },
+			{ id: 'c-2n3iqfr3', name: '株式会社サンライズ', domain: 'sunrise.co.jp', industry: '人材', size: '従業員 40 名' }
 		],
 		people: [
 			{
-				id: 'p-tanaka',
+				id: 'p-jm2kz188',
 				name: '田中 太郎',
 				kana: 'たなか たろう',
-				companyId: 'c-abc',
+				companyId: 'c-wuu098te',
 				title: '営業部長',
 				phone: '03-1234-5678',
 				memo: '佐藤さんから紹介。\n価格について慎重。\n決裁は本人。',
 				tags: ['重要', '決裁者'],
-				projectIds: ['pj-abc-dx', 'pj-abc-analysis']
+				projectIds: ['pj-axk0knp2', 'pj-l62bnpux']
 			},
 			{
-				id: 'p-sato',
+				id: 'p-qvr4u400',
 				name: '佐藤 美咲',
 				kana: 'さとう みさき',
-				companyId: 'c-xyz',
+				companyId: 'c-7x9w0wg8',
 				title: '人事部 課長',
 				phone: '03-9876-5432',
 				memo: 'AI 研修の担当。\n今月中に見積が欲しい。',
 				tags: ['研修'],
-				projectIds: ['pj-xyz-ai', 'pj-xyz-elearning']
+				projectIds: ['pj-zpiw6l27', 'pj-f6dvmk75']
 			},
 			{
-				id: 'p-yamada',
+				id: 'p-2pqiowfh',
 				name: '山田 健二',
 				kana: 'やまだ けんじ',
-				companyId: 'c-kuroko',
+				companyId: 'c-l34xvewn',
 				title: '営業',
 				phone: '090-1111-2222',
 				memo: '社内。見積書の確認担当。',
@@ -391,62 +418,62 @@ export function seed(base: Date = new Date()): Db {
 			}
 		],
 		identities: [
-			{ id: 'id-tanaka-mail', personId: 'p-tanaka', kind: 'email', value: 'tanaka@abc.co.jp', label: 'Gmail' },
-			{ id: 'id-tanaka-line', personId: 'p-tanaka', kind: 'line_id', value: 'Uabcdef01', label: 'LINE' },
-			{ id: 'id-sato-mail', personId: 'p-sato', kind: 'email', value: 'sato@xyz.co.jp', label: 'Gmail' },
-			{ id: 'id-sato-slack', personId: 'p-sato', kind: 'slack_id', value: 'U0123SATO', label: 'Slack' },
-			{ id: 'id-yamada-slack', personId: 'p-yamada', kind: 'slack_id', value: 'U0123YAMA', label: 'Slack' },
-			{ id: 'id-yamada-line', personId: 'p-yamada', kind: 'line_id', value: 'Uyamada02', label: 'LINE' },
-			{ id: 'id-abc-keiri', kind: 'email', value: 'keiri@abc.co.jp', label: 'Gmail' },
-			{ id: 'id-sunrise', kind: 'email', value: 'suzuki@sunrise.co.jp', label: 'Gmail' },
-			{ id: 'id-soumu', kind: 'email', value: 'soumu@kuroko.co.jp', label: 'Gmail' },
-			...FILLER_SUBJECTS.map((f, i) => ({ id: `id-f-${i + 1}`, kind: 'email' as const, value: f.mail, label: 'Gmail' }))
+			{ id: 'id-az6z6hk9', personId: 'p-jm2kz188', kind: 'email', value: 'tanaka@abc.co.jp', label: 'Gmail' },
+			{ id: 'id-wtnilvvx', personId: 'p-jm2kz188', kind: 'line_id', value: 'Uabcdef01', label: 'LINE' },
+			{ id: 'id-qe7x7zc6', personId: 'p-qvr4u400', kind: 'email', value: 'sato@xyz.co.jp', label: 'Gmail' },
+			{ id: 'id-zh3g4lpm', personId: 'p-qvr4u400', kind: 'slack_id', value: 'U0123SATO', label: 'Slack' },
+			{ id: 'id-x91a8td7', personId: 'p-2pqiowfh', kind: 'slack_id', value: 'U0123YAMA', label: 'Slack' },
+			{ id: 'id-tbbss1my', personId: 'p-2pqiowfh', kind: 'line_id', value: 'Uyamada02', label: 'LINE' },
+			{ id: 'id-4wdu9zhj', kind: 'email', value: 'keiri@abc.co.jp', label: 'Gmail' },
+			{ id: 'id-ehfzvr9b', kind: 'email', value: 'suzuki@sunrise.co.jp', label: 'Gmail' },
+			{ id: 'id-xb5uadxy', kind: 'email', value: 'soumu@kuroko.co.jp', label: 'Gmail' },
+			...FILLER_SUBJECTS.map((f, i) => ({ id: `id-f${(i + 1).toString(36).padStart(7, '0')}`, kind: 'email' as const, value: f.mail, label: 'Gmail' }))
 		],
 		projects: [
 			{
-				id: 'pj-abc-dx',
+				id: 'pj-axk0knp2',
 				name: 'ABC 社 DX 導入',
-				companyId: 'c-abc',
+				companyId: 'c-wuu098te',
 				status: '提案中',
 				amount: '300 万円',
 				nextDate: B1,
-				personIds: ['p-tanaka'],
-				documentIds: ['doc-abc-proposal', 'doc-abc-quote', 'doc-abc-minutes']
+				personIds: ['p-jm2kz188'],
+				documentIds: ['doc-uqxzmho0', 'doc-qw4zfmg1', 'doc-8uqh5vn5']
 			},
 			{
-				id: 'pj-xyz-ai',
+				id: 'pj-zpiw6l27',
 				name: 'XYZ 社 AI 研修',
-				companyId: 'c-xyz',
+				companyId: 'c-7x9w0wg8',
 				status: '見積提出',
 				amount: '120 万円',
-				personIds: ['p-sato'],
-				documentIds: ['doc-xyz-training', 'doc-xyz-quote']
+				personIds: ['p-qvr4u400'],
+				documentIds: ['doc-x6osynyn', 'doc-gk2n1942']
 			},
 			/* 進行中の 2 件の前後にある案件。状態の色分けは derived.ts の projectStatusClass。
 			   並び順は先頭を変えない (人物の projectIds[0] を既定の案件として使う箇所がある) */
 			{
-				id: 'pj-abc-analysis',
+				id: 'pj-l62bnpux',
 				name: 'ABC 社 業務分析',
-				companyId: 'c-abc',
+				companyId: 'c-wuu098te',
 				status: '受注',
 				amount: '80 万円',
-				personIds: ['p-tanaka'],
+				personIds: ['p-jm2kz188'],
 				documentIds: []
 			},
 			{
-				id: 'pj-xyz-elearning',
+				id: 'pj-f6dvmk75',
 				name: 'XYZ 社 店舗向け e ラーニング',
-				companyId: 'c-xyz',
+				companyId: 'c-7x9w0wg8',
 				status: '検討中',
 				amount: '90 万円',
-				personIds: ['p-sato'],
+				personIds: ['p-qvr4u400'],
 				documentIds: []
 			},
 			// 面談日程の相談 (th-sunrise-interview) がこれから始まる案件。担当者は未登録
 			{
-				id: 'pj-sunrise-interview',
+				id: 'pj-5whdlq2m',
 				name: 'サンライズ社 面談代行',
-				companyId: 'c-sunrise',
+				companyId: 'c-2n3iqfr3',
 				status: '商談前',
 				amount: '未定',
 				personIds: [],
@@ -454,9 +481,9 @@ export function seed(base: Date = new Date()): Db {
 			},
 			// 見積を出したが見送られた案件 (th-sunrise-quote が当時のやり取り)
 			{
-				id: 'pj-sunrise-ats',
+				id: 'pj-moggxlz6',
 				name: 'サンライズ社 採用管理ツール',
-				companyId: 'c-sunrise',
+				companyId: 'c-2n3iqfr3',
 				status: '失注',
 				amount: '150 万円',
 				personIds: [],
@@ -466,11 +493,11 @@ export function seed(base: Date = new Date()): Db {
 		threads: [...queueThreads, ...sunriseThreads, ...fillerThreads],
 		messages,
 		events: [
-			{ id: 'ev-standup', date: T, start: '10:00', end: '11:00', title: '社内定例', place: '渋谷', personIds: ['p-yamada'], source: 'gcal' },
-			{ id: 'ev-shibuya', date: T, start: '13:00', end: '14:00', title: '打ち合わせ', place: '渋谷', personIds: [], source: 'gcal' },
-			{ id: 'ev-sato-call', date: T, start: '17:30', end: '18:00', title: 'XYZ 株式会社 佐藤様 電話', personIds: ['p-sato'], companyId: 'c-xyz', projectId: 'pj-xyz-ai', source: 'gcal' },
+			{ id: 'ev-ugsbhi9y', date: T, start: '10:00', end: '11:00', title: '社内定例', place: '渋谷', personIds: ['p-2pqiowfh'], source: 'gcal' },
+			{ id: 'ev-bqt0gs44', date: T, start: '13:00', end: '14:00', title: '打ち合わせ', place: '渋谷', personIds: [], source: 'gcal' },
+			{ id: 'ev-d6ep67a4', date: T, start: '17:30', end: '18:00', title: 'XYZ 株式会社 佐藤様 電話', personIds: ['p-qvr4u400'], companyId: 'c-7x9w0wg8', projectId: 'pj-zpiw6l27', source: 'gcal' },
 			{
-				id: 'ev-abc-meeting',
+				id: 'ev-rrd3vexc',
 				date: B1,
 				start: '15:00',
 				end: '16:00',
@@ -478,54 +505,54 @@ export function seed(base: Date = new Date()): Db {
 				place: 'オンライン',
 				online: 'meet',
 				url: 'meet.google.com/abc-defg-hij',
-				personIds: ['p-tanaka'],
-				companyId: 'c-abc',
-				projectId: 'pj-abc-dx',
-				meetingId: 'm-abc',
+				personIds: ['p-jm2kz188'],
+				companyId: 'c-wuu098te',
+				projectId: 'pj-axk0knp2',
+				meetingId: 'm-vqpvh0ce',
 				source: 'gcal',
 				purpose: '価格条件を詰めて契約時期を決める'
 			},
 			/* 過去の商談 2 件。m-abc の Brief の履歴 (デモ実施 / 見積提示) と日付をそろえる。
 			   People の「最終商談」と「会議 N 件」はここから値が出る */
 			{
-				id: 'ev-abc-demo',
+				id: 'ev-gv97uwll',
 				date: key(addDays(-41, b)),
 				start: '14:00',
 				end: '15:00',
 				title: 'ABC 株式会社 デモ実施',
 				place: 'オンライン',
 				online: 'meet',
-				personIds: ['p-tanaka'],
-				companyId: 'c-abc',
-				projectId: 'pj-abc-dx',
-				meetingId: 'm-abc-demo',
+				personIds: ['p-jm2kz188'],
+				companyId: 'c-wuu098te',
+				projectId: 'pj-axk0knp2',
+				meetingId: 'm-syj9m5c9',
 				source: 'gcal'
 			},
 			{
-				id: 'ev-abc-quote',
+				id: 'ev-fcsft5le',
 				date: key(addDays(-21, b)),
 				start: '15:00',
 				end: '16:30',
 				title: 'ABC 株式会社 見積提示',
 				place: '渋谷',
-				personIds: ['p-tanaka'],
-				companyId: 'c-abc',
-				projectId: 'pj-abc-dx',
-				meetingId: 'm-abc-quote',
+				personIds: ['p-jm2kz188'],
+				companyId: 'c-wuu098te',
+				projectId: 'pj-axk0knp2',
+				meetingId: 'm-4pt4biw2',
 				source: 'gcal'
 			},
-			{ id: 'ev-standup-2', date: B4, start: '10:00', end: '11:00', title: '社内定例', place: '渋谷', personIds: ['p-yamada'], source: 'gcal' },
-			{ id: 'ev-shinagawa', date: B5, start: '14:00', end: '15:30', title: '外出 (取引先訪問)', place: '品川', personIds: [], source: 'gcal' },
-			{ id: 'ev-wed', date: WED, start: '13:00', end: '15:00', title: '打ち合わせ', place: '品川', personIds: [], source: 'gcal' }
+			{ id: 'ev-o6pcisjv', date: B4, start: '10:00', end: '11:00', title: '社内定例', place: '渋谷', personIds: ['p-2pqiowfh'], source: 'gcal' },
+			{ id: 'ev-2xsgwqft', date: B5, start: '14:00', end: '15:30', title: '外出 (取引先訪問)', place: '品川', personIds: [], source: 'gcal' },
+			{ id: 'ev-k0mj3be3', date: WED, start: '13:00', end: '15:00', title: '打ち合わせ', place: '品川', personIds: [], source: 'gcal' }
 		],
 		meetings: [
 			{
-				id: 'm-abc',
-				eventId: 'ev-abc-meeting',
+				id: 'm-vqpvh0ce',
+				eventId: 'ev-rrd3vexc',
 				title: 'ABC 株式会社 商談',
-				personIds: ['p-tanaka'],
-				companyId: 'c-abc',
-				projectId: 'pj-abc-dx',
+				personIds: ['p-jm2kz188'],
+				companyId: 'c-wuu098te',
+				projectId: 'pj-axk0knp2',
 				purpose: '価格条件を詰めて契約時期を決める',
 				briefRead: false,
 				agenda: [],
@@ -537,16 +564,16 @@ export function seed(base: Date = new Date()): Db {
 					lastPoints: ['価格について懸念あり'],
 					homework: ['未提出: 導入スケジュールの提出'],
 					recentContacts: [`社内稟議中との連絡あり (${md(-14)} LINE)`],
-					documentIds: ['doc-abc-proposal', 'doc-abc-quote']
+					documentIds: ['doc-uqxzmho0', 'doc-qw4zfmg1']
 				}
 			},
 			{
-				id: 'm-abc-demo',
-				eventId: 'ev-abc-demo',
+				id: 'm-syj9m5c9',
+				eventId: 'ev-gv97uwll',
 				title: 'ABC 株式会社 デモ実施',
-				personIds: ['p-tanaka'],
-				companyId: 'c-abc',
-				projectId: 'pj-abc-dx',
+				personIds: ['p-jm2kz188'],
+				companyId: 'c-wuu098te',
+				projectId: 'pj-axk0knp2',
 				purpose: '製品デモで適用範囲の当たりを付ける',
 				briefRead: true,
 				agenda: [],
@@ -563,12 +590,12 @@ export function seed(base: Date = new Date()): Db {
 				}
 			},
 			{
-				id: 'm-abc-quote',
-				eventId: 'ev-abc-quote',
+				id: 'm-4pt4biw2',
+				eventId: 'ev-fcsft5le',
 				title: 'ABC 株式会社 見積提示',
-				personIds: ['p-tanaka'],
-				companyId: 'c-abc',
-				projectId: 'pj-abc-dx',
+				personIds: ['p-jm2kz188'],
+				companyId: 'c-wuu098te',
+				projectId: 'pj-axk0knp2',
 				purpose: '見積を提示して価格条件をすり合わせる',
 				briefRead: true,
 				agenda: [],
@@ -587,17 +614,17 @@ export function seed(base: Date = new Date()): Db {
 		],
 		transcripts: [],
 		tasks: [
-			{ id: 't-abc-proposal', title: 'ABC 社へ提案書の修正版を送る', due: T, time: '18:00', priority: 'high', projectId: 'pj-abc-dx', status: 'todo', origin: 'tasks', createdAt: at(Y, '9:00') },
-			{ id: 't-xyz-quote', title: 'XYZ 社の見積を確認する', due: T, priority: 'normal', projectId: 'pj-xyz-ai', status: 'todo', origin: 'today', createdAt: at(T, '8:30') },
-			{ id: 't-cards', title: '名刺の登録 (展示会分)', due: T, priority: 'low', status: 'todo', origin: 'tasks', createdAt: at(Y, '9:00') },
-			{ id: 't-training', title: '研修日程を佐藤様に連絡する', due: B3, priority: 'normal', personId: 'p-sato', status: 'todo', origin: 'tasks', memo: `${md(-18)}の打ち合わせで依頼`, createdAt: at(Y, '9:00') },
-			{ id: 't-standup-doc', title: '社内定例の資料をまとめる', due: B4, priority: 'normal', status: 'todo', origin: 'tasks', createdAt: at(Y, '9:00') },
-			{ id: 't-expense', title: '先週分の経費を提出する', due: key(addDays(-3, b)), priority: 'low', status: 'done', origin: 'tasks', createdAt: at(key(addDays(-7, b)), '9:00') }
+			{ id: 't-jp448pyz', title: 'ABC 社へ提案書の修正版を送る', due: T, time: '18:00', priority: 'high', projectId: 'pj-axk0knp2', status: 'todo', origin: 'tasks', createdAt: at(Y, '9:00') },
+			{ id: 't-w8gtwdju', title: 'XYZ 社の見積を確認する', due: T, priority: 'normal', projectId: 'pj-zpiw6l27', status: 'todo', origin: 'today', createdAt: at(T, '8:30') },
+			{ id: 't-nx8vpqm5', title: '名刺の登録 (展示会分)', due: T, priority: 'low', status: 'todo', origin: 'tasks', createdAt: at(Y, '9:00') },
+			{ id: 't-0aogstu6', title: '研修日程を佐藤様に連絡する', due: B3, priority: 'normal', personId: 'p-qvr4u400', status: 'todo', origin: 'tasks', memo: `${md(-18)}の打ち合わせで依頼`, createdAt: at(Y, '9:00') },
+			{ id: 't-lprklrla', title: '社内定例の資料をまとめる', due: B4, priority: 'normal', status: 'todo', origin: 'tasks', createdAt: at(Y, '9:00') },
+			{ id: 't-zzxbo657', title: '先週分の経費を提出する', due: key(addDays(-3, b)), priority: 'low', status: 'done', origin: 'tasks', createdAt: at(key(addDays(-7, b)), '9:00') }
 		],
 		documents,
 		approvals: [
 			{
-				id: 'ap-xyz-quote',
+				id: 'ap-dtfanvx1',
 				title: 'XYZ 社 佐藤様への見積書 (修正版) の送付',
 				risk: 'external_send',
 				kind: 'mail',
@@ -606,11 +633,11 @@ export function seed(base: Date = new Date()): Db {
 				body: quoteBody,
 				status: 'pending',
 				createdAt: at(T, '9:58'),
-				payload: { type: 'reply', threadId: 'th-sato-training', body: quoteBody },
+				payload: { type: 'reply', threadId: 'th-5iw7qbjw', body: quoteBody },
 				origin: 'inbox'
 			},
 			{
-				id: 'ap-abc-minutes',
+				id: 'ap-v0ywl592',
 				title: 'ABC 社 田中様への前回議事録の共有',
 				risk: 'external_send',
 				kind: 'mail',
@@ -618,7 +645,7 @@ export function seed(base: Date = new Date()): Db {
 				body: `前回商談 (${md(-21)}) の議事録を Google ドライブのリンクで共有します。`,
 				status: 'pending',
 				createdAt: at(T, '8:55'),
-				payload: { type: 'share', personId: 'p-tanaka', what: `議事録 ${md(-21)}` },
+				payload: { type: 'share', personId: 'p-jm2kz188', what: `議事録 ${md(-21)}` },
 				origin: 'meeting'
 			},
 			/* 社内の 3 件。初期の自動化レベル (下の settings.automation) では社内は自動で実行される
@@ -626,7 +653,7 @@ export function seed(base: Date = new Date()): Db {
 			   出る場所は承認待ちドロワーの「実行済み」(ApprovalDrawer が executedAt の新しい順に 3 件)。
 			   承認待ちの件数には入らない (derived.ts の pendingApprovals は pending のみ) */
 			{
-				id: 'ap-yamada-quote-ok',
+				id: 'ap-2gtu0gdh',
 				title: '山田さんへの見積書の確認結果の返信',
 				risk: 'internal',
 				kind: 'slack',
@@ -635,11 +662,11 @@ export function seed(base: Date = new Date()): Db {
 				status: 'executed',
 				createdAt: at(T, '8:32'),
 				executedAt: at(T, '8:32'),
-				payload: { type: 'reply', threadId: 'th-yamada-quote', body: '見積書を確認しました。' },
+				payload: { type: 'reply', threadId: 'th-thb8z1o6', body: '見積書を確認しました。' },
 				origin: 'slack'
 			},
 			{
-				id: 'ap-standup-doc',
+				id: 'ap-rzt9awz4',
 				title: '社内定例の資料のたたき台の共有',
 				risk: 'internal_low',
 				kind: 'slack',
@@ -649,11 +676,11 @@ export function seed(base: Date = new Date()): Db {
 				status: 'executed',
 				createdAt: at(T, '8:12'),
 				executedAt: at(T, '8:12'),
-				payload: { type: 'share', personId: 'p-yamada', what: '社内定例 資料のたたき台' },
+				payload: { type: 'share', personId: 'p-2pqiowfh', what: '社内定例 資料のたたき台' },
 				origin: 'slack'
 			},
 			{
-				id: 'ap-yamada-line-remind',
+				id: 'ap-kq4zgcqn',
 				title: '山田さんへの内見の日程の確認',
 				risk: 'internal_low',
 				kind: 'line',
@@ -670,7 +697,7 @@ export function seed(base: Date = new Date()): Db {
 			/* 田中様のメールから拾った宿題の候補。KUROKO は登録まではせず、必ず人が選ぶ (仕様 5.4)。
 			   中身は m-abc の Brief の homework と同じ宿題を指す。出る場所は /tasks の候補カード */
 			{
-				id: 'sg-abc-schedule',
+				id: 'sg-8gb0vezw',
 				source: 'email',
 				kind: 'task',
 				status: 'pending',
@@ -679,25 +706,25 @@ export function seed(base: Date = new Date()): Db {
 					type: 'task',
 					title: 'ABC 社へ導入スケジュールを提出する',
 					due: B3,
-					personId: 'p-tanaka',
-					projectId: 'pj-abc-dx'
+					personId: 'p-jm2kz188',
+					projectId: 'pj-axk0knp2'
 				},
 				createdAt: at(T, '9:15')
 			}
 		] satisfies Suggestion[],
 		scheduling: [],
 		logs: [
-			{ id: 'log-1', at: at(T, '9:58'), actor: 'KUROKO', kind: 'draft', text: 'XYZ 社 見積書 (修正版) の下書きを作成し承認待ちにしました', origin: 'inbox', approved: false },
-			{ id: 'log-2', at: at(T, '9:12'), actor: 'KUROKO', kind: 'other', text: `受信 ${8 + FILLER_SUBJECTS.length} 件から 8 件を要対応として選びました`, origin: 'inbox', approved: false },
-			{ id: 'log-3', at: at(T, '8:55'), actor: 'KUROKO', kind: 'draft', text: '前回議事録の共有を承認待ちにしました', origin: 'meeting', approved: false },
-			{ id: 'log-4', at: at(T, '8:30'), actor: 'user', kind: 'register', text: 'ToDo「XYZ 社の見積を確認する」を登録しました', origin: 'today', approved: false },
-			{ id: 'log-5', at: at(Y, '21:00'), actor: 'KUROKO', kind: 'other', text: 'ABC 株式会社商談の Brief を作成しました', origin: 'meeting', approved: false },
-			{ id: 'log-6', at: at(Y, '18:22'), actor: 'user', kind: 'send', text: '田中様へメールを送信しました', origin: 'inbox', approved: true }
+			{ id: 'log-ofc52d11', at: at(T, '9:58'), actor: 'KUROKO', kind: 'draft', text: 'XYZ 社 見積書 (修正版) の下書きを作成し承認待ちにしました', origin: 'inbox', approved: false },
+			{ id: 'log-9pli1b3f', at: at(T, '9:12'), actor: 'KUROKO', kind: 'other', text: `受信 ${8 + FILLER_SUBJECTS.length} 件から 8 件を要対応として選びました`, origin: 'inbox', approved: false },
+			{ id: 'log-5xp12932', at: at(T, '8:55'), actor: 'KUROKO', kind: 'draft', text: '前回議事録の共有を承認待ちにしました', origin: 'meeting', approved: false },
+			{ id: 'log-wcl1801f', at: at(T, '8:30'), actor: 'user', kind: 'register', text: 'ToDo「XYZ 社の見積を確認する」を登録しました', origin: 'today', approved: false },
+			{ id: 'log-1rkzj9mi', at: at(Y, '21:00'), actor: 'KUROKO', kind: 'other', text: 'ABC 株式会社商談の Brief を作成しました', origin: 'meeting', approved: false },
+			{ id: 'log-1ip4eahv', at: at(Y, '18:22'), actor: 'user', kind: 'send', text: '田中様へメールを送信しました', origin: 'inbox', approved: true }
 		],
 		chat: [],
 		line: [
-			{ id: 'ln-1', who: '佐藤', text: '明日の資料どうします?', at: '10:12' },
-			{ id: 'ln-2', who: '山田', text: '確認します', at: '10:15' }
+			{ id: 'ln-7jqsfkai', who: '佐藤', text: '明日の資料どうします?', at: '10:12' },
+			{ id: 'ln-pkhyqa8r', who: '山田', text: '確認します', at: '10:15' }
 		],
 		slack: [],
 		settings: {

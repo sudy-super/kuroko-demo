@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { seed } from './seed';
+import { seed, SEED } from './seed';
 import {
 	todayCount,
 	todayItems,
@@ -35,7 +35,7 @@ describe('todayItems', () => {
 	it('次の会議より後の会議の未読 Brief は数えない', () => {
 		const db = seed(new Date(2026, 8, 15));
 		db.events.push({
-			...db.events.find((e) => e.id === 'ev-abc-meeting')!,
+			...db.events.find((e) => e.id === SEED.abcMeetingEvent)!,
 			id: 'ev-later',
 			date: '2026-09-30',
 			meetingId: 'm-later'
@@ -74,7 +74,7 @@ describe('予定の並べ替え', () => {
 	});
 	it('nextMeeting は同じ日なら 9:00 の会議を返す', () => {
 		const db = seed(new Date(2026, 8, 15));
-		const base = db.events.find((e) => e.id === 'ev-abc-meeting')!;
+		const base = db.events.find((e) => e.id === SEED.abcMeetingEvent)!;
 		db.events.push({ ...base, id: 'ev-am', date: '2026-09-15', start: '9:00', end: '9:30', meetingId: 'm-am' });
 		db.events.push({ ...base, id: 'ev-ten', date: '2026-09-15', start: '10:00', end: '11:00', meetingId: 'm-ten' });
 		db.meetings.push({ ...db.meetings[0], id: 'm-am', eventId: 'ev-am' });

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { db, resetDb } from './store.svelte';
 import { insertSlots, dropSlotsDraft, sendReply, approve, confirmSlot, cancelScheduling, SEND_DELAY_MS } from './actions';
 import { todayCount, nextMeeting } from './derived';
+import { SEED } from './seed';
 
 beforeEach(() => {
 	(globalThis as any).localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
@@ -16,10 +17,10 @@ describe('scheduling', () => {
 		}
 		vi.advanceTimersByTime(SEND_DELAY_MS);
 		expect(todayCount(db)).toBe(5);
-		const s = insertSlots('th-tanaka-next');
+		const s = insertSlots(SEED.tanakaNextThread);
 		expect(s.status).toBe('draft');
 		expect(s.slots.filter((x) => x.selected).length).toBe(3);
-		const ap = sendReply('th-tanaka-next', 'body ' + s.text, 'inbox');
+		const ap = sendReply(SEED.tanakaNextThread, 'body ' + s.text, 'inbox');
 		expect(todayCount(db)).toBe(6);
 		approve(ap.id);
 		expect(todayCount(db)).toBe(5); // 承認待ち +1 が sending になって消え、要返信 1 はまだ残る
@@ -38,18 +39,18 @@ describe('scheduling', () => {
 			'導入スケジュールは別途提出'
 		]);
 		expect(todayCount(db)).toBe(4);
-		expect(nextMeeting(db)!.meeting.id).toBe('m-abc'); // 次の会議は変わらない
+		expect(nextMeeting(db)!.meeting.id).toBe(SEED.abcMeeting); // 次の会議は変わらない
 		expect(db.logs[0].approved).toBe(true);
 	});
 	it('確定の履歴に「元に戻す」は付かない', () => {
-		const s = insertSlots('th-tanaka-next');
+		const s = insertSlots(SEED.tanakaNextThread);
 		s.status = 'sent';
 		s.token = 'tok';
 		confirmSlot('tok', s.slots[0].id);
 		expect(db.logs[0].undo).toBeUndefined();
 	});
 	it('action の返り値は db の中の要素と同一', () => {
-		const s = insertSlots('th-tanaka-next');
+		const s = insertSlots(SEED.tanakaNextThread);
 		expect(s).toBe(db.scheduling[db.scheduling.length - 1]);
 		s.status = 'sent';
 		s.token = 'tok';
@@ -61,19 +62,19 @@ describe('scheduling', () => {
 		expect(confirmSlot('nope', 'x')).toBeNull();
 	});
 	it('確定済みの枠を選び直しても予定と会議は 1 件ずつ', () => {
-		const s = insertSlots('th-tanaka-next');
+		const s = insertSlots(SEED.tanakaNextThread);
 		s.status = 'sent';
 		s.token = 'tok';
 		confirmSlot('tok', s.slots[0].id);
 		const r = confirmSlot('tok', s.slots[1].id)!;
 		expect(db.events.filter((e) => e.source === 'kuroko').length).toBe(1);
-		expect(db.meetings.length).toBe(4); // シードの 3 件 (m-abc と過去の商談 2 件) と選び直した 1 件
+		expect(db.meetings.length).toBe(4); // シードの 3 件 (SEED.abcMeeting と過去の商談 2 件) と選び直した 1 件
 		expect(db.demo.stats.confirmed).toBe(1);
 		expect(s.eventId).toBe(r.event.id);
 		expect(r.event.start).toBe(s.slots[1].start);
 	});
 	it('cancel で予定と会議が消える', () => {
-		const s = insertSlots('th-tanaka-next');
+		const s = insertSlots(SEED.tanakaNextThread);
 		s.status = 'sent';
 		s.token = 'tok';
 		confirmSlot('tok', s.slots[0].id);
@@ -83,11 +84,11 @@ describe('scheduling', () => {
 	});
 	// 人物がいないと相手の画面の confirmSlot() が落ちるので、作らせない
 	it('人物未登録のスレッドでは insertSlots が throw する', () => {
-		expect(db.threads.find((t) => t.id === 'th-sunrise-interview')?.personId).toBeUndefined();
-		expect(() => insertSlots('th-sunrise-interview')).toThrow();
+		expect(db.threads.find((t) => t.id === SEED.sunriseInterviewThread)?.personId).toBeUndefined();
+		expect(() => insertSlots(SEED.sunriseInterviewThread)).toThrow();
 	});
 	it('personId が空の scheduling は confirmSlot が null を返す (二重の防御)', () => {
-		const s = insertSlots('th-tanaka-next');
+		const s = insertSlots(SEED.tanakaNextThread);
 		s.personId = '';
 		s.status = 'sent';
 		s.token = 'tok';
@@ -95,16 +96,16 @@ describe('scheduling', () => {
 	});
 	// 破棄や他トーンへの乗り換えでは insertSlots を呼ばないので、sendReply が拾う draft が残らない
 	it('insertSlots を呼ばなければ sendReply の schedulingId は付かない', () => {
-		const ap = sendReply('th-tanaka-next', '日程の話は取り下げます。', 'inbox');
+		const ap = sendReply(SEED.tanakaNextThread, '日程の話は取り下げます。', 'inbox');
 		expect(ap.payload.type).toBe('reply');
 		expect((ap.payload as { schedulingId?: string }).schedulingId).toBeUndefined();
 	});
 	// slots を採用したあと別トーンを採用すると本文から候補が消えるので、下書きも道連れにする
 	it('dropSlotsDraft のあとは sendReply の schedulingId が付かない', () => {
-		insertSlots('th-tanaka-next');
-		dropSlotsDraft('th-tanaka-next');
-		expect(db.scheduling.filter((s) => s.threadId === 'th-tanaka-next').length).toBe(0);
-		const ap = sendReply('th-tanaka-next', '承知しました。改めてご連絡いたします。', 'inbox');
+		insertSlots(SEED.tanakaNextThread);
+		dropSlotsDraft(SEED.tanakaNextThread);
+		expect(db.scheduling.filter((s) => s.threadId === SEED.tanakaNextThread).length).toBe(0);
+		const ap = sendReply(SEED.tanakaNextThread, '承知しました。改めてご連絡いたします。', 'inbox');
 		expect((ap.payload as { schedulingId?: string }).schedulingId).toBeUndefined();
 		approve(ap.id);
 		vi.advanceTimersByTime(SEND_DELAY_MS);
@@ -112,9 +113,9 @@ describe('scheduling', () => {
 	});
 	// 承認待ちの返信が指している下書きは、その本文に候補が載っているので消さない
 	it('承認待ちの返信が指す下書きは dropSlotsDraft でも残る', () => {
-		const s = insertSlots('th-tanaka-next');
-		const ap = sendReply('th-tanaka-next', 'body ' + s.text, 'inbox');
-		dropSlotsDraft('th-tanaka-next');
+		const s = insertSlots(SEED.tanakaNextThread);
+		const ap = sendReply(SEED.tanakaNextThread, 'body ' + s.text, 'inbox');
+		dropSlotsDraft(SEED.tanakaNextThread);
 		expect(db.scheduling).toContain(s);
 		approve(ap.id);
 		vi.advanceTimersByTime(SEND_DELAY_MS);

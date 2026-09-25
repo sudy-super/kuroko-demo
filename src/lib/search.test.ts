@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { seed } from './seed';
+import { seed, SEED } from './seed';
 import { search, recent, GROUPS } from './search';
 
 const BASE = new Date(2026, 8, 15); // 火曜。シードの相対日付がこの日を基準になる
@@ -13,7 +13,7 @@ describe('search', () => {
 		expect(groups).toEqual(GROUPS);
 		expect(hits.find((h) => h.group === '人物')).toMatchObject({
 			label: '田中 太郎',
-			href: '/people/p-tanaka',
+			href: `/people/${SEED.tanaka}`,
 			source: '社内データ'
 		});
 		// 本人を通じて会社・案件・メール・予定・資料・ToDo まで当たる
@@ -48,11 +48,11 @@ describe('search', () => {
 describe('recent', () => {
 	it('道を画面の名前に変える。詳細は実体の名前を出す', () => {
 		const d = seed(BASE);
-		d.demo.recent = ['/today', '/people/p-tanaka', '/companies/c-abc', '/settings'];
+		d.demo.recent = ['/today', `/people/${SEED.tanaka}`, `/companies/${SEED.abcCo}`, '/settings'];
 		expect(recent(d)).toEqual([
 			{ href: '/today', label: 'Today' },
-			{ href: '/people/p-tanaka', label: '田中 太郎' },
-			{ href: '/companies/c-abc', label: 'ABC 株式会社' },
+			{ href: `/people/${SEED.tanaka}`, label: '田中 太郎' },
+			{ href: `/companies/${SEED.abcCo}`, label: 'ABC 株式会社' },
 			{ href: '/settings', label: '設定' }
 		]);
 	});
