@@ -45,6 +45,11 @@ const doc = {
 	hidden: false,
 	/* 覆いが開いている間 (data-overlay="on") は glass() の面を止める (glass.ts の mount) */
 	body: { dataset: {} as Record<string, string> },
+	/* 面の下にあるオーブの canvas。空なら周期の描き直しは要らない (glass.ts の orbUnder) */
+	orbs: [] as object[],
+	querySelectorAll() {
+		return this.orbs;
+	},
 	listeners: new Set<() => void>(),
 	addEventListener(_: string, fn: () => void) {
 		this.listeners.add(fn);
@@ -138,8 +143,13 @@ describe('ガラスの配線', () => {
 		expect(created[0].updates).toHaveLength(1);
 	});
 
-	it('まとめて描く層は間隔で描き直し、隠れている間は描かない', () => {
-		const stop = chromeGlass(fakeLayer({}));
+	it('まとめて描く層はオーブが下にある間だけ間隔で描き直し、隠れている間は描かない', () => {
+		const box = { left: 0, top: 0, right: 100, bottom: 100, width: 100, height: 100 };
+		const sidebar = { contains: () => false, getBoundingClientRect: () => box };
+		const stop = chromeGlass(fakeLayer({ '.sidebar, .rail, .side-toggle': [sidebar] }));
+		vi.advanceTimersByTime(150);
+		expect(created[0].refreshed).toBe(0);
+		doc.orbs = [{ getBoundingClientRect: () => box }];
 		vi.advanceTimersByTime(150);
 		expect(created[0].refreshed).toBe(3);
 		doc.hidden = true;
@@ -151,6 +161,7 @@ describe('ガラスの配線', () => {
 		vi.advanceTimersByTime(150);
 		expect(created[0].refreshed).toBe(3);
 		expect(observers[0].connected).toBe(false);
+		doc.orbs = [];
 	});
 
 	it('依頼バーは層に乗らず自分の描画面を持つ (枠の面と同じ層に乗せると互いを映せないため)', () => {

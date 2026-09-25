@@ -117,7 +117,7 @@ const CHROME_TIERS = {
 };
 
 /* 依頼バーは層に入れず、自分の描画面を持つ。層に乗せると自身の文字や塗りが背後の絵に入らなくなる */
-export const barGlass = (node: Element) => mount(node as HTMLElement, BAR);
+export const barGlass = (node: Element) => mount(node as HTMLElement, BAR, 50);
 
 /* 50ms — 枠の層を毎フレーム描き直すと本文の文字を 60 回/秒描き起こし、カレンダーの月表示が 25fps まで落ちた。
    この間隔が要るのは知らせずに描き変わるオーブの canvas のためだけで、20 回/秒でも見た目は変わらない */
@@ -196,9 +196,10 @@ function mount(
 		/* 引数なしの refresh() は targets と観測子まで付け直す。背後の描き直しだけなので backdrop: false
 		   (.d.ts には無いが dom.js の refresh は受け取る)。隠れているタブでは飛ばす */
 		const repaint = instance.refresh as (o?: { backdrop?: boolean }) => void;
+		const surfaces = () => (tiers ? targets().map((t) => t.element) : [node]);
 		if (repaintMs)
 			timer = setInterval(() => {
-				if (!document.hidden) repaint.call(instance!, { backdrop: false });
+				if (!document.hidden && orbUnder(surfaces())) repaint.call(instance!, { backdrop: false });
 			}, repaintMs);
 	};
 
@@ -214,4 +215,21 @@ function mount(
 	};
 
 	return whileVisible(acquire, release);
+}
+
+/* 周期の描き直しが要るのは、知らせずに描き変わるオーブの canvas が面の下 (ぼかしと屈折が届く 96px の外周を
+   含む) にあるときだけ。それ以外の変化 (DOM・スクロール・大きさ) はライブラリが自分で拾う。
+   面の中のオーブ (サイドナビのロゴ) は面の手前にあり、背後の絵に入らないので数えない */
+function orbUnder(surfaces: Element[]) {
+	const orbs = [...document.querySelectorAll('.orb canvas:not(.off)')].filter(
+		(canvas) => !surfaces.some((surface) => surface.contains(canvas))
+	);
+	return orbs.some((canvas) => {
+		const a = canvas.getBoundingClientRect();
+		return surfaces.some((surface) => {
+			const b = surface.getBoundingClientRect();
+			// 覆いの層の常駐する印 (幅 0) は描かれないので数えない
+			return b.width > 0 && a.left < b.right + 96 && b.left - 96 < a.right && a.top < b.bottom + 96 && b.top - 96 < a.bottom;
+		});
+	});
 }
