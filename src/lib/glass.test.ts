@@ -24,7 +24,9 @@ class FakeGlass {
 		this.refreshed++;
 	};
 }
-vi.mock('apple-liquid-glass-webgl', () => ({ LiquidGlass: FakeGlass }));
+/* 光の読み戻しを外す差し替えの先。中身は描かないので空のクラスでよい */
+class FakeRenderer {}
+vi.mock('apple-liquid-glass-webgl', () => ({ LiquidGlass: FakeGlass, LiquidGlassWebGLV2: FakeRenderer }));
 
 /* node 環境には document も MutationObserver も無い。visible.ts が既定で見るのは
    document.hidden なので、そこだけを持つ代役を置く */
@@ -186,4 +188,16 @@ describe('ガラスの配線', () => {
 		o.onContextRestored();
 		expect(attrs['data-liquid-glass']).toBe('webgl');
 	});
+});
+
+it('光の読み戻し (getImageData) を描画のたびに走らせない', () => {
+	const r = FakeRenderer.prototype as unknown as {
+		updateLightField(this: object): void;
+		requestLightField(): boolean;
+	};
+	const state = { lightFieldDirty: true, lightPixels: new Uint8ClampedArray(4) };
+	r.updateLightField.call(state);
+	expect(state).toEqual({ lightFieldDirty: false, lightPixels: null });
+	// true は「読み戻しを引き受けた」の意味。false だとライブラリはその場で同期の読み戻しに切り替える
+	expect(r.requestLightField()).toBe(true);
 });

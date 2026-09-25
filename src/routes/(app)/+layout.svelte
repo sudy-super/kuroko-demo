@@ -32,7 +32,8 @@
 		const key = (e: KeyboardEvent) => {
 			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
 				e.preventDefault();
-				ui.palette = true;
+				// 同じ近道で閉じる (Spotlight・Raycast と同じ)
+				ui.palette = !ui.palette;
 			}
 			// side-collapse.md — ⌘\ / Ctrl+\ はサイドナビの格納の近道。\ は文字入力と
 			// 衝突しないので、入力欄に焦点があっても効かせる

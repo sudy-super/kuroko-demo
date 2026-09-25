@@ -87,10 +87,10 @@
 .pal-row::after {
 	display: none;
 }
-/* 表の「選択中」— ホバーと同じ塗りに、左端 3px の縦バーを足してキーボードの位置を区別する */
+/* 選択中 — macOS 26 の Spotlight (Apple Newsroom の WWDC25 の映像) と同じく、角丸の無彩色の塗りだけで示す。
+   縦バーも文字色の反転も付けない。塗りはサイドナビの現在地と同じ --sel-gray */
 .pal-row[data-selected] {
-	background: var(--sel-soft);
-	box-shadow: inset 3px 0 0 var(--accent);
+	background: var(--sel-gray);
 }
 /* 行の高さは 48px 固定なので、長い文言は折り返さず省略する
    (折り返すと隣の行に重なる) */

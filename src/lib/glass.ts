@@ -2,10 +2,21 @@
    border-radius を読む。WebGL2 が無い環境では backdrop-filter に落ち、data-liquid-glass="fallback" が付く */
 import {
 	LiquidGlass,
+	LiquidGlassWebGLV2,
 	type LiquidGlassElementOptions,
 	type LiquidGlassBackdropPainter
 } from 'apple-liquid-glass-webgl';
 import { whileVisible } from './visible';
+
+/* ライブラリは描くたびに背景を GPU から読み戻し (getImageData)、光の向きと塗りの明暗を決める。
+   ここの材質は反射 (rim / highlight) を 0、tintTone を 'light' に固定しているので、その結果は絵に
+   一切出ない。読み戻しは ⌘K の開閉で 1 回 50ms を超え、動きがカクつく元になっていた */
+const probeless = LiquidGlassWebGLV2.prototype as unknown as Record<string, unknown>;
+probeless.updateLightField = function (this: { lightFieldDirty: boolean; lightPixels: null }) {
+	this.lightFieldDirty = false;
+	this.lightPixels = null;
+};
+probeless.requestLightField = () => true;
 
 /* 反射の無い Liquid Glass の材質。面の中はほぼ素通しで、縁の帯だけ像を曲げる。
    hairline は背景の明暗で白か黒を選ぶ輪郭線で、光を映すものではないので残す。
