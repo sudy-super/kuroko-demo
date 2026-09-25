@@ -1,10 +1,8 @@
 <script lang="ts">
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
 	import type { CalendarEvent } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { deleteEvent, undo } from '$lib/actions';
-	import { toast } from '$lib/ui.svelte';
+	import { toast, takeIntent, type Intent } from '$lib/ui.svelte';
 	import { parse, key, addDays, fmtYMDW } from '$lib/dates';
 	import { weekOf } from '$lib/calendar';
 	import { linkUrl } from '$lib/derived';
@@ -33,14 +31,9 @@
 		return a.getFullYear() === b.getFullYear() ? `${ym(a)}〜${b.getMonth() + 1}月` : `${ym(a)}〜${ym(b)}`;
 	});
 
-	const params = $derived(page.url.searchParams);
-	const formOpen = $derived(params.get('new') === '1');
-	const initial = $derived({
-		date: params.get('date') ?? undefined,
-		start: params.get('start') ?? undefined,
-		place: params.get('place') ?? undefined
-	});
-	const closeForm = () => goto('/calendar', { replaceState: true, noScroll: true, keepFocus: true });
+	// 開いている間の初期値。null なら閉じている。⌘K・チャット・案内の筋書きは intent で埋めて開かせる
+	let form = $state<Omit<Extract<Intent, { kind: 'new-event' }>, 'kind'> | null>(null);
+	$effect(() => takeIntent('new-event', ({ kind, ...initial }) => (form = initial)));
 
 	function shift(n: number) {
 		cursor =
@@ -91,9 +84,9 @@
 				onchange={(k) => (view = k)}
 			/>
 		</div>
-		<a class="iconbtn cal-add" href="/calendar?new=1" title="予定を追加" aria-label="予定を追加">
+		<button class="iconbtn cal-add" title="予定を追加" aria-label="予定を追加" onclick={() => (form = {})}>
 			<Icon name="ic-plus" size={20} />
-		</a>
+		</button>
 	</div>
 
 	<!-- コンテンツ層なのでガラスは使わない (HIG Materials) -->
@@ -106,7 +99,7 @@
 	</section>
 </div>
 
-<EventForm open={formOpen} {initial} onclose={closeForm} />
+<EventForm open={!!form} initial={form ?? undefined} onclose={() => (form = null)} />
 
 <Modal
 	open={!!detail}

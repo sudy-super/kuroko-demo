@@ -1,7 +1,6 @@
 /* 音声の依頼の聞き取り。全画面の覆い (VoiceOverlay.svelte) と Today のその場の聞き取り
    (today/+page.svelte と KurokoBar.svelte) が同じ 1 つを使う (docs/research/voice-orb.md) */
-import { goto } from '$app/navigation';
-import { ui } from './ui.svelte';
+import { ui, request } from './ui.svelte';
 
 /** 音声を受け取れない環境で流す例文と 1 文字あたりの間隔 */
 const DEMO_TEXT = '明日の商談の準備、あとで見られるようにしておいて';
@@ -67,8 +66,7 @@ class Hearing {
 		this.thinking = true;
 		setTimeout(() => {
 			ui.voice = false;
-			// Palette と同じ道。?q= を受けた /chat 側が送る
-			goto(q ? `/chat?q=${encodeURIComponent(q)}` : '/chat');
+			request('/chat', q ? { kind: 'ask', q } : null);
 		}, THINK_MS);
 	}
 

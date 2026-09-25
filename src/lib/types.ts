@@ -36,7 +36,8 @@ export interface Minutes { summary: string; decisions: string[]; followUpMail?: 
 export interface Meeting { id: string; eventId: string; title: string; personIds: string[]; companyId?: string; projectId?: string; purpose: string; brief?: Brief; briefRead: boolean; agenda: string[]; agendaShared: boolean; transcriptIds: string[]; minutes?: Minutes }
 export interface Transcript { id: string; meetingId: string; text: string; addedAt: string }
 export interface Task { id: string; title: string; due?: string; time?: string; priority: 'high' | 'normal' | 'low'; personId?: string; companyId?: string; projectId?: string; meetingId?: string; memo?: string; status: 'todo' | 'doing' | 'done'; origin: Origin; createdAt: string }
-export interface Document { id: string; kind: '提案書' | '見積書' | '報告書'; title: string; projectId?: string; personId?: string; createdBy: 'KUROKO' | 'user'; createdAt: string; sections: { heading: string; body: string }[] }
+export const DOC_KINDS = ['提案書', '見積書', '報告書'] as const;
+export interface Document { id: string; kind: (typeof DOC_KINDS)[number]; title: string; projectId?: string; personId?: string; createdBy: 'KUROKO' | 'user'; createdAt: string; sections: { heading: string; body: string }[] }
 /** 何で送るか (送り先のサービス)。何をするか (共有・送付など) は title に書く。行の記号はこのサービスのロゴ */
 export type ApprovalKind = 'mail' | 'line' | 'slack';
 export interface Approval { id: string; title: string; risk: RiskLevel; kind: ApprovalKind; to: string; subject?: string; body: string; status: 'pending' | 'sending' | 'executed' | 'rejected'; createdAt: string; sendingAt?: string; executedAt?: string; payload: ApprovalPayload; origin: Origin }

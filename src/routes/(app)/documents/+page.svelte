@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { untrack } from 'svelte';
 	import { db } from '$lib/store.svelte';
 	import { documentOf, personOf, projectOf } from '$lib/derived';
 	import { generateDocument, sendDocument } from '$lib/actions';
-	import { ui, focusChatbar, toast } from '$lib/ui.svelte';
+	import { ui, focusChatbar, toast, takeIntent } from '$lib/ui.svelte';
 	import { relAt } from '$lib/dates';
 	import type { Document } from '$lib/types';
 	import Icon from '$lib/components/Icon.svelte';
@@ -31,8 +30,6 @@
 	};
 
 	const WAIT_MS = 1200;
-	// 種別は Document['kind'] そのもの (src/lib/types.ts)。?kind= の値を突き合わせる
-	const KINDS: Document['kind'][] = ['提案書', '見積書', '報告書'];
 
 	async function generate(kind: Document['kind']) {
 		if (busy) return;
@@ -47,16 +44,8 @@
 		toast(`${kind}の下書きができました`);
 	}
 
-	// チャットの「下書きを作る」はここへ ?kind= 付きで飛ばしてくる (actions.ts chatAct の gen-doc)。
-	// 作り終えたら ?kind= を落とす (戻るたびに作り直さないよう、履歴には積まずに差し替える)
-	$effect(() => {
-		const kind = page.url.searchParams.get('kind');
-		if (!kind || !KINDS.includes(kind as Document['kind'])) return;
-		untrack(() => {
-			goto('/documents', { replaceState: true, noScroll: true, keepFocus: true });
-			generate(kind as Document['kind']);
-		});
-	});
+	// チャットの「下書きを作る」(actions/chat.ts の gen-doc)
+	$effect(() => takeIntent('gen-doc', (i) => generate(i.docKind)));
 
 	/** 依頼バーにこの資料の文脈を載せる。画面を離れたら外す (仕様 5.5) */
 	function ask() {

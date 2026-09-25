@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
 	import { db } from '$lib/store.svelte';
 	import type { TaskFilter } from '$lib/derived';
 	import { addLogOf, badgeCount, filterTasks, openTaskCount, orderTasks } from '$lib/derived';
@@ -13,7 +11,7 @@
 		undo
 	} from '$lib/actions';
 	import { key, addDays, parse } from '$lib/dates';
-	import { toast } from '$lib/ui.svelte';
+	import { toast, takeIntent } from '$lib/ui.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import TaskRow from '$lib/components/TaskRow.svelte';
@@ -52,8 +50,9 @@
 		db.suggestions.filter((s) => s.kind === 'task' && s.status === 'pending')
 	);
 
-	const formOpen = $derived(page.url.searchParams.get('new') === '1');
-	const closeForm = () => goto('/tasks', { replaceState: true, noScroll: true, keepFocus: true });
+	// ⌘K の「新しい ToDo を追加」
+	let formOpen = $state(false);
+	$effect(() => takeIntent('new-task', () => (formOpen = true)));
 
 	function accept(ids: string[]) {
 		toast(`ToDo を ${acceptTaskSuggestions(ids).length} 件登録しました`);
@@ -261,7 +260,7 @@
 	</section>
 </div>
 
-<TaskForm open={formOpen} onclose={closeForm} />
+<TaskForm open={formOpen} onclose={() => (formOpen = false)} />
 
 <style>
 	.tasks {

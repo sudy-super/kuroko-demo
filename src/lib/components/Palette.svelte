@@ -1,13 +1,12 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { Command } from 'bits-ui';
-	import { goto } from '$app/navigation';
 	import { db } from '$lib/store.svelte';
 	import { canStartGuide } from '$lib/derived';
 	import { startGuide } from '$lib/actions';
 	import { search, recent, GROUPS } from '$lib/search';
 	import { SCENARIOS, pickScenario } from '$lib/scenarios';
-	import { ui } from '$lib/ui.svelte';
+	import { ui, request, type Intent } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 	import Modal from './Modal.svelte';
 	import VoiceOverlay from './VoiceOverlay.svelte';
@@ -39,13 +38,12 @@
 
 	const close = () => (ui.palette = false);
 
-	function open(href: string) {
+	function open(href: string, intent: Intent | null = null) {
 		close();
-		goto(href);
+		request(href, intent);
 	}
 
-	/* ここから chatSend を直接呼ばない (/chat 以外に発言が積まれて見えなくなる)。?q= を受けた /chat 側が送る */
-	const ask = () => open(q ? `/chat?q=${encodeURIComponent(q)}` : '/chat');
+	const ask = () => open('/chat', q ? { kind: 'ask', q } : null);
 </script>
 
 <!-- 群は見出しと行の並び。見出しの無い群 (KUROKO に頼む) もある -->
@@ -73,8 +71,8 @@
 
 <!-- 「予定」「ToDo」の追加。行き先は各画面の追加ボタンと同じ -->
 {#snippet actItems()}
-	{@render row('act:event', () => open('/calendar?new=1'), 'ic-plus', '予定を追加')}
-	{@render row('act:task', () => open('/tasks?new=1'), 'ic-plus', '新しい ToDo を追加')}
+	{@render row('act:event', () => open('/calendar', { kind: 'new-event' }), 'ic-plus', '予定を追加')}
+	{@render row('act:task', () => open('/tasks', { kind: 'new-task' }), 'ic-plus', '新しい ToDo を追加')}
 {/snippet}
 
 {#snippet demoItems()}

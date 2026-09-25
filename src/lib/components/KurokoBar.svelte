@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { ui, dictated, type ContextChip } from '$lib/ui.svelte';
+	import { ui, dictated, request, type ContextChip } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 	import { barGlass } from '$lib/glass';
 	import VoiceActions from './VoiceActions.svelte';
@@ -44,12 +43,8 @@
 	function send() {
 		const q = text.trim();
 		if (!q) return;
-		let url = `/chat?q=${encodeURIComponent(q)}`;
-		if (context?.personId) url += `&person=${context.personId}`;
-		if (context?.threadId) url += `&thread=${context.threadId}`;
-		if (context?.meetingId) url += `&meeting=${context.meetingId}`;
 		text = '';
-		goto(url);
+		request('/chat', { kind: 'ask', q });
 	}
 </script>
 

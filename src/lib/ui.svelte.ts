@@ -1,3 +1,18 @@
+import { untrack } from 'svelte';
+import { goto } from '$app/navigation';
+import type { Document } from './types';
+
+/** 別の画面に頼む一度きりの操作。URL に載せると再読み込みや「戻る」で繰り返されるので、ここで渡す。
+    受け取る画面は takeIntent で取り出し、取り出した時点で消える */
+export type Intent =
+	| { kind: 'ask'; q: string }
+	| { kind: 'new-event'; date?: string; start?: string; place?: string }
+	| { kind: 'new-task' }
+	| { kind: 'ocr' }
+	| { kind: 'line-say'; text: string }
+	| { kind: 'line-approve' }
+	| { kind: 'gen-doc'; docKind: Document['kind'] };
+
 export type ContextChip = { label: string; personId?: string; threadId?: string; meetingId?: string };
 export type Toast = {
 	id: number;
@@ -31,6 +46,7 @@ export const ui = $state({
 	/** デモをリセットの確かめ。上部バーのメニューと ⌘K の両方から立てる */
 	demoReset: false,
 	context: null as ContextChip | null,
+	intent: null as Intent | null,
 	voice: false,
 	/** Today の環状配置が出ている間だけ立つ。立っている間の音声は全画面の覆いを出さず、
 	    Today の上でカードを退かせて聞く (today/+page.svelte、docs/research/voice-orb.md) */
@@ -144,4 +160,21 @@ export function dismissToast(key?: string) {
 	if (!ui.toast) return;
 	if (key !== undefined && ui.toast.key !== key) return;
 	closeToast(ui.toast.id);
+}
+
+/** $effect の中で呼ぶ。自分宛ての intent があれば取り出して消し、run に渡す。同じ画面にいる間に
+    頼まれても拾えるよう ui.intent を追いかけ、run は追跡の外で走らせる */
+export function takeIntent<K extends Intent['kind']>(kind: K, run: (i: Extract<Intent, { kind: K }>) => void) {
+	const i = ui.intent;
+	if (i?.kind !== kind) return;
+	untrack(() => {
+		ui.intent = null;
+		run(i as Extract<Intent, { kind: K }>);
+	});
+}
+
+/** intent を渡して行き先を開く。ここから chatSend を直接呼ばない (/chat 以外に発言が積まれて見えなくなる) */
+export function request(path: string, intent: Intent | null) {
+	ui.intent = intent;
+	return goto(path);
 }

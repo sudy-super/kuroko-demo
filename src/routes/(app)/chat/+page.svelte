@@ -1,10 +1,8 @@
 <script lang="ts">
-	import { tick, untrack } from 'svelte';
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { tick } from 'svelte';
 	import { db } from '$lib/store.svelte';
 	import { chatSend } from '$lib/actions';
-	import { ui } from '$lib/ui.svelte';
+	import { ui, takeIntent } from '$lib/ui.svelte';
 	import { GUIDE_CHIPS, thinking } from '$lib/kuroko/route';
 	import ChatCard from '$lib/components/ChatCard.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -25,20 +23,8 @@
 		logEl?.children[before]?.scrollIntoView({ block: 'nearest' });
 	}
 
-	// 依頼バーと ⌘K パレットはここへ ?q= 付きで飛ばしてくる (KurokoBar.svelte / Palette.svelte)。
-	// この画面から送ったときは行き先も /chat なので onMount は走らない。印の変化で拾う。
-	// 受け取ったら印を落とす (戻るたびに送り直さないため、履歴には積まずに差し替える)。
-	// 音声の覆いは URL を経由しない — ui.voice を直に立てる (KurokoBar.svelte / Palette.svelte)。
-	// ここで goto と同時に開くと、URL の差し替えでこの $effect が再走して覆いが開く途中で消え、
-	// markOverlay の後片付け (ui.svelte.ts) が走らずガラスが落ちたままになる
-	$effect(() => {
-		const q = page.url.searchParams.get('q');
-		if (!q) return;
-		untrack(() => {
-			goto('/chat', { replaceState: true, noScroll: true, keepFocus: true });
-			send(q);
-		});
-	});
+	// 依頼バー・⌘K・音声・案内の筋書きからの依頼。この画面にいる間に頼まれても拾う
+	$effect(() => takeIntent('ask', (i) => send(i.q)));
 </script>
 
 <svelte:head><title>KUROKO — KUROKO AI</title></svelte:head>

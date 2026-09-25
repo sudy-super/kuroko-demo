@@ -1,6 +1,6 @@
-import type { ChatMessage } from '../types';
+import { DOC_KINDS, type ChatMessage, type Document } from '../types';
 import { db } from '../store.svelte';
-import { toast, type ContextChip } from '../ui.svelte';
+import { toast, request, type ContextChip } from '../ui.svelte';
 import { nowIso, parse, fmtMDW, hm } from '../dates';
 import { firstFreeStart, suggestionOf } from '../derived';
 import { uid, suggestion } from '../kuroko/generate';
@@ -99,7 +99,7 @@ export function chatAct(act: string, arg: string) {
 		case 'change-date':
 			if (s?.payload.type !== 'event') throw new Error(`予定の候補がありません: ${arg}`);
 			// 日時だけ変えたいので、埋めた値を持ったまま予定の追加画面を開く
-			return goto(`/calendar?new=1&date=${s.payload.date}&start=${s.payload.start}`);
+			return request('/calendar', { kind: 'new-event', date: s.payload.date, start: s.payload.start });
 		case 'add-task':
 			if (acceptTaskSuggestions([arg]).length === 0) throw new Error(`ToDo の候補がありません: ${arg}`);
 			toast('ToDo を登録しました');
@@ -111,7 +111,8 @@ export function chatAct(act: string, arg: string) {
 		case 'open-meeting':
 			return goto(`/meetings/${arg}`);
 		case 'gen-doc':
-			return goto(`/documents?kind=${encodeURIComponent(arg)}`);
+			if (!DOC_KINDS.includes(arg as Document['kind'])) throw new Error(`知らない資料の種別です: ${arg}`);
+			return request('/documents', { kind: 'gen-doc', docKind: arg as Document['kind'] });
 		default:
 			throw new Error(`知らない操作です: ${act}`);
 	}
