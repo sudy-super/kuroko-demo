@@ -2,7 +2,7 @@
 	import type { CalendarEvent } from '$lib/types';
 	import { db } from '$lib/store.svelte';
 	import { deleteEvent, undo } from '$lib/actions';
-	import { toast, takeIntent, type Intent } from '$lib/ui.svelte';
+	import { toast, takeHandoff, type HandoffOf } from '$lib/ui.svelte';
 	import { parse, key, addDays, fmtYMDW } from '$lib/dates';
 	import { weekOf } from '$lib/calendar';
 	import { linkUrl } from '$lib/derived';
@@ -31,9 +31,9 @@
 		return a.getFullYear() === b.getFullYear() ? `${ym(a)}〜${b.getMonth() + 1}月` : `${ym(a)}〜${ym(b)}`;
 	});
 
-	// 開いている間の初期値。null なら閉じている。⌘K・チャット・案内の筋書きは intent で埋めて開かせる
-	let form = $state<Omit<Extract<Intent, { kind: 'new-event' }>, 'kind'> | null>(null);
-	$effect(() => takeIntent('new-event', ({ kind, ...initial }) => (form = initial)));
+	// 開いている間の初期値。null なら閉じている。⌘K・チャット・案内の筋書きは頼みごと (ui.handoff) で埋めて開かせる
+	let form = $state<Partial<HandoffOf<'new-event'>> | null>(null);
+	$effect(() => takeHandoff('new-event', (h) => (form = h)));
 
 	function shift(n: number) {
 		cursor =

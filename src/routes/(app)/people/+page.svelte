@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { takeIntent } from '$lib/ui.svelte';
+	import { takeHandoff } from '$lib/ui.svelte';
 	import { db } from '$lib/store.svelte';
 	import { badgeCount, companyOf, personOf } from '$lib/derived';
 	import Icon from '$lib/components/Icon.svelte';
@@ -19,7 +19,7 @@
 	const current = $derived(TABS.find((t) => t.key === tab)!);
 	let cardOpen = $state(false);
 	// 案内の筋書き (scenarios.ts) が直接開く
-	$effect(() => takeIntent('ocr', () => (cardOpen = true)));
+	$effect(() => takeHandoff('ocr', () => (cardOpen = true)));
 
 	const count = $derived({
 		people: db.people.length,

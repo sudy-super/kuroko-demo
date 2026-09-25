@@ -11,7 +11,7 @@
 		undo
 	} from '$lib/actions';
 	import { key, addDays, parse } from '$lib/dates';
-	import { toast, takeIntent } from '$lib/ui.svelte';
+	import { toast, takeHandoff } from '$lib/ui.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import TaskRow from '$lib/components/TaskRow.svelte';
@@ -52,7 +52,7 @@
 
 	// ⌘K の「新しい ToDo を追加」
 	let formOpen = $state(false);
-	$effect(() => takeIntent('new-task', () => (formOpen = true)));
+	$effect(() => takeHandoff('new-task', () => (formOpen = true)));
 
 	function accept(ids: string[]) {
 		toast(`ToDo を ${acceptTaskSuggestions(ids).length} 件登録しました`);

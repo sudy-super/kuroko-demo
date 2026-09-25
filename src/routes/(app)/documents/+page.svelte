@@ -4,7 +4,7 @@
 	import { db } from '$lib/store.svelte';
 	import { documentOf, personOf, projectOf } from '$lib/derived';
 	import { generateDocument, sendDocument } from '$lib/actions';
-	import { ui, focusChatbar, toast, takeIntent } from '$lib/ui.svelte';
+	import { ui, focusChatbar, toast, takeHandoff } from '$lib/ui.svelte';
 	import { relAt } from '$lib/dates';
 	import type { Document } from '$lib/types';
 	import Icon from '$lib/components/Icon.svelte';
@@ -45,7 +45,7 @@
 	}
 
 	// チャットの「下書きを作る」(actions/chat.ts の gen-doc)
-	$effect(() => takeIntent('gen-doc', (i) => generate(i.docKind)));
+	$effect(() => takeHandoff('gen-doc', (i) => generate(i.docKind)));
 
 	/** 依頼バーにこの資料の文脈を載せる。画面を離れたら外す (仕様 5.5) */
 	function ask() {

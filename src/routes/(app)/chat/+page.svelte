@@ -2,7 +2,7 @@
 	import { tick } from 'svelte';
 	import { db } from '$lib/store.svelte';
 	import { chatSend } from '$lib/actions';
-	import { ui, takeIntent } from '$lib/ui.svelte';
+	import { ui, takeHandoff } from '$lib/ui.svelte';
 	import { GUIDE_CHIPS, thinking } from '$lib/kuroko/route';
 	import ChatCard from '$lib/components/ChatCard.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -24,7 +24,7 @@
 	}
 
 	// 依頼バー・⌘K・音声・案内の筋書きからの依頼。この画面にいる間に頼まれても拾う
-	$effect(() => takeIntent('ask', (i) => send(i.q)));
+	$effect(() => takeHandoff('ask', (i) => send(i.q)));
 </script>
 
 <svelte:head><title>KUROKO — KUROKO AI</title></svelte:head>

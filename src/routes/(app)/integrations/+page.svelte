@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { SEED } from '$lib/seed';
-	import { takeIntent } from '$lib/ui.svelte';
+	import { takeHandoff } from '$lib/ui.svelte';
 	import { db } from '$lib/store.svelte';
 	import { lineSay, sendReply } from '$lib/actions';
 	import { integrations } from '$lib/integrations';
@@ -29,7 +29,7 @@
 	   無ければここで作る (/inbox を通らずにこの画面だけで見せられるように)。
 	   status は見ない。送信済みや却下済みでも作り直さない (やり直しは「デモをリセット」) */
 	$effect(() =>
-		takeIntent('line-approve', () => {
+		takeHandoff('line-approve', () => {
 			const a =
 				db.approvals.find((x) => x.payload.type === 'reply' && x.payload.threadId === TANAKA) ??
 				sendReply(TANAKA, '田中様\n\nご連絡ありがとうございます。\n次回の日程を調整いたします。', 'line');
@@ -46,7 +46,7 @@
 				});
 		})
 	);
-	$effect(() => takeIntent('line-say', (i) => lineSay(i.text, db.demo.lineRole)));
+	$effect(() => takeHandoff('line-say', (i) => lineSay(i.text, db.demo.lineRole)));
 </script>
 
 <svelte:head><title>LINE / Slack — KUROKO AI</title></svelte:head>

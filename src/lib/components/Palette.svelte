@@ -6,7 +6,7 @@
 	import { startGuide } from '$lib/actions';
 	import { search, recent, GROUPS } from '$lib/search';
 	import { SCENARIOS, pickScenario } from '$lib/scenarios';
-	import { ui, request, type Intent } from '$lib/ui.svelte';
+	import { ui, request, type Handoff } from '$lib/ui.svelte';
 	import Icon from './Icon.svelte';
 	import Modal from './Modal.svelte';
 	import VoiceOverlay from './VoiceOverlay.svelte';
@@ -38,12 +38,12 @@
 
 	const close = () => (ui.palette = false);
 
-	function open(href: string, intent: Intent | null = null) {
+	function open(href: string, handoff?: Handoff) {
 		close();
-		request(href, intent);
+		request(href, handoff);
 	}
 
-	const ask = () => open('/chat', q ? { kind: 'ask', q } : null);
+	const ask = () => open('/chat', q ? { kind: 'ask', q } : undefined);
 </script>
 
 <!-- 群は見出しと行の並び。見出しの無い群 (KUROKO に頼む) もある -->

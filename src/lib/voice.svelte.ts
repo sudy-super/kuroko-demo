@@ -66,7 +66,7 @@ class Hearing {
 		this.thinking = true;
 		setTimeout(() => {
 			ui.voice = false;
-			request('/chat', q ? { kind: 'ask', q } : null);
+			request('/chat', q ? { kind: 'ask', q } : undefined);
 		}, THINK_MS);
 	}
 
